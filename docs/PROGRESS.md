@@ -8,8 +8,8 @@ Nguồn plan: bộ spec 3D trong `docs/` (bản 3D thay thế bản 2D cũ). L�
 |---|---|---|
 | — | Chép bộ spec 3D vào repo, vendor Three.js r186 (`lib/three/`) | ✅ Xong |
 | Đường hình ảnh | Model 3D 16 tướng (tạo bằng code, `tools/modelgen/`) | ✅ Bản đầu xong, đạt ngân sách; còn tinh chỉnh |
-| 1 (một phần) | `tools/model-check.html` (trang kiểm tra model theo 11 §8.2) | ✅ Xong; phần còn lại của Mốc 1 chưa làm |
-| 1 | Khung 3D, vòng lặp, điều khiển (còn lại) | ⬜ Chưa |
+| 1 (phần công cụ) | `tools/model-check.html` (trang kiểm tra model theo 11 §8.2) | ✅ Xong |
+| 1 | Khung 3D, vòng lặp 30Hz, joystick/WASD, bản đồ 1v1 trống, nạp model + Idle/Run, `?debug=1` | 🚧 Code xong, đã chạy thử bằng trình duyệt headless; **chờ bạn thử trên điện thoại** |
 | 2 | Chiến đấu và kỹ năng | ⬜ Chưa |
 | 3 | Bản đồ 1v1 hoàn chỉnh | ⬜ Chưa |
 | 4 | Kinh tế, đồ, phép, bùa | ⬜ Chưa |
@@ -56,3 +56,4 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 ## Nhật ký
 - 2026-09-30: nhập spec 3D + hướng dẫn model; vendor Three.js r186.
 - 2026-09-30: `tools/modelgen` + 16 model GLB + `tools/model-check.html`, `tools/model-sheet.html`.
+- 2026-09-30: Mốc 1 code: `index.html`, `src/{core,sim,render,hud,data}`; chạy `python3 -m http.server 8080` rồi mở `/index.html?debug=1`.

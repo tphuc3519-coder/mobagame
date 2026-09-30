@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f1224">
+<title>Lantern Arena</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0f1224; color: #f3e9d6; font: 14px system-ui, sans-serif; overflow: hidden; }
+  body { touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; -webkit-touch-callout: none; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #hud { pointer-events: none; }
+  #fs { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 5; background: #171b33cc; color: inherit; border: 1px solid #2a3050; border-radius: 6px; padding: 6px 10px; font: inherit; }
+  #rotate, #lost { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; text-align: center; background: #0f1224; padding: 24px; }
+  #lost.on { display: grid; }
+  @media (orientation: portrait) { #rotate { display: grid; } }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<canvas id="hud"></canvas>
+<button id="fs" type="button">Toàn màn hình</button>
+<div id="rotate"><div><div style="font-size:40px">⟳</div>Xoay ngang thiết bị để chơi</div></div>
+<div id="lost">Đang khôi phục đồ hoạ…</div>
+<script type="importmap">
+{ "imports": { "three": "./lib/three/build/three.module.js", "three/addons/": "./lib/three/examples/jsm/" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
