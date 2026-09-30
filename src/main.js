@@ -7,7 +7,7 @@ import { createRenderer } from './render/renderer.js';
 import { pickLevel, LEVELS } from './render/quality.js';
 import { addLights } from './render/lights.js';
 import { createCamera } from './render/camera.js';
-import { buildMap } from './render/mapBuilder.js';
+import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
@@ -30,17 +30,17 @@ const player = world.spawnHero(heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.ro
 if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x0f1224, 3500, 6500);
+scene.fog = new THREE.Fog(FOG_COLOR, 2600, 6200);
 const { renderer } = createRenderer(document.getElementById('world'), level, {
   onLost: () => { loop.pause(); document.getElementById('lost').classList.add('on'); },
   onRestored: () => { document.getElementById('lost').classList.remove('on'); loop.resume(); },
 });
 addLights(scene, renderer);
-buildMap(scene, DUEL);
+const env = buildMap(scene, DUEL, level);
 const views = createUnitViews(scene, 0, player.id);
 const fx = createFx(scene);
 const indicators = createIndicators(scene);
-const cam = createCamera({ distance: 2000 });
+const cam = createCamera({ distance: parseFloat(q.get('camdist') || '2000') });
 cam.resize(innerWidth, innerHeight);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -92,6 +92,7 @@ const loop = createLoop({
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt);
+    env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
     renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
@@ -101,7 +102,7 @@ const loop = createLoop({
 });
 if (q.has('ff')) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
 loop.start();
-window.__game = { world, player, loop }; // phục vụ kiểm thử tự động
+window.__game = { world, player, loop, renderer }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : loop.resume()));
 document.getElementById('fs').onclick = async () => {
