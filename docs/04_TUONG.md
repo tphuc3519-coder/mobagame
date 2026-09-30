@@ -282,3 +282,125 @@ export default {
   art: 'heroes/nguyet_ha/hero.art.json'   // model 3D, ánh xạ clip, hitTime… (09 §3.4)
 };
 ```
+
+
+---
+
+## 8. Đợt 2: 14 tướng port cơ chế từ autobattle
+
+Cơ chế lấy từ các đấu thủ của repo autobattle, nhưng **tên, ngoại hình, tên chiêu đều là nội dung gốc** (thần thoại/dân gian Việt hoặc nhân vật tự đặt), để tuân thủ 01 §5. Dữ liệu: `src/data/heroes/<id>.js`; model: `tools/modelgen/heroes/<id>.mjs`. Con số là bản đầu, cần cân bằng bằng simtest (Mốc 5, 11). Hook cơ chế trong `passive.params` và `skills[*].params` mới ở dạng khai báo, engine hiện thực ở Mốc 2.
+
+| id | Tướng | Vai | Cơ chế cốt lõi (1 câu) |
+|---|---|---|---|
+| hanh_hoa | Hạnh Hoa — Thầy Lang Mai Vàng | support / fighter | thầy thuốc cận chiến, đánh tích nội lực để hồi máu, chiêu cuối mở trạng thái bùng nổ. |
+| tieu_anh | Tiểu Ảnh — Cậu Bé Rối Giấy | marksman | đánh xa, phân thân giấy, tích Hứng để tung đòn xoáy. |
+| ba_nam | Bà Năm Chảo — Bà Nội Trợ Xóm Chợ | fighter | cận chiến chí mạng tích dần, mắng xối phản lại đạn bay. |
+| cau_may | Cầu Mây — Chàng Đá Cầu Xóm Đình | marksman | sút xa, chưa sung thì hay trượt, dưới 35% máu nổi Cánh Sếu mạnh hơn hẳn. |
+| bong_den | Bóng Đèn — Nghệ Nhân Rối Bóng | mage | khống chế bằng bóng, trói cổ rồi choáng, mở lãnh địa rối bóng làm cả nhóm địch chậm. |
+| thay_do | Thầy Đồ — Ông Đồ Chữ Nghĩa | fighter / mage | tiến hoá theo điểm Học, ba cấp Nghĩa; mỗi cấp mạnh và tầm xa hơn. |
+| kep_cheo | Kép Chèo — Ông Kép Múa Hài | fighter | đánh có tỉ lệ choáng, sáu tia sáng đẩy lùi, chiêu cuối đổi vai (hoán đổi máu) khi sắp chết. |
+| meo_than_tai | Mèo Thần Tài — Mèo Vẫy Tay Bảo Bối | tank / support | khống chế bằng bảo bối, cánh chong chóng thoát hiểm, chiêu cuối tua ngược thời gian. |
+| phu_dong | Phù Đổng — Chàng Trai Ngựa Sắt | tank / fighter | tướng đỡ đòn cứng cáp, giáp sắt giảm sát thương vật lý, phun lửa, thổi băng, lao từ trời xuống. |
+| thu_linh | Thư Linh — Nàng Sách Cổ | mage | pháp sư khống chế tầm xa, mở sách dựng kết giới. |
+| kiem_thuy | Kiếm Thuỷ — Kiếm Sĩ Sông Xanh | fighter / assassin | đổi thế kiếm theo dòng nước; tích Ấn rồi tung chuỗi mười ba nhát. |
+| luong_cuc | Lưỡng Cực — Đạo Sĩ Âm Dương | mage | điều khiển không gian — hút, đẩy, rồi hợp Thái Cực; chiêu cuối mở cõi giam địch. |
+| nhan_su | Nhãn Sư — Thợ Săn Thấu Nhãn | marksman / assassin | tích Tầm Nhìn bằng thông tin, đủ 100 thì thấy điểm yếu và tung loạt bắn quyết định. |
+| trang_nhi | Trạng Nhí — Thám Tử Nhí Phố Cổ | marksman / support | dùng bảo bối phá án — giày đá bóng, kim gây mê, ván trượt, ghép manh mối để kết án. |
+
+### 8.1 Hạnh Hoa — "Thầy Lang Mai Vàng"
+- **Nội tại – Nụ Mai:** Mỗi đòn đánh trúng tướng tích 1 Nụ (tối đa 4, giữ 5s). Đủ 4 Nụ: đòn kế tiếp gây thêm 50 (+0.3 Công) phép và hồi cho Hạnh Hoa 6% HP tối đa.
+- **S1 – Đấm Mai** (`dash`, CD 7→5s): Lao tới và đấm sát thương tuyến đường; tích 1 Nụ.
+- **S2 – Châm Cứu** (`allyTarget`, CD 10→7.5s): Hồi máu đồng minh (hoặc chính mình) và xoá khống chế.
+- **S3 – Ấn Trăm Mai** (`selfBuff`, CD 70→50s): 8 giây: +30% Công, hồi 3% HP mỗi giây, kháng hiệu ứng 30%.
+- Build: `giay_chien, bua_than_ren, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
+
+### 8.2 Tiểu Ảnh — "Cậu Bé Rối Giấy"
+- **Nội tại – Xoáy Nhỏ:** Mỗi lần trúng tướng +1 Hứng. Đủ 20 Hứng: đòn đánh kế tiếp thành Xoáy Nhỏ 120 (+0.6 Công) phép, hất lùi nhẹ.
+- **S1 – Phi Tiêu Giấy** (`skillshot`, CD 5→3.5s): 25% số phát thành Pháo Giấy nổ vùng 200, sát thương tối đa ở tâm.
+- **S2 – Phân Thân Giấy** (`recast`, CD 13→8s): Tung 2 phân thân giấy đánh địch trong 4s; kích hoạt lại để đổi chỗ với một phân thân.
+- **S3 – Xoáy Gió** (`dash`, CD 55→40s): Lao dọc theo hướng, nổ xoáy khi chạm tướng.
+- Build: `giay_xa_thu, cung_gio, kiem_nhanh, ao_giap_nhe, nhan_bao_kich, mat_na_hoi_sinh`
+
+### 8.3 Bà Năm Chảo — "Bà Nội Trợ Xóm Chợ"
+- **Nội tại – Chiêu Chảo:** Mỗi đòn đánh trúng +4% tỉ lệ chí mạng (tối đa +36%, giữ 6s); chí mạng gây 210% sát thương.
+- **S1 – Đập Chảo** (`cone`, CD 6→4s): Vung chảo hình quạt, làm chậm 25% trong 1s.
+- **S2 – Mắng Xối** (`aoeSelf`, CD 16→11s): 5 đợt sóng xung kích trong 1s; đạn bay chạm sóng bị phản ngược về phía địch.
+- **S3 – Dép Bay** (`targetedDash`, CD 45→35s): Lao đá vào mục tiêu đã khoá: choáng 1s, tích thêm 3 chí mạng.
+- Build: `giay_chien, kiem_nhanh, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
+
+### 8.4 Cầu Mây — "Chàng Đá Cầu Xóm Đình"
+- **Nội tại – Cánh Sếu:** Dưới 35% HP tối đa: giảm 35% sát thương nhận, +50% tốc ra chiêu, kháng hiệu ứng 40%, cho đến khi hồi lên trên 50%.
+- **S1 – Tạt Cầu** (`skillshot`, CD 4→3s): 30% số phát thành Đá Lộn Ngược 140 sát thương kèm choáng ngắn.
+- **S2 – Đá Xoáy Lửa** (`skillshot`, CD 9→6.5s): Quả cầu xoáy gây cháy 3s.
+- **S3 – Song Cầu Thắng** (`skillshot`, CD 42→30s): Hai phát liên tiếp, phát thứ hai theo dấu phát đầu.
+- Build: `giay_xa_thu, cung_gio, kiem_nhanh, ao_giap_nhe, nhan_bao_kich, mat_na_hoi_sinh`
+
+### 8.5 Bóng Đèn — "Nghệ Nhân Rối Bóng"
+- **Nội tại – Bóng Sau Lưng:** Sát thương gây từ sau lưng mục tiêu +30%. Đứng yên 2s hồi 4% mana mỗi giây.
+- **S1 – Phi Tiêu Bóng** (`skillshot`, CD 5→3.5s): Hai phi tiêu, mỗi cái kèm chảy máu 3s.
+- **S2 – Trói Bóng** (`tether`, CD 12→9.5s): Bóng quấn cổ 2s (trói, sát thương theo thời gian) rồi choáng 0.8s nếu còn trong tầm.
+- **S3 – Lãnh Địa Bóng** (`zone`, CD 70→54s): Vùng rối bóng 5s: địch bên trong chậm 40% và không thể lướt.
+- Build: `giay_phap_su, truong_song, mu_sam, sach_pha_gioi, binh_suong_dong, ngoc_bang`
+
+### 8.6 Thầy Đồ — "Ông Đồ Chữ Nghĩa"
+- **Nội tại – Điểm Học:** Đòn đánh và kỹ năng trúng tướng +1 Điểm. 12 Điểm: lên Nghĩa II (+15% tốc đánh, +40 tầm, đòn đánh +25 phép). 30 Điểm: Nghĩa III (+30% sát thương kỹ năng, đòn đánh xuyên 1 mục tiêu).
+- **S1 – Nét Bút** (`line`, CD 6→4s): Vạch một nét mực thẳng; ở Nghĩa II để lại vệt chậm 1s.
+- **S2 – Quyết Sách** (`selfBuff`, CD 16→11s): Khiên 5s, +20% tốc chạy 2s; +2 Điểm.
+- **S3 – Đứng Một Mình** (`selfBuff`, CD 75→55s): 6s: kháng hiệu ứng 50%, giảm 25% sát thương nhận, +25% Công; nhận 6 Điểm.
+- Build: `giay_chien, bua_than_ren, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
+
+### 8.7 Kép Chèo — "Ông Kép Múa Hài"
+- **Nội tại – Hào Quang Sân Khấu:** Địch trong 400 quanh Kép Chèo có 10% đòn đánh trượt; bản thân +8% tốc đánh khi có địch trong vùng. Đòn đánh 25% kèm choáng 0.3s.
+- **S1 – Quyền Chèo** (`cone`, CD 5→3.5s): Ba đòn quyền liên tiếp trước mặt.
+- **S2 – Sáu Tia Sáng** (`cone`, CD 11→8.5s): Bắn xối 6 tia, mỗi tia đẩy lùi; trúng đủ 3 tia thì địch kiệt sức (chậm mạnh 1.5s).
+- **S3 – Đổi Vai** (`skillshot`, CD 90→70s): Khi HP dưới 30%: bắn tia đổi vai. Trúng thì hai bên đổi phần trăm máu rồi cùng về ít nhất 20%; trượt thì Kép Chèo còn 10% máu.
+- Build: `giay_chien, bua_than_ren, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
+
+### 8.8 Mèo Thần Tài — "Mèo Vẫy Tay Bảo Bối"
+- **Nội tại – Chong Chóng Thoát Hiểm:** Bị khống chế cứng: bay lên 1.5s, gỡ khống chế và +30% tốc chạy (hồi 25s).
+- **S1 – Nện Bụng** (`cone`, CD 6→4s): Húc bụng: đẩy lùi; đòn thứ ba của mỗi chuỗi choáng 0.6s.
+- **S2 – Súng Hơi** (`skillshot`, CD 10→7.5s): Vòng khí nén: đẩy lùi, cắt ngang chiêu đang gồng.
+- **S3 – Đồng Hồ Ngược** (`selfBuff`, CD 130→90s): Tua ngược 4s: quay lại vị trí và máu của 4 giây trước (không hồi thêm khi HP hiện tại cao hơn).
+- Build: `giay_giap, khien_da, ao_giap_dong, ngoc_binh_an, giap_gai, mat_na_hoi_sinh`
+
+### 8.9 Phù Đổng — "Chàng Trai Ngựa Sắt"
+- **Nội tại – Giáp Sắt:** Giảm 20% sát thương vật lý và 40% lực đẩy; sát thương phép, đốt, độc và theo %HP vẫn nhận đủ.
+- **S1 – Lửa Ngựa Sắt** (`line`, CD 8→5.5s): Hai tia lửa bốn nhịp; trúng đủ bốn nhịp thì địch bốc cháy 3s.
+- **S2 – Gió Băng Núi Sóc** (`cone`, CD 12→9.5s): Luồng hơi nón: đóng băng 0.8s rồi làm chậm nặng.
+- **S3 – Bay Lên Trời** (`aoeCircle`, CD 60→44s): Bay lên rồi lao xuống điểm chỉ định: không thể chọn khi bay, hất tung mục tiêu ở tâm, vùng chấn động quanh điểm rơi.
+- Build: `giay_giap, khien_da, ao_giap_dong, ngoc_binh_an, giap_gai, mat_na_hoi_sinh`
+
+### 8.10 Thư Linh — "Nàng Sách Cổ"
+- **Nội tại – Trang Sách:** Mỗi kỹ năng trúng tướng để lại 1 Trang trên địch (5s). Đủ 3 Trang: địch bị Câm lặng 1s và nhận 60 (+0.4 Phép) sát thương phép.
+- **S1 – Tinh Thể Chữ** (`skillshot`, CD 4.5→3.5s): Bắn tinh thể chữ xuyên một mục tiêu.
+- **S2 – Ấn Giữ** (`aoeCircle`, CD 13→9.5s): Vòng ấn giữ chân 1.2s.
+- **S3 – Vòng Kết Giới** (`zone`, CD 70→50s): Mở sách dựng kết giới 4s: địch trong vùng chậm, không lướt được; đồng minh nhận khiên.
+- Build: `giay_phap_su, truong_song, mu_sam, sach_pha_gioi, binh_suong_dong, ngoc_bang`
+
+### 8.11 Kiếm Thuỷ — "Kiếm Sĩ Sông Xanh"
+- **Nội tại – Thế Thuỷ:** Mỗi kỹ năng chuyển sang thế kế tiếp: Sông (+15% tốc chạy), Thác (+20% sát thương đòn kế), Xoáy (làm chậm 20% 1s). Kỹ năng trúng tướng +1 Ấn (tối đa 5).
+- **S1 – Nhát Sông** (`line`, CD 5→3.5s): Hai nhát chém liên tiếp theo hướng.
+- **S2 – Bánh Xe Nước** (`aoeSelf`, CD 9→6.5s): Xoay kiếm quanh mình, hất lùi nhẹ.
+- **S3 – Nhật Vũ Mười Ba Thức** (`dash`, CD 60→40s): Cần đủ 5 Ấn: lướt và chém 13 nhát liên hoàn, nhát cuối gây thêm 50%.
+- Build: `giay_chien, kiem_nhanh, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
+
+### 8.12 Lưỡng Cực — "Đạo Sĩ Âm Dương"
+- **Nội tại – Vô Hạn:** Đòn đánh của Lưỡng Cực không bị chặn bởi đạn/khiên đường bay; +10% tốc chạy khi không có địch trong 700.
+- **S1 – Âm Hút** (`aoeCircle`, CD 9→6.5s): Hút địch về tâm vùng.
+- **S2 – Dương Đẩy** (`aoeCircle`, CD 9→6.5s): Đẩy văng địch; tung sau Âm Hút trong 3s thì hợp Chùm Thái Cực.
+- **S3 – Thái Cực Giới** (`zone`, CD 100→80s): Mở cõi 4s: địch trong vùng bị câm lặng và chậm mạnh; Lưỡng Cực không bị chọn làm mục tiêu bởi đòn đánh thường trong lúc mở.
+- Build: `giay_phap_su, truong_song, mu_sam, sach_pha_gioi, binh_suong_dong, ngoc_bang`
+
+### 8.13 Nhãn Sư — "Thợ Săn Thấu Nhãn"
+- **Nội tại – Tầm Nhìn:** Tích Tầm Nhìn khi thấy tướng địch (tối đa 27/giây, dừng khi bị khống chế cứng). Đủ 100: Thấu Nhãn — lộ điểm yếu địch, +12% tốc chạy, né đòn trực tiếp đầu tiên.
+- **S1 – Chạy Mù Điểm** (`dash`, CD 9→6.5s): Chạy vòng sườn: giảm 30% sát thương, miễn nhiễm làm chậm 1s; phát bắn kế tiếp được nạp.
+- **S2 – Phát Bắn Thẳng** (`skillshot`, CD 7→5s): Phát bắn chính xác; đúng thời điểm (sau Chạy Mù Điểm) gây 80 và làm địch ngã ngắn.
+- **S3 – Hai Nòng Liên Xạ** (`skillshot`, CD 55→40s): Cần Tầm Nhìn 100: loạt bắn 135 xuyên 15% giáp (157 nếu địch đang hở).
+- Build: `giay_xa_thu, cung_gio, kiem_nhanh, ao_giap_nhe, nhan_bao_kich, mat_na_hoi_sinh`
+
+### 8.14 Trạng Nhí — "Thám Tử Nhí Phố Cổ"
+- **Nội tại – Manh Mối:** Mỗi kỹ năng trúng đánh dấu 1 Manh Mối lên địch (8s, tối đa 3). Đòn đánh vào mục tiêu có Manh Mối gây thêm 15 (+0.2 Công) sát thương chuẩn.
+- **S1 – Đá Bóng Giày Lực** (`skillshot`, CD 6→4s): Đá quả bóng bằng giày tăng lực, đẩy lùi nhẹ.
+- **S2 – Đồng Hồ Kim Mê** (`skillshot`, CD 12→8.5s): Bắn kim gây mê: choáng 1s.
+- **S3 – Chân Lý Duy Nhất** (`targetedDash`, CD 65→45s): Kết án mục tiêu có từ 2 Manh Mối: sát thương chuẩn, mỗi Manh Mối cộng thêm 15%; trượt thì không mất Manh Mối.
+- Build: `giay_xa_thu, cung_gio, kiem_nhanh, ao_giap_nhe, nhan_bao_kich, mat_na_hoi_sinh`
