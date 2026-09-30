@@ -1,7 +1,7 @@
 name: Deploy game to GitHub Pages
+# Chỉ chạy khi bấm tay (Actions → Deploy game to GitHub Pages → Run workflow), sau khi đã bật Pages:
+# Settings → Pages → Source: GitHub Actions. Không tự chạy khi push để khỏi báo lỗi khi Pages chưa bật.
 on:
-  push:
-    branches: [main, claude/amazing-tesla-3gpr9u]
   workflow_dispatch:
 permissions:
   contents: read
