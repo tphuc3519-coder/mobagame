@@ -18,8 +18,8 @@ export class Model {
     this.id = id;
     this.joints = [];            // {name,parent,pos}
     this.jointMap = new Map();
-    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = [];
-    this.idx = [[], []];         // 0 = thân, 1 = phát sáng
+    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = []; this.uv = [];
+    this.idx = [[], [], []];     // 0 = thân, 1 = phát sáng, 2 = mặt (texture vẽ lúc chạy)
     this.vcount = 0;
     this.glowColor = '#ffffff';
     this.glowStrength = 1.5;
@@ -93,7 +93,7 @@ export class Model {
     const p = V();
     for (let i = 0; i < n; i++) {
       p.fromBufferAttribute(pos, i);
-      this.pos.push(p.x, p.y, p.z);
+      this.pos.push(p.x, p.y, p.z); this.uv.push(0, 0);
       this.nor.push(nor.getX(i), nor.getY(i), nor.getZ(i));
       let k = 0;
       if (c2) k = (local[i * 3 + 1] - bb.min.y) / Math.max(1e-6, bb.max.y - bb.min.y);
@@ -244,10 +244,29 @@ export class Model {
     }
     return this;
   }
+  /** Mảng da mặt có UV (nhóm 2): lưới bám bề mặt đầu, game vẽ mắt/miệng anime lên texture. */
+  facePatch(sdf, { hc, hr, bone, x0 = -0.82, x1 = 0.82, y0 = -1.0, y1 = 0.55, nx = 18, ny = 16, lift = 0.0015 }) {
+    const base = this.vcount, j = this.jointMap.get(bone), id = [];
+    for (let iy = 0; iy <= ny; iy++) for (let ix = 0; ix <= nx; ix++) {
+      const u = ix / nx, v = iy / ny, x = hc.x + (x0 + (x1 - x0) * u) * hr, yy = hc.y + (y0 + (y1 - y0) * v) * hr;
+      let z = hc.z + hr * 2, hit = false;
+      for (let s = 0; s < 80; s++) { const d = sdf.dist(x, yy, z); if (d < 0.0003) { hit = true; break; } z -= Math.max(d, 0.0008); if (z < hc.z - hr) break; }
+      const e = 0.002, gx = sdf.dist(x + e, yy, z) - sdf.dist(x - e, yy, z), gy = sdf.dist(x, yy + e, z) - sdf.dist(x, yy - e, z), gz = sdf.dist(x, yy, z + e) - sdf.dist(x, yy, z - e), l = Math.hypot(gx, gy, gz) || 1;
+      id.push(hit && gz / l > 0.15);
+      this.pos.push(x + gx / l * lift, yy + gy / l * lift, z + gz / l * lift); this.nor.push(gx / l, gy / l, gz / l); this.col.push(1, 1, 1); this.uv.push(u, v);
+      this.si.push(j.index, 0, 0, 0); this.sw.push(1, 0, 0, 0);
+    }
+    const at = (ix, iy) => iy * (nx + 1) + ix;
+    for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
+      const a = at(ix, iy), b = at(ix + 1, iy), c = at(ix + 1, iy + 1), d = at(ix, iy + 1);
+      if (id[a] && id[b] && id[c] && id[d]) this.idx[2].push(base + a, base + b, base + c, base + a, base + c, base + d);
+    }
+    this.vcount += (nx + 1) * (ny + 1);
+  }
   _emitSdf() {
     const r = this.sdf.mesh(this.sdfCell, this.sdfTris); if (!r) return;
     const base = this.vcount, N = r.pos.length / 3;
-    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col);
+    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col); for (let i = 0; i < N; i++) this.uv.push(0, 0);
     for (const list of r.bones) {
       const si = [0, 0, 0, 0], sw = [0, 0, 0, 0];
       const keep = list.filter(([, w]) => w > 1e-3), tot = keep.reduce((a, [, w]) => a + w, 0) || 1;
@@ -274,13 +293,15 @@ export class Model {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(this.si, 4));
     geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(this.sw, 4));
     const all = [], mats = [];
     const body = new THREE.MeshStandardMaterial({ name: `${this.id}_body`, vertexColors: true, roughness: 0.62, metalness: 0.12 });
     const glow = new THREE.MeshStandardMaterial({ name: `${this.id}_glow`, vertexColors: true, roughness: 0.5, metalness: 0,
       emissive: new THREE.Color(this.glowColor), emissiveIntensity: 1 });
-    [[0, body], [1, glow]].forEach(([k, m]) => {
+    const face = new THREE.MeshStandardMaterial({ name: `${this.id}_face`, color: 0xffffff, transparent: true, alphaTest: 0.4, roughness: 0.6, metalness: 0 });
+    [[0, body], [1, glow], [2, face]].forEach(([k, m]) => {
       if (!this.idx[k].length) return;
       geo.addGroup(all.length, this.idx[k].length, mats.length);
       all.push(...this.idx[k]); mats.push(m);

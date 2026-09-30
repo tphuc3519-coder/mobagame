@@ -19,7 +19,7 @@ for (const [id, def] of Object.entries(HEROES)) {
   const ctx = def.build(id);
   const { m } = ctx;
   m.glowColor = def.glow || '#ffffff';
-  m.userData = { name: def.name, height: ctx.H };
+  m.userData = { ...m.userData, name: def.name, height: ctx.H };
   const built = m.build();
   const clips = buildClips(ctx, built.bones, def.anim || {});
   const exporter = new GLTFExporter();

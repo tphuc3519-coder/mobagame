@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { faceMaterial } from './face.js';
 
 // Vật liệu nhân vật: đổ bóng kiểu hoạt hình (toon 4 nấc), viền sáng màu đội bằng shader (không vẽ sẵn trong texture),
 // viền đen ngoài bằng "vỏ đảo" có bề dày cố định theo pixel, nháy trắng khi trúng đòn (02 §13.3).
@@ -30,7 +31,7 @@ function patch(mat, u) {
 }
 
 function toToon(m, u) {
-  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity * (m.emissive.getHex() ? 2.2 : 1), gradientMap: gradientMap() }); // phần phát sáng mạnh hơn để bloom chỉ bắt chỗ này
+  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity * (m.emissive.getHex() ? 1.6 : 1), gradientMap: gradientMap() }); // phần phát sáng mạnh hơn để bloom chỉ bắt chỗ này
   t.name = m.name; patch(t, u);
   return t;
 }
@@ -46,19 +47,23 @@ function outlineMaterial() {
   return m;
 }
 const outlineMat = outlineMaterial();
+const hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
 
 /** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi màu viền/độ trong suốt. */
 export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8 } = {}) {
   const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 }, rimAmt: { value: rim } };
-  const mats = [], outlines = [];
+  const mats = [], outlines = [], faces = [];
   const meshes = [];
   object.traverse((o) => { if (o.isMesh) meshes.push(o); });
   for (const o of meshes) {
     const src = [].concat(o.material);
-    const list = src.map((m) => { const c = m.isMeshStandardMaterial ? toToon(m, u) : (() => { const k = m.clone(); patch(k, u); return k; })(); mats.push(c); return c; });
+    const list = src.map((m) => {
+      if (/_face$/.test(m.name)) { const f = o.userData?.face || o.parent?.userData?.face; if (!f) { const k = m.clone(); k.visible = false; return k; } const fm = faceMaterial(f); faces.push(fm); return fm.material; }
+      const c = m.isMeshStandardMaterial ? toToon(m, u) : (() => { const k = m.clone(); patch(k, u); return k; })(); mats.push(c); return c;
+    });
     o.material = Array.isArray(o.material) ? list : list[0];
     if (outline && o.isSkinnedMesh) { // viền đen: bản sao cùng xương, mặt trong, đẩy ra theo pháp tuyến
-      const ol = new THREE.SkinnedMesh(o.geometry, src.length > 1 ? src.map(() => outlineMat) : outlineMat);
+      const ol = new THREE.SkinnedMesh(o.geometry, src.length > 1 ? src.map((s) => (/_face$/.test(s.name) ? hiddenMat : outlineMat)) : outlineMat);
       ol.bind(o.skeleton, o.bindMatrix); ol.frustumCulled = false; ol.renderOrder = -1;
       o.parent.add(ol); outlines.push(ol);
     }
@@ -66,6 +71,8 @@ export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8
   return {
     uniforms: u,
     setFlash(v) { u.flash.value = v; },
+    /** Chớp mắt (gọi mỗi khung hình). */
+    update(dt) { for (const f of faces) f.update(dt); },
     setGhost(on) { for (const m of mats) { m.transparent = on; m.opacity = on ? 0.35 : 1; m.depthWrite = !on; m.needsUpdate = true; } for (const ol of outlines) ol.visible = !on; },
   };
 }

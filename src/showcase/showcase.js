@@ -6,6 +6,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { loadHero, instantiate } from '../render/assets.js';
 import { prepareUnitMaterials, setOutlineResolution } from '../render/materials.js';
 import { glowTexture } from '../render/env/textures.js';
+import { createSplash } from './splash.js';
 
 // Cảnh trưng bày (02 §13.9): bệ đá sen phát sáng, ánh sáng 3 điểm (key ấm, fill lạnh, rim màu tướng), đèn trời bay,
 // bụi sáng lung linh, bloom. Vuốt ngang xoay 360°, chạm đúp phát Victory; đổi tướng: tan thành hạt → hiện ra.
@@ -79,13 +80,14 @@ function sparkles(n = 220) {
 export function createShowcase(canvas, { quality = 'mid' } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
-  const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 8, 40);
+  const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
+  const splash = createSplash(); scene.add(splash.group);
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
   scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.65));
-  const key = new THREE.DirectionalLight(0xfff0e0, 1.9); key.position.set(2.5, 4, 3.5); scene.add(key);
+  const key = new THREE.DirectionalLight(0xfff6ec, 2.4); key.position.set(1.5, 3, 5); scene.add(key); // đèn chính trước mặt để tướng nổi trên phông
   const fill = new THREE.DirectionalLight(0x8ab4ff, 0.9); fill.position.set(-3, 2, 2); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xffffff, 2.0); rim.position.set(-1.5, 3, -4); scene.add(rim);
-  const warm = new THREE.PointLight(0xffa050, 2.2, 5, 1.5); warm.position.set(0, 0.35, 0.9); scene.add(warm);
+  const warm = new THREE.PointLight(0xffa050, 1.0, 5, 1.5); warm.position.set(0, 0.35, 0.9); scene.add(warm);
   const ped = pedestal(); scene.add(ped.group);
   const lan = lanterns(); scene.add(lan.group);
   const sp = sparkles(); scene.add(sp.object);
@@ -93,7 +95,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.45, 1.35); composer.addPass(bloom);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.15, 1.6); composer.addPass(bloom);
   composer.addPass(new OutputPass());
   const useBloom = quality !== 'low';
 
@@ -146,8 +148,10 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     if (old) setTimeout(() => stage.remove(old.g), 400);
     rimCol.set(h.art.rim || '#ffd28a'); rim.color.copy(rimCol).lerp(new THREE.Color(0xffffff), 0.35); ped.beam.material.uniforms.uCol.value.copy(rimCol);
     sp.mat.uniforms.uCol.value.copy(rimCol).lerp(new THREE.Color(0xffe0a0), 0.5);
+    const pal = h.art.palette || [], cA = new THREE.Color(pal[1] || h.art.rim || '#ff9a40'), cB = new THREE.Color(pal[2] || '#ffe0a0');
+    splash.setColors(cA, cB);
     // khung hình theo chiều cao tướng
-    const hh = Math.max(1.6, h.h); camera.position.set(0.25, hh * 0.68, hh * 2.75 + 1.0); camera.lookAt(0.25, hh * 0.5, 0);
+    const hh = Math.max(1.6, h.h); camera.position.set(0.25, hh * 0.45, hh * 2.6 + 1.2); camera.lookAt(0.25, hh * 0.58, 0);
   }
 
   function frame(now) {
@@ -158,11 +162,11 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     stage.rotation.y = spin;
     for (const h of stage.children.map((g) => (cur && cur.g === g ? cur : null)).filter(Boolean)) {
       h.life += dt; const s = Math.min(1, h.life / 0.45); h.g.scale.setScalar(0.001 + (1 - Math.pow(1 - s, 3)) * 0.999);
-      h.mats.setFlash(Math.max(0, 0.6 - h.life * 1.5)); h.mixer.update(dt);
+      h.mats.setFlash(Math.max(0, 0.6 - h.life * 1.5)); h.mats.update(dt); h.mixer.update(dt);
     }
     stage.children.forEach((g) => { if (!cur || g !== cur.g) g.scale.multiplyScalar(Math.max(0, 1 - dt * 9)); });
     ped.rune.rotation.z = t * 0.15; ped.beam.material.uniforms.uT.value = t; sp.mat.uniforms.uT.value = t;
-    lan.update(t, dt); burst.update(dt);
+    lan.update(t, dt); burst.update(dt); splash.update(t, H * renderer.getPixelRatio());
     if (useBloom) composer.render(); else renderer.render(scene, camera);
   }
   req = requestAnimationFrame(frame);

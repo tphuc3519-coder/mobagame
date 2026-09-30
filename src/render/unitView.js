@@ -60,7 +60,7 @@ export function createUnitViews(scene, localTeam, localId) {
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
         if (e.kind === 'minion') { v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
-          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : 0);
+          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : 0); v.mats.update(dt);
           const ghost = e.statuses.some((s) => s.kind === 'stealth');
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
           v.root.visible = !(ghost && e.team !== localTeam);

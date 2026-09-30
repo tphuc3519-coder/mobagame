@@ -1,7 +1,7 @@
 // Hoả Rèn — Thợ Rèn Làng Lò (09 §4.4)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { belt, boots, flaps } from '../costume.mjs';
-import { swayChain, tube, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
+import { swayChain, tube, ribbon, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
 
 const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e', iron2: '#45454c', leather: '#7a4524', leather2: '#4a2814', hair: '#2a1810', gold: '#ffd166', ember: '#ff7a1a' };
 
@@ -19,7 +19,7 @@ export default {
     const { m, H, hr, hc, y } = ctx;
     const head = BONE('Head'), hips = BONE('Hips'), chest = BONE('Chest');
     // — tóc buộc cao —
-    hairLocks(ctx, { color: C.hair, color2: '#4a2a18', shine: '#b0703a', bangs: 5, side: 0.5, back: 0.4, spiky: 0.8, part: -0.3, volume: 1.04 });
+    hairLocks(ctx, { color: C.hair, color2: '#c2461a', shine: '#ff9a50', bangs: 6, side: 0.6, back: 0.7, spiky: 1.4, part: -0.3, volume: 1.06 }); // tóc như lửa: đuôi tóc đỏ cam
     const tie = [0, hc.y + hr * 1.05, hc.z - hr * 0.55];
     m.torus(hr * 0.2, hr * 0.06, { at: tie, rot: [60, 0, 0], bone: head, color: C.leather });
     const pts = [tie, [0, tie[1] + 0.05, tie[2] - 0.14], [0, tie[1] - 0.06, tie[2] - 0.24], [0, tie[1] - 0.24, tie[2] - 0.26], [0, tie[1] - 0.44, tie[2] - 0.22]];
@@ -55,14 +55,23 @@ export default {
     m.seg(p0, p1, 0.03, 0.03, { bone: HR, color: C.leather, color2: '#4a2814', noCap1: true });
     for (let i = 0; i < 6; i++) band(m, p0, p1, 0.1 + i * 0.03, 0.02, 0.036, { bone: HR, color: C.leather2 });
     m.sphere(0.04, { at: p0, bone: HR, color: C.iron2 });
-    const rot = orient(dir);
-    m.box(0.44, 0.22, 0.22, { at: p1, rot, bone: HR, color: C.iron, color2: C.iron2 });
-    for (const s of [-1, 1]) {
-      m.box(0.03, 0.2, 0.2, { at: place(dir, p1, [s * 0.225, 0, 0]), rot, bone: HR, color: '#ff6a18', glow: true, ao: 0 });
-      m.box(0.07, 0.25, 0.25, { at: place(dir, p1, [s * 0.17, 0, 0]), rot, bone: HR, color: C.iron2 });
+    // đầu búa bát giác: thân sắt, hai mặt viền vàng có lõi lửa, đai rune rực, gai trên đỉnh
+    const ax = [place(dir, p1, [1, 0, 0])[0] - p1[0], place(dir, p1, [1, 0, 0])[1] - p1[1], place(dir, p1, [1, 0, 0])[2] - p1[2]], rotX = orient(ax);
+    const P = (x, yy = 0, z = 0) => place(dir, p1, [x, yy, z]);
+    m.cyl(0.125, 0.125, 0.4, { at: p1, rot: rotX, bone: HR, color: C.iron2, color2: C.iron, seg: 8, flat: true });
+    for (const s2 of [-1, 1]) {
+      m.cyl(s2 > 0 ? 0.105 : 0.14, s2 > 0 ? 0.14 : 0.105, 0.05, { at: P(s2 * 0.225), rot: rotX, bone: HR, color: C.gold, seg: 8, flat: true });
+      m.cyl(0.085, 0.085, 0.012, { at: P(s2 * 0.252), rot: rotX, bone: HR, color: '#ff6a18', glow: true, seg: 16, ao: 0 });
+      m.torus(0.13, 0.012, { at: P(s2 * 0.12), rot: [...orient(ax)].map((v, i) => v + (i === 0 ? 90 : 0)), bone: HR, color: C.gold, seg: 16 });
     }
-    m.box(0.12, 0.06, 0.26, { at: place(dir, p1, [0, -0.13, 0]), rot, bone: HR, color: C.iron2 });
-    for (const [dx, dy, dz] of [[0.34, 0.2, 0.1], [-0.3, 0.3, -0.1], [0.28, -0.1, 0.15]]) m.sphere(0.012, { at: place(dir, p1, [dx, dy, dz]), bone: HR, color: '#ffd166', glow: true, ao: 0 });
+    m.cyl(0.128, 0.128, 0.05, { at: p1, rot: rotX, bone: HR, color: '#ff8a30', glow: true, seg: 8, flat: true, ao: 0 });
+    m.cone(0.045, 0.16, { at: P(0, 0.19), rot: orient(dir), bone: HR, color: C.iron2, seg: 8 });
+    m.sphere(0.03, { at: P(0, 0.12), bone: HR, color: C.gold });
+    for (const [dx, dy, dz] of [[0.34, 0.2, 0.1], [-0.3, 0.3, -0.1], [0.28, -0.1, 0.15], [0.05, 0.36, 0.05]]) m.sphere(0.014, { at: P(dx, dy, dz), bone: HR, color: '#ffd166', glow: true, ao: 0 });
+    // dải lụa đỏ bay từ đai lưng (xương lắc)
+    const s0 = [0.13, y(0.53), 0.08], sp = [[0.17, y(0.44), 0.06], [0.2, y(0.34), 0.02], [0.22, y(0.24), -0.03], [0.23, y(0.15), -0.08]];
+    const sb = swayChain(m, hips, 'Sash', sp);
+    ribbon(m, sb, [s0, ...sp], [0.1, 0.11, 0.1, 0.09, 0.06], { color: '#c8301c', color2: '#ff9a3a' });
     return ctx;
   },
 };

@@ -33,3 +33,7 @@
 - Màn chọn tướng: chỉ 6 tướng Alpha chọn được, 14 tướng còn lại hiện "Sắp có". Chân dung thẻ chụp từ model lúc chạy (render target), không có file ảnh.
 - 2026-09-30 (model v3): thân người dựng bằng SDF (loft elip cho thân theo đúng số đo cũ + nón tròn tay chân, hoà trộn smooth-min), lưới surface-nets ô 1.3 cm rồi giảm còn ~8 nghìn tam giác bằng meshoptimizer; pháp tuyến từ gradient, AO khe nướng vào màu đỉnh, trọng số xương hoà theo khoảng cách tới từng khối. Tổng mỗi tướng 9–18 nghìn tam giác.
 - Toon ramp đổi từ 4 nấc cứng sang 2 tông mềm (bóng 60%) để mặt không loang lổ; phần phát sáng ×2.2 để bloom chỉ bắt chỗ đó.
+- 2026-09-30 (model v4 — theo phản hồi "trông như Roblox"): bỏ tỉ lệ chibi, chuyển sang anime bán thực (~7 đầu: `STYLE.head 0.86`, tay chân thon 0.94, cằm nhọn, bắp tay/bắp chân, bàn tay có cụm ngón + ngón cái, mũi giày thon).
+- Mặt anime vẽ bằng canvas lúc chạy (`src/render/face.js`) lên một mảng da mặt có UV bám bề mặt đầu (nhóm vật liệu thứ 3 `<id>_face`); thông số mặt (màu mống mắt, mi, mày, môi, kiểu mắt) nằm trong `userData.face` của mesh (glTF extras). Mặt không chịu ánh sáng để nét mực luôn rõ; có chớp mắt.
+- Cảnh trưng bày thêm phông kiểu tranh splash bằng shader (`src/showcase/splash.js`): mây xoáy, tia sáng, 6 dải "cánh" năng lượng, tàn lửa — màu theo palette tướng. Bloom giảm (0.3 / 0.15 / ngưỡng 1.6) vì bloom mạnh làm tướng bị loá, trông trong suốt.
+- Ảnh splash vẽ tay như game thương mại cần hoạ sĩ hoặc công cụ tạo ảnh; không làm được bằng code trong dự án này.
