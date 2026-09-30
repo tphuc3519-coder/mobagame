@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { LEVELS } from './quality.js';
+import { setOutlineResolution } from './materials.js';
 
 /** WebGLRenderer + xử lý resize và mất ngữ cảnh WebGL (02 §13.10). */
 export function createRenderer(canvas, level, { onLost, onRestored }) {
@@ -10,6 +11,7 @@ export function createRenderer(canvas, level, { onLost, onRestored }) {
   const resize = () => {
     renderer.setPixelRatio(Math.min(devicePixelRatio, LEVELS[level].pixelRatio));
     renderer.setSize(innerWidth, innerHeight, false);
+    setOutlineResolution(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio());
   };
   addEventListener('resize', resize); resize();
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onLost?.(); });

@@ -14,6 +14,8 @@ const ARM_PRESETS = {
 };
 
 export const BONE = (n) => 'Bone_' + n;
+/** Phong cách chung: đầu to hơn, tay chân dày hơn, mặt lớn để đọc được ở cỡ nhỏ. */
+export const STYLE = { head: 1.22, limb: 1.12 };
 
 /** Tính vị trí khuỷu/cổ tay/đầu ngón bằng FK cho tay bên trái (+X). */
 function armFK(S, Lu, Lf, Lh, p) {
@@ -73,8 +75,9 @@ export function humanoid(id, s = {}) {
   m.joint(BONE('FootL'), BONE('ShinL'), lx, y(0.05), 0);
   m.joint(BONE('FootR'), BONE('ShinR'), -lx, y(0.05), 0);
 
-  const hr = 0.083 * H * S.headS;
-  const hc = V(0, y(0.9) + (S.headS - 1) * 0.02 * H, 0.008 * H + zs(0.9));
+  const hs = S.headS * STYLE.head;
+  const hr = 0.083 * H * hs;
+  const hc = V(0, y(0.9) + (hs - 1) * 0.02 * H, 0.008 * H + zs(0.9));
   const ctx = { m, H, S, hr, hc, hips, zs, shoulder, Lu, Lf, Lh, y, hipsRest: [0, hips, 0], legLen: hips,
     armDirs: { L: fkL, R } };
   const skin = S.skin;
@@ -113,7 +116,7 @@ export function humanoid(id, s = {}) {
   // ---- tay ----
   if (has('arms')) {
     const ac = col(S.arm, skin), fc = col(S.forearm, ac), hc2 = col(S.hand, skin);
-    const rS = S.armR * H;
+    const rS = S.armR * H * STYLE.limb;
     for (const side of ['L', 'R']) {
       const sg = side === 'L' ? 1 : -1;
       const dirs = ctx.armDirs[side];
@@ -133,7 +136,7 @@ export function humanoid(id, s = {}) {
   // ---- chân ----
   if (has('legs')) {
     const tc = col(S.thigh, S.pelvis), sc = col(S.shin, tc);
-    const rL = S.legR * H;
+    const rL = S.legR * H * STYLE.limb;
     for (const sd of ['L', 'R']) {
       const sg = sd === 'L' ? 1 : -1;
       const T = BONE('Thigh' + sd), Sh = BONE('Shin' + sd), F = BONE('Foot' + sd);
@@ -155,12 +158,14 @@ export function humanoid(id, s = {}) {
 /** Mắt, mày, môi đơn giản; đủ để ở màn trưng bày thấy mặt có hồn. */
 export function faceFeatures(ctx, o = {}) {
   const { m, hr, hc, S } = ctx;
-  const ex = hr * 0.34, ey = hc.y + hr * 0.02, ez = hc.z + hr * 0.86;
+  const ex = hr * 0.38, ey = hc.y + hr * 0.02, ez = hc.z + hr * 0.86;
   if (o.closedEyes) {
     m.box(hr * 0.26, hr * 0.03, hr * 0.03, { at: [ex, ey, ez + hr * 0.08], rot: [0, 0, -6], bone: BONE('Head'), color: S.eye, mirror: true, flat: false });
   } else {
-    m.sphere(1, { radii: [hr * 0.12, hr * 0.17, hr * 0.07], at: [ex, ey, ez + hr * 0.02], bone: BONE('Head'), color: o.eyeColor || S.eye, mirror: true, ao: 0 });
-    m.sphere(1, { radii: [hr * 0.04, hr * 0.05, hr * 0.03], at: [ex + hr * 0.03, ey + hr * 0.06, ez + hr * 0.08], bone: BONE('Head'), color: '#ffffff', mirror: true, ao: 0 });
+    m.sphere(1, { radii: [hr * 0.17, hr * 0.23, hr * 0.08], at: [hr * 0.38, ey - hr * 0.04, ez + hr * 0.01], bone: BONE('Head'), color: '#ffffff', mirror: true, ao: 0 });
+    m.sphere(1, { radii: [hr * 0.125, hr * 0.19, hr * 0.06], at: [hr * 0.38, ey - hr * 0.05, ez + hr * 0.06], bone: BONE('Head'), color: o.eyeColor || S.eye, mirror: true, ao: 0 });
+    m.sphere(1, { radii: [hr * 0.055, hr * 0.065, hr * 0.03], at: [hr * 0.42, ey + hr * 0.04, ez + hr * 0.1], bone: BONE('Head'), color: '#ffffff', mirror: true, ao: 0 });
+    m.sphere(1, { radii: [hr * 0.14, hr * 0.07, hr * 0.03], at: [hr * 0.56, hc.y - hr * 0.3, ez - hr * 0.02], bone: BONE('Head'), color: '#f2a0a0', mirror: true, ao: 0 });
   }
   m.box(hr * 0.3, hr * 0.04, hr * 0.04, { at: [ex, ey + hr * 0.26, ez - hr * 0.03], rot: [0, 0, o.browTilt ?? -8], bone: BONE('Head'), color: o.brow || S.brow, mirror: true, flat: false });
   m.box(hr * 0.22, hr * 0.035, hr * 0.03, { at: [0, hc.y - hr * 0.5, ez - hr * 0.06], bone: BONE('Head'), color: o.lip || S.lip, flat: false });

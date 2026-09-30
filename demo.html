@@ -94,6 +94,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { prepareUnitMaterials, setOutlineResolution } from './src/render/materials.js';
 
 const HEROES = [
   ['thach_quy', 'Thạch Quy', 'Đỡ đòn · Trợ thủ', '#7fd1a8'], ['trau_dong', 'Trâu Đồng', 'Đỡ đòn · Đấu sĩ', '#d9a441'],
@@ -153,6 +154,7 @@ ring.rotation.x = Math.PI / 2; scene.add(ring);
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  setOutlineResolution(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
 }
 new ResizeObserver(resize).observe(stage); resize();
 
@@ -204,7 +206,8 @@ async function show(hid) {
   $('#loading').hidden = false;
   try {
     let g = cache.get(hid);
-    if (!g) { g = await loadGlb(hid); cache.set(hid, g); }
+    if (!g) { g = await loadGlb(hid); g.mats = prepareUnitMaterials(g.scene, h[3]); cache.set(hid, g); }
+    g.mats.uniforms.rim.value.set(h[3]);
     if (id !== hid) return;
     if (cur) scene.remove(cur);
     cur = g.scene; scene.add(cur);
