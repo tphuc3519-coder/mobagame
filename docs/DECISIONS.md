@@ -37,3 +37,5 @@
 - Mặt anime vẽ bằng canvas lúc chạy (`src/render/face.js`) lên một mảng da mặt có UV bám bề mặt đầu (nhóm vật liệu thứ 3 `<id>_face`); thông số mặt (màu mống mắt, mi, mày, môi, kiểu mắt) nằm trong `userData.face` của mesh (glTF extras). Mặt không chịu ánh sáng để nét mực luôn rõ; có chớp mắt.
 - Cảnh trưng bày thêm phông kiểu tranh splash bằng shader (`src/showcase/splash.js`): mây xoáy, tia sáng, 6 dải "cánh" năng lượng, tàn lửa — màu theo palette tướng. Bloom giảm (0.3 / 0.15 / ngưỡng 1.6) vì bloom mạnh làm tướng bị loá, trông trong suốt.
 - Ảnh splash vẽ tay như game thương mại cần hoạ sĩ hoặc công cụ tạo ảnh; không làm được bằng code trong dự án này.
+- 2026-09-30 (chất vẽ tay): mỗi đỉnh model có thuộc tính `_mat` (0 vải, 1 da, 2 kim loại, 3 tóc, 4 da thuộc/gỗ, 5 phát sáng; tự đoán theo màu, tóc/da gán rõ). Shader toon thêm vệt cọ/vân vải theo toạ độ vật thể, kim loại có dải sáng và điểm loé vẽ tay, tóc có vòng bóng, da có sắc ấm. Không cần texture/UV.
+- Cảnh trưng bày vẽ thẳng không hậu kỳ (thử bloom + lọc tranh sơn Kuwahara: làm tướng nhạt màu, bỏ). Canvas `alpha: false` và shader ghi alpha = diffuse.a để tướng không bị trong suốt khi ghép lớp.

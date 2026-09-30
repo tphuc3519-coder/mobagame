@@ -1,8 +1,4 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { loadHero, instantiate } from '../render/assets.js';
 import { prepareUnitMaterials, setOutlineResolution } from '../render/materials.js';
 import { glowTexture } from '../render/env/textures.js';
@@ -78,7 +74,7 @@ function sparkles(n = 220) {
 }
 
 export function createShowcase(canvas, { quality = 'mid' } = {}) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, premultipliedAlpha: false, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
   const splash = createSplash(); scene.add(splash.group);
@@ -93,17 +89,13 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   const sp = sparkles(); scene.add(sp.object);
   const stage = new THREE.Group(); scene.add(stage);
 
-  const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.15, 1.6); composer.addPass(bloom);
-  composer.addPass(new OutputPass());
-  const useBloom = quality !== 'low';
+  // Vẽ thẳng ra màn hình (không hậu kỳ): so sánh A/B cho thấy hậu kỳ làm nhạt màu tướng; đèn đã có quầng sáng riêng.
 
   let W = 1, H = 1, offX = 0;
   const resize = () => {
     W = canvas.clientWidth || innerWidth; H = canvas.clientHeight || innerHeight;
     const pr = Math.min(devicePixelRatio, quality === 'high' ? 2 : 1.5);
-    renderer.setPixelRatio(pr); renderer.setSize(W, H, false); composer.setPixelRatio(pr); composer.setSize(W, H);
+    renderer.setPixelRatio(pr); renderer.setSize(W, H, false);
     camera.aspect = W / H; camera.clearViewOffset(); if (offX) camera.setViewOffset(W, H, -offX, 0, W, H); camera.updateProjectionMatrix();
     setOutlineResolution(W * pr, H * pr); sp.mat.uniforms.uH.value = H * pr;
   };
@@ -167,7 +159,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     stage.children.forEach((g) => { if (!cur || g !== cur.g) g.scale.multiplyScalar(Math.max(0, 1 - dt * 9)); });
     ped.rune.rotation.z = t * 0.15; ped.beam.material.uniforms.uT.value = t; sp.mat.uniforms.uT.value = t;
     lan.update(t, dt); burst.update(dt); splash.update(t, H * renderer.getPixelRatio());
-    if (useBloom) composer.render(); else renderer.render(scene, camera);
+    renderer.render(scene, camera);
   }
   req = requestAnimationFrame(frame);
 
@@ -194,6 +186,6 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     show, portrait, scene, stage,
     /** Dời tâm cảnh sang phải (px) để chừa chỗ cho lưới tướng bên trái. */
     setOffset(px) { offX = px; resize(); },
-    dispose() { running = false; cancelAnimationFrame(req); composer.dispose(); renderer.dispose(); renderer.forceContextLoss(); removeEventListener('resize', resize); },
+    dispose() { running = false; cancelAnimationFrame(req); renderer.dispose(); renderer.forceContextLoss(); removeEventListener('resize', resize); },
   };
 }

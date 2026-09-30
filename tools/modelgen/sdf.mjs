@@ -78,7 +78,7 @@ export class SdfBody {
   }
 
   /** Dựng lưới. cell: cạnh ô (m). Trả { pos, nor, col, bones:[[[name,w]..]], idx }. */
-  mesh(cell = 0.014, targetTris = 9000) {
+  mesh(cell = 0.014, targetTris = 9000, classify = () => 0) {
     if (!this.prims.length) return null;
     const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
     for (const q of this.prims) if (!q.sub) for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], q.lo[i] - q.k - 2 * cell); hi[i] = Math.max(hi[i], q.hi[i] + q.k + 2 * cell); }
@@ -149,7 +149,7 @@ export class SdfBody {
       if (fx * mx + fy * my + fz * mz < 0) { idx[f + 1] = c; idx[f + 2] = b; }
     }
     // màu, AO, trọng số xương
-    const col = new Float32Array(N * 3), bones = [], tmp = new THREE.Color(), acc = new THREE.Color();
+    const col = new Float32Array(N * 3), bones = [], tmp = new THREE.Color(), acc = new THREE.Color(), mat = new Array(N);
     for (let t = 0; t < N; t++) {
       const x = pos[t * 3], y = pos[t * 3 + 1], z = pos[t * 3 + 2], nx_ = nor[t * 3], ny_ = nor[t * 3 + 1], nz_ = nor[t * 3 + 2];
       const ds = this.prims.map((q) => (q.sub ? 1e9 : this.prim(q, x, y, z)));
@@ -158,6 +158,8 @@ export class SdfBody {
       acc.setRGB(0, 0, 0); let cw = 0;
       ds.forEach((d, i) => { const w = Math.max(0, 1 - (d - dmin) / 0.006); if (w <= 0) return; const q = this.prims[i]; tmp.set(typeof q.color === 'function' ? q.color(x, y, z) : q.color || '#ff00ff'); acc.r += tmp.r * w; acc.g += tmp.g * w; acc.b += tmp.b * w; cw += w; });
       acc.multiplyScalar(1 / cw);
+      { const iq = ds.indexOf(dmin), q = this.prims[iq], hex = typeof q.color === 'function' ? q.color(x, y, z) : q.color || '#ff00ff';
+        mat[t] = q.mat != null ? (typeof q.mat === 'function' ? q.mat(x, y, z) : q.mat) : classify(hex); }
       // AO khe: đo trường khoảng cách dọc pháp tuyến (IQ)
       let occ = 0, sca = 1;
       for (let s = 1; s <= 5; s++) { const hh = 0.012 * s; occ += (hh - this.dist(x + nx_ * hh, y + ny_ * hh, z + nz_ * hh)) * sca; sca *= 0.75; }
@@ -169,7 +171,7 @@ export class SdfBody {
       const list = [...bw.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4), tot = list.reduce((a, b) => a + b[1], 0) || 1;
       bones.push(list.map(([nm, w]) => [nm, w / tot]));
     }
-    return { pos, nor: Array.from(nor), col: Array.from(col), bones, idx };
+    return { pos, nor: Array.from(nor), col: Array.from(col), bones, idx, mat };
   }
 }
 

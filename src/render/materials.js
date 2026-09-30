@@ -21,13 +21,46 @@ function gradientMap() {
 export const OUTLINE = { ndc: { value: new THREE.Vector2(0.004, 0.004) }, px: 1.2 };
 export function setOutlineResolution(w, h) { OUTLINE.ndc.value.set((OUTLINE.px * 2) / w, (OUTLINE.px * 2) / h); }
 
+// Chất "vẽ tay" theo loại chất liệu (thuộc tính _mat do tools/modelgen ghi): 0 vải, 1 da, 2 kim loại, 3 tóc, 4 da thuộc/gỗ, 5 phát sáng.
+// Vệt cọ + vân vải theo toạ độ vật thể (bám bề mặt khi chuyển động), kim loại có dải sáng và điểm loé vẽ tay,
+// tóc có vòng bóng, da có sắc ấm ở vùng tối. Không cần UV hay texture.
+const PAINT_V = `attribute float _mat;
+varying float vMat; varying vec3 vObj;`;
+const PAINT_F = `varying float vMat; varying vec3 vObj;
+float ph3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float pn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(ph3(i), ph3(i + vec3(1,0,0)), f.x), mix(ph3(i + vec3(0,1,0)), ph3(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(ph3(i + vec3(0,0,1)), ph3(i + vec3(1,0,1)), f.x), mix(ph3(i + vec3(0,1,1)), ph3(i + vec3(1,1,1)), f.x), f.y), f.z); }`;
 function patch(mat, u) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.rimColor = u.rim; sh.uniforms.flashAmt = u.flash; sh.uniforms.rimAmt = u.rimAmt;
-    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\nuniform float rimAmt;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
-      '#include <emissivemap_fragment>\n float rimF = smoothstep(0.55, 1.0, 1.0 - saturate(dot(normalize(vNormal), normalize(vViewPosition))));\n totalEmissiveRadiance += rimColor * rimF * rimAmt + vec3(flashAmt);');
+    sh.vertexShader = PAINT_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vObj = position;');
+    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\nuniform float rimAmt;\n' + PAINT_F + '\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float pn1 = pn3(vObj * 9.0), pn2 = pn3(vObj * 42.0), stroke = pn3(vec3(vObj.x * 14.0, vObj.y * 3.5, vObj.z * 14.0));
+        if (vMat < 0.5) diffuseColor.rgb *= 0.88 + 0.16 * pn1 + 0.08 * (stroke - 0.5) + 0.05 * (pn2 - 0.5);
+        else if (vMat < 1.5) diffuseColor.rgb *= 0.97 + 0.05 * pn1;
+        else if (vMat < 2.5) diffuseColor.rgb *= 0.8 + 0.3 * stroke;
+        else if (vMat < 3.5) diffuseColor.rgb *= 0.86 + 0.22 * pn3(vec3(vObj.x * 60.0, vObj.y * 6.0, vObj.z * 60.0));
+        else if (vMat < 4.5) diffuseColor.rgb *= 0.85 + 0.2 * pn3(vec3(vObj.x * 30.0, vObj.y * 90.0, vObj.z * 30.0));`)
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = diffuseColor.a;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        vec3 Vv = normalize(vViewPosition); float ndv = saturate(dot(normal, Vv));
+        float rimF = smoothstep(0.55, 1.0, 1.0 - ndv);
+        totalEmissiveRadiance += rimColor * rimF * rimAmt + vec3(flashAmt);
+        if (vMat > 0.5 && vMat < 1.5) totalEmissiveRadiance += diffuseColor.rgb * vec3(0.16, 0.06, 0.05) * (1.0 - ndv * 0.6);
+        else if (vMat > 1.5 && vMat < 2.5) {
+          float wob = (pn2 - 0.5) * 0.12, band = smoothstep(0.18, 0.3, normal.y + wob) * (1.0 - smoothstep(0.45, 0.6, normal.y + wob));
+          float spec = pow(saturate(dot(reflect(-Vv, normal), normalize(vec3(0.35, 0.8, 0.5)))), 28.0);
+          totalEmissiveRadiance += diffuseColor.rgb * band * 0.45 + vec3(1.0, 0.97, 0.9) * spec * 0.7 + diffuseColor.rgb * rimF * 0.3;
+        } else if (vMat > 2.5 && vMat < 3.5) {
+          float w = normal.y + (pn2 - 0.5) * 0.14, ring = smoothstep(0.3, 0.4, w) * (1.0 - smoothstep(0.52, 0.64, w));
+          totalEmissiveRadiance += mix(diffuseColor.rgb, vec3(1.0), 0.55) * ring * 0.5;
+        } else if (vMat > 3.5 && vMat < 4.5) {
+          totalEmissiveRadiance += vec3(1.0, 0.9, 0.75) * pow(saturate(dot(reflect(-Vv, normal), normalize(vec3(0.35, 0.8, 0.5)))), 10.0) * 0.18;
+        }`);
   };
-  mat.customProgramCacheKey = () => 'unit-toon-rim';
+  mat.customProgramCacheKey = () => 'unit-toon-paint';
 }
 
 function toToon(m, u) {

@@ -11,6 +11,16 @@ export const smooth = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
+/** Loại chất liệu cho shader vẽ tay: 0 vải, 1 da người, 2 kim loại (sắt/vàng), 3 tóc, 4 da thuộc/gỗ, 5 phát sáng. */
+export const MAT = { cloth: 0, skin: 1, metal: 2, hair: 3, leather: 4, glow: 5 };
+export function classifyMat(hex, skinHex) {
+  const c = new THREE.Color(hex), h = {}; c.getHSL(h);
+  if (skinHex && c.equals(new THREE.Color(skinHex))) return MAT.skin;
+  if (h.s < 0.12 && h.l > 0.2 && h.l < 0.72) return MAT.metal;
+  if (h.h > 0.09 && h.h < 0.16 && h.s > 0.45 && h.l > 0.35 && h.l < 0.72) return MAT.metal; // vàng
+  if (h.h > 0.0 && h.h < 0.12 && h.l < 0.36) return MAT.leather;
+  return MAT.cloth;
+}
 export const mirrorName = (n) => n.replace(/([LR])(_Tip)?$/, (m, s, t) => (s === 'L' ? 'R' : 'L') + (t || ''));
 
 export class Model {
@@ -18,7 +28,8 @@ export class Model {
     this.id = id;
     this.joints = [];            // {name,parent,pos}
     this.jointMap = new Map();
-    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = []; this.uv = [];
+    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = []; this.uv = []; this.mat = [];
+    this.skinHex = null;
     this.idx = [[], [], []];     // 0 = thân, 1 = phát sáng, 2 = mặt (texture vẽ lúc chạy)
     this.vcount = 0;
     this.glowColor = '#ffffff';
@@ -91,9 +102,10 @@ export class Model {
     }
     const base = this.vcount;
     const p = V();
+    const matId = glow ? MAT.glow : o.mat != null ? (typeof o.mat === 'string' ? MAT[o.mat] : o.mat) : classifyMat(color, this.skinHex);
     for (let i = 0; i < n; i++) {
       p.fromBufferAttribute(pos, i);
-      this.pos.push(p.x, p.y, p.z); this.uv.push(0, 0);
+      this.pos.push(p.x, p.y, p.z); this.uv.push(0, 0); this.mat.push(matId);
       this.nor.push(nor.getX(i), nor.getY(i), nor.getZ(i));
       let k = 0;
       if (c2) k = (local[i * 3 + 1] - bb.min.y) / Math.max(1e-6, bb.max.y - bb.min.y);
@@ -253,7 +265,7 @@ export class Model {
       for (let s = 0; s < 80; s++) { const d = sdf.dist(x, yy, z); if (d < 0.0003) { hit = true; break; } z -= Math.max(d, 0.0008); if (z < hc.z - hr) break; }
       const e = 0.002, gx = sdf.dist(x + e, yy, z) - sdf.dist(x - e, yy, z), gy = sdf.dist(x, yy + e, z) - sdf.dist(x, yy - e, z), gz = sdf.dist(x, yy, z + e) - sdf.dist(x, yy, z - e), l = Math.hypot(gx, gy, gz) || 1;
       id.push(hit && gz / l > 0.15);
-      this.pos.push(x + gx / l * lift, yy + gy / l * lift, z + gz / l * lift); this.nor.push(gx / l, gy / l, gz / l); this.col.push(1, 1, 1); this.uv.push(u, v);
+      this.pos.push(x + gx / l * lift, yy + gy / l * lift, z + gz / l * lift); this.nor.push(gx / l, gy / l, gz / l); this.col.push(1, 1, 1); this.uv.push(u, v); this.mat.push(MAT.skin);
       this.si.push(j.index, 0, 0, 0); this.sw.push(1, 0, 0, 0);
     }
     const at = (ix, iy) => iy * (nx + 1) + ix;
@@ -264,9 +276,9 @@ export class Model {
     this.vcount += (nx + 1) * (ny + 1);
   }
   _emitSdf() {
-    const r = this.sdf.mesh(this.sdfCell, this.sdfTris); if (!r) return;
+    const r = this.sdf.mesh(this.sdfCell, this.sdfTris, (hex) => classifyMat(hex, this.skinHex)); if (!r) return;
     const base = this.vcount, N = r.pos.length / 3;
-    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col); for (let i = 0; i < N; i++) this.uv.push(0, 0);
+    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col); for (let i = 0; i < N; i++) this.uv.push(0, 0); this.mat.push(...r.mat);
     for (const list of r.bones) {
       const si = [0, 0, 0, 0], sw = [0, 0, 0, 0];
       const keep = list.filter(([, w]) => w > 1e-3), tot = keep.reduce((a, [, w]) => a + w, 0) || 1;
@@ -294,6 +306,7 @@ export class Model {
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+    geo.setAttribute('_mat', new THREE.Float32BufferAttribute(this.mat, 1));
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(this.si, 4));
     geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(this.sw, 4));
     const all = [], mats = [];

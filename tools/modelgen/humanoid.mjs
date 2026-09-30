@@ -42,6 +42,7 @@ export function humanoid(id, s = {}) {
     hipY: 0.49, hunch: 0, handR: 0.03, neckR: 0.03, footL: 0.078, kneeBend: 0,
   }, s);
   const m = new Model(id);
+  m.skinHex = S.skin;
   const hips = S.hipY * H;
   const y = (f) => f * H;
   const zs = (f) => S.hunch * H * Math.pow(Math.max(0, (f - 0.5) / 0.35), 1.4); // độ gù về phía trước theo độ cao
@@ -199,9 +200,9 @@ export function hairLocks(ctx, o = {}) {
     return '#' + c.lerp(shine, band * 0.45).getHexString();
   };
   // chỏm tóc: lệch ra sau-lên để lộ trán
-  m.blob({ ell: [[0, hc.y + hr * 0.16, hc.z - hr * 0.2], [hr * vol, hr * vol * 1.0, hr * vol]], k: 0.012, color: col, weights: hb });
-  m.blob({ ell: [[0, hc.y + hr * 0.62, hc.z + hr * 0.28], [hr * 0.9, hr * 0.42, hr * 0.62]], k: 0.03, color: col, weights: hb });
-  const lock = (root, mid, end, r0) => { m.blob({ cone: [root, mid, r0, r0 * 0.7], k: 0.012, color: col, weights: hb }); m.blob({ cone: [mid, end, r0 * 0.7, 0.004], k: 0.008, color: col, weights: hb }); };
+  m.blob({ ell: [[0, hc.y + hr * 0.16, hc.z - hr * 0.2], [hr * vol, hr * vol * 1.0, hr * vol]], k: 0.012, color: col, weights: hb, mat: 3 });
+  m.blob({ ell: [[0, hc.y + hr * 0.62, hc.z + hr * 0.28], [hr * 0.9, hr * 0.42, hr * 0.62]], k: 0.03, color: col, weights: hb, mat: 3 });
+  const lock = (root, mid, end, r0) => { m.blob({ cone: [root, mid, r0, r0 * 0.7], k: 0.012, color: col, weights: hb, mat: 3 }); m.blob({ cone: [mid, end, r0 * 0.7, 0.004], k: 0.008, color: col, weights: hb, mat: 3 }); };
   // mái: các lọn rủ xuống trán, xoè nhẹ, ngôi lệch
   const nb = o.bangs ?? 7;
   for (let i = 0; i < nb; i++) {
