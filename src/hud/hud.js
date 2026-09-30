@@ -24,7 +24,7 @@ export function createHud(canvas, input) {
         else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, text: '+' + ev.amount, color: '#8affb0', size: 16 });
       }
     },
-    draw(world, cam, player, debugLines) {
+    draw(world, cam, player, enemy, debugLines) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
@@ -59,7 +59,20 @@ export function createHud(canvas, input) {
       bar(bx, by + 19, bw, 8, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 11px ui-monospace, monospace'; ctx.fillStyle = '#fff';
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 7);
-      { const sec = Math.floor(world.tick / 30); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '700 15px ui-monospace, monospace'; ctx.fillStyle = '#f3e9d6'; ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, w / 2, 44); }
+      { // tỉ số + đồng hồ ở giữa trên (07 §9)
+        const sec = Math.floor(world.tick / 30), cx = w / 2, ty = 10;
+        ctx.fillStyle = 'rgba(12,15,32,0.72)'; ctx.beginPath(); ctx.roundRect(cx - 92, ty, 184, 30, 15); ctx.fill();
+        ctx.textBaseline = 'middle'; ctx.font = '800 17px system-ui, sans-serif';
+        ctx.textAlign = 'right'; ctx.fillStyle = '#5fe3d0'; ctx.fillText(String(player.kills), cx - 40, ty + 15);
+        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(String(enemy ? enemy.kills : 0), cx + 40, ty + 15);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#f3e9d6'; ctx.font = '700 13px ui-monospace, monospace';
+        ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, cx, ty + 15);
+        if (!player.alive && player.respawnTick) {
+          const left = Math.max(0, Math.ceil((player.respawnTick - world.tick) / 30));
+          ctx.fillStyle = 'rgba(10,6,12,0.55)'; ctx.fillRect(0, 0, w, h);
+          ctx.font = '800 26px system-ui, sans-serif'; ctx.fillStyle = '#ffb84d'; ctx.fillText(`Hồi sinh sau ${left}s`, cx, h * 0.42);
+        }
+      }
       // joystick
       const { js, R } = input;
       if (js.active) {
