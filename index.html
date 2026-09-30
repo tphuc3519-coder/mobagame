@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Realistic 3D MOBA Champion Showcase (Liên Quân / Arena of Valor)</title>
+  <title>3D MOBA Champion Showcase (Liên Quân / Arena of Valor)</title>
   <link rel="stylesheet" href="styles.css">
   <!-- Three.js, OrbitControls, and GLTFLoader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -17,25 +17,32 @@
   <div id="ui-overlay">
     <!-- Top Header / Hero Banner -->
     <div class="hero-header">
-      <div class="hero-badge">TƯỚNG 3D THẬT / REALISTIC MOBA CHAMPION</div>
+      <div class="hero-badge">ĐẤU SĨ / PALADIN</div>
       <h1 class="hero-name" id="hero-display-name">ARTHUR - HOÀNG KIM CHIẾN THẦN</h1>
-      <div class="hero-sub">Mô hình 3D Nhân vật Chi tiết (Mô phỏng Xương & Chuyển động Mượt)</div>
+      <div class="hero-sub">Mô hình 3D Nhân vật Chi tiết (Xoay 360°, Xem Nhiều Góc & Chụp Ảnh)</div>
     </div>
 
     <!-- Mode Selector & Controls Info -->
     <div class="top-controls">
-      <button id="btn-cam-mode" class="ui-btn active">📷 Camera 360°</button>
-      <button id="btn-switch-hero" class="ui-btn gold-btn">🔄 Đổi Tướng (Soldier / Cyber Bot)</button>
-      <button id="btn-anim-attack" class="ui-btn skill-btn">⚔️ Chiêu 1: Trảm</button>
-      <button id="btn-anim-spin" class="ui-btn skill-btn">🌀 Chiêu 2: Xoay 360°</button>
-      <button id="btn-anim-ult" class="ui-btn skill-btn ult">🔥 Chiêu 3: Tuyệt Kỹ</button>
+      <button id="btn-switch-hero" class="ui-btn gold-btn">🔄 Đổi Tướng (Arthur / Cyber Bot)</button>
+      <button id="btn-take-photo" class="ui-btn photo-btn">📸 Chụp Ảnh Tướng (Download PNG)</button>
+    </div>
+
+    <!-- Camera Angle Preset Bar -->
+    <div class="cam-bar">
+      <span class="cam-label">📐 GÓC NHÌN:</span>
+      <button id="cam-front" class="cam-btn active">Chính Diện</button>
+      <button id="cam-back" class="cam-btn">Sau Lưng</button>
+      <button id="cam-closeup" class="cam-btn">Cận Cảnh (Face)</button>
+      <button id="cam-top" class="cam-btn">Góc Trên Cao</button>
+      <button id="cam-side" class="cam-btn">Góc Nghiêng 45°</button>
     </div>
 
     <!-- Instructions Overlay -->
     <div class="instructions-panel">
-      <div class="inst-item"><strong>🎮 Di chuyển:</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc Cần gạt ảo 360°</div>
-      <div class="inst-item"><strong>🔄 Xoay Camera 360°:</strong> Nhấp giữ chuột trái & kéo</div>
-      <div class="inst-item"><strong>🔍 Zoom:</strong> Cuộn chuột (Scroll Wheel)</div>
+      <div class="inst-item">🎮 <strong>Di chuyển:</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc Cần gạt ảo 360°</div>
+      <div class="inst-item">🔄 <strong>Xoay Camera 360°:</strong> Nhấp giữ chuột trái & kéo xung quanh</div>
+      <div class="inst-item">🔍 <strong>Zoom:</strong> Cuộn chuột (Scroll Wheel)</div>
     </div>
 
     <!-- Virtual Joystick for Touch / Mouse Drag -->

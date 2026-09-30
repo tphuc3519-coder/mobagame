@@ -76,7 +76,7 @@ body, html {
   margin-top: 4px;
 }
 
-/* Top Buttons */
+/* Top Controls Bar */
 .top-controls {
   pointer-events: auto;
   position: absolute;
@@ -84,6 +84,55 @@ body, html {
   right: 20px;
   display: flex;
   gap: 10px;
+}
+
+/* Camera Bar */
+.cam-bar {
+  pointer-events: auto;
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 18, 34, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.cam-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd700;
+  margin-right: 4px;
+}
+
+.cam-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e0;
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cam-btn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  color: #ffffff;
+  border-color: #00f0ff;
+}
+
+.cam-btn.active {
+  background: #00f0ff;
+  color: #060913;
+  border-color: #00f0ff;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
 }
 
 .ui-btn {
@@ -119,14 +168,15 @@ body, html {
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
 }
 
-.ui-btn.skill-btn.ult {
-  border-color: #ff3366;
-  color: #ff3366;
+.ui-btn.photo-btn {
+  border-color: #00f0ff;
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.3) 0%, rgba(0, 150, 255, 0.5) 100%);
 }
 
-.ui-btn.skill-btn.ult:hover {
-  background: rgba(255, 51, 102, 0.3);
-  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+.ui-btn.photo-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.6) 0%, rgba(0, 180, 255, 0.8) 100%);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
 }
 
 /* Instructions Panel */

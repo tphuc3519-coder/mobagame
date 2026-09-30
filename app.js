@@ -6,6 +6,10 @@ let mixer, actions = {}, activeAction, previousAction;
 let gltfLoader;
 let currentHeroIndex = 0;
 
+// Camera preset angles
+let targetCamPos = null;
+let targetCamTarget = null;
+
 const HERO_MODELS = [
   {
     name: "ARTHUR - HOÀNG KIM CHIẾN THẦN",
@@ -42,10 +46,10 @@ function init() {
 
   // 2. Camera setup
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 3.5, 8);
+  camera.position.set(0, 2.5, 6.5);
 
-  // 3. Renderer setup
-  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  // 3. Renderer setup (preserveDrawingBuffer required for canvas photo export)
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -59,7 +63,7 @@ function init() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02;
-  controls.minDistance = 2.5;
+  controls.minDistance = 1.5;
   controls.maxDistance = 20;
   controls.target.set(0, 1.6, 0);
 
@@ -201,18 +205,15 @@ function loadHeroModel(index) {
       actions[clip.name] = action;
     });
 
-    // Map default animations (Idle, Walk, Run, Attack)
-    const clipNames = Object.keys(actions);
-    console.log("Loaded clips for", config.name, ":", clipNames);
-
     // Default to Idle animation
+    const clipNames = Object.keys(actions);
     if (clipNames.length > 0) {
       const idleClip = clipNames.find(name => name.toLowerCase().includes('idle')) || clipNames[0];
       activeAction = actions[idleClip];
       if (activeAction) activeAction.play();
     }
 
-    // Attach Glowing Crystal Sword for Soldier if weapon flag set
+    // Attach Glowing Crystal Sword if weapon flag set
     if (config.hasWeapon) {
       attachGlowingGreatsword(model);
     }
@@ -223,7 +224,6 @@ function loadHeroModel(index) {
 }
 
 function attachGlowingGreatsword(model) {
-  // Find right hand bone
   let rightHandBone = null;
   model.traverse((child) => {
     if (child.isBone && (child.name.includes('RightHand') || child.name.includes('HandR') || child.name.includes('mixamorigRightHand'))) {
@@ -232,14 +232,12 @@ function attachGlowingGreatsword(model) {
   });
 
   if (!rightHandBone) {
-    // Fallback: attach to model root if bone name varies
     rightHandBone = model;
   }
 
   const swordGroup = new THREE.Group();
   swordGroup.position.set(0, 0.1, 0);
 
-  // Crystal Energy Blade Material
   const bladeMat = new THREE.MeshPhysicalMaterial({
     color: 0x00f0ff,
     emissive: 0x0088ff,
@@ -265,7 +263,6 @@ function attachGlowingGreatsword(model) {
   blade.position.y = 1.0;
   swordGroup.add(blade);
 
-  // Guard & Hilt
   const hilt = new THREE.Mesh(
     new THREE.CylinderGeometry(0.03, 0.03, 0.4),
     new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 })
@@ -279,7 +276,6 @@ function attachGlowingGreatsword(model) {
 }
 
 function createHeroHUD(parentGroup) {
-  // Target Ring
   const ringGeo = new THREE.RingGeometry(0.9, 1.05, 32);
   const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide });
   heroRingMesh = new THREE.Mesh(ringGeo, ringMat);
@@ -287,7 +283,6 @@ function createHeroHUD(parentGroup) {
   heroRingMesh.position.y = 0.03;
   parentGroup.add(heroRingMesh);
 
-  // Canvas HP Bar
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 32;
@@ -341,7 +336,6 @@ function createAmbientParticles() {
 
 // Controls & Interactions
 function setupControlsAndUI() {
-  // Key state
   const keys = { KeyW: false, KeyS: false, KeyA: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
   window.addEventListener('keydown', (e) => {
@@ -409,15 +403,46 @@ function setupControlsAndUI() {
     loadHeroModel(currentHeroIndex);
   });
 
+  // Photo / Snapshot Button
+  document.getElementById('btn-take-photo').addEventListener('click', takeHeroPhoto);
+
+  // Camera Presets
+  const camBtns = {
+    'cam-front': { pos: new THREE.Vector3(0, 2.2, 5.5), target: new THREE.Vector3(0, 1.6, 0) },
+    'cam-back': { pos: new THREE.Vector3(0, 2.2, -5.5), target: new THREE.Vector3(0, 1.6, 0) },
+    'cam-closeup': { pos: new THREE.Vector3(0, 2.7, 2.2), target: new THREE.Vector3(0, 2.5, 0) },
+    'cam-top': { pos: new THREE.Vector3(0, 9.0, 1.0), target: new THREE.Vector3(0, 0, 0) },
+    'cam-side': { pos: new THREE.Vector3(4.5, 2.5, 4.5), target: new THREE.Vector3(0, 1.6, 0) }
+  };
+
+  Object.keys(camBtns).forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const preset = camBtns[id];
+        const heroPos = currentHeroGroup ? currentHeroGroup.position : new THREE.Vector3(0, 0, 0);
+        targetCamPos = preset.pos.clone().add(heroPos);
+        targetCamTarget = preset.target.clone().add(heroPos);
+      });
+    }
+  });
+
   // Skills
-  document.getElementById('btn-anim-attack').addEventListener('click', triggerAttack);
   document.getElementById('skill-q').addEventListener('click', triggerAttack);
-
-  document.getElementById('btn-anim-spin').addEventListener('click', triggerSpin);
   document.getElementById('skill-w').addEventListener('click', triggerSpin);
-
-  document.getElementById('btn-anim-ult').addEventListener('click', triggerUlt);
   document.getElementById('skill-r').addEventListener('click', triggerUlt);
+}
+
+function takeHeroPhoto() {
+  renderer.render(scene, camera);
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = `3D_MOBA_Hero_Snapshot_${Date.now()}.png`;
+  link.href = dataURL;
+  link.click();
 }
 
 function triggerAttack() {
@@ -440,6 +465,16 @@ function animate() {
   const delta = clock.getDelta();
 
   if (mixer) mixer.update(delta);
+
+  // Smooth Camera transition to presets
+  if (targetCamPos && targetCamTarget) {
+    camera.position.lerp(targetCamPos, 0.08);
+    controls.target.lerp(targetCamTarget, 0.08);
+    if (camera.position.distanceTo(targetCamPos) < 0.05) {
+      targetCamPos = null;
+      targetCamTarget = null;
+    }
+  }
 
   // Billboarding HP Bar
   if (hpBarMesh) {
@@ -468,7 +503,6 @@ function animate() {
 
     controls.target.copy(currentHeroGroup.position).add(new THREE.Vector3(0, 1.6, 0));
 
-    // Switch to Walk / Run animation in skeletal mixer
     const clipNames = Object.keys(actions);
     const runClip = clipNames.find(n => n.toLowerCase().includes('run') || n.toLowerCase().includes('walk'));
     if (runClip && actions[runClip] && activeAction !== actions[runClip]) {
@@ -476,7 +510,6 @@ function animate() {
     }
   } else if (isMoving && currentHeroGroup) {
     isMoving = false;
-    // Switch back to Idle
     const clipNames = Object.keys(actions);
     const idleClip = clipNames.find(n => n.toLowerCase().includes('idle')) || clipNames[0];
     if (idleClip && actions[idleClip] && activeAction !== actions[idleClip]) {
