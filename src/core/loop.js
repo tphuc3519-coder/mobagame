@@ -18,6 +18,8 @@ export function createLoop({ update, render, requestFrame = (f) => requestAnimat
     start() { id = requestFrame(frame); },
     pause() { running = false; },
     resume() { running = true; last = null; },
+    /** Chạy nhanh n tick không vẽ (debug ?ff=giây). */
+    fastForward(n) { for (let i = 0; i < n; i++) { tick++; update(tick); } },
     get tick() { return tick; },
     get running() { return running; },
   };

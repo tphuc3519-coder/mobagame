@@ -11,3 +11,7 @@
 - Hình nộm có 6000 HP, giáp/KP 30, hồi đầy sau 5s không bị đánh; chết thì hồi đầy ngay.
 - Đòn đánh chỉ ra đòn khi mục tiêu đã trong tầm (chưa tự đuổi); nút Đánh giữ để đánh liên tục.
 - Ba ví dụ tính tay công thức sát thương (đều nằm trong `tools/t_combat.mjs`): Hoả Rèn K1 cấp 1 = (70 + 1.0×68)×100/130 = 106.15; Nguyệt Hà K1 = 80×100/130 = 61.54 phép; Thạch Quy K2 = (50 + 4%×1000)×100/130 = 69.23.
+- 2026-09-30 (Mốc 3): trụ 1v1 dùng chỉ số ở 03 §B2 (HP 3200/3800/5000); 'nhà chính' đóng vai trụ nhà nên bất tử tới khi trụ trong vỡ; giáp trụ 80/90/100, không có giáp bảo vệ 4 phút.
+- Lính: chưa cho vàng/KN (Mốc 4); model lính là khối đơn giản, mỗi lính vài draw call (chưa InstancedMesh) — 16 lính đồng thời ổn; sẽ instancing khi lên 5v5.
+- Tướng bị giữ trong đường, không đi vào khe hở tường (bãi quái ở Mốc 6); lưới đi được đã dựng sẵn từ tường/biên.
+- Đợt lính theo 03 §B3: đầu 0:15, mỗi 25s, 3 Kiếm + 1 Cung, mỗi 3 đợt thêm Xe Đá. Lính Đèn Lớn chưa có (cần luật phá trụ nhà 5v5).

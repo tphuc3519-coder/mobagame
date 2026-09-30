@@ -21,10 +21,10 @@ const seed = parseInt(q.get('seed') || '1', 10);
 const level = pickLevel();
 const heroId = ALPHA.includes(q.get('hero')) ? q.get('hero') : 'hoa_ren';
 
-// Màn thử (Mốc 2): mình + 3 hình nộm cách 400 / 700 / 1000 (10 §Mốc 2)
+// Mốc 3: bản đồ 1v1 đủ công trình và lính. ?dummies=1 thêm 3 hình nộm cách 400 / 700 / 1000 để tập kỹ năng.
 const world = createWorld({ map: DUEL, seed });
-const player = world.spawnHero(heroId, 0, DUEL.spawn[0]);
-[[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx, y: DUEL.road.y + dy }));
+const player = world.spawnHero(heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.road.y });
+if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0f1224, 3500, 6500);
@@ -55,6 +55,14 @@ document.getElementById('labLv').onclick = () => world.debug.level15(player);
 document.getElementById('labHeal').onclick = () => world.debug.fullHeal(player);
 for (const b of panel.querySelectorAll('button')) b.addEventListener('pointerdown', (e) => e.stopPropagation());
 
+function showResult(winner) {
+  const el = document.getElementById('result');
+  el.querySelector('h2').textContent = winner === player.team ? 'THẮNG' : 'THUA';
+  el.querySelector('p').textContent = `Thời gian ${Math.floor(world.tick / 1800)} phút ${Math.floor(world.tick / 30) % 60} giây · Hạ gục ${player.kills}`;
+  el.classList.add('on');
+}
+document.getElementById('again').onclick = () => location.reload();
+
 const minFrame = 1000 / LEVELS[level].fps - 2;
 let lastDraw = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 
@@ -69,8 +77,9 @@ const loop = createLoop({
     if (now - lastDraw < minFrame) return;
     lastDraw = now;
     const events = world.drainEvents();
+    for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
     views.handle(events); fx.handle(events); hud.handle(events, world);
-    views.update(world, alpha, dt); fx.update(world, dt);
+    views.update(world, alpha, dt); fx.update(world, dt, player);
     buttons.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
@@ -82,6 +91,7 @@ const loop = createLoop({
     hud.draw(world, cam.camera, player, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
 });
+if (q.has('ff')) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
 loop.start();
 window.__game = { world, player, loop }; // phục vụ kiểm thử tự động
 

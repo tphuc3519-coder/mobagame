@@ -30,13 +30,14 @@ export function createHud(canvas, input) {
       // thanh máu trên đầu
       ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       for (const e of world.entities) {
-        if (!e.alive || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth'))) continue;
-        const p = project(cam, e.pos.x, 230, e.pos.y, w, h); if (!p.visible) continue;
-        const bw = e.kind === 'dummy' ? 74 : 84, col = e.id === player.id ? '#7ee8a0' : e.team === player.team ? '#5fe3d0' : '#ff6a5a';
-        bar(p.x - bw / 2, p.y - 6, bw, 7, e.hp / e.stats.maxHp, col);
+        if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth'))) continue;
+        const p = project(cam, e.pos.x, e.kind === 'hero' || e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
+        const bw = e.structure ? 120 : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84, col = e.id === player.id ? '#7ee8a0' : e.team === player.team ? '#5fe3d0' : '#ff6a5a';
+        bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
         const sh = e.shields.reduce((a, s) => a + s.amount, 0);
         if (sh > 0) bar(p.x - bw / 2, p.y - 6, bw, 3, sh / e.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
         if (e.kind === 'hero') { ctx.fillStyle = '#f3e9d6'; ctx.fillText(`${e.level}  ${e.data.name}`, p.x, p.y - 10); }
+        if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - 10); }
         // hiệu ứng khống chế trên đầu
         const cc = e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind));
         if (cc) { ctx.fillStyle = '#ffd23a'; ctx.fillText({ stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' }[cc.kind], p.x, p.y - 24); }
@@ -58,6 +59,7 @@ export function createHud(canvas, input) {
       bar(bx, by + 19, bw, 8, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 11px ui-monospace, monospace'; ctx.fillStyle = '#fff';
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 7);
+      { const sec = Math.floor(world.tick / 30); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '700 15px ui-monospace, monospace'; ctx.fillStyle = '#f3e9d6'; ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, w / 2, 44); }
       // joystick
       const { js, R } = input;
       if (js.active) {

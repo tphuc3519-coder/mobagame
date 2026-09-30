@@ -26,6 +26,9 @@
   .cancel { position: absolute; right: 60px; top: -60px; background: #ff5a4acc; color: #fff; padding: 6px 14px; border-radius: 6px; font: 700 13px system-ui, sans-serif; }
   #lab { position: fixed; left: 50%; transform: translateX(-50%); top: max(8px, env(safe-area-inset-top)); z-index: 5; display: flex; gap: 6px; }
   #lab select, #lab button { background: #171b33cc; color: #f3e9d6; border: 1px solid #2a3050; border-radius: 6px; padding: 5px 9px; font: 12px system-ui, sans-serif; }
+  #result { position: fixed; inset: 0; z-index: 9; display: none; place-items: center; text-align: center; background: #0f1224cc; }
+  #result.on { display: grid; } #result h2 { font-size: 56px; margin: 0; letter-spacing: 0.1em; color: #ffb84d; }
+  #result button { margin-top: 16px; font: 700 15px system-ui, sans-serif; padding: 10px 22px; border-radius: 8px; border: 1px solid #ffb84d; background: #171b33; color: #f3e9d6; }
   #rotate, #lost { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; text-align: center; background: #0f1224; padding: 24px; }
   #lost.on { display: grid; }
   @media (orientation: portrait) { #rotate { display: grid; } }
@@ -36,6 +39,7 @@
 <canvas id="hud"></canvas>
 <button id="fs" type="button">Toàn màn hình</button>
 <div id="lab"></div>
+<div id="result"><div><h2></h2><p></p><button id="again" type="button">Chơi lại</button></div></div>
 <div id="skills"></div>
 <div id="rotate"><div><div style="font-size:40px">⟳</div>Xoay ngang thiết bị để chơi</div></div>
 <div id="lost">Đang khôi phục đồ hoạ…</div>

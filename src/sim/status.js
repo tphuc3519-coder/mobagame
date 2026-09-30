@@ -5,7 +5,7 @@ const HARD = new Set(['stun', 'knockup']);
 
 /** Áp hiệu ứng. spec: {status, duration(giây), pct, ...}; id tuỳ chọn để thay thế bản cũ cùng id. */
 export function applyStatus(world, target, spec, src) {
-  if (!target.alive) return null;
+  if (!target.alive || target.structure) return null; // công trình miễn nhiễm hiệu ứng
   const kind = spec.status, id = spec.id || kind;
   const s = { ...spec, kind, id, src: src?.id, until: world.tick + T(spec.duration ?? 0) };
   delete s.status;

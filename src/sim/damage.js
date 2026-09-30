@@ -1,4 +1,4 @@
-import { T } from './util.js';
+import { T, dist } from './util.js';
 import { removeStatus, isStealthed } from './status.js';
 
 /** Sát thương nhận = raw × 100 / (100 + giáp hiệu dụng) (02 §7). Chuẩn không giảm. */
@@ -12,12 +12,20 @@ export function mitigate(src, tgt, raw, type) {
   return (raw * 100) / (100 + Math.max(0, tgt.stats.mr));
 }
 
-/** Gây sát thương: hook onDealDamage, giảm giáp/KP, khiên, chết. Trả sát thương thực vào máu. */
+/** Chống phá lén: công trình nhận ít hơn 60% sát thương khi không có lính bên tấn công trong bán kính 900 (03 §A4). */
+function backdoorFactor(world, src, tgt) {
+  if (!tgt.structure || !src) return 1;
+  const R = world.map.tower.minionAggroRadius;
+  return world.entities.some((m) => m.kind === 'minion' && m.alive && m.team === src.team && dist(m.pos, tgt.pos) <= R) ? 1 : world.map.tower.backdoorTaken;
+}
+
+/** Gây sát thương: hook, bất tử, giảm giáp/KP, khiên, chết. Trả sát thương thực vào máu. */
 export function dealDamage(world, src, tgt, amount, type = 'physical') {
-  if (!tgt || !tgt.alive || amount <= 0) return 0;
+  if (!tgt || !tgt.alive || amount <= 0 || tgt.noTarget) return 0;
+  if (tgt.invulnerable) { world.emit('immune', { id: tgt.id }); return 0; }
   const hook = src?.data?.passive?.hooks?.onDealDamage;
   if (hook) { const ctx = { world, self: src, target: tgt, amount, type }; hook(ctx); amount = ctx.amount; }
-  let dmg = mitigate(src, tgt, amount, type) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0));
+  let dmg = mitigate(src, tgt, amount, type) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0)) * backdoorFactor(world, src, tgt);
   let absorbed = 0;
   tgt.shields.sort((a, b) => a.until - b.until);
   for (const sh of tgt.shields) {
@@ -29,16 +37,19 @@ export function dealDamage(world, src, tgt, amount, type = 'physical') {
   tgt.hp -= dmg;
   tgt.lastDamagedTick = world.tick;
   if (isStealthed(tgt)) removeStatus(tgt, 'stealth');
+  if (src?.kind === 'hero' && tgt.kind === 'hero') world.onHeroDamaged?.(src, tgt);
   world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, shield: absorbed > 0 && dmg <= 0 });
   if (tgt.hp <= 0) kill(world, src, tgt);
   return dmg;
 }
 
 function kill(world, src, tgt) {
-  if (tgt.data?.dummy) { tgt.hp = tgt.stats.maxHp; world.emit('reset', { id: tgt.id }); return; } // hình nộm hồi đầy
-  tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.respawnTick = world.tick + T(3);
+  if (tgt.kind === 'dummy') { tgt.hp = tgt.stats.maxHp; world.emit('reset', { id: tgt.id }); return; } // hình nộm hồi đầy
+  tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.deadTick = world.tick;
   tgt.dash = null; tgt.moveDir = { x: 0, y: 0 }; tgt.attacking = false; tgt.statuses = []; tgt.shields = [];
   if (src) src.kills++;
+  if (tgt.structure) { world.emit('structureDown', { id: tgt.id, sid: tgt.sid, team: tgt.team, kind: tgt.kind }); return; }
+  if (tgt.kind === 'hero') tgt.respawnTick = world.tick + T(3);
   world.emit('death', { id: tgt.id, killer: src?.id });
 }
 

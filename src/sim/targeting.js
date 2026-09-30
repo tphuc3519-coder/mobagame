@@ -1,9 +1,9 @@
 import { dist, dirTo } from './util.js';
 import { isStealthed, isUntargetable } from './status.js';
 
-export const isTargetable = (viewer, t) => t.alive && !isUntargetable(t) && (t.team === viewer.team || !isStealthed(t));
-export const enemiesOf = (world, e) => world.entities.filter((t) => t.team !== e.team && t.alive && !isUntargetable(t));
-export const alliesOf = (world, e, range = Infinity) => world.entities.filter((t) => t.team === e.team && t.alive && t !== e && dist(t.pos, e.pos) <= range);
+export const isTargetable = (viewer, t) => t.alive && !t.noTarget && !isUntargetable(t) && (t.team === viewer.team || !isStealthed(t));
+export const enemiesOf = (world, e) => world.entities.filter((t) => t.team !== e.team && t.alive && !t.noTarget && !isUntargetable(t));
+export const alliesOf = (world, e, range = Infinity) => world.entities.filter((t) => t.team === e.team && t.alive && !t.structure && t !== e && dist(t.pos, e.pos) <= range);
 
 /** Địch gần nhất trong tầm (tính bán kính mục tiêu); ưu tiên id truyền vào. */
 export function nearestEnemy(world, e, range, preferId = null) {

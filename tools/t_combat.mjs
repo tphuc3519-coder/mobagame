@@ -7,7 +7,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'ĐẠT ' : 'LỖI 
 const near = (a, b, tol = 0.6) => Math.abs(a - b) <= tol;
 
 function setup(heroId, dummyDx = 300) {
-  const w = createWorld({ map: DUEL, seed: 7 });
+  const w = createWorld({ map: DUEL, seed: 7, structures: false, waves: false });
   const p = w.spawnHero(heroId, 0, { x: 1000, y: 1200 });
   const d = w.spawnDummy(1, { x: 1000 + dummyDx, y: 1200 });
   p.skillLevels.s1 = p.skillLevels.s2 = p.skillLevels.s3 = 1; // học đủ ở cấp kỹ năng 1

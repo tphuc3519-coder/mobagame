@@ -8,6 +8,7 @@ const flat = (m) => { m.rotation.x = -Math.PI / 2; m.renderOrder = 2; return m; 
 export function createFx(scene) {
   const projs = new Map();
   const rings = [];
+  const towerRings = new Map();
   const ballGeo = new THREE.SphereGeometry(1, 10, 8);
 
   const ring = (x, z, r, life, color, o = {}) => {
@@ -32,7 +33,16 @@ export function createFx(scene) {
         else if (ev.type === 'cone') cone(ev, c);
       }
     },
-    update(world, dt) {
+    update(world, dt, player) {
+      // vòng tầm bắn của trụ địch: hiện khi tướng mình lại gần 900, đỏ khi đang nhắm mình (03 §A4 luật 7)
+      for (const s2 of world.entities) {
+        if (!s2.structure || s2.noTarget || s2.team === player.team) continue;
+        let r = towerRings.get(s2.id);
+        if (!r) { r = flat(new THREE.Mesh(new THREE.RingGeometry(s2.stats.range - 8, s2.stats.range, 64), add(0xffffff, 0.5))); r.visible = false; r.position.set(s2.pos.x, 3, s2.pos.y); scene.add(r); towerRings.set(s2.id, r); }
+        const d = Math.hypot(player.pos.x - s2.pos.x, player.pos.y - s2.pos.y);
+        r.visible = s2.alive && player.alive && d < s2.stats.range + 900;
+        r.material.color.setHex(s2.streakTarget === player.id && world.tick < s2.attackReady + 30 ? 0xff3a2a : 0xffd27a);
+      }
       // đạn
       const seen = new Set();
       for (const p of world.projectiles) {
