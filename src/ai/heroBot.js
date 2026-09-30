@@ -112,7 +112,7 @@ function think(bot) {
   if (cov && !tankedBy(world, cov, e.team)) spot = { x: cov.pos.x - sign * (cov.stats.range + cfg.towerMargin + 40), y: spot.y };
   let hit = target;
   const defenders = tower ? theirs.filter((m) => dist(m.pos, tower.pos) < tower.stats.range + 100).length : 0;
-  const pushing = !foe?.alive || !foeSeen || fd > 1500 || (defenders <= 1 && h > 0.45); // đối thủ vắng hoặc trụ chỉ còn ít lính giữ: dồn trụ
+  const pushing = !foe?.alive || !foeSeen || fd > 1500 || (defenders <= 1 && h > 0.45) || (world.tick > 30 * 60 * 16 && h > 0.6); // cuối trận hoặc đối thủ vắng hoặc trụ chỉ còn ít lính giữ: dồn trụ
   if ((!target || pushing) && tower && (tankedBy(world, tower, e.team) || (!foe?.alive && h > 0.5 && tower.hp < tower.stats.maxHp * 0.25)) && (pushing || !target) && dist(tower.pos, e.pos) < tower.stats.range + 400) { hit = tower; spot = { x: tower.pos.x - sign * (e.stats.range * 0.7 + tower.radius), y: tower.pos.y }; }
   move(bot, spot, 40);
   attack(bot, hit);
