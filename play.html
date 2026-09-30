@@ -1,0 +1,46 @@
+
+<title>Lantern Arena</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0f1224; color: #f3e9d6; font: 14px system-ui, sans-serif; overflow: hidden; }
+  body { touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; -webkit-touch-callout: none; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #hud { pointer-events: none; }
+  #fs { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 5; background: #171b33cc; color: inherit; border: 1px solid #2a3050; border-radius: 6px; padding: 6px 10px; font: inherit; }
+  #skills { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); width: 330px; height: 250px; z-index: 4; }
+  .sb { position: absolute; border-radius: 50%; border: 2px solid #f3e9d6aa; background: #171b33d9; color: #f3e9d6; font: 700 13px system-ui, sans-serif; overflow: hidden; touch-action: none; display: grid; place-items: center; padding: 0; }
+  .sb.down { transform: scale(0.94); border-color: #ffb84d; }
+  .atk { right: 0; bottom: 0; width: 96px; height: 96px; background: #4a2226d9; font-size: 16px; }
+  .sk { width: 66px; height: 66px; }
+  .sk[data-k="s1"] { right: 112px; bottom: 6px; } .sk[data-k="s2"] { right: 96px; bottom: 82px; } .sk[data-k="s3"] { right: 20px; bottom: 112px; width: 72px; height: 72px; }
+  .cd { position: absolute; left: 0; right: 0; bottom: 0; background: #0009; pointer-events: none; }
+  .cdt { position: absolute; font-size: 18px; pointer-events: none; }
+  .nm { position: relative; z-index: 1; } .cooling .nm { opacity: 0; }
+  .sk.nomana { border-color: #4a9cff; color: #7ab4ff; } .sk.locked { opacity: 0.45; }
+  .lvl { position: absolute; top: -2px; right: -2px; width: 26px; height: 26px; border-radius: 50%; background: #ffb84d; color: #1a1200; font-style: normal; display: none; place-items: center; font-size: 18px; z-index: 3; }
+  .pips { position: absolute; bottom: 3px; font-size: 7px; letter-spacing: 1px; color: #ffb84d; text-decoration: none; }
+  .cancel { position: absolute; right: 60px; top: -60px; background: #ff5a4acc; color: #fff; padding: 6px 14px; border-radius: 6px; font: 700 13px system-ui, sans-serif; }
+  #lab { position: fixed; left: 50%; transform: translateX(-50%); top: max(8px, env(safe-area-inset-top)); z-index: 5; display: flex; gap: 6px; }
+  #lab select, #lab button { background: #171b33cc; color: #f3e9d6; border: 1px solid #2a3050; border-radius: 6px; padding: 5px 9px; font: 12px system-ui, sans-serif; }
+  #result { position: fixed; inset: 0; z-index: 9; display: none; place-items: center; text-align: center; background: #0f1224cc; }
+  #result.on { display: grid; } #result h2 { font-size: 56px; margin: 0; letter-spacing: 0.1em; color: #ffb84d; }
+  #result button { margin-top: 16px; font: 700 15px system-ui, sans-serif; padding: 10px 22px; border-radius: 8px; border: 1px solid #ffb84d; background: #171b33; color: #f3e9d6; }
+  #rotate, #lost { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; text-align: center; background: #0f1224; padding: 24px; }
+  #lost.on { display: grid; }
+  @media (orientation: portrait) { #rotate { display: grid; } }
+</style>
+
+
+<canvas id="world"></canvas>
+<canvas id="hud"></canvas>
+<button id="fs" type="button">Toàn màn hình</button>
+<div id="lab"></div>
+<div id="result"><div><h2></h2><p></p><button id="again" type="button">Chơi lại</button></div></div>
+<div id="skills"></div>
+<div id="rotate"><div><div style="font-size:40px">⟳</div>Xoay ngang thiết bị để chơi</div></div>
+<div id="lost">Đang khôi phục đồ hoạ…</div>
+<script type="importmap">
+{ "imports": { "three": "./lib/three/build/three.module.js", "three/addons/": "./lib/three/examples/jsm/" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+
+

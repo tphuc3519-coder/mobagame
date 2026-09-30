@@ -12,7 +12,14 @@ export function loadHero(id) {
     try {
       const base = `./assets/heroes/${id}/`;
       const art = await (await fetch(base + 'hero.art.json')).json();
-      const gltf = await loader.loadAsync(base + art.model);
+      let gltf;
+      try { gltf = await loader.loadAsync(base + art.model); }
+      catch (_) { // máy chủ không phục vụ .glb (trang xem trước đăng dạng artifact): dùng bản base64 .glb.json
+        const j = await (await fetch(base + art.model + '.json')).json();
+        const bin = atob(j.b64), buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        gltf = await loader.parseAsync(buf.buffer, base);
+      }
       return { art, gltf };
     } catch (e) { console.warn('Không nạp được model', id, e.message); return null; }
   })();
