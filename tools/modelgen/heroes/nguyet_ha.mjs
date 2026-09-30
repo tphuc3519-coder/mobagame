@@ -1,4 +1,4 @@
-// Nguyệt Hà — Người Dẫn Sông Trăng (09 §4.9)
+// Moonstream — Guide of the Moon River (09 §4.9)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { swayChain, tube, ribbon, dangle, handPos, band, wy } from '../parts.mjs';
 import { smooth } from '../kit.mjs';
@@ -6,7 +6,7 @@ import { smooth } from '../kit.mjs';
 const C = { skin: '#f3dccd', hair: '#e2e8f4', hair2: '#a8c2ea', robe: '#1d2b64', robe2: '#0f1a44', blue: '#8fd3ff', pale: '#e8f4ff', gold: '#c9a24a' };
 
 export default {
-  name: 'Nguyệt Hà', glow: '#8fd3ff',
+  name: 'Moonstream', glow: '#8fd3ff',
   palette: ['#1d2b64', '#8fd3ff', '#e8f4ff', '#c9a24a'], rim: '#8fd3ff',
   hitTime: { Attack1: 0.3, Attack2: 0.3 },
   anim: { style: { atk1: 'pushR', atk2: 'pushL', cast1: 'push2', cast2: 'sweep2', ult: 'raise2' }, run: { amp: 30, arm: 0.5, bob: 0.014, lean: 6 }, idle: 'float', moveSpeed: 315, swayAmp: 8 },

@@ -1,4 +1,4 @@
-// Lồng Đăng — Người Giữ Đèn (09 §4.15)
+// Lanternward — The Lamp Keeper (09 §4.15)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { jacket, sleeves, boots } from '../costume.mjs';
 import { swayChain, tube } from '../parts.mjs';
@@ -6,7 +6,7 @@ import { swayChain, tube } from '../parts.mjs';
 const C = { ivory: '#fff1d8', ivory2: '#f3dcb4', gold: '#e2b04a', red: '#d8452f', hair: '#1c1620', wood: '#7a5230', shade: '#2b2b52', skin: '#f2cdb0' };
 
 export default {
-  name: 'Lồng Đăng', glow: '#ffb347',
+  name: 'Lanternward', glow: '#ffb347',
   palette: ['#fff4e0', '#ffc15e', '#e0513b', '#2b2b52'], rim: '#ffc15e',
   hitTime: { Attack1: 0.3, Attack2: 0.27 },
   anim: { style: { atk1: 'swingR', atk2: 'chopR', cast1: 'pushR', cast2: 'sweep2', ult: 'raise2' }, run: { hold: 'R', amp: 33, arm: 0.55, bob: 0.018 }, swayAmp: 8, moveSpeed: 315 },

@@ -1,6 +1,6 @@
 # Quyết định
 
-- 2026-09-30 (Mốc 1): thay file thử `assets/test/test_character.glb` bằng chính model Hoả Rèn do `tools/modelgen` sinh (`assets/heroes/hoa_ren/`), vì đã có sẵn clip Idle/Run đúng chuẩn. Không cần tải bộ CC0.
+- 2026-09-30 (Mốc 1): thay file thử `assets/test/test_character.glb` bằng chính model Emberforge do `tools/modelgen` sinh (`assets/heroes/hoa_ren/`), vì đã có sẵn clip Idle/Run đúng chuẩn. Không cần tải bộ CC0.
 - 2026-09-30 (Mốc 1): giới hạn FPS vẽ bằng cách bỏ khung hình (30 ở mức Thấp), mô phỏng luôn 30Hz cố định.
 - 2026-09-30 (Mốc 1): tướng bị giữ trong đường (y 750–1650) và trong bản đồ; tường, bụi, khe nước chưa chặn (Mốc 3).
 - 2026-09-30: GLB xuất mét, `hero.art.json.scale = 100` để ra cm trong thế giới.
@@ -10,7 +10,7 @@
 - 2026-09-30 (Mốc 2): 6 tướng Alpha có engine đầy đủ; 14 tướng port và 10 tướng còn lại giữ dạng khai báo. Kỹ năng kiểu `recast`, `tether`, `trap`, `targetedDash`, `line` chưa có handler (chưa cần cho Alpha).
 - Hình nộm có 6000 HP, giáp/KP 30, hồi đầy sau 5s không bị đánh; chết thì hồi đầy ngay.
 - Đòn đánh chỉ ra đòn khi mục tiêu đã trong tầm (chưa tự đuổi); nút Đánh giữ để đánh liên tục.
-- Ba ví dụ tính tay công thức sát thương (đều nằm trong `tools/t_combat.mjs`): Hoả Rèn K1 cấp 1 = (70 + 1.0×68)×100/130 = 106.15; Nguyệt Hà K1 = 80×100/130 = 61.54 phép; Thạch Quy K2 = (50 + 4%×1000)×100/130 = 69.23.
+- Ba ví dụ tính tay công thức sát thương (đều nằm trong `tools/t_combat.mjs`): Emberforge K1 cấp 1 = (70 + 1.0×68)×100/130 = 106.15; Moonstream K1 = 80×100/130 = 61.54 phép; Mossback K2 = (50 + 4%×1000)×100/130 = 69.23.
 - 2026-09-30 (Mốc 3): trụ 1v1 dùng chỉ số ở 03 §B2 (HP 3200/3800/5000); 'nhà chính' đóng vai trụ nhà nên bất tử tới khi trụ trong vỡ; giáp trụ 80/90/100, không có giáp bảo vệ 4 phút.
 - Lính: chưa cho vàng/KN (Mốc 4); model lính là khối đơn giản, mỗi lính vài draw call (chưa InstancedMesh) — 16 lính đồng thời ổn; sẽ instancing khi lên 5v5.
 - Tướng bị giữ trong đường, không đi vào khe hở tường (bãi quái ở Mốc 6); lưới đi được đã dựng sẵn từ tường/biên.
@@ -23,13 +23,13 @@
 - Bùa: trang mặc định theo vai (`PAGE_BY_ROLE`), cộng phẳng vào chỉ số; chưa có UI chỉnh bùa. Kiểm thử sát thương dùng `world.debug.bare(e)` để bỏ bùa/đồ.
 - Chí mạng dùng `world.rng` (tất định), sát thương chí mạng gốc ×1.75 (+50% từ Dao Trăng Khuyết); tối đa giảm hồi chiêu 40%, kháng hiệu ứng 80%, xuyên giáp 80%.
 - Hút máu chỉ tính đòn đánh thường (vật lý); hút máu phép chỉ tính sát thương phép của kỹ năng.
-- Tên đồ trong `recommendedBuild` của tướng port chưa có trong bảng chính thức được quy về đồ hợp lệ bằng `ALIAS` trong `data/items.js` (`kiem_nhanh`→Lưỡi Huyết Nguyệt…); Bóng Tre mang Thu Hoạch bị đổi sang Chớp Bước ở 1v1.
+- Tên đồ trong `recommendedBuild` của tướng port chưa có trong bảng chính thức được quy về đồ hợp lệ bằng `ALIAS` trong `data/items.js` (`kiem_nhanh`→Lưỡi Huyết Nguyệt…); Bamboo Shade mang Thu Hoạch bị đổi sang Chớp Bước ở 1v1.
 - HUD kiểu video tham khảo (bố cục, không sao chép hình): cửa hàng trượt từ trái với 6 tab, chi tiết + công thức bên phải; biểu tượng đồ/phép là SVG tự vẽ (hình theo chỉ số chính, viền theo bậc).
 - `stasis` (Bình Sương Đông) xếp cùng nhóm khống chế cứng để dừng di chuyển/đánh/ra chiêu; thêm `invuln` (Mặt Nạ Hồi Sinh) và `ccImmune` (Giải Trói).
 - 2026-09-30 (bản đồ đẹp): dựng môi trường bằng code trong `src/render/env/` (địa hình dốc + nhiễu, đường lát đá/gạch/cỏ vẽ canvas lúc chạy, sông shader chảy, cầu đá, tường rêu thấp 120, cây/đá/cỏ/hoa/bụi bằng InstancedMesh có gió, quầng đèn lồng, đom đóm, vòm trời). Không có file ảnh ngoài. Mật độ theo mức chất lượng (thấp 0.4 / vừa 0.7 / cao 1): ~66 draw call, ~110k–240k tam giác. Phía gần camera (nam) chỉ đặt vật thấp để không che HUD. Nhịp trận trong video tham khảo đã bị làm chậm nên không dùng làm chuẩn tốc độ.
 - 2026-09-30 (Mốc 5): bot 1v1 theo 06 §5 rút gọn: LANE/PUSH, FIGHT/KITE, RETREAT, RECALL, HEAL tại suối; lách quanh công trình bằng điểm bên hông (lưới A* chưa có công trình). Bot dùng RNG riêng seed theo (world.seed, id) → trận tất định.
 - Lính gây ×2.5 sát thương lên công trình (Xe Đá ×4) để đợt lính có sức đẩy; không có trong tài liệu, chỉnh ở `data/units.js` (`structureMult`).
-- Bot vs bot trung bình ~19 phút (tài liệu mong 6–10 phút với người); vài cặp (Lồng Đăng vs Bóng Tre) còn quá 40 phút. Cân bằng nhịp trận để Mốc 6.
+- Bot vs bot trung bình ~19 phút (tài liệu mong 6–10 phút với người); vài cặp (Lanternward vs Bamboo Shade) còn quá 40 phút. Cân bằng nhịp trận để Mốc 6.
 - Màn chọn tướng: chỉ 6 tướng Alpha chọn được, 14 tướng còn lại hiện "Sắp có". Chân dung thẻ chụp từ model lúc chạy (render target), không có file ảnh.
 - 2026-09-30 (model v3): thân người dựng bằng SDF (loft elip cho thân theo đúng số đo cũ + nón tròn tay chân, hoà trộn smooth-min), lưới surface-nets ô 1.3 cm rồi giảm còn ~8 nghìn tam giác bằng meshoptimizer; pháp tuyến từ gradient, AO khe nướng vào màu đỉnh, trọng số xương hoà theo khoảng cách tới từng khối. Tổng mỗi tướng 9–18 nghìn tam giác.
 - Toon ramp đổi từ 4 nấc cứng sang 2 tông mềm (bóng 60%) để mặt không loang lổ; phần phát sáng ×2.2 để bloom chỉ bắt chỗ đó.

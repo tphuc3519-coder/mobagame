@@ -15,7 +15,7 @@ Việc bạn (hoặc hoạ sĩ) làm song song, theo `11_HUONG_DAN_MODEL_3D.md`:
 | Khi code đang ở | Việc hình ảnh nên làm |
 |---|---|
 | Mốc 1 | Tải 1 nhân vật CC0 có animation để thử quy trình (11 §2) |
-| Mốc 2–4 | Chọn hướng làm model (mua / AI / thuê). Làm **1 tướng thử** (đề xuất Lồng Đăng) từ đầu tới cuối |
+| Mốc 2–4 | Chọn hướng làm model (mua / AI / thuê). Làm **1 tướng thử** (đề xuất Lanternward) từ đầu tới cuối |
 | Mốc 5–6 | Hoàn thành 6 tướng Alpha |
 | Mốc 7–11 | 10 tướng còn lại, lính, quái, mục tiêu lớn, trụ |
 | Mốc 12–14 | Splash + chân dung render từ model, icon kỹ năng, bản đồ vẽ tay |
@@ -29,7 +29,7 @@ Việc bạn (hoặc hoạ sĩ) làm song song, theo `11_HUONG_DAN_MODEL_3D.md`:
 - Chép Three.js r186 vào `lib/three/` (thư mục `build/` và các addon cần dùng trong `examples/jsm/`), import map trong `index.html`.
 - `main.js`, `core/*` (loop 30Hz + nội suy, rng, math, pool, events), `sim/world.js`, `sim/commands.js`, `sim/movement.js`.
 - `render/renderer.js, scene.js, camera.js, lights.js, quality.js, mapBuilder.js` (bản đồ 1v1 trống: mặt đất, đường, khe nước), `render/assets.js`, `render/animator.js`, `render/placeholder/capsule.js`, `render/shadows.js` (bóng tròn).
-- Một tướng (Hoả Rèn) dùng model giữ chỗ. **Thử quy trình model ngay:** nạp 1 file GLB CC0 có animation đặt ở `assets/test/test_character.glb` (người dùng tự tải, xem 11 §2), phát `Idle`/`Run` theo trạng thái di chuyển, `timeScale` theo tốc chạy.
+- Một tướng (Emberforge) dùng model giữ chỗ. **Thử quy trình model ngay:** nạp 1 file GLB CC0 có animation đặt ở `assets/test/test_character.glb` (người dùng tự tải, xem 11 §2), phát `Idle`/`Run` theo trạng thái di chuyển, `timeScale` theo tốc chạy.
 - Joystick động, bàn phím WASD cho máy tính. Lớp phủ "Xoay ngang thiết bị", nút toàn màn hình. Xử lý mất ngữ cảnh WebGL.
 - `?debug=1` hiện FPS, draw call, số tam giác.
 - `tools/model-check.html` theo 11 §8.2: chọn file GLB từ máy, hiện số tam giác/xương/vật liệu/texture/dung lượng so với ngân sách 09 §3 (xanh/đỏ), danh sách clip bấm để phát, thanh `timeScale`, mũi tên +Z, khối 1.8 m so tỉ lệ, nút chuyển sang góc camera trận.
@@ -91,11 +91,11 @@ Việc bạn (hoặc hoạ sĩ) làm song song, theo `11_HUONG_DAN_MODEL_3D.md`:
 **Đọc:** 03 (§A6, §A7), 05 (§6 Thu Hoạch, nanh_thu_rung)
 - 12 bãi quái, bùa Lam/Hoả (rơi khi chết), Thuồng Luồng, Thuồng Luồng Cổ, Hộ Vệ Đèn + Người Đá Đèn, Cá Chép Vàng. Kéo quái/reset. Ấn Thuồng Luồng. Thông báo toàn trận.
 
-**Xong khi:** đi hết một vòng rừng ở cấp 1 với Bóng Tre + Nanh Thú Rừng + Thu Hoạch mà không chết; mục tiêu lớn xuất hiện đúng giờ; buff hiện icon + thời gian trên HUD.
+**Xong khi:** đi hết một vòng rừng ở cấp 1 với Bamboo Shade + Nanh Thú Rừng + Thu Hoạch mà không chết; mục tiêu lớn xuất hiện đúng giờ; buff hiện icon + thời gian trên HUD.
 
 ### Mốc 9 — Tầm nhìn
 **Đọc:** 02 (§9), 03 (§A8 bụi cỏ), 07 (§9 minimap)
-- `vision.js`, lớp sương mù (`render/fog.js`), bụi cỏ ẩn đơn vị, bẫy tàng hình, tàng hình Bóng Tre. Minimap chỉ hiện thứ thấy được. Bot chỉ dùng thông tin thấy được.
+- `vision.js`, lớp sương mù (`render/fog.js`), bụi cỏ ẩn đơn vị, bẫy tàng hình, tàng hình Bamboo Shade. Minimap chỉ hiện thứ thấy được. Bot chỉ dùng thông tin thấy được.
 
 **Xong khi:** đứng trong bụi thì bot không nhắm được mình; đánh từ bụi bị lộ 1s; FPS không giảm quá 5 so với Mốc 8.
 

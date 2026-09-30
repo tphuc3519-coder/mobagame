@@ -1,4 +1,4 @@
-// Hoả Rèn — Thợ Rèn Làng Lò (09 §4.4)
+// Emberforge — Blacksmith of Furnace Village (09 §4.4)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { belt, boots, flaps } from '../costume.mjs';
 import { swayChain, tube, ribbon, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
@@ -6,7 +6,7 @@ import { swayChain, tube, ribbon, curve, band, orient, along, place, handPos, wy
 const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e', iron2: '#45454c', leather: '#7a4524', leather2: '#4a2814', hair: '#2a1810', gold: '#ffd166', ember: '#ff7a1a' };
 
 export default {
-  name: 'Hoả Rèn', glow: '#ff5a10',
+  name: 'Emberforge', glow: '#ff5a10',
   palette: ['#2a2a2e', '#ff7a1a', '#ffd166', '#6b3b1e'], rim: '#ff7a1a',
   hitTime: { Attack1: 0.3, Attack2: 0.26 },
   anim: { style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' }, run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6 },

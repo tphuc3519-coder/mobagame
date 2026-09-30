@@ -1,6 +1,6 @@
-// Cánh Diều — Cung Thủ Theo Gió (04 §6.12). Đòn thứ tư bắn đôi, lướt thả diều.
+// Kitewing — Windchasing Archer (04 §6.12). Đòn thứ tư bắn đôi, lướt thả diều.
 export default {
-  id: 'canh_dieu', name: 'Cánh Diều', title: 'Cung Thủ Theo Gió', roles: ['marksman'], lanes: ['river'], difficulty: 1, resource: 'mana', radius: 36,
+  id: 'canh_dieu', name: 'Kitewing', title: 'Windchasing Archer', roles: ['marksman'], lanes: ['river'], difficulty: 1, resource: 'mana', radius: 36,
   base: { maxHp: 620, maxMana: 300, atk: 64, ap: 0, armor: 20, mr: 26, atkSpeed: 0.72, moveSpeed: 325, range: 600 },
   perLevel: { maxHp: 82, maxMana: 30, atk: 6, armor: 2.8, mr: 1.5, atkSpeedPct: 0.03 },
   basicAttack: { projectile: { speed: 2200 }, delay: 0.36 },

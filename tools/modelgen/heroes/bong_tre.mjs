@@ -1,4 +1,4 @@
-// Bóng Tre — Sát Thủ Rừng Tre (09 §4.7)
+// Bamboo Shade — Bamboo Forest Assassin (09 §4.7)
 import { humanoid, BONE } from '../humanoid.mjs';
 import { jacket, sleeves, belt, boots } from '../costume.mjs';
 import { swayChain, tube, dangle, leaf, handPos, along, place, orient, band, flap } from '../parts.mjs';
@@ -6,7 +6,7 @@ import { swayChain, tube, dangle, leaf, handPos, along, place, orient, band, fla
 const C = { skin: '#e6bf9d', green: '#24452f', green2: '#182f21', dark: '#0f1a14', leaf: '#6fbf73', dry: '#d8e8b0', straw: '#dcc98a', straw2: '#a89a5c', steel: '#b9d4c0' };
 
 export default {
-  name: 'Bóng Tre', glow: '#9dff9d',
+  name: 'Bamboo Shade', glow: '#9dff9d',
   palette: ['#1f3b2a', '#6fbf73', '#d8e8b0', '#0f1a14'], rim: '#6fbf73',
   hitTime: { Attack1: 0.2, Attack2: 0.2 },
   anim: { style: { atk1: 'jabR', atk2: 'jabL', cast1: 'slashR', cast2: 'spin', ult: 'slashCombo' }, run: { amp: 41, arm: 0.9, bob: 0.022, lean: 15 }, idle: 'sneak', moveSpeed: 345, swayAmp: 10 },

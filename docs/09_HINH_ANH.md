@@ -18,7 +18,7 @@ Lộ trình hình ảnh:
 | Beta | 6 tướng Alpha có model thật (mua/AI/thuê) | Dựng từ dữ liệu + tài nguyên trang trí |
 | 1.0 | Đủ 16 tướng, lính, quái, mục tiêu lớn | Bản đồ vẽ tay nướng sáng |
 
-Nếu bạn thuê được hoạ sĩ, nên đặt **1 tướng trước** (ví dụ Lồng Đăng) để thử toàn bộ quy trình từ file gửi tới lúc chạy trong game, rồi mới đặt các tướng còn lại.
+Nếu bạn thuê được hoạ sĩ, nên đặt **1 tướng trước** (ví dụ Lanternward) để thử toàn bộ quy trình từ file gửi tới lúc chạy trong game, rồi mới đặt các tướng còn lại.
 
 ### Quy tắc khi dùng công cụ AI (ảnh hoặc 3D)
 - Đọc điều khoản của công cụ: gói đang dùng phải cho phép dùng thương mại.
@@ -110,7 +110,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 **Đuôi B — splash art** (sảnh, màn tải):
 > `, original character design, stylized realism, high-detail fantasy mobile game splash art, dramatic rim lighting, lantern festival night, painterly background with bokeh lights, no text, no logo, no watermark`
 
-### 4.1 Thạch Quy — Người Gác Đền Rêu Phủ
+### 4.1 Mossback — Guardian of the Mossy Temple
 - **Ngoại hình:** người khổng lồ lưng gù mang mai rùa đá phủ rêu, khắc hoa văn trống đồng. Da như đá xám xanh có vết nứt phát sáng ngọc bích. Râu dài như rễ cây. Cao gấp rưỡi người thường.
 - **Màu:** `#4b5a4a` đá rêu, `#7fd1a8` ngọc, `#c9a24a` đồng, `#2b2f3a` bóng.
 - **Vũ khí:** cột đá đền chạm rồng, quấn xích đồng.
@@ -134,7 +134,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Hiệu ứng:** rễ chui lên khỏi đất; khiên lá xoay; K3 rừng rễ mọc thành vòng tròn.
 - **Prompt:** `ancient banyan tree spirit in humanoid form, twisted bark body, hanging aerial roots forming hair and cloak, serene carved wooden mask face, tiny paper lanterns hanging from shoulder branches, leaf-topped wooden staff, arms spread as roots rise from the ground into a protective dome, fireflies`
 
-### 4.4 Hoả Rèn — Thợ Rèn Làng Lò
+### 4.4 Emberforge — Blacksmith of Furnace Village
 - **Ngoại hình:** thợ rèn cơ bắp, tạp dề da cháy sém, găng tay sắt, tóc buộc cao, mắt ánh lửa, cánh tay có đường vân kim loại nóng đỏ khi tích Nhiệt.
 - **Màu:** `#2a2a2e` sắt đen, `#ff7a1a` lửa, `#ffd166`, `#6b3b1e` da.
 - **Vũ khí:** búa rèn lớn, đầu búa nung đỏ, cán quấn da.
@@ -158,7 +158,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Hiệu ứng:** vết cào đỏ; sóng tru dạng vòng; K3 hào quang đỏ, mắt để lại vệt sáng khi chạy.
 - **Prompt:** `werewolf warrior with silver-grey fur and a thick mane, hide and bone armor, golden eyes, steel claw gauntlets, howling on a cliff edge, huge crimson moon behind, wind whipping the mane`
 
-### 4.7 Bóng Tre — Sát Thủ Rừng Tre
+### 4.7 Bamboo Shade — Bamboo Forest Assassin
 - **Ngoại hình:** sát thủ nữ, áo bó màu lục đậm, khăn che nửa mặt, nón lá tre cắt vát, lá tre khô gắn trên vai áo.
 - **Màu:** `#1f3b2a`, `#6fbf73`, `#d8e8b0` lá khô, `#0f1a14`.
 - **Vũ khí:** hai dao ngắn hình lá tre.
@@ -174,7 +174,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Hiệu ứng:** sóng âm hình nón tím; dấu vọng là vòng sóng nhỏ trên đầu địch; K3 bầy dơi tím xoáy.
 - **Prompt:** `young man with black-violet hair, high-collared cloak edged like bat wings, eyes closed, small bell earrings, long clawed right hand, floating upside down in a cave, cloak spread like wings, violet sonic rings spreading outward, swarm of small bats`
 
-### 4.9 Nguyệt Hà — Người Dẫn Sông Trăng
+### 4.9 Moonstream — Guide of the Moon River
 - **Ngoại hình:** pháp sư nữ tóc bạc dài chạm đất, áo lụa xanh đêm có hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người.
 - **Màu:** `#1d2b64`, `#8fd3ff`, `#e8f4ff`, `#c9a24a`.
 - **Vũ khí:** không; điều khiển nước bằng tay và dải lụa.
@@ -198,7 +198,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Hiệu ứng:** hạt độc xanh lục nổ; dây leo trói; K3 đầm độc với hoa sen nở.
 - **Prompt:** `young woman in a pink-violet lotus petal outfit, lotus-leaf skirt, lotus stamens in her hair, vines wrapped around her arms, toxic green eyes, glowing lotus bud in her hand, sitting on a giant lotus leaf in a dark swamp, green poisonous mist rising, floating petals`
 
-### 4.12 Cánh Diều — Cung Thủ Theo Gió
+### 4.12 Kitewing — Windchasing Archer
 - **Ngoại hình:** cung thủ nam trẻ, áo ngắn kiểu phi công cổ điển, kính bảo hộ đẩy lên trán, khăn quàng dài, lưng đeo diều gấp làm cánh.
 - **Màu:** `#2b6cb0`, `#f6ad55`, `#fff5e1`, `#1a202c`.
 - **Vũ khí:** cung gỗ tre cong với dây gió phát sáng.
@@ -222,7 +222,7 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Hiệu ứng:** tên xuyên có vệt đồng xanh; bẫy tre hình chữ V; K3 ba mũi tên toả hình quạt.
 - **Prompt:** `stern female crossbow sharpshooter, light verdigris-bronze armor, small winged helmet, short cape, bronze monocle scope, ornate bronze repeating crossbow, kneeling on a fortress wall aiming through the monocle, three glowing bolts loaded`
 
-### 4.15 Lồng Đăng — Người Giữ Đèn
+### 4.15 Lanternward — The Lamp Keeper
 - **Ngoại hình:** cô gái dịu dàng, áo dài trắng ngà viền vàng, tóc đen dài thắt dải lụa, cầm đèn lồng giấy lớn phát sáng ấm, đom đóm bay quanh.
 - **Màu:** `#fff4e0`, `#ffc15e`, `#e0513b`, `#2b2b52`.
 - **Vũ khí:** đèn lồng treo trên cán gỗ dài.

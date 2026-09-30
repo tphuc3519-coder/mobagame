@@ -85,7 +85,7 @@ score = 2 + 3·min(kda,6)/6 + 3·part + 2·dmg + 1.5·tank + 1.5·gold + 1.5·ob
 | **Gạo Hội** | Vật phẩm sự kiện, đổi quà sự kiện | Nhận thưởng sự kiện (vd. ảnh 2 hiện "Gạo ×8") |
 
 - **Cấp tài khoản**: KN tài khoản = 60 mỗi trận thắng, 40 mỗi trận thua. Cấp 1–30. Mở Đấu hạng ở cấp 6 (offline có thể bỏ qua trong cài đặt).
-- **Tướng khởi đầu**: 6 tướng Alpha (Thạch Quy, Hoả Rèn, Bóng Tre, Nguyệt Hà, Cánh Diều, Lồng Đăng). Các tướng khác mở bằng Xu Đèn hoặc tuần miễn phí (4 tướng xoay vòng mỗi tuần theo seed).
+- **Tướng khởi đầu**: 6 tướng Alpha (Mossback, Emberforge, Bamboo Shade, Moonstream, Kitewing, Lanternward). Các tướng khác mở bằng Xu Đèn hoặc tuần miễn phí (4 tướng xoay vòng mỗi tuần theo seed).
 - **Rương**: "Đấu tiếp N trận sẽ nhận được rương" — mỗi 3 trận (bất kỳ chế độ) được 1 rương thường: Xu Đèn 50–200, Mảnh Tướng 1–5, 15% ra Bùa Giữ Sao (MVP thua).
 
 ## 6. Nhiệm vụ (`data/missions.js`)

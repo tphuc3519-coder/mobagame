@@ -1,6 +1,6 @@
-// Hoả Rèn — Thợ Rèn Làng Lò (04 §6.4). Đánh càng lâu càng nóng, đủ 5 Nhiệt thì nổ.
+// Emberforge — Blacksmith of Furnace Village (04 §6.4). Đánh càng lâu càng nóng, đủ 5 Nhiệt thì nổ.
 export default {
-  id: 'hoa_ren', name: 'Hoả Rèn', title: 'Thợ Rèn Làng Lò', roles: ['fighter'], lanes: ['temple'], difficulty: 1, resource: 'mana', radius: 42,
+  id: 'hoa_ren', name: 'Emberforge', title: 'Blacksmith of Furnace Village', roles: ['fighter'], lanes: ['temple'], difficulty: 1, resource: 'mana', radius: 42,
   base: { maxHp: 880, maxMana: 300, atk: 68, ap: 0, armor: 30, mr: 30, atkSpeed: 0.68, moveSpeed: 320, range: 170 },
   perLevel: { maxHp: 105, maxMana: 32, atk: 6.5, armor: 3.6, mr: 2, atkSpeedPct: 0.02 },
   basicAttack: { melee: true, delay: 0.28 },

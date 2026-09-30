@@ -1,6 +1,6 @@
-// Nguyệt Hà — Người Dẫn Sông Trăng (04 §6.9). Kiểm soát vùng từ xa.
+// Moonstream — Guide of the Moon River (04 §6.9). Kiểm soát vùng từ xa.
 export default {
-  id: 'nguyet_ha', name: 'Nguyệt Hà', title: 'Người Dẫn Sông Trăng', roles: ['mage'], lanes: ['mid'], difficulty: 1, resource: 'mana', radius: 36,
+  id: 'nguyet_ha', name: 'Moonstream', title: 'Guide of the Moon River', roles: ['mage'], lanes: ['mid'], difficulty: 1, resource: 'mana', radius: 36,
   base: { maxHp: 640, maxMana: 480, atk: 50, ap: 0, armor: 20, mr: 28, atkSpeed: 0.62, moveSpeed: 315, range: 540 },
   perLevel: { maxHp: 78, maxMana: 48, atk: 3.2, armor: 2.8, mr: 1.6, atkSpeedPct: 0.012 },
   basicAttack: { projectile: { speed: 1800 }, delay: 0.3 },

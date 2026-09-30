@@ -67,21 +67,21 @@ Hồi máu/mana chung: HP hồi `40 (+4/cấp)` mỗi 5s; mana hồi `25 (+2.5/c
 
 | id | Tướng | Vai | Đường | Khó | HP | +HP | Mana | +Mana | Công | +Công | Giáp | +Giáp | KP | +KP | Tốc đánh | +TĐ/cấp | Chạy | Tầm |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| thach_quy | Thạch Quy | Đỡ đòn / Trợ thủ | Đền, Hỗ trợ | ★ | 1000 | 130 | 320 | 35 | 58 | 4.5 | 36 | 4.2 | 32 | 2.2 | 0.62 | 1.5% | 310 | 160 |
+| thach_quy | Mossback | Đỡ đòn / Trợ thủ | Đền, Hỗ trợ | ★ | 1000 | 130 | 320 | 35 | 58 | 4.5 | 36 | 4.2 | 32 | 2.2 | 0.62 | 1.5% | 310 | 160 |
 | trau_dong | Trâu Đồng | Đỡ đòn / Đấu sĩ | Đền | ★ | 1020 | 125 | 300 | 30 | 62 | 5 | 34 | 4 | 32 | 2 | 0.64 | 1.5% | 315 | 170 |
 | co_thu | Cổ Thụ | Đỡ đòn / Trợ thủ | Hỗ trợ | ★★ | 980 | 125 | 380 | 40 | 52 | 3.5 | 34 | 4 | 34 | 2.4 | 0.60 | 1.2% | 305 | 180 |
-| hoa_ren | Hoả Rèn | Đấu sĩ | Đền | ★ | 880 | 105 | 300 | 32 | 68 | 6.5 | 30 | 3.6 | 30 | 2 | 0.68 | 2% | 320 | 170 |
+| hoa_ren | Emberforge | Đấu sĩ | Đền | ★ | 880 | 105 | 300 | 32 | 68 | 6.5 | 30 | 3.6 | 30 | 2 | 0.68 | 2% | 320 | 170 |
 | kiem_may | Kiếm Mây | Đấu sĩ / Sát thủ | Đền, Rừng | ★★★ | 820 | 98 | Không | – | 70 | 7 | 28 | 3.4 | 28 | 1.8 | 0.70 | 2.5% | 330 | 170 |
 | soi_nui | Sói Núi | Đấu sĩ | Rừng, Đền | ★★ | 860 | 102 | Không | – | 72 | 7 | 27 | 3.3 | 27 | 1.8 | 0.72 | 2.8% | 335 | 160 |
-| bong_tre | Bóng Tre | Sát thủ | Rừng | ★★ | 700 | 85 | 260 | 25 | 74 | 7.5 | 24 | 3 | 26 | 1.6 | 0.78 | 2.8% | 345 | 160 |
+| bong_tre | Bamboo Shade | Sát thủ | Rừng | ★★ | 700 | 85 | 260 | 25 | 74 | 7.5 | 24 | 3 | 26 | 1.6 | 0.78 | 2.8% | 345 | 160 |
 | doi_dem | Dơi Đêm | Sát thủ / Pháp sư | Rừng, Giữa | ★★★ | 680 | 82 | 380 | 40 | 55 | 4 | 22 | 3 | 28 | 1.8 | 0.65 | 1.5% | 340 | 450 |
-| nguyet_ha | Nguyệt Hà | Pháp sư | Giữa | ★ | 640 | 78 | 480 | 48 | 50 | 3.2 | 20 | 2.8 | 28 | 1.6 | 0.62 | 1.2% | 315 | 540 |
+| nguyet_ha | Moonstream | Pháp sư | Giữa | ★ | 640 | 78 | 480 | 48 | 50 | 3.2 | 20 | 2.8 | 28 | 1.6 | 0.62 | 1.2% | 315 | 540 |
 | sam_trong | Sấm Trống | Pháp sư | Giữa | ★★ | 660 | 80 | 460 | 46 | 52 | 3.2 | 21 | 2.8 | 28 | 1.6 | 0.62 | 1.2% | 315 | 520 |
 | hoa_doc | Hoa Độc | Pháp sư / Trợ thủ | Giữa, Hỗ trợ | ★★ | 650 | 80 | 470 | 45 | 50 | 3 | 21 | 2.8 | 29 | 1.7 | 0.62 | 1.2% | 315 | 520 |
-| canh_dieu | Cánh Diều | Xạ thủ | Sông | ★ | 620 | 82 | 300 | 30 | 64 | 6 | 20 | 2.8 | 26 | 1.5 | 0.72 | 3% | 325 | 600 |
+| canh_dieu | Kitewing | Xạ thủ | Sông | ★ | 620 | 82 | 300 | 30 | 64 | 6 | 20 | 2.8 | 26 | 1.5 | 0.72 | 3% | 325 | 600 |
 | phao_hoa | Pháo Hoa | Xạ thủ | Sông | ★★ | 610 | 80 | 300 | 30 | 62 | 6.2 | 20 | 2.8 | 26 | 1.5 | 0.70 | 3% | 320 | 580 |
 | trang_no | Trạng Nỏ | Xạ thủ | Sông | ★★ | 600 | 78 | 320 | 32 | 66 | 6.4 | 19 | 2.7 | 26 | 1.5 | 0.66 | 2.6% | 315 | 680 |
-| long_dang | Lồng Đăng | Trợ thủ | Hỗ trợ | ★ | 720 | 95 | 440 | 42 | 48 | 3 | 24 | 3.2 | 30 | 2 | 0.62 | 1.2% | 315 | 520 |
+| long_dang | Lanternward | Trợ thủ | Hỗ trợ | ★ | 720 | 95 | 440 | 42 | 48 | 3 | 24 | 3.2 | 30 | 2 | 0.62 | 1.2% | 315 | 520 |
 | moc_cam | Mộc Cầm | Trợ thủ / Pháp sư | Hỗ trợ | ★★ | 700 | 92 | 450 | 44 | 47 | 3 | 23 | 3 | 30 | 2 | 0.62 | 1.2% | 320 | 530 |
 
 Tướng có tầm ≥ 400 bắn đạn đánh thường (tốc đạn 1800). Tướng cận chiến gây sát thương ngay tại khung đánh (0.25s sau khi bắt đầu đòn).
@@ -92,7 +92,7 @@ Tướng có tầm ≥ 400 bắn đạn đánh thường (tốc đạn 1800). T�
 
 Định dạng mỗi kỹ năng: **Tên** (`type`, tầm, hồi chiêu, tiêu hao) — hiệu ứng.
 
-### 6.1 Thạch Quy — "Người Gác Đền Rêu Phủ" (Đỡ đòn)
+### 6.1 Mossback — "Guardian of the Mossy Temple" (Đỡ đòn)
 Cơ chế cốt lõi: **khiên tự hồi và khiêu khích cả đám đông.**
 - **Nội tại – Mai Đá:** sau 8s không nhận sát thương, nhận khiên 8% HP tối đa (không cộng dồn).
 - **K1 – Húc Núi** (`dash`, 450, CD 10/9.5/9/8.5/8/7.5s, 50 mana): lao tới, `stopOnHero`. Mục tiêu đầu tiên chịu `60 (+30) +6% HP` VL và bị hất tung 0.6s.
@@ -119,7 +119,7 @@ Cơ chế cốt lõi: **trói diện rộng, đứng yên để hồi máu.**
 - Combo bot: K3 → K1 → K2 cho đồng minh máu thấp nhất. Phép: Hồi Phục.
 - Build: `giay_tinh_tam, den_dong_hanh, giap_den_long, tim_co_thu, khien_da, ao_choang_suong`.
 
-### 6.4 Hoả Rèn — "Thợ Rèn Làng Lò" (Đấu sĩ)
+### 6.4 Emberforge — "Blacksmith of Furnace Village" (Đấu sĩ)
 Cơ chế cốt lõi: **đánh càng lâu càng nóng, tích đủ nhiệt thì nổ lớn.**
 - **Nội tại – Lò Nung:** mỗi đòn đánh hoặc kỹ năng trúng tướng: +1 Nhiệt (tối đa 5, tồn tại 4s). Mỗi Nhiệt +5% tốc đánh. Đủ 5: đòn đánh kế tiếp gây thêm 8% HP tối đa của mục tiêu dạng P và xoá Nhiệt.
 - **K1 – Vung Búa** (`cone`, 320, 100°, CD 6s, 30 mana): `70 (+35) +1.0 Công` VL, làm chậm 25% 1s.
@@ -146,7 +146,7 @@ Cơ chế cốt lõi: **càng mất máu càng hút máu mạnh.**
 - Combo bot: K1 → K2 → K3 khi giao tranh có ≥ 2 địch. Phép: Thu Hoạch khi đi Rừng, Trảm Hồn khi đi Đền.
 - Build: `nanh_thu_rung (nếu Rừng), giay_toc_chien, huyet_kiem, cung_gio, khien_da, mat_na_hoi_sinh`.
 
-### 6.7 Bóng Tre — "Sát Thủ Rừng Tre" (Sát thủ)
+### 6.7 Bamboo Shade — "Bamboo Forest Assassin" (Sát thủ)
 Cơ chế cốt lõi: **tàng hình và kết liễu mục tiêu yếu máu.**
 - **Nội tại – Mũi Tre:** gây thêm 15% sát thương lên tướng dưới 40% HP.
 - **K1 – Lá Bay** (`skillshot`, 700, rộng 60, CD 5s, 30 mana): `60 (+30) +0.9 Công` VL; trúng tướng giảm 50% hồi chiêu còn lại của K2.
@@ -164,7 +164,7 @@ Cơ chế cốt lõi: **đánh dấu rồi kích nổ, lướt lại khi hạ g�
 - Combo bot: K1 → K3 → K1 → K2 (vào hoặc ra). Phép: Thu Hoạch (Rừng) / Chớp Bước (Giữa).
 - Build: `giay_phap_su, sach_pha_gioi, nhan_huyet_phach, mu_sam, binh_suong_dong, truong_song`.
 
-### 6.9 Nguyệt Hà — "Người Dẫn Sông Trăng" (Pháp sư)
+### 6.9 Moonstream — "Guide of the Moon River" (Pháp sư)
 Cơ chế cốt lõi: **kiểm soát vùng và sát thương diện rộng từ xa.**
 - **Nội tại – Triều Trăng:** mỗi kỹ năng trúng ít nhất 1 tướng hồi 3% mana tối đa.
 - **K1 – Giọt Bạc** (`skillshot`, 800, xuyên, rộng 70, CD 5s, 50 mana): `80 (+40) +0.7 Phép` P.
@@ -191,7 +191,7 @@ Cơ chế cốt lõi: **độc cộng dồn theo thời gian và vùng hồi má
 - Combo bot: K2 → K1 → K3. Phép: Chớp Bước (Giữa) / Hồi Phục (Hỗ trợ).
 - Build: `giay_phap_su, ngoc_bang, truong_song, mu_sam, sach_pha_gioi, binh_suong_dong`.
 
-### 6.12 Cánh Diều — "Cung Thủ Theo Gió" (Xạ thủ)
+### 6.12 Kitewing — "Windchasing Archer" (Xạ thủ)
 Cơ chế cốt lõi: **đòn đánh thứ tư bắn đôi, lướt để thả diều.**
 - **Nội tại – Gió Thuận:** mỗi đòn đánh thứ 4 bắn thêm 1 mũi tên gây 50% sát thương (có thể chí mạng).
 - **K1 – Mũi Tên Gió** (`skillshot`, 950, rộng 70, CD 7/6.6/6.2/5.8/5.4/5s, 40 mana): `70 (+35) +1.1 Công` VL, làm chậm 25% 1.5s.
@@ -218,9 +218,9 @@ Cơ chế cốt lõi: **tầm xa nhất, bẫy tre kiểm soát lối đi.**
 - Combo bot: K2 đặt ở bụi/cửa rừng gần đường; K1 lên cụm lính có tướng phía sau; K3 khi mục tiêu bị trói/choáng. Phép: Chớp Bước.
 - Build: `giay_toc_chien, dao_trang_khuyet, cung_gio, thuong_pha_giap, huyet_kiem, mat_na_hoi_sinh`.
 
-### 6.15 Lồng Đăng — "Người Giữ Đèn" (Trợ thủ)
+### 6.15 Lanternward — "The Lamp Keeper" (Trợ thủ)
 Cơ chế cốt lõi: **khiên và hồi máu, soi sáng đồng đội.**
-- **Nội tại – Ánh Lửa Nhỏ:** đồng minh trong bán kính 500 hồi 0.5% HP tối đa mỗi giây (không cộng dồn giữa nhiều Lồng Đăng).
+- **Nội tại – Ánh Lửa Nhỏ:** đồng minh trong bán kính 500 hồi 0.5% HP tối đa mỗi giây (không cộng dồn giữa nhiều Lanternward).
 - **K1 – Đèn Trôi** (`skillshot`, 700, rộng 80, CD 9/8.6/8.2/7.8/7.4/7s, 50 mana): `60 (+30) +0.5 Phép` P, choáng 1s mục tiêu đầu tiên.
 - **K2 – Thắp Sáng** (`allyTarget`, 600, CD 10/9.6/9.2/8.8/8.4/8s, 70 mana): hồi `80 (+40) +0.6 Phép` và khiên `60 (+30) +0.4 Phép` 3s.
 - **K3 – Hội Đèn** (`aoeSelf`, bán kính 650, CD 70/62/54s, 120 mana): đồng minh trong vùng nhận khiên `200 (+100) +0.8 Phép` 4s và +25% tốc chạy 3s.
@@ -244,8 +244,8 @@ Cơ chế cốt lõi: **giai điệu tăng tốc đội, dây đàn trói rồi 
 // src/data/heroes/nguyet_ha.js
 export default {
   id: 'nguyet_ha',
-  name: 'Nguyệt Hà',
-  title: 'Người Dẫn Sông Trăng',
+  name: 'Moonstream',
+  title: 'Guide of the Moon River',
   roles: ['mage'], lanes: ['mid'], difficulty: 1,
   resource: 'mana',
   base: { maxHp: 640, maxMana: 480, atk: 50, ap: 0, armor: 20, mr: 28,

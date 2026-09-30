@@ -1,6 +1,6 @@
-// Bóng Tre — Sát Thủ Rừng Tre (04 §6.7). Tàng hình và kết liễu.
+// Bamboo Shade — Bamboo Forest Assassin (04 §6.7). Tàng hình và kết liễu.
 export default {
-  id: 'bong_tre', name: 'Bóng Tre', title: 'Sát Thủ Rừng Tre', roles: ['assassin'], lanes: ['jungle'], difficulty: 2, resource: 'mana', radius: 36,
+  id: 'bong_tre', name: 'Bamboo Shade', title: 'Bamboo Forest Assassin', roles: ['assassin'], lanes: ['jungle'], difficulty: 2, resource: 'mana', radius: 36,
   base: { maxHp: 700, maxMana: 260, atk: 74, ap: 0, armor: 24, mr: 26, atkSpeed: 0.78, moveSpeed: 345, range: 160 },
   perLevel: { maxHp: 85, maxMana: 25, atk: 7.5, armor: 3, mr: 1.6, atkSpeedPct: 0.028 },
   basicAttack: { melee: true, delay: 0.2 },

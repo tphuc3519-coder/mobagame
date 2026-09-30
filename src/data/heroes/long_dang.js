@@ -1,6 +1,6 @@
-// Lồng Đăng — Người Giữ Đèn (04 §6.15). Khiên, hồi máu, soi sáng đồng đội.
+// Lanternward — The Lamp Keeper (04 §6.15). Khiên, hồi máu, soi sáng đồng đội.
 export default {
-  id: 'long_dang', name: 'Lồng Đăng', title: 'Người Giữ Đèn', roles: ['support'], lanes: ['support'], difficulty: 1, resource: 'mana', radius: 36,
+  id: 'long_dang', name: 'Lanternward', title: 'The Lamp Keeper', roles: ['support'], lanes: ['support'], difficulty: 1, resource: 'mana', radius: 36,
   base: { maxHp: 720, maxMana: 440, atk: 48, ap: 0, armor: 24, mr: 30, atkSpeed: 0.62, moveSpeed: 315, range: 520 },
   perLevel: { maxHp: 95, maxMana: 42, atk: 3, armor: 3.2, mr: 2, atkSpeedPct: 0.012 },
   basicAttack: { projectile: { speed: 1700 }, delay: 0.3 },

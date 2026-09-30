@@ -1,6 +1,6 @@
-// Thạch Quy — Người Gác Đền Rêu Phủ (04 §6.1). Khiên tự hồi và khiêu khích.
+// Mossback — Guardian of the Mossy Temple (04 §6.1). Khiên tự hồi và khiêu khích.
 export default {
-  id: 'thach_quy', name: 'Thạch Quy', title: 'Người Gác Đền Rêu Phủ', roles: ['tank', 'support'], lanes: ['temple', 'support'], difficulty: 1, resource: 'mana', radius: 55,
+  id: 'thach_quy', name: 'Mossback', title: 'Guardian of the Mossy Temple', roles: ['tank', 'support'], lanes: ['temple', 'support'], difficulty: 1, resource: 'mana', radius: 55,
   base: { maxHp: 1000, maxMana: 320, atk: 58, ap: 0, armor: 36, mr: 32, atkSpeed: 0.62, moveSpeed: 310, range: 160 },
   perLevel: { maxHp: 130, maxMana: 35, atk: 4.5, armor: 4.2, mr: 2.2, atkSpeedPct: 0.015 },
   basicAttack: { melee: true, delay: 0.32 },

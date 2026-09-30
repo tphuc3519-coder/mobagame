@@ -1,4 +1,4 @@
-// Thạch Quy — Người Gác Đền Rêu Phủ (09 §4.1)
+// Mossback — Guardian of the Mossy Temple (09 §4.1)
 import { humanoid, BONE } from '../humanoid.mjs';
 import { belt } from '../costume.mjs';
 import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../parts.mjs';
@@ -6,7 +6,7 @@ import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../
 const C = { skin: '#70847a', stone: '#5d6f5f', stone2: '#3f4c40', dark: '#2b2f3a', moss: '#5f8f4a', jade: '#7fd1a8', bronze: '#b8843a', bronze2: '#7a5424', gold: '#c9a24a', root: '#4a5440' };
 
 export default {
-  name: 'Thạch Quy', glow: '#5fe0a8',
+  name: 'Mossback', glow: '#5fe0a8',
   palette: ['#4b5a4a', '#7fd1a8', '#c9a24a', '#2b2f3a'], rim: '#7fd1a8',
   hitTime: { Attack1: 0.34, Attack2: 0.3 },
   anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 26, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
