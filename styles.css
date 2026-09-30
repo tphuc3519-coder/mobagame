@@ -1,0 +1,256 @@
+/* Modern Cyber-Fantasy MOBA UI Styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #060913;
+  color: #ffffff;
+}
+
+#canvas-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+/* Header Banner */
+.hero-header {
+  pointer-events: auto;
+  background: linear-gradient(135deg, rgba(12, 18, 34, 0.9) 0%, rgba(20, 30, 55, 0.75) 100%);
+  border-left: 4px solid #f3b61d;
+  border-radius: 8px;
+  padding: 16px 24px;
+  max-width: 440px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.hero-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00f0ff;
+  margin-bottom: 4px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.hero-name {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ffffff, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+  font-size: 12px;
+  color: #a0aec0;
+  margin-top: 4px;
+}
+
+/* Top Buttons */
+.top-controls {
+  pointer-events: auto;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.ui-btn {
+  background: rgba(16, 24, 45, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ui-btn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+}
+
+.ui-btn.gold-btn {
+  border-color: #ffd700;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+}
+
+.ui-btn.gold-btn:hover {
+  background: rgba(255, 215, 0, 0.35);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+.ui-btn.skill-btn.ult {
+  border-color: #ff3366;
+  color: #ff3366;
+}
+
+.ui-btn.skill-btn.ult:hover {
+  background: rgba(255, 51, 102, 0.3);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+}
+
+/* Instructions Panel */
+.instructions-panel {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(10, 15, 28, 0.85);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inst-item kbd {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: bold;
+  color: #00f0ff;
+}
+
+/* Virtual Joystick */
+#joystick-container {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 120px;
+  left: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#joystick-base {
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, rgba(10, 20, 40, 0.6) 100%);
+  border: 2px solid rgba(0, 240, 255, 0.6);
+  border-radius: 50%;
+  position: relative;
+  touch-action: none;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#joystick-stick {
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle, #ffe600 0%, #ff8800 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(255, 170, 0, 0.8);
+  transition: transform 0.05s ease-out;
+}
+
+.joystick-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #a0aec0;
+}
+
+/* MOBA Skill Buttons (Bottom Right) */
+.moba-skill-bar {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.skill-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a263d 0%, #0a111e 100%);
+  border: 2px solid #00f0ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  transition: all 0.2s ease;
+}
+
+.skill-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+}
+
+.skill-icon.ult {
+  width: 76px;
+  height: 76px;
+  border-color: #ff3366;
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.5);
+}
+
+.skill-icon.ult:hover {
+  box-shadow: 0 0 35px rgba(255, 51, 102, 0.9);
+}
+
+.skill-icon .key {
+  font-size: 10px;
+  font-weight: 800;
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  color: #ffd700;
+}
+
+.skill-icon .label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+}
