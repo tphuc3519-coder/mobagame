@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>High-Fidelity 3D MOBA Hero Showcase (Cyber Fantasy Warrior)</title>
+  <title>Realistic 3D MOBA Champion Showcase (Liên Quân / Arena of Valor)</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Three.js and OrbitControls -->
+  <!-- Three.js, OrbitControls, and GLTFLoader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
   <div id="canvas-container"></div>
@@ -16,24 +17,25 @@
   <div id="ui-overlay">
     <!-- Top Header / Hero Banner -->
     <div class="hero-header">
-      <div class="hero-badge">ĐẤU SĨ SÂN BĂNG / CYBER PALADIN</div>
-      <h1 class="hero-name">ARTHUR - BĂNG PHONG THANH KIẾM</h1>
-      <div class="hero-sub">Mô hình Tướng MOBA 3D Cao Cấp - Di chuyển & Xoay 360°</div>
+      <div class="hero-badge">TƯỚNG 3D THẬT / REALISTIC MOBA CHAMPION</div>
+      <h1 class="hero-name" id="hero-display-name">ARTHUR - HOÀNG KIM CHIẾN THẦN</h1>
+      <div class="hero-sub">Mô hình 3D Nhân vật Chi tiết (Mô phỏng Xương & Chuyển động Mượt)</div>
     </div>
 
     <!-- Mode Selector & Controls Info -->
     <div class="top-controls">
-      <button id="btn-cam-mode" class="ui-btn active">📷 Camera: Orbit 360°</button>
-      <button id="btn-anim-attack" class="ui-btn skill-btn">⚔️ Chiêu 1: Băng Long Trảm</button>
-      <button id="btn-anim-spin" class="ui-btn skill-btn">🌀 Chiêu 2: Phong Bão Kiếm 360°</button>
-      <button id="btn-anim-ult" class="ui-btn skill-btn ult">🔥 Chiêu 3: Hoàng Kim Thiên Lôi</button>
+      <button id="btn-cam-mode" class="ui-btn active">📷 Camera 360°</button>
+      <button id="btn-switch-hero" class="ui-btn gold-btn">🔄 Đổi Tướng (Soldier / Cyber Bot)</button>
+      <button id="btn-anim-attack" class="ui-btn skill-btn">⚔️ Chiêu 1: Trảm</button>
+      <button id="btn-anim-spin" class="ui-btn skill-btn">🌀 Chiêu 2: Xoay 360°</button>
+      <button id="btn-anim-ult" class="ui-btn skill-btn ult">🔥 Chiêu 3: Tuyệt Kỹ</button>
     </div>
 
     <!-- Instructions Overlay -->
     <div class="instructions-panel">
-      <div class="inst-item"><strong>🎮 Di chuyển tướng:</strong> Phím <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc Cần gạt ảo (Joystick)</div>
-      <div class="inst-item"><strong>🔄 Xoay góc nhìn 360°:</strong> Nhấp giữ chuột trái & kéo xung quanh</div>
-      <div class="inst-item"><strong>🔍 Phóng to / Thu nhỏ:</strong> Cuộn chuột (Scroll)</div>
+      <div class="inst-item"><strong>🎮 Di chuyển:</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc Cần gạt ảo 360°</div>
+      <div class="inst-item"><strong>🔄 Xoay Camera 360°:</strong> Nhấp giữ chuột trái & kéo</div>
+      <div class="inst-item"><strong>🔍 Zoom:</strong> Cuộn chuột (Scroll Wheel)</div>
     </div>
 
     <!-- Virtual Joystick for Touch / Mouse Drag -->
@@ -48,11 +50,11 @@
     <div class="moba-skill-bar">
       <div class="skill-icon" id="skill-q">
         <span class="key">Q</span>
-        <span class="label">Chém</span>
+        <span class="label">Đánh</span>
       </div>
       <div class="skill-icon" id="skill-w">
         <span class="key">W</span>
-        <span class="label">Xoay 360</span>
+        <span class="label">Chạy</span>
       </div>
       <div class="skill-icon ult" id="skill-r">
         <span class="key">R</span>

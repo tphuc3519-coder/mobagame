@@ -1,17 +1,18 @@
+/* Modern Cyber-Fantasy MOBA UI Styling */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   user-select: none;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 body, html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #0b0e14;
-  color: #fff;
+  background-color: #060913;
+  color: #ffffff;
 }
 
 #canvas-container {
@@ -37,43 +38,45 @@ body, html {
   padding: 20px;
 }
 
-/* Header */
+/* Header Banner */
 .hero-header {
   pointer-events: auto;
-  background: linear-gradient(135deg, rgba(16, 26, 43, 0.85), rgba(8, 12, 22, 0.6));
-  border-left: 4px solid #e2b041;
-  padding: 12px 20px;
-  border-radius: 4px;
-  max-width: 420px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(12, 18, 34, 0.9) 0%, rgba(20, 30, 55, 0.75) 100%);
+  border-left: 4px solid #f3b61d;
+  border-radius: 8px;
+  padding: 16px 24px;
+  max-width: 440px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .hero-badge {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #e2b041;
+  color: #00f0ff;
   margin-bottom: 4px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
 }
 
 .hero-name {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ffffff;
   text-transform: uppercase;
-  background: linear-gradient(to right, #ffffff, #ffd778);
+  background: linear-gradient(90deg, #ffffff, #ffd700);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(226, 176, 65, 0.3);
 }
 
 .hero-sub {
-  font-size: 13px;
+  font-size: 12px;
   color: #a0aec0;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-/* Top Action Buttons */
+/* Top Buttons */
 .top-controls {
   pointer-events: auto;
   position: absolute;
@@ -84,72 +87,80 @@ body, html {
 }
 
 .ui-btn {
-  background: rgba(18, 28, 45, 0.85);
-  border: 1px solid #2d3748;
+  background: rgba(16, 24, 45, 0.85);
   color: #e2e8f0;
-  padding: 8px 16px;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 10px 18px;
+  border-radius: 20px;
   font-weight: 600;
   font-size: 13px;
-  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .ui-btn:hover {
-  background: rgba(45, 60, 88, 0.9);
-  border-color: #e2b041;
-  color: #fff;
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(226, 176, 65, 0.25);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
 }
 
-.ui-btn.active {
-  border-color: #e2b041;
-  background: rgba(226, 176, 65, 0.2);
-  color: #ffd778;
+.ui-btn.gold-btn {
+  border-color: #ffd700;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
 }
 
-.ui-btn.ult {
-  border-color: #e53e3e;
-  background: rgba(229, 62, 62, 0.2);
-  color: #feb2b2;
+.ui-btn.gold-btn:hover {
+  background: rgba(255, 215, 0, 0.35);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
 }
 
-/* Instructions */
+.ui-btn.skill-btn.ult {
+  border-color: #ff3366;
+  color: #ff3366;
+}
+
+.ui-btn.skill-btn.ult:hover {
+  background: rgba(255, 51, 102, 0.3);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+}
+
+/* Instructions Panel */
 .instructions-panel {
   pointer-events: auto;
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background: rgba(10, 15, 25, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 16px;
+  background: rgba(10, 15, 28, 0.85);
   border-radius: 8px;
-  font-size: 13px;
-  color: #cbd5e0;
+  padding: 12px 18px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   gap: 6px;
-  backdrop-filter: blur(6px);
 }
 
-kbd {
-  background: #2d3748;
-  color: #edf2f7;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
+.inst-item kbd {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  padding: 1px 5px;
   font-weight: bold;
-  border: 1px solid #4a5568;
+  color: #00f0ff;
 }
 
-/* Joystick */
+/* Virtual Joystick */
 #joystick-container {
   pointer-events: auto;
   position: absolute;
-  bottom: 30px;
-  left: 320px;
+  bottom: 120px;
+  left: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -157,98 +168,89 @@ kbd {
 }
 
 #joystick-base {
-  width: 110px;
-  height: 110px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(226, 176, 65, 0.4);
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, rgba(10, 20, 40, 0.6) 100%);
+  border: 2px solid rgba(0, 240, 255, 0.6);
   border-radius: 50%;
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   touch-action: none;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(226, 176, 65, 0.1);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #joystick-stick {
   width: 44px;
   height: 44px;
-  background: radial-gradient(circle, #ffd778 0%, #e2b041 100%);
+  background: radial-gradient(circle, #ffe600 0%, #ff8800 100%);
   border-radius: 50%;
-  position: absolute;
-  box-shadow: 0 0 10px rgba(226, 176, 65, 0.8);
-  transition: transform 0.05s linear;
+  box-shadow: 0 0 15px rgba(255, 170, 0, 0.8);
+  transition: transform 0.05s ease-out;
 }
 
 .joystick-label {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #e2b041;
+  color: #a0aec0;
 }
 
-/* Skill bar */
+/* MOBA Skill Buttons (Bottom Right) */
 .moba-skill-bar {
   pointer-events: auto;
   position: absolute;
   bottom: 25px;
-  right: 30px;
+  right: 25px;
   display: flex;
-  gap: 16px;
   align-items: flex-end;
+  gap: 16px;
 }
 
 .skill-icon {
-  width: 65px;
-  height: 65px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: radial-gradient(circle, #1a202c 0%, #0d1117 100%);
-  border: 2px solid #4a5568;
+  background: radial-gradient(circle, #1a263d 0%, #0a111e 100%);
+  border: 2px solid #00f0ff;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
   transition: all 0.2s ease;
 }
 
 .skill-icon:hover {
-  border-color: #e2b041;
-  transform: scale(1.08);
-  box-shadow: 0 0 20px rgba(226, 176, 65, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
 }
 
 .skill-icon.ult {
-  width: 80px;
-  height: 80px;
-  border-color: #e53e3e;
+  width: 76px;
+  height: 76px;
+  border-color: #ff3366;
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.5);
 }
 
 .skill-icon.ult:hover {
-  border-color: #fc8181;
-  box-shadow: 0 0 25px rgba(229, 62, 62, 0.7);
+  box-shadow: 0 0 35px rgba(255, 51, 102, 0.9);
 }
 
 .skill-icon .key {
+  font-size: 10px;
+  font-weight: 800;
   position: absolute;
-  top: -6px;
-  right: -2px;
-  background: #e2b041;
-  color: #000;
-  font-weight: bold;
-  font-size: 11px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 4px;
+  right: 8px;
+  color: #ffd700;
 }
 
 .skill-icon .label {
   font-size: 11px;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #ffffff;
 }
