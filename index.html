@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D MOBA Hero Showcase & 360 Control</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- MOBA HUD & Showcase UI -->
+  <div id="ui-overlay">
+    <!-- Top Header / Hero Banner -->
+    <div class="hero-header">
+      <div class="hero-badge">ĐẤU SĨ / WARRIOR</div>
+      <h1 class="hero-name">ARTHUR - THANH KIẾM THÁNH</h1>
+      <div class="hero-sub">Mô hình Tướng MOBA 3D - Di chuyển & Xoay 360°</div>
+    </div>
+
+    <!-- Mode Selector & Controls Info -->
+    <div class="top-controls">
+      <button id="btn-cam-mode" class="ui-btn active">📷 Camera: Orbit 360°</button>
+      <button id="btn-anim-attack" class="ui-btn skill-btn">⚔️ Chiêu 1: Kiếm Lực</button>
+      <button id="btn-anim-spin" class="ui-btn skill-btn">🌀 Chiêu 2: Xoay Kiếm 360°</button>
+      <button id="btn-anim-ult" class="ui-btn skill-btn ult">🔥 Chiêu 3: Hoàng Kim Trảm</button>
+    </div>
+
+    <!-- Instructions Overlay -->
+    <div class="instructions-panel">
+      <div class="inst-item"><strong>🎮 Di chuyển tướng:</strong> Phím <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> hoặc Cần gạt ảo (Joystick)</div>
+      <div class="inst-item"><strong>🔄 Xoay góc nhìn 360°:</strong> Nhấp giữ chuột trái & kéo xung quanh</div>
+      <div class="inst-item"><strong>🔍 Phóng to / Thu nhỏ:</strong> Cuộn chuột (Scroll)</div>
+    </div>
+
+    <!-- Virtual Joystick for Touch / Mouse Drag -->
+    <div id="joystick-container">
+      <div id="joystick-base">
+        <div id="joystick-stick"></div>
+      </div>
+      <div class="joystick-label">CẦN GẠT 360°</div>
+    </div>
+
+    <!-- Ability Buttons (Bottom Right MOBA Style) -->
+    <div class="moba-skill-bar">
+      <div class="skill-icon" id="skill-q">
+        <span class="key">Q</span>
+        <span class="label">Chém</span>
+      </div>
+      <div class="skill-icon" id="skill-w">
+        <span class="key">W</span>
+        <span class="label">Xoay 360</span>
+      </div>
+      <div class="skill-icon ult" id="skill-r">
+        <span class="key">R</span>
+        <span class="label">Tuyệt Kỹ</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
