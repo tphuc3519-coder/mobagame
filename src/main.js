@@ -14,6 +14,9 @@ import { createIndicators } from './render/indicators.js';
 import { createInput } from './hud/joystick.js';
 import { createHud } from './hud/hud.js';
 import { createSkillButtons } from './hud/skillButtons.js';
+import { createShop } from './hud/shop.js';
+import { createSpellButtons } from './hud/spellButtons.js';
+import { STARTER } from './data/items.js';
 
 const q = new URLSearchParams(location.search);
 const debug = q.has('debug');
@@ -44,11 +47,16 @@ addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 const input = createInput(document.body);
 const hud = createHud(document.getElementById('hud'), input);
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
+const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
+const shop = createShop(document.getElementById('shopRoot'), { world, player });
+for (const id of STARTER[HEROES[heroId].roles[0]] || []) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vai (05 §5)
+if (q.has('shop')) shop.open(true);
 
 // bảng thử
 const panel = document.getElementById('lab');
 panel.innerHTML = `<select id="labHero">${ALPHA.map((id) => `<option value="${id}" ${id === heroId ? 'selected' : ''}>${HEROES[id].name}</option>`).join('')}</select>
-  <button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button>`;
+  <button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button>`;
+document.getElementById('labGold').onclick = () => { player.gold += 3000; };
 document.getElementById('labHero').onchange = (e) => { q.set('hero', e.target.value); location.search = q.toString(); };
 document.getElementById('labCd').onclick = () => world.debug.resetCooldowns(player);
 document.getElementById('labLv').onclick = () => world.debug.level15(player);
@@ -80,7 +88,7 @@ const loop = createLoop({
     for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
     views.handle(events); fx.handle(events); hud.handle(events, world);
     views.update(world, alpha, dt); fx.update(world, dt, player);
-    buttons.update();
+    buttons.update(); spells.update(); shop.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt);

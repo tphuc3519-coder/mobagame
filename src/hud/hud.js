@@ -52,7 +52,7 @@ export function createHud(canvas, input) {
         ctx.fillStyle = f.color; ctx.fillText(f.text, p.x, p.y); ctx.globalAlpha = 1;
       }
       // thanh máu / mana của mình
-      const bx = 16, by = h - 44, bw = Math.min(260, w * 0.32);
+      const bx = 16, by = h - 44, bw = Math.min(240, w * 0.26);
       bar(bx, by, bw, 14, player.hp / player.stats.maxHp, '#3ecf74');
       const sh = player.shields.reduce((a, s) => a + s.amount, 0);
       if (sh > 0) bar(bx, by, bw, 5, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');

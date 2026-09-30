@@ -15,3 +15,14 @@
 - Lính: chưa cho vàng/KN (Mốc 4); model lính là khối đơn giản, mỗi lính vài draw call (chưa InstancedMesh) — 16 lính đồng thời ổn; sẽ instancing khi lên 5v5.
 - Tướng bị giữ trong đường, không đi vào khe hở tường (bãi quái ở Mốc 6); lưới đi được đã dựng sẵn từ tường/biên.
 - Đợt lính theo 03 §B3: đầu 0:15, mỗi 25s, 3 Kiếm + 1 Cung, mỗi 3 đợt thêm Xe Đá. Lính Đèn Lớn chưa có (cần luật phá trụ nhà 5v5).
+- 2026-09-30 (Mốc 4): 38 món đúng 05 §2–§4; giá ghép = giá tổng − thành phần đang có (đệ quy), bán 60% giá tổng. Đồ hỗ trợ/đi rừng khoá ở 1v1 (`teamOnly`), chờ chế độ nhiều người.
+- Vàng thụ động ở 1v1 không có trong tài liệu: chọn **3 vàng/s từ giây 15** (5v5 là 4/s từ 0:20). Chỉnh ở `data/economy.js`.
+- Vàng lính chỉ cho tướng kết liễu; lính chết do lính/trụ thì mất vàng (ai cũng không nhận). KN lính chia đều tướng địch trong 1000. Hạ trụ: +100 vàng cả đội, +100 cho người kết liễu, 120 KN trong 1200.
+- Hạ gục tướng: 200 + 20×chuỗi (tối đa 5) vàng, giảm 20%/lần khi nạn nhân đã chết ≥3 lần liên tiếp (sàn 80); 100 + 30×cấp nạn nhân KN. Chưa có hỗ trợ chia vàng (1v1 không cần).
+- Hồi sinh 4 + 1.5×cấp giây (luật 1v1). Về thành 6s, huỷ khi bị sát thương/di chuyển/đánh/ra chiêu, +40% tốc chạy 4s sau khi về.
+- Bùa: trang mặc định theo vai (`PAGE_BY_ROLE`), cộng phẳng vào chỉ số; chưa có UI chỉnh bùa. Kiểm thử sát thương dùng `world.debug.bare(e)` để bỏ bùa/đồ.
+- Chí mạng dùng `world.rng` (tất định), sát thương chí mạng gốc ×1.75 (+50% từ Dao Trăng Khuyết); tối đa giảm hồi chiêu 40%, kháng hiệu ứng 80%, xuyên giáp 80%.
+- Hút máu chỉ tính đòn đánh thường (vật lý); hút máu phép chỉ tính sát thương phép của kỹ năng.
+- Tên đồ trong `recommendedBuild` của tướng port chưa có trong bảng chính thức được quy về đồ hợp lệ bằng `ALIAS` trong `data/items.js` (`kiem_nhanh`→Lưỡi Huyết Nguyệt…); Bóng Tre mang Thu Hoạch bị đổi sang Chớp Bước ở 1v1.
+- HUD kiểu video tham khảo (bố cục, không sao chép hình): cửa hàng trượt từ trái với 6 tab, chi tiết + công thức bên phải; biểu tượng đồ/phép là SVG tự vẽ (hình theo chỉ số chính, viền theo bậc).
+- `stasis` (Bình Sương Đông) xếp cùng nhóm khống chế cứng để dừng di chuyển/đánh/ra chiêu; thêm `invuln` (Mặt Nạ Hồi Sinh) và `ccImmune` (Giải Trói).
