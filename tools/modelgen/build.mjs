@@ -23,8 +23,8 @@ for (const [id, def] of Object.entries(HEROES)) {
   const built = m.build();
   const clips = buildClips(ctx, built.bones, def.anim || {});
   const exporter = new GLTFExporter();
-  const scene = new THREE.Scene();
-  scene.add(built.root);
+  const scene = new THREE.Scene(); // mesh và xương gốc là nút gốc của scene (không lồng trong nhóm)
+  for (const c of built.root.children.slice()) scene.add(c);
   const glb = await exporter.parseAsync(scene, { binary: true, animations: Object.values(clips), onlyVisible: false });
   const dir = path.join(outRoot, id);
   fs.mkdirSync(dir, { recursive: true });

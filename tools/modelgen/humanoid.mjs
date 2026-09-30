@@ -93,7 +93,7 @@ export function humanoid(id, s = {}) {
     ];
     const secs = secs0.map((q) => ({ ...q, cz: (q.cz || 0) + zs(q.y / H) }));
     const yH = y(0.5), yS = y(0.58), yC = y(0.685);
-    m.loft(secs, { bone: BONE('Hips'), color: S.top, color2: S.pelvis, seg: 20, ao: 0.28,
+    m.loft(secs, { bone: BONE('Hips'), color: S.top, color2: S.pelvis, seg: 26, ao: 0.28,
       weights: (p) => {
         if (p.y <= yH) return [[BONE('Hips'), 1]];
         if (p.y <= yS) { const t = smooth(yH, yS, p.y); return [[BONE('Hips'), 1 - t], [BONE('Spine'), t]]; }
@@ -104,7 +104,7 @@ export function humanoid(id, s = {}) {
   }
   // ---- đầu ----
   if (has('head')) {
-    m.sphere(1, { radii: [hr * 0.93, hr * 1.06, hr], at: hc.toArray(), bone: BONE('Head'), color: skin, wseg: 18, hseg: 13, ao: 0.15 });
+    m.sphere(1, { radii: [hr * 0.93, hr * 1.06, hr], at: hc.toArray(), bone: BONE('Head'), color: skin, wseg: 24, hseg: 16, ao: 0.15 });
     m.sphere(1, { radii: [hr * 0.66, hr * 0.5, hr * 0.68], at: [0, hc.y - hr * 0.55, hc.z + hr * 0.3], bone: BONE('Head'), color: skin, ao: 0.15 });
     m.sphere(1, { radii: [hr * 0.15, hr * 0.13, hr * 0.17], at: [0, hc.y - hr * 0.1, hc.z + hr * 1.0], bone: BONE('Head'), color: skin, ao: 0.1 }); // mũi
     m.sphere(1, { radii: [hr * 0.13, hr * 0.2, hr * 0.1], at: [hr * 0.95, hc.y - hr * 0.05, hc.z - hr * 0.05], bone: BONE('Head'), color: skin, mirror: true, ao: 0.1 }); // tai
@@ -120,11 +120,11 @@ export function humanoid(id, s = {}) {
       const Sp = [sg * shoulder.x, shoulder.y, shoulder.z];
       const Ep = dirs.E.toArray(), Wp = dirs.W.toArray(), Tp = dirs.T.toArray();
       const U = BONE('UpperArm' + side), F = BONE('Forearm' + side), Hd = BONE('Hand' + side);
-      m.limb(Sp, Ep, [[0, 0.7 * rS], [0.1, 1.2 * rS], [0.4, 1.12 * rS], [0.78, 0.9 * rS], [1, 0.82 * rS]], { bone: U, color: ac, ao: 0.3,
+      m.limb(Sp, Ep, [[0, 0.7 * rS], [0.1, 1.2 * rS], [0.4, 1.12 * rS], [0.78, 0.9 * rS], [1, 0.82 * rS]], { bone: U, color: ac, ao: 0.3, seg: 12,
         blend: { b1: U, b2: F, from: Sp, to: Ep, t0: 0.6, t1: 1, w0: 0, w1: 0.5 } });
       m.sphere(rS * 1.32, { at: Sp, bone: U, color: ac });
       m.sphere(rS * 0.95, { at: Ep, bone: U, color: fc, blend: { b1: U, b2: F, from: Sp, to: Wp, t0: 0.4, t1: 0.6, w0: 0, w1: 1 } });
-      m.limb(Ep, Wp, [[0, 0.82 * rS], [0.2, 0.96 * rS], [0.5, 0.86 * rS], [0.85, 0.66 * rS], [1, 0.58 * rS]], { bone: F, color: fc, ao: 0.3,
+      m.limb(Ep, Wp, [[0, 0.82 * rS], [0.2, 0.96 * rS], [0.5, 0.86 * rS], [0.85, 0.66 * rS], [1, 0.58 * rS]], { bone: F, color: fc, ao: 0.3, seg: 12,
         blend: { b1: U, b2: F, from: Ep, to: Wp, t0: 0, t1: 0.35, w0: 0.5, w1: 1 } });
       const hp = [Wp[0] * 0.2 + Tp[0] * 0.8, Wp[1] * 0.2 + Tp[1] * 0.8, Wp[2] * 0.2 + Tp[2] * 0.8];
       m.sphere(1, { radii: [S.handR * H * 0.9, S.handR * H, S.handR * H * 0.85], at: hp, bone: Hd, color: hc2 });
@@ -138,10 +138,10 @@ export function humanoid(id, s = {}) {
       const sg = sd === 'L' ? 1 : -1;
       const T = BONE('Thigh' + sd), Sh = BONE('Shin' + sd), F = BONE('Foot' + sd);
       const hp = [sg * S.legOut * H * 0.95, hips, 0], kn = [sg * lx, y(0.265), kneeZ], an = [sg * lx, y(0.05), 0];
-      m.limb(hp, kn, [[0, 0.95 * rL], [0.2, 1.22 * rL], [0.55, 1.05 * rL], [1, 0.82 * rL]], { bone: T, color: tc, seg: 11, ao: 0.28,
+      m.limb(hp, kn, [[0, 0.95 * rL], [0.2, 1.22 * rL], [0.55, 1.05 * rL], [1, 0.82 * rL]], { bone: T, color: tc, seg: 14, ao: 0.28,
         blend: { b1: T, b2: Sh, from: hp, to: kn, t0: 0.65, t1: 1, w0: 0, w1: 0.5 } });
       m.sphere(rL * 0.86, { at: kn, bone: T, color: sc, blend: { b1: T, b2: Sh, from: hp, to: an, t0: 0.45, t1: 0.55, w0: 0, w1: 1 } });
-      m.limb(kn, an, [[0, 0.84 * rL], [0.2, 0.98 * rL], [0.45, 0.9 * rL], [0.85, 0.62 * rL], [1, 0.58 * rL]], { bone: Sh, color: sc, seg: 11, ao: 0.28,
+      m.limb(kn, an, [[0, 0.84 * rL], [0.2, 0.98 * rL], [0.45, 0.9 * rL], [0.85, 0.62 * rL], [1, 0.58 * rL]], { bone: Sh, color: sc, seg: 14, ao: 0.28,
         blend: { b1: T, b2: Sh, from: kn, to: an, t0: 0, t1: 0.3, w0: 0.5, w1: 1 } });
       if (has('feet')) {
         m.sphere(1, { radii: [rL * 0.86, y(0.034), y(S.footL)], at: [sg * lx, y(0.03), y(0.032)], bone: F, color: S.boot, wseg: 14 });

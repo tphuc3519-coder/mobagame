@@ -178,7 +178,8 @@ async function load(url, bytes, label) {
   root = gltf.scene; scene.add(root);
   root.userData.height = analyze(gltf, bytes).size.y;
   root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });
-  $('#title').textContent = (gltf.scene.children[0]?.userData?.name || label || '') + ' — ' + (label || '');
+  let nm = ''; root.traverse((o) => { if (o.userData?.name) nm = o.userData.name; });
+  $('#title').textContent = (nm || label || '') + ' — ' + (label || '');
   $('#bones').textContent = [...new Set((() => { const a = []; root.traverse((o) => o.isBone && /Head$|Tip$|Hand|Sway/.test(o.name) && a.push(o.name)); return a; })())].join(' · ');
   mixer = new THREE.AnimationMixer(root); actions = {};
   clipsList = gltf.animations;

@@ -102,11 +102,11 @@ export class Model {
         const si = [0, 0, 0, 0], sw = [0, 0, 0, 0];
         let tot = 0;
         list.forEach(([nm, w], k) => { const j = this.jointMap.get(mirrored ? mirrorName(nm) : nm); if (!j) throw new Error('Thiếu xương ' + nm); si[k] = j.index; sw[k] = w; tot += w; });
-        this.si.push(...si); this.sw.push(...sw.map((w) => w / (tot || 1)));
+        this.si.push(...si.map((v, k) => (sw[k] > 0 ? v : 0))); this.sw.push(...sw.map((w) => w / (tot || 1)));
       } else if (blend) {
         const t = p.clone().sub(f).dot(dl);
         const w = blend.w0 + (blend.w1 - blend.w0) * smooth(blend.t0, blend.t1, t);
-        this.si.push(b1.index, b2.index, 0, 0); this.sw.push(1 - w, w, 0, 0);
+        this.si.push(1 - w > 0 ? b1.index : 0, w > 0 ? b2.index : 0, 0, 0); this.sw.push(1 - w, w, 0, 0);
       } else {
         this.si.push(bi.index, 0, 0, 0); this.sw.push(1, 0, 0, 0);
       }
@@ -123,17 +123,18 @@ export class Model {
 
   // ---- khối nguyên thuỷ ----
   sphere(r, o = {}) { // ellipsoid nếu có o.radii
-    const w = o.wseg || 14, h = o.hseg || 10;
-    const g = new THREE.SphereGeometry(1, w, h);
     const rr = o.radii || [r, r, r];
+    const R = Math.max(...rr) * (o.scale ? Math.max(...o.scale) : 1); // chi tiết giảm theo kích thước
+    const w = o.wseg || (R < 0.03 ? 6 : R < 0.06 ? 8 : R < 0.12 ? 11 : 14), h = o.hseg || (R < 0.03 ? 4 : R < 0.06 ? 6 : R < 0.12 ? 8 : 10);
+    const g = new THREE.SphereGeometry(1, w, h);
     return this.add(g, { ...o, scale: rr.map((v, i) => v * (o.scale ? o.scale[i] : 1)) });
   }
   box(w, h, d, o = {}) { return this.add(new THREE.BoxGeometry(w, h, d), { flat: true, ...o }); }
   cyl(rTop, rBot, h, o = {}) {
-    return this.add(new THREE.CylinderGeometry(rTop, rBot, h, o.seg || 10, 1, o.open || false), o);
+    return this.add(new THREE.CylinderGeometry(rTop, rBot, h, o.seg || (Math.max(rTop, rBot) < 0.03 ? 6 : 10), 1, o.open || false), o);
   }
-  cone(r, h, o = {}) { return this.add(new THREE.ConeGeometry(r, h, o.seg || 8), o); }
-  torus(R, r, o = {}) { return this.add(new THREE.TorusGeometry(R, r, o.rseg || 6, o.seg || 16, o.arc || Math.PI * 2), o); }
+  cone(r, h, o = {}) { return this.add(new THREE.ConeGeometry(r, h, o.seg || (r < 0.03 ? 5 : 8)), o); }
+  torus(R, r, o = {}) { return this.add(new THREE.TorusGeometry(R, r, o.rseg || (r < 0.015 ? 4 : 6), o.seg || (R < 0.08 ? 12 : 16), o.arc || Math.PI * 2), o); }
   /** profile: [[r,y],...] từ dưới lên. */
   lathe(profile, o = {}) {
     const pts = profile.map(([r, y]) => new THREE.Vector2(r, y));
@@ -258,7 +259,7 @@ export class Model {
     root.updateMatrixWorld(true);
     const skeleton = new THREE.Skeleton(bones);
     mesh.bind(skeleton);
-    root.userData = { ...this.userData, heroId: this.id, unit: 'm', facing: '+Z' };
+    mesh.userData = { ...this.userData, heroId: this.id, unit: 'm', facing: '+Z' };
     return { root, mesh, skeleton, bones, tris: all.length / 3, verts: this.vcount };
   }
 }
