@@ -1,0 +1,35 @@
+{
+  "model": "canh_dieu.glb",
+  "scale": 100,
+  "height": 182,
+  "runRefSpeed": 325,
+  "hitTime": {
+    "Attack1": 0.36,
+    "Attack2": 0.36
+  },
+  "attach": {
+    "weapon_tip": "Bone_HandR_Tip",
+    "head": "Bone_Head"
+  },
+  "rim": "#a8e6ff",
+  "palette": [
+    "#2b6cb0",
+    "#f6ad55",
+    "#fff5e1",
+    "#1a202c"
+  ],
+  "clips": [
+    "Idle",
+    "Run",
+    "Attack1",
+    "Attack2",
+    "Cast1",
+    "Cast2",
+    "Ult",
+    "Death",
+    "Recall",
+    "Victory",
+    "Showcase"
+  ],
+  "generator": "tools/modelgen"
+}

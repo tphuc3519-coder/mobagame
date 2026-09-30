@@ -1,0 +1,66 @@
+// Hoả Rèn — Thợ Rèn Làng Lò (09 §4.4)
+import { humanoid, BONE } from '../humanoid.mjs';
+import { swayChain, tube, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
+
+const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e', iron2: '#45454c', leather: '#7a4524', leather2: '#4a2814', hair: '#2a1810', gold: '#ffd166', ember: '#ff7a1a' };
+
+export default {
+  name: 'Hoả Rèn', glow: '#ff5a10',
+  palette: ['#2a2a2e', '#ff7a1a', '#ffd166', '#6b3b1e'], rim: '#ff7a1a',
+  hitTime: { Attack1: 0.3, Attack2: 0.26 },
+  anim: { style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' }, run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6 },
+  build(id) {
+    const ctx = humanoid(id, {
+      H: 1.95, headS: 0.98, shoulder: 0.2, chestW: 0.178, chestD: 0.108, waistW: 0.13, hipW: 0.14, armR: 0.042, legR: 0.052, legOut: 0.062,
+      skin: C.skin, top: C.skin, pelvis: C.pants, thigh: C.pants, shin: C.pants2, boot: C.iron, bootTop: C.leather2, forearm: C.iron2, hand: C.iron,
+      armL: 'ready', armR_: 'ready', handR: 0.042, brow: '#1a0e08',
+    });
+    const { m, H, hr, hc, y } = ctx;
+    const head = BONE('Head'), hips = BONE('Hips'), chest = BONE('Chest');
+    // — tóc buộc cao —
+    m.sphere(1, { radii: [hr * 1.03, hr * 1.02, hr * 1.04], at: [0, hc.y + hr * 0.16, hc.z - hr * 0.16], bone: head, color: C.hair, wseg: 16, hseg: 12 });
+    m.sphere(1, { radii: [hr * 0.95, hr * 0.26, hr * 0.4], at: [0, hc.y + hr * 0.72, hc.z + hr * 0.6], rot: [-10, 0, 0], bone: head, color: C.hair });
+    const tie = [0, hc.y + hr * 1.05, hc.z - hr * 0.55];
+    m.torus(hr * 0.2, hr * 0.06, { at: tie, rot: [60, 0, 0], bone: head, color: C.leather });
+    const pts = [tie, [0, tie[1] + 0.05, tie[2] - 0.14], [0, tie[1] - 0.06, tie[2] - 0.24], [0, tie[1] - 0.24, tie[2] - 0.26], [0, tie[1] - 0.44, tie[2] - 0.22]];
+    const hb = swayChain(m, head, 'Tail', pts.slice(1));
+    tube(m, hb, pts, [0.06, 0.07, 0.06, 0.045, 0.006], { color: C.hair, color2: '#4a2a18' });
+    // ánh lửa trong mắt
+    m.sphere(1, { radii: [hr * 0.11, hr * 0.09, hr * 0.06], at: [hr * 0.34, hc.y + hr * 0.02, hc.z + hr * 0.92], bone: head, color: '#ffb060', glow: true, mirror: true, ao: 0 });
+    // — tạp dề da cháy sém, đai lưng, dụng cụ —
+    const aTop = y(0.745), aBot = y(0.3);
+    m.panel(0.27, 0.38, aTop - aBot, { at: [0, (aTop + aBot) / 2, 0.128], color: '#5c3520', color2: '#1e120a', bone: hips, ao: 0.1, weights: wy(y(0.5), y(0.68), hips, chest) });
+    m.panel(0.05, 0.05, 0.3, { at: [0.12, aTop + 0.1, 0.06], rot: [0, 0, 0], color: C.leather2, bone: chest, mirror: true });
+    m.torus(0.145, 0.03, { at: [0, y(0.535), 0.005], rot: [90, 0, 0], bone: hips, color: C.leather2, seg: 20 });
+    m.box(0.07, 0.06, 0.02, { at: [0, y(0.535), 0.148], bone: hips, color: '#c9a24a' });
+    m.box(0.09, 0.11, 0.06, { at: [0.15, y(0.5), 0.06], rot: [0, 25, 0], bone: hips, color: C.leather });
+    m.cyl(0.011, 0.011, 0.34, { at: [-0.16, y(0.44), 0.05], rot: [0, 0, -8], bone: hips, color: C.iron2 });
+    m.cyl(0.011, 0.011, 0.34, { at: [-0.14, y(0.44), 0.06], rot: [0, 0, 6], bone: hips, color: C.iron2 });
+    // vân kim loại nóng đỏ trên ngực, cánh tay
+    for (const [dx, dy, r] of [[0.08, 0.7, 20], [0.11, 0.66, -30], [0.05, 0.63, 10]]) m.box(0.008, 0.06, 0.008, { at: [dx * H * 0.9, y(dy) + 0.03, 0.14], rot: [0, 0, r], bone: chest, color: '#ff8a30', glow: true, mirror: true, ao: 0 });
+    for (const sd of ['L', 'R']) {
+      const d = ctx.armDirs[sd];
+      const E = d.E.toArray(), W = d.W.toArray();
+      for (const t of [0.25, 0.7]) band(m, E, W, t, 0.06, 0.05, { bone: BONE('Forearm' + sd), color: '#ff7a20', glow: true, ao: 0 });
+      band(m, E, W, 0.5, 0.1, 0.056, { bone: BONE('Forearm' + sd), color: C.iron });
+      m.sphere(0.055, { at: d.E.toArray(), bone: BONE('UpperArm' + sd), color: C.iron2 });
+    }
+    // — búa rèn —
+    const hp = handPos(ctx, 'R');
+    const dir = [-0.12, 1, -0.3];
+    const p0 = along(hp, dir, -0.3), p1 = along(hp, dir, 1.05);
+    const HR = BONE('HandR');
+    m.seg(p0, p1, 0.03, 0.03, { bone: HR, color: C.leather, color2: '#4a2814', noCap1: true });
+    for (let i = 0; i < 6; i++) band(m, p0, p1, 0.1 + i * 0.03, 0.02, 0.036, { bone: HR, color: C.leather2 });
+    m.sphere(0.04, { at: p0, bone: HR, color: C.iron2 });
+    const rot = orient(dir);
+    m.box(0.44, 0.22, 0.22, { at: p1, rot, bone: HR, color: C.iron, color2: C.iron2 });
+    for (const s of [-1, 1]) {
+      m.box(0.03, 0.2, 0.2, { at: place(dir, p1, [s * 0.225, 0, 0]), rot, bone: HR, color: '#ff6a18', glow: true, ao: 0 });
+      m.box(0.07, 0.25, 0.25, { at: place(dir, p1, [s * 0.17, 0, 0]), rot, bone: HR, color: C.iron2 });
+    }
+    m.box(0.12, 0.06, 0.26, { at: place(dir, p1, [0, -0.13, 0]), rot, bone: HR, color: C.iron2 });
+    for (const [dx, dy, dz] of [[0.34, 0.2, 0.1], [-0.3, 0.3, -0.1], [0.28, -0.1, 0.15]]) m.sphere(0.012, { at: place(dir, p1, [dx, dy, dz]), bone: HR, color: '#ffd166', glow: true, ao: 0 });
+    return ctx;
+  },
+};

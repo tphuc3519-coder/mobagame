@@ -1,0 +1,35 @@
+{
+  "model": "hoa_doc.glb",
+  "scale": 100,
+  "height": 168,
+  "runRefSpeed": 315,
+  "hitTime": {
+    "Attack1": 0.3,
+    "Attack2": 0.3
+  },
+  "attach": {
+    "weapon_tip": "Bone_HandR_Tip",
+    "head": "Bone_Head"
+  },
+  "rim": "#6bd36b",
+  "palette": [
+    "#b24f8f",
+    "#6bd36b",
+    "#2a1a2e",
+    "#f6c6e0"
+  ],
+  "clips": [
+    "Idle",
+    "Run",
+    "Attack1",
+    "Attack2",
+    "Cast1",
+    "Cast2",
+    "Ult",
+    "Death",
+    "Recall",
+    "Victory",
+    "Showcase"
+  ],
+  "generator": "tools/modelgen"
+}

@@ -1,0 +1,53 @@
+// Bóng Tre — Sát Thủ Rừng Tre (09 §4.7)
+import { humanoid, BONE } from '../humanoid.mjs';
+import { swayChain, tube, dangle, leaf, handPos, along, place, orient, band, flap } from '../parts.mjs';
+
+const C = { skin: '#e6bf9d', green: '#24452f', green2: '#182f21', dark: '#0f1a14', leaf: '#6fbf73', dry: '#d8e8b0', straw: '#dcc98a', straw2: '#a89a5c', steel: '#b9d4c0' };
+
+export default {
+  name: 'Bóng Tre', glow: '#9dff9d',
+  palette: ['#1f3b2a', '#6fbf73', '#d8e8b0', '#0f1a14'], rim: '#6fbf73',
+  hitTime: { Attack1: 0.2, Attack2: 0.2 },
+  anim: { style: { atk1: 'jabR', atk2: 'jabL', cast1: 'slashR', cast2: 'spin', ult: 'slashCombo' }, run: { amp: 41, arm: 0.9, bob: 0.022, lean: 15 }, idle: 'sneak', moveSpeed: 345, swayAmp: 10 },
+  build(id) {
+    const ctx = humanoid(id, {
+      H: 1.72, headS: 1.05, shoulder: 0.15, chestW: 0.118, chestD: 0.072, waistW: 0.084, hipW: 0.106, armR: 0.024, legR: 0.036, legOut: 0.05,
+      skin: C.skin, top: C.green, pelvis: C.green2, thigh: C.green, shin: C.green2, boot: C.dark, bootTop: C.green2, arm: C.green, forearm: C.dark, hand: C.dark,
+      armL: 'ready', armR_: 'ready', handR: 0.026, brow: '#0f1a14', eye: '#1f3a28',
+    });
+    const { m, H, hr, hc, y } = ctx;
+    const head = BONE('Head'), chest = BONE('Chest'), hips = BONE('Hips');
+    // — nón lá tre cắt vát, khăn che nửa mặt —
+    m.cone(hr * 1.85, hr * 0.85, { at: [0, hc.y + hr * 1.02, hc.z], rot: [0, 0, 7], bone: head, color: C.straw, color2: C.straw2, seg: 22, ao: 0.2 });
+    m.torus(hr * 1.8, hr * 0.04, { at: [0.0, hc.y + hr * 0.6, hc.z], rot: [90, 0, 7], bone: head, color: C.straw2, seg: 26 });
+    m.torus(hr * 1.0, hr * 0.025, { at: [0, hc.y + hr * 0.35, hc.z], rot: [90, 0, 0], bone: head, color: C.dark, seg: 18 });
+    m.sphere(1, { radii: [hr * 1.0, hr * 0.55, hr * 1.05], at: [0, hc.y - hr * 0.38, hc.z + hr * 0.02], bone: head, color: C.dark, color2: C.green2, wseg: 16, hseg: 10 });
+    m.sphere(1, { radii: [hr * 0.2, hr * 0.17, hr * 0.22], at: [0, hc.y - hr * 0.08, hc.z + hr * 0.98], bone: head, color: C.dark });
+    m.sphere(1, { radii: [hr * 1.0, hr * 0.85, hr * 1.02], at: [0, hc.y + hr * 0.3, hc.z - hr * 0.2], bone: head, color: '#1a1410', wseg: 14, hseg: 10 });
+    dangle(m, head, 'Pony', [0, hc.y + hr * 0.1, hc.z - hr * 1.0], { len: 0.7, n: 3, drift: [0, -0.12], r0: 0.05, r1: 0.008, color: '#1a1410', color2: '#3a2a20' });
+    dangle(m, head, 'Wrap', [hr * 0.4, hc.y - hr * 0.3, hc.z - hr * 0.9], { len: 0.34, n: 2, drift: [0.03, -0.08], r0: 0.022, r1: 0.006, color: C.dark });
+    // — lá tre trên vai, dây lưng, túi —
+    for (let i = 0; i < 5; i++) leaf(m, { at: [ctx.shoulder.x + 0.02 + i * 0.03, ctx.shoulder.y + 0.05, ctx.shoulder.z - 0.02 + (i % 2) * 0.03], len: 0.26, w: 0.075, rot: [-15 + i * 5, i * 25 - 20, -45 + i * 12], color: i % 2 ? C.leaf : C.dry, bone: BONE('UpperArmL'), mirror: true });
+    m.torus(0.105, 0.028, { at: [0, y(0.545), 0], rot: [90, 0, 0], bone: hips, color: C.dark, seg: 18 });
+    for (const sd of [1, -1]) leaf(m, { at: [sd * 0.12, y(0.53), 0.1], len: 0.2, w: 0.07, rot: [170, 0, sd * 12], color: C.leaf, bone: hips });
+    flap(m, 'TailB', { at: [0, -0.09], top: y(0.53), bottom: y(0.32), wTop: 0.14, wBot: 0.2, color: C.green2, color2: C.dark });
+    for (const sd of ['L', 'R']) {
+      const d = ctx.armDirs[sd];
+      band(m, d.E.toArray(), d.W.toArray(), 0.6, 0.3, 0.03, { bone: BONE('Forearm' + sd), color: C.green });
+      m.torus(0.038, 0.01, { at: [(sd === 'L' ? 1 : -1) * 0.11, y(0.24), 0], rot: [90, 0, 0], bone: BONE('Shin' + sd), color: C.dark });
+    }
+    // — hai dao hình lá tre —
+    for (const sd of ['L', 'R']) {
+      const d = ctx.armDirs[sd];
+      const W = d.W.toArray(), T = d.T.toArray();
+      const dir = [T[0] - W[0], T[1] - W[1] + 0.35, T[2] - W[2]];
+      const hp = handPos(ctx, sd), B = BONE('Hand' + sd);
+      const g = along(hp, dir, 0.06);
+      m.seg(along(hp, dir, -0.09), g, 0.014, 0.014, { bone: B, color: C.dark });
+      m.sphere(0.02, { at: along(hp, dir, -0.1), bone: B, color: C.leaf });
+      leaf(m, { at: g, len: 0.5, w: 0.1, rot: orient(dir), color: C.steel, color2: '#eef8f0', bone: B, thick: 0.008, bulge: 0.32 });
+      leaf(m, { at: along(g, dir, 0.04), len: 0.4, w: 0.02, rot: orient(dir), color: '#c8ffcf', glow: true, bone: B, thick: 0.01 });
+    }
+    return ctx;
+  },
+};

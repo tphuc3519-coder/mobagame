@@ -1,0 +1,8 @@
+{
+  "name": "modelgen",
+  "private": true,
+  "type": "module",
+  "description": "Sinh model GLB cho tướng Lantern Arena (chỉ là công cụ dev, game không cần build)",
+  "scripts": { "build": "node build.mjs" },
+  "devDependencies": { "three": "0.186.0" }
+}

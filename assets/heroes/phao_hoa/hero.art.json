@@ -1,0 +1,35 @@
+{
+  "model": "phao_hoa.glb",
+  "scale": 100,
+  "height": 165,
+  "runRefSpeed": 320,
+  "hitTime": {
+    "Attack1": 0.3,
+    "Attack2": 0.3
+  },
+  "attach": {
+    "weapon_tip": "Bone_HandR_Tip",
+    "head": "Bone_Head"
+  },
+  "rim": "#f6e05e",
+  "palette": [
+    "#e53e3e",
+    "#f6e05e",
+    "#1a1a2e",
+    "#ffb3c1"
+  ],
+  "clips": [
+    "Idle",
+    "Run",
+    "Attack1",
+    "Attack2",
+    "Cast1",
+    "Cast2",
+    "Ult",
+    "Death",
+    "Recall",
+    "Victory",
+    "Showcase"
+  ],
+  "generator": "tools/modelgen"
+}
