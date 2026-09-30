@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { buildClips } from './anim.mjs';
+import { importHero } from './import_glb.mjs';
 import { HEROES } from './heroes/index.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -16,6 +17,7 @@ const only = process.argv.slice(2);
 const report = [];
 for (const [id, def] of Object.entries(HEROES)) {
   if (only.length && !only.includes(id)) continue;
+  if (def.import) { report.push(await importHero(id, def, outRoot, here)); continue; } // model hoạ sĩ nhập vào, không sinh bằng code
   const ctx = def.build(id);
   const { m } = ctx;
   m.glowColor = def.glow || '#ffffff';

@@ -6,10 +6,19 @@ import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../
 const C = { skin: '#70847a', stone: '#5d6f5f', stone2: '#3f4c40', dark: '#2b2f3a', moss: '#5f8f4a', jade: '#7fd1a8', bronze: '#b8843a', bronze2: '#7a5424', gold: '#c9a24a', root: '#4a5440' };
 
 export default {
-  name: 'Mossback', glow: '#5fe0a8',
-  palette: ['#4b5a4a', '#7fd1a8', '#c9a24a', '#2b2f3a'], rim: '#7fd1a8',
+  name: 'Mossback', glow: '#ff8a1e',
+  palette: ['#405c57', '#ff8a1e', '#a66119', '#1c302e'], rim: '#ffab47', // màu theo model thợ lặn: thân xanh ngọc cũ, hổ phách, đồng thau
   hitTime: { Attack1: 0.34, Attack2: 0.3 },
-  anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 26, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
+  import: {
+    file: './imports/thach_quy_prototype.glb',
+    // File gốc: hệ số màu ghi theo sRGB; nắp đồng thau che kín cửa sổ hổ phách và cả hai lọt trong thân → đẩy cửa sổ nhô ra khỏi nắp, nắp và bu-lông ra sát mặt thân;
+    // găng tay phải dời vào cán gậy để cầm được.
+    srgb: true,
+    portrait: { dist: 2.7, dy: -0.3 }, // khung chân dung rộng hơn để thấy cả mũ và cửa sổ hổ phách
+    nudge: (name, cx) => (/amber_chest/i.test(name) ? [0, -0.28, 0] : /porthole_brass/i.test(name) ? [0, -0.12, 0] : /chest_bolt/i.test(name) ? [0, -0.17, 0] : /glove/i.test(name) && cx < 0 ? [-0.63, 0, 0] : null),
+    joints: { wristR: [-1.85, 2.1], tipR: [-1.85, 4.55] },
+  }, // model hoạ sĩ (bộ thợ lặn đồng thau); build() bên dưới là bản sinh bằng code cũ, không còn dùng
+  anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
   build(id) {
     const ctx = humanoid(id, {
       H: 2.5, headS: 0.8, shoulder: 0.215, chestW: 0.205, chestD: 0.15, waistW: 0.175, hipW: 0.18, armR: 0.058, legR: 0.066, legOut: 0.072, hunch: 0.055,

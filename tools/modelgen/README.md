@@ -14,3 +14,5 @@ npm i --no-save gltf-validator && node validate.mjs   # kiểm tra định dạn
 - `sdf.mjs` thân liền khối SDF (surface nets + meshoptimizer, AO khe) · `costume.mjs` áo/tay áo/đai/vạt/ủng/khăn · `kit.mjs` khối nguyên thuỷ, loft, trọng số xương · `humanoid.mjs` xương + thân chung · `anim.mjs` thư viện đòn/clip
 - `parts.mjs` phụ kiện dùng chung · `heroes/<id>.mjs` thiết kế từng tướng (theo 09 §4)
 - Muốn thay bằng model hoạ sĩ: đè `assets/heroes/<id>/<id>.glb` (giữ tên clip/xương theo 02 §13.5, 09 §3.4).
+
+- **Model hoạ sĩ nhập vào** (`heroes/<id>.mjs` có `import: { file, nudge, joints, … }`): `import_glb.mjs` xoay Z-up → Y-up, co về chiều cao, gắn từng mảnh vào xương `Bone_*` và dùng lại bộ clip `anim.mjs`. File gốc để ở `imports/`. Hiện dùng cho `thach_quy` (Mossback); `node build.mjs thach_quy` dựng lại.
