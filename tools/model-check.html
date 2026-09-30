@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kiểm tra model — Lantern Arena</title>
+<style>
+  :root { color-scheme: dark; --bg:#0d1320; --panel:#151d2e; --line:#26324a; --ink:#e8eefc; --dim:#8b9bbd; --ok:#4ade80; --bad:#f87171; --acc:#ffc15e; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:13px/1.45 system-ui,sans-serif; }
+  #app { display:grid; grid-template-columns:1fr 300px; grid-template-rows:minmax(0,1fr); height:100%; }
+  #view { position:relative; min-width:0; min-height:0; overflow:hidden; }
+  canvas { position:absolute; inset:0; display:block; width:100%; height:100%; }
+  aside { background:var(--panel); border-left:1px solid var(--line); overflow:auto; padding:12px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:14px 0 6px; }
+  h2:first-child { margin-top:0; }
+  button, label.btn { background:#1e2a44; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:5px 9px; cursor:pointer; font:inherit; }
+  button:hover, label.btn:hover { border-color:var(--acc); }
+  button.on { background:var(--acc); color:#1a1200; border-color:var(--acc); }
+  .row { display:flex; flex-wrap:wrap; gap:5px; }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:2px 0; } td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  #title { position:absolute; left:12px; top:10px; font-size:15px; font-weight:600; text-shadow:0 1px 3px #000; pointer-events:none; }
+  #msg { position:absolute; left:12px; bottom:10px; color:var(--dim); pointer-events:none; }
+  input[type=range] { width:100%; }
+  @media (max-width:700px) { #app { grid-template-columns:1fr; grid-template-rows:60% 40%; } aside { border-left:0; border-top:1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view"><div id="title"></div><div id="msg">Chọn file .glb hoặc thêm ?src=../assets/heroes/long_dang/long_dang.glb</div></div>
+  <aside>
+    <h2>File</h2>
+    <label class="btn">Chọn .glb<input id="file" type="file" accept=".glb,.gltf" hidden></label>
+    <h2>Số liệu / ngân sách (09 §3.1)</h2>
+    <table id="stats"></table>
+    <h2>Clip</h2>
+    <div class="row" id="clips"></div>
+    <h2>Tốc độ phát (timeScale) <span id="tsv">1.0</span></h2>
+    <input id="ts" type="range" min="0.1" max="2.5" step="0.05" value="1">
+    <h2>Góc nhìn</h2>
+    <div class="row" id="views">
+      <button data-v="front">Trước</button><button data-v="side">Nghiêng</button><button data-v="back">Sau</button><button data-v="game">Camera trận</button>
+    </div>
+    <h2>Hiển thị</h2>
+    <div class="row"><button id="tRef" class="on">Tham chiếu 1.8m</button><button id="tWire">Lưới</button><button id="tRim">Viền sáng</button></div>
+    <h2>Xương (attach)</h2>
+    <div id="bones" style="color:var(--dim);word-break:break-all"></div>
+  </aside>
+</div>
+<script type="importmap">
+{ "imports": { "three": "../lib/three/build/three.module.js", "three/addons/": "../lib/three/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = (s) => document.querySelector(s);
+const q = new URLSearchParams(location.search);
+const BUDGET = { tris: 15000, bones: 60, mats: 2, kb: 2560, tex: 1024 };
+
+const view = $('#view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+view.prepend(renderer.domElement);
+renderer.setClearColor(q.get('bg') || '#151b2b');
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.85;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.target.set(0, 0.95, 0);
+
+scene.add(new THREE.HemisphereLight(0xe4ecff, 0x6a5a48, 0.85));
+const key = new THREE.DirectionalLight(0xfff0dc, 1.9); key.position.set(2.5, 4, 3); scene.add(key);
+const rimL = new THREE.DirectionalLight(0x8fd3ff, 1.8); rimL.position.set(-3, 2.5, -3); scene.add(rimL);
+{ // môi trường đơn giản để kim loại/bóng có phản chiếu
+  const pm = new THREE.PMREMGenerator(renderer);
+  const s = new THREE.Scene();
+  s.background = new THREE.Color(0x1a2238);
+  const g = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xc4c8d8, side: THREE.BackSide }));
+  s.add(g);
+  const l = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); l.position.set(3, 3, 3); s.add(l);
+  scene.environment = pm.fromScene(s, 0.04).texture;
+}
+const ground = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48), new THREE.MeshStandardMaterial({ color: 0x232c44, roughness: 0.9 }));
+ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const grid = new THREE.GridHelper(4, 16, 0x3a4a70, 0x28324d); grid.position.y = 0.002; scene.add(grid);
+const ref = new THREE.Group();
+{ const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.8, 0.4), new THREE.MeshBasicMaterial({ color: 0x4ade80, wireframe: true, transparent: true, opacity: 0.35 }));
+  b.position.set(-1.0, 0.9, 0); ref.add(b);
+  const a = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0.02, 0), 1.1, 0xffc15e, 0.16, 0.1); ref.add(a);
+  scene.add(ref); }
+
+let root = null, mixer = null, current = null, actions = {}, clipsList = [], rimOn = false;
+const clock = new THREE.Clock();
+
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+function setView(v) {
+  const H = root?.userData?.height || 1.9;
+  const d = H * 1.75 * Math.max(1, 0.8 / camera.aspect);
+  controls.target.set(0, H * 0.5, 0);
+  if (v === 'front') camera.position.set(0, H * 0.55, d);
+  if (v === 'side') camera.position.set(d, H * 0.55, 0.001);
+  if (v === 'back') camera.position.set(0, H * 0.55, -d);
+  if (v === 'game') { // giống camera trận (02 §13.2): nghiêng 55°, FOV 38°, khoảng cách 23 m; nhìn từ phía nhà Xanh
+    const dist = 23, a = 55 * Math.PI / 180;
+    controls.target.set(0, 0.6, 0);
+    camera.position.set(0, 0.6 + Math.sin(a) * dist, Math.cos(a) * dist);
+  }
+  camera.lookAt(controls.target); controls.update();
+  document.querySelectorAll('#views button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+}
+document.querySelectorAll('#views button').forEach((b) => b.onclick = () => setView(b.dataset.v));
+
+function play(name, t) {
+  if (!mixer || !actions[name]) return;
+  if (current && current !== actions[name]) current.fadeOut(0.12);
+  current = actions[name];
+  current.reset().fadeIn(0.12).play();
+  const loop = /^(Idle|Run|Recall|Showcase)$/.test(name);
+  current.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+  current.clampWhenFinished = true;
+  if (t != null) { current.time = t; mixer.update(0); current.paused = true; }
+  else current.paused = false;
+  document.querySelectorAll('#clips button').forEach((b) => b.classList.toggle('on', b.textContent === name));
+}
+window.__play = play;
+
+function ok(v, max) { return `<span class="${v <= max ? 'ok' : 'bad'}">${v}</span> / ${max}`; }
+
+function analyze(gltf, bytes) {
+  let tris = 0, verts = 0, bones = 0, texMax = 0; const mats = new Set(), texs = new Set();
+  gltf.scene.traverse((o) => {
+    if (o.isBone) bones++;
+    if (o.isMesh) {
+      const g = o.geometry; verts += g.attributes.position.count;
+      tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+        mats.add(m);
+        for (const k of ['map', 'normalMap', 'metalnessMap', 'emissiveMap', 'aoMap']) if (m[k]) { texs.add(m[k]); const im = m[k].image; if (im) texMax = Math.max(texMax, im.width || 0); }
+      });
+    }
+  });
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const size = box.getSize(new THREE.Vector3());
+  const kb = bytes ? Math.round(bytes / 1024) : 0;
+  $('#stats').innerHTML = `
+    <tr><td>Tam giác</td><td>${ok(Math.round(tris), BUDGET.tris)}</td></tr>
+    <tr><td>Đỉnh</td><td>${verts}</td></tr>
+    <tr><td>Xương</td><td>${ok(bones, BUDGET.bones)}</td></tr>
+    <tr><td>Vật liệu</td><td>${ok(mats.size, BUDGET.mats)}</td></tr>
+    <tr><td>Texture / lớn nhất</td><td>${texs.size} / ${texMax || '–'}</td></tr>
+    <tr><td>Dung lượng (KB)</td><td>${bytes ? ok(kb, BUDGET.kb) : '–'}</td></tr>
+    <tr><td>Cao (m)</td><td>${size.y.toFixed(2)}</td></tr>
+    <tr><td>Rộng × sâu (m)</td><td>${size.x.toFixed(2)} × ${size.z.toFixed(2)}</td></tr>
+    <tr><td>Clip</td><td>${gltf.animations.length}</td></tr>`;
+  const need = ['Idle', 'Run', 'Attack1', 'Attack2', 'Cast1', 'Cast2', 'Ult', 'Death', 'Recall'];
+  const have = new Set(gltf.animations.map((a) => a.name));
+  const miss = need.filter((n) => !have.has(n));
+  $('#stats').insertAdjacentHTML('beforeend', `<tr><td>Clip bắt buộc</td><td class="${miss.length ? 'bad' : 'ok'}">${miss.length ? 'thiếu ' + miss.join(',') : 'đủ'}</td></tr>`);
+  return { tris, bones, size };
+}
+
+async function load(url, bytes, label) {
+  $('#msg').textContent = 'Đang nạp…';
+  const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+  const gltf = await loader.loadAsync(url);
+  if (root) { scene.remove(root); root = null; }
+  root = gltf.scene; scene.add(root);
+  root.userData.height = analyze(gltf, bytes).size.y;
+  root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; } });
+  let nm = ''; root.traverse((o) => { if (o.userData?.name) nm = o.userData.name; });
+  $('#title').textContent = (nm || label || '') + ' — ' + (label || '');
+  $('#bones').textContent = [...new Set((() => { const a = []; root.traverse((o) => o.isBone && /Head$|Tip$|Hand|Sway/.test(o.name) && a.push(o.name)); return a; })())].join(' · ');
+  mixer = new THREE.AnimationMixer(root); actions = {};
+  clipsList = gltf.animations;
+  $('#clips').innerHTML = '';
+  for (const c of clipsList) {
+    actions[c.name] = mixer.clipAction(c);
+    const b = document.createElement('button'); b.textContent = c.name; b.onclick = () => play(c.name); $('#clips').append(b);
+  }
+  setView(q.get('view') || 'front');
+  const startClip = q.get('clip') || (actions.Idle ? 'Idle' : clipsList[0]?.name);
+  if (startClip) play(startClip, q.has('t') ? parseFloat(q.get('t')) : null);
+  $('#msg').textContent = '';
+  window.__ready = true;
+}
+
+$('#file').onchange = (e) => { const f = e.target.files[0]; if (f) load(URL.createObjectURL(f), f.size, f.name); };
+$('#ts').oninput = (e) => { $('#tsv').textContent = (+e.target.value).toFixed(2); if (mixer) mixer.timeScale = +e.target.value; };
+$('#tRef').onclick = (e) => { ref.visible = !ref.visible; e.target.classList.toggle('on', ref.visible); };
+$('#tWire').onclick = (e) => { e.target.classList.toggle('on'); const on = e.target.classList.contains('on'); root?.traverse((o) => o.isMesh && [].concat(o.material).forEach((m) => (m.wireframe = on))); };
+$('#tRim').onclick = (e) => { e.target.classList.toggle('on'); rimOn = e.target.classList.contains('on'); rimL.intensity = rimOn ? 5 : 1.8; };
+
+if (q.has('src')) {
+  const src = q.get('src');
+  fetch(src, { method: 'HEAD' }).then((r) => +r.headers.get('content-length') || 0).catch(() => 0)
+    .then((n) => load(src, n, src.split('/').pop())).catch((e) => { $('#msg').textContent = 'Lỗi nạp: ' + e.message; window.__ready = 'error'; });
+}
+if (q.get('ref') === '0') { ref.visible = false; $('#tRef').classList.remove('on'); }
+if (q.has('hideui')) { document.querySelector('aside').style.display = 'none'; document.querySelector('#app').style.gridTemplateColumns = '1fr'; document.querySelector('#title').style.display = 'none'; resize(); }
+
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  if (mixer && !q.has('t')) mixer.update(dt);
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

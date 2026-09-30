@@ -1,0 +1,130 @@
+[
+  {
+    "id": "thach_quy",
+    "tris": 13048,
+    "bones": 35,
+    "kb": 1132,
+    "mats": 2,
+    "runRef": 310
+  },
+  {
+    "id": "trau_dong",
+    "tris": 10736,
+    "bones": 20,
+    "kb": 691,
+    "mats": 1,
+    "runRef": 315
+  },
+  {
+    "id": "co_thu",
+    "tris": 9550,
+    "bones": 44,
+    "kb": 1083,
+    "mats": 2,
+    "runRef": 305
+  },
+  {
+    "id": "hoa_ren",
+    "tris": 6630,
+    "bones": 24,
+    "kb": 557,
+    "mats": 2,
+    "runRef": 320
+  },
+  {
+    "id": "kiem_may",
+    "tris": 7606,
+    "bones": 32,
+    "kb": 701,
+    "mats": 2,
+    "runRef": 330
+  },
+  {
+    "id": "soi_nui",
+    "tris": 6064,
+    "bones": 24,
+    "kb": 529,
+    "mats": 2,
+    "runRef": 335
+  },
+  {
+    "id": "bong_tre",
+    "tris": 6164,
+    "bones": 26,
+    "kb": 573,
+    "mats": 2,
+    "runRef": 345
+  },
+  {
+    "id": "doi_dem",
+    "tris": 6626,
+    "bones": 26,
+    "kb": 591,
+    "mats": 2,
+    "runRef": 340
+  },
+  {
+    "id": "nguyet_ha",
+    "tris": 8698,
+    "bones": 30,
+    "kb": 708,
+    "mats": 2,
+    "runRef": 315
+  },
+  {
+    "id": "sam_trong",
+    "tris": 7940,
+    "bones": 22,
+    "kb": 689,
+    "mats": 2,
+    "runRef": 315
+  },
+  {
+    "id": "hoa_doc",
+    "tris": 10006,
+    "bones": 23,
+    "kb": 838,
+    "mats": 2,
+    "runRef": 315
+  },
+  {
+    "id": "canh_dieu",
+    "tris": 6810,
+    "bones": 25,
+    "kb": 574,
+    "mats": 2,
+    "runRef": 325
+  },
+  {
+    "id": "phao_hoa",
+    "tris": 7860,
+    "bones": 22,
+    "kb": 572,
+    "mats": 2,
+    "runRef": 320
+  },
+  {
+    "id": "trang_no",
+    "tris": 7872,
+    "bones": 27,
+    "kb": 654,
+    "mats": 2,
+    "runRef": 315
+  },
+  {
+    "id": "long_dang",
+    "tris": 7516,
+    "bones": 26,
+    "kb": 607,
+    "mats": 2,
+    "runRef": 315
+  },
+  {
+    "id": "moc_cam",
+    "tris": 7704,
+    "bones": 23,
+    "kb": 604,
+    "mats": 2,
+    "runRef": 315
+  }
+]

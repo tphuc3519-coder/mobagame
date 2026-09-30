@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Bảng model — Lantern Arena</title>
+<style>
+  html,body { margin:0; background:#0d1320; color:#cfd8f0; font:12px system-ui,sans-serif; }
+  #wrap { position:relative; display:inline-block; }
+  canvas { display:block; }
+  .lab { position:absolute; text-shadow:0 1px 2px #000; pointer-events:none; }
+  .name { font-size:13px; font-weight:600; color:#ffc15e; }
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<script type="importmap">
+{ "imports": { "three": "../lib/three/build/three.module.js", "three/addons/": "../lib/three/examples/jsm/" } }
+</script>
+<script type="module">
+// Xem nhanh nhiều tướng × nhiều tư thế trong một ảnh.
+// ?ids=long_dang,hoa_ren&poses=front:Idle:0,side:Run:0.15,game:Idle:0&cw=300&ch=380&tone=1
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const q = new URLSearchParams(location.search);
+const ids = (q.get('ids') || '').split(',').filter(Boolean);
+const poses = (q.get('poses') || 'front:Idle:0,side:Run:0.15,side:Attack1:0.3,front:Ult:0.55,game:Idle:0').split(',').map((s) => { const [v, c, t] = s.split(':'); return { v, c: c || 'Idle', t: parseFloat(t || '0') }; });
+const CW = +(q.get('cw') || 300), CH = +(q.get('ch') || 380);
+const wrap = document.getElementById('wrap');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(CW * poses.length, CH * ids.length);
+renderer.setScissorTest(true);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = +(q.get('exp') || 0.85);
+wrap.append(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(q.get('bg') || '#151b2b');
+scene.add(new THREE.HemisphereLight(0xe4ecff, 0x6a5a48, 0.85));
+const key = new THREE.DirectionalLight(0xfff0dc, 1.9); key.position.set(2.5, 4, 3); scene.add(key);
+const rim = new THREE.DirectionalLight(0x8fd3ff, 1.8); rim.position.set(-3, 2.5, -3); scene.add(rim);
+{
+  const pm = new THREE.PMREMGenerator(renderer), s = new THREE.Scene();
+  s.background = new THREE.Color(0x1a2238);
+  s.add(new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xc4c8d8, side: THREE.BackSide })));
+  const l = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); l.position.set(3, 3, 3); s.add(l);
+  scene.environment = pm.fromScene(s, 0.04).texture;
+}
+const floor = new THREE.Mesh(new THREE.CircleGeometry(1.4, 40), new THREE.MeshStandardMaterial({ color: 0x232c44, roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; scene.add(floor);
+const cam = new THREE.PerspectiveCamera(38, CW / CH, 0.05, 100);
+
+const loader = new GLTFLoader();
+const models = {};
+await Promise.all(ids.map(async (id) => { models[id] = await loader.loadAsync(`../assets/heroes/${id}/${id}.glb`); }));
+
+function frame(H, v) {
+  const top = H; H = Math.max(H, 1.6) * 1.06; void top;
+  if (v === 'game') { const a = 55 * Math.PI / 180, d = 23; cam.position.set(0, 0.6 + Math.sin(a) * d, Math.cos(a) * d); cam.lookAt(0, 0.6, 0); return; }
+  const d = H * 2.05 * Math.max(1, 0.8 / cam.aspect);
+  const p = { front: [0, 0.55, 1], side: [1, 0.55, 0.001], back: [0, 0.55, -1], q: [0.7, 0.6, 0.85], face: [0, 0.9, 1] }[v] || [0, 0.55, 1];
+  if (v === 'face') { cam.position.set(0, H * 0.9, H * 0.7); cam.lookAt(0, H * 0.88, 0); return; }
+  cam.position.set(p[0] * d, p[1] * H, p[2] * d); cam.lookAt(0, H * 0.5, 0);
+}
+
+ids.forEach((id, r) => {
+  const g = models[id];
+  const root = g.scene; scene.add(root);
+  const mixer = new THREE.AnimationMixer(root);
+  const H = new THREE.Box3().setFromObject(root).max.y;
+  poses.forEach((P, c) => {
+    root.traverse((o) => o.isSkinnedMesh && o.skeleton.pose());
+    root.position.set(0, 0, 0); root.quaternion.identity();
+    mixer.stopAllAction();
+    const clip = g.animations.find((a) => a.name === P.c);
+    if (clip) { const a = mixer.clipAction(clip); a.reset().play(); a.time = P.t; a.paused = true; mixer.update(0); }
+    root.updateMatrixWorld(true);
+    frame(H, P.v);
+    renderer.setViewport(c * CW, (ids.length - 1 - r) * CH, CW, CH);
+    renderer.setScissor(c * CW, (ids.length - 1 - r) * CH, CW, CH);
+    renderer.render(scene, cam);
+  });
+  scene.remove(root);
+  const lab = document.createElement('div'); lab.className = 'lab name'; lab.style.left = '8px'; lab.style.top = (r * CH + 6) + 'px'; lab.textContent = id; wrap.append(lab);
+});
+poses.forEach((P, c) => { const lab = document.createElement('div'); lab.className = 'lab'; lab.style.left = (c * CW + 8) + 'px'; lab.style.top = '22px'; lab.textContent = `${P.v} ${P.c} ${P.t}`; wrap.append(lab); });
+window.__ready = true;
+</script>
+</body>
+</html>
