@@ -62,8 +62,9 @@ function attack(world, e, t) {
   const ba = e.data.basicAttack, d = MINIONS[e.minionType];
   world.pending.push({ tick: world.tick + T(ba.delay), run: () => {
     if (!e.alive || !t.alive || isHardCC(e)) return;
-    if (ba.melee) dealDamage(world, e, t, e.stats.atk, 'physical');
-    else spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: 0, dy: 0, speed: d.projSpeed, remaining: 9999, homing: t.id, kind: 'basic', onHit: (tt) => dealDamage(world, e, tt, e.stats.atk, 'physical') });
+    const amt = (tt) => e.stats.atk * (tt.structure ? d.structureMult || 1 : 1); // lính phá công trình mạnh hơn để đợt lính có sức đẩy
+    if (ba.melee) dealDamage(world, e, t, amt(t), 'physical');
+    else spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: 0, dy: 0, speed: d.projSpeed, remaining: 9999, homing: t.id, kind: 'basic', onHit: (tt) => dealDamage(world, e, tt, amt(tt), 'physical') });
   } });
 }
 

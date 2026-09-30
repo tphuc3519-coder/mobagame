@@ -17,11 +17,13 @@ import { initEconomy, updateEconomy } from './economy.js';
 import { SPELLS } from '../data/spells.js';
 import { equip, computeBonus } from './inventory.js';
 import { updateItems } from './items.js';
+import { createBot, updateBots } from '../ai/heroBot.js';
+import { DIFFICULTY } from '../data/ai.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
-  const world = { map, tick: 0, rng: mulberry32(seed), entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
+  const world = { map, seed, tick: 0, rng: mulberry32(seed), entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.emit = (type, data) => world.events.push({ type, tick: world.tick, ...data });
   world.drainEvents = () => { const ev = world.events; world.events = []; return ev; };
@@ -46,6 +48,8 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   };
   world.spawnHero = (heroId, team, pos) => makeHero(HEROES[heroId], team, pos, 'hero');
   world.spawnDummy = (team, pos) => makeHero(DUMMY, team, pos, 'dummy');
+  /** Gắn bot điều khiển tướng (06 §5). */
+  world.addBot = (e, difficulty = 'normal') => { e.goldMult = DIFFICULTY[difficulty]?.goldMult ?? 1; return createBot(world, e, difficulty); };
   world.command = (entityId, cmd) => {
     let q = world.queue.get(entityId); if (!q) world.queue.set(entityId, (q = []));
     if (cmd.type === 'move' || cmd.type === 'attack') { const i = q.findIndex((c) => c.type === cmd.type); if (i >= 0) { q[i] = cmd; return; } }
@@ -88,6 +92,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     // dọn lính đã chết sau 1 giây (để hiệu ứng ngã kịp chạy)
     world.entities = world.entities.filter((e) => !(e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30));
     checkMatch(world);
+    updateBots(world);
   };
   return world;
 }

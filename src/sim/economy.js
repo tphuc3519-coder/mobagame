@@ -8,7 +8,7 @@ import { applyStatus, isHardCC } from './status.js';
 const heroes = (world, team) => world.entities.filter((h) => h.kind === 'hero' && h.team === team);
 
 export function initEconomy(e) { e.gold = ECON.startGold; e.goldEarned = 0; e.killStreak = 0; e.deathStreak = 0; e.recall = null; }
-export function addGold(world, e, n) { if (!e || n <= 0) return; e.gold += n; e.goldEarned += n; world.emit('gold', { id: e.id, amount: Math.round(n) }); }
+export function addGold(world, e, n) { if (!e || n <= 0) return; n *= e.goldMult ?? 1; e.gold += n; e.goldEarned += n; world.emit('gold', { id: e.id, amount: Math.round(n) }); }
 
 /** KN → lên cấp (tối đa 15). Tướng thấp hơn địch ≥2 cấp nhận thêm 20% KN. */
 export function gainXp(world, e, amount) {
