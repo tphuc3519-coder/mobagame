@@ -81,10 +81,10 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 8, 40);
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
-  scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.9));
-  const key = new THREE.DirectionalLight(0xfff0e0, 2.2); key.position.set(2.5, 4, 3.5); scene.add(key);
+  scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.65));
+  const key = new THREE.DirectionalLight(0xfff0e0, 1.9); key.position.set(2.5, 4, 3.5); scene.add(key);
   const fill = new THREE.DirectionalLight(0x8ab4ff, 0.9); fill.position.set(-3, 2, 2); scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 3.2); rim.position.set(-1.5, 3, -4); scene.add(rim);
+  const rim = new THREE.DirectionalLight(0xffffff, 2.0); rim.position.set(-1.5, 3, -4); scene.add(rim);
   const warm = new THREE.PointLight(0xffa050, 2.2, 5, 1.5); warm.position.set(0, 0.35, 0.9); scene.add(warm);
   const ped = pedestal(); scene.add(ped.group);
   const lan = lanterns(); scene.add(lan.group);
@@ -93,7 +93,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.5, 0.82); composer.addPass(bloom);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.45, 1.35); composer.addPass(bloom);
   composer.addPass(new OutputPass());
   const useBloom = quality !== 'low';
 
@@ -107,15 +107,15 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   };
   addEventListener('resize', resize); resize();
 
-  let cur = null, next = null, spin = 0, spinV = 0.25, t = 0, running = true, drag = null, lastTap = 0, req = 0;
+  let cur = null, next = null, spin = -0.35, spinV = 0.12, t = 0, running = true, drag = null, lastTap = 0, req = 0;
   const rimCol = new THREE.Color();
   canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX }; const now = performance.now(); if (now - lastTap < 300) cur?.play('Victory'); lastTap = now; });
   addEventListener('pointermove', (e) => { if (!drag) return; spinV = 0; spin += (e.clientX - drag.x) * 0.012; drag.x = e.clientX; });
-  addEventListener('pointerup', () => { drag = null; setTimeout(() => { if (!drag) spinV = 0.25; }, 1500); });
+  addEventListener('pointerup', () => { drag = null; setTimeout(() => { if (!drag) spinV = 0.12; }, 1500); });
 
   function holder(m, id) {
     const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
-    const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a');
+    const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35 });
     const mixer = new THREE.AnimationMixer(obj), acts = {};
     for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
     const g = new THREE.Group(); g.add(obj);
@@ -142,11 +142,12 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     const h = holder(m, id);
     if (cur) { cur.out = 0.001; burst.fire(cur.h); }
     const old = cur; cur = h; h.g.scale.setScalar(0.001); stage.add(h.g); h.play('Showcase');
+    spin = -0.35 - Math.round((spin + 0.35) / (Math.PI * 2)) * Math.PI * 2; // quay lại góc 3/4 mặt trước
     if (old) setTimeout(() => stage.remove(old.g), 400);
     rimCol.set(h.art.rim || '#ffd28a'); rim.color.copy(rimCol).lerp(new THREE.Color(0xffffff), 0.35); ped.beam.material.uniforms.uCol.value.copy(rimCol);
     sp.mat.uniforms.uCol.value.copy(rimCol).lerp(new THREE.Color(0xffe0a0), 0.5);
     // khung hình theo chiều cao tướng
-    const hh = Math.max(1.6, h.h); camera.position.set(0, hh * 0.7, hh * 3.3 + 1.4); camera.lookAt(0, hh * 0.47, 0);
+    const hh = Math.max(1.6, h.h); camera.position.set(0.25, hh * 0.68, hh * 2.75 + 1.0); camera.lookAt(0.25, hh * 0.5, 0);
   }
 
   function frame(now) {
@@ -175,7 +176,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     sc.add(h.g); h.mixer.update(0.01); h.g.updateMatrixWorld(true);
     const head = new THREE.Vector3(); let bone = null; h.g.traverse((o) => { if (o.name === 'Bone_Head') bone = o; });
     if (bone) bone.getWorldPosition(head); else head.set(0, h.h * 0.85, 0);
-    const cam = new THREE.PerspectiveCamera(26, 1, 0.05, 20); cam.position.set(head.x + 0.12, head.y + 0.05, head.z + 1.25); cam.lookAt(head.x, head.y - 0.04, head.z);
+    const cam = new THREE.PerspectiveCamera(26, 1, 0.05, 20); cam.position.set(head.x + 0.1, head.y + 0.2, head.z + 1.2); cam.lookAt(head.x, head.y + 0.1, head.z);
     const rt = new THREE.WebGLRenderTarget(size, size, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cam); renderer.setRenderTarget(null);
     const px = new Uint8Array(size * size * 4); renderer.readRenderTargetPixels(rt, 0, 0, size, size, px); rt.dispose();
@@ -186,7 +187,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   }
 
   return {
-    show, portrait,
+    show, portrait, scene, stage,
     /** Dời tâm cảnh sang phải (px) để chừa chỗ cho lưới tướng bên trái. */
     setOffset(px) { offX = px; resize(); },
     dispose() { running = false; cancelAnimationFrame(req); composer.dispose(); renderer.dispose(); renderer.forceContextLoss(); removeEventListener('resize', resize); },

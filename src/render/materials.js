@@ -7,8 +7,11 @@ export const RIM = { self: '#ffe9a0', ally: '#5fe3d0', enemy: '#ff5a4a', neutral
 let ramp;
 function gradientMap() {
   if (!ramp) {
-    ramp = new THREE.DataTexture(new Uint8Array([70, 120, 185, 255]), 4, 1, THREE.RedFormat);
-    ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+    // 2 tông kiểu anime (sáng / bóng) với ranh giới mềm, bóng không quá tối để mặt không loang lổ
+    const N = 32, a = new Uint8Array(N);
+    for (let i = 0; i < N; i++) { const t = i / (N - 1), s = Math.min(1, Math.max(0, (t - 0.36) / 0.12)); a[i] = Math.round(255 * (0.6 + 0.4 * s * s * (3 - 2 * s))); }
+    ramp = new THREE.DataTexture(a, N, 1, THREE.RedFormat);
+    ramp.minFilter = ramp.magFilter = THREE.LinearFilter; ramp.needsUpdate = true;
   }
   return ramp;
 }
@@ -19,15 +22,15 @@ export function setOutlineResolution(w, h) { OUTLINE.ndc.value.set((OUTLINE.px *
 
 function patch(mat, u) {
   mat.onBeforeCompile = (sh) => {
-    sh.uniforms.rimColor = u.rim; sh.uniforms.flashAmt = u.flash;
-    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
-      '#include <emissivemap_fragment>\n float rimF = smoothstep(0.55, 1.0, 1.0 - saturate(dot(normalize(vNormal), normalize(vViewPosition))));\n totalEmissiveRadiance += rimColor * rimF * 0.8 + vec3(flashAmt);');
+    sh.uniforms.rimColor = u.rim; sh.uniforms.flashAmt = u.flash; sh.uniforms.rimAmt = u.rimAmt;
+    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\nuniform float rimAmt;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n float rimF = smoothstep(0.55, 1.0, 1.0 - saturate(dot(normalize(vNormal), normalize(vViewPosition))));\n totalEmissiveRadiance += rimColor * rimF * rimAmt + vec3(flashAmt);');
   };
   mat.customProgramCacheKey = () => 'unit-toon-rim';
 }
 
 function toToon(m, u) {
-  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, gradientMap: gradientMap() });
+  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity * (m.emissive.getHex() ? 2.2 : 1), gradientMap: gradientMap() }); // phần phát sáng mạnh hơn để bloom chỉ bắt chỗ này
   t.name = m.name; patch(t, u);
   return t;
 }
@@ -45,8 +48,8 @@ function outlineMaterial() {
 const outlineMat = outlineMaterial();
 
 /** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi màu viền/độ trong suốt. */
-export function prepareUnitMaterials(object, rimHex, { outline = true } = {}) {
-  const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 } };
+export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8 } = {}) {
+  const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 }, rimAmt: { value: rim } };
   const mats = [], outlines = [];
   const meshes = [];
   object.traverse((o) => { if (o.isMesh) meshes.push(o); });

@@ -1,5 +1,5 @@
 // Nguyệt Hà — Người Dẫn Sông Trăng (09 §4.9)
-import { humanoid, BONE } from '../humanoid.mjs';
+import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { swayChain, tube, ribbon, dangle, handPos, band, wy } from '../parts.mjs';
 import { smooth } from '../kit.mjs';
 
@@ -19,9 +19,7 @@ export default {
     const { m, H, hr, hc, y } = ctx;
     const head = BONE('Head'), chest = BONE('Chest'), hips = BONE('Hips');
     // — tóc bạc dài chạm đất —
-    m.sphere(1, { radii: [hr * 1.04, hr * 1.06, hr * 1.06], at: [0, hc.y + hr * 0.12, hc.z - hr * 0.16], bone: head, color: C.hair, color2: C.hair2, wseg: 16, hseg: 12 });
-    m.sphere(1, { radii: [hr * 1.0, hr * 0.3, hr * 0.44], at: [0, hc.y + hr * 0.72, hc.z + hr * 0.6], rot: [-14, 0, 0], bone: head, color: C.hair });
-    m.sphere(1, { radii: [hr * 0.17, hr * 0.8, hr * 0.28], at: [hr * 0.9, hc.y - hr * 0.3, hc.z + hr * 0.08], bone: head, color: C.hair, mirror: true });
+    hairLocks(ctx, { color: C.hair, color2: C.hair2, shine: '#ffffff', bangs: 7, side: 1.8, back: 1.3, spiky: 0.1, part: 0.2 });
     const hp0 = [[0, hc.y + hr * 0.1, hc.z - hr * 1.0], [0, y(0.78), -0.16], [0, y(0.56), -0.22], [0, y(0.34), -0.22], [0, y(0.13), -0.18], [0, 0.04, -0.13]];
     const hb = swayChain(m, head, 'Hair', hp0.slice(1));
     ribbon(m, hb, hp0, [0.2, 0.3, 0.34, 0.34, 0.3, 0.2], { color: C.hair, color2: C.hair2 });

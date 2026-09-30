@@ -11,6 +11,6 @@ npm i --no-save gltf-validator && node validate.mjs   # kiểm tra định dạn
 # bảng nhiều tướng: tools/model-sheet.html?ids=long_dang,hoa_ren   (chụp ảnh: NODE_PATH=$(npm root -g) node sheet.cjs out.png ids)
 ```
 
-- `kit.mjs` khối nguyên thuỷ, loft, trọng số xương · `humanoid.mjs` xương + thân chung · `anim.mjs` thư viện đòn/clip
+- `sdf.mjs` thân liền khối SDF (surface nets + meshoptimizer, AO khe) · `costume.mjs` áo/tay áo/đai/vạt/ủng/khăn · `kit.mjs` khối nguyên thuỷ, loft, trọng số xương · `humanoid.mjs` xương + thân chung · `anim.mjs` thư viện đòn/clip
 - `parts.mjs` phụ kiện dùng chung · `heroes/<id>.mjs` thiết kế từng tướng (theo 09 §4)
 - Muốn thay bằng model hoạ sĩ: đè `assets/heroes/<id>/<id>.glb` (giữ tên clip/xương theo 02 §13.5, 09 §3.4).

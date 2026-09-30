@@ -104,7 +104,7 @@ export function buildBushes(map) {
     for (let i = 0; i < 14; i++) tufts.push({ x: b.x + r.range(-0.55, 0.55) * b.w, y: 0, z: b.y + r.range(-0.55, 0.55) * b.h, ry: r.range(0, 7), sx: 1.6, sy: r.range(1.6, 2.4), sz: 1.6 });
   }
   const bg = new THREE.IcosahedronGeometry(1, 1); paint(bg, (t, ny) => C(0.31, 0.62, 0.34 + Math.max(0, ny) * 0.26));
-  g.add(scatter(new THREE.InstancedMesh(bg.toNonIndexed(), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.05), blobs.length), blobs, true));
+  g.add(scatter(new THREE.InstancedMesh((bg.index ? bg.toNonIndexed() : bg), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.05), blobs.length), blobs, true));
   g.add(scatter(new THREE.InstancedMesh(tuftGeo(90), sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.3), tufts.length), tufts, true));
   return g;
 }

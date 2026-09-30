@@ -2,6 +2,7 @@
 // tô màu theo đỉnh, gán xương (cứng hoặc pha trộn ở khớp). Đơn vị: mét, mặt nhìn về +Z,
 // bên trái của nhân vật ở +X (chuẩn glTF).
 import * as THREE from 'three';
+import { SdfBody } from './sdf.mjs';
 
 export const D2R = Math.PI / 180;
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -23,6 +24,9 @@ export class Model {
     this.glowColor = '#ffffff';
     this.glowStrength = 1.5;
     this.userData = {};
+    this.sdf = new SdfBody();
+    this.sdfCell = 0.013;
+    this.sdfTris = 8000;
   }
 
   joint(name, parent, x, y, z) {
@@ -224,8 +228,39 @@ export class Model {
     return this.loft(secs, { seg: o.seg || 10, ...o, at: a.clone().add(b).multiplyScalar(0.5).toArray(), rot: [e.x / D2R, e.y / D2R, e.z / D2R] });
   }
 
+  /** Khối SDF của thân liền (xem sdf.mjs). o.mirror: thêm bản đối xứng qua X (đổi tên xương L↔R). */
+  blob(o) {
+    this.sdf.add(o);
+    if (o.mirror) {
+      const mx = (p) => [-p[0], p[1], p[2]];
+      const q = { ...o, mirror: false };
+      if (o.cone) q.cone = [mx(o.cone[0]), mx(o.cone[1]), o.cone[2], o.cone[3]];
+      if (o.ell) q.ell = [mx(o.ell[0]), o.ell[1], o.ell[2] ? [o.ell[2][0], -o.ell[2][1], -o.ell[2][2]] : undefined];
+      if (o.loft) q.loft = o.loft.map((e) => ({ ...e, cx: -(e.cx || 0) }));
+      const w = o.weights, c = o.color;
+      q.weights = (x, y, z) => w(-x, y, z).map(([n, ww]) => [mirrorName(n), ww]);
+      if (typeof c === 'function') q.color = (x, y, z) => c(-x, y, z);
+      this.sdf.add(q);
+    }
+    return this;
+  }
+  _emitSdf() {
+    const r = this.sdf.mesh(this.sdfCell, this.sdfTris); if (!r) return;
+    const base = this.vcount, N = r.pos.length / 3;
+    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col);
+    for (const list of r.bones) {
+      const si = [0, 0, 0, 0], sw = [0, 0, 0, 0];
+      const keep = list.filter(([, w]) => w > 1e-3), tot = keep.reduce((a, [, w]) => a + w, 0) || 1;
+      keep.forEach(([nm, w], i) => { const j = this.jointMap.get(nm); if (!j) throw new Error('Thiếu xương ' + nm); si[i] = j.index; sw[i] = w / tot; });
+      this.si.push(...si); this.sw.push(...sw);
+    }
+    for (const i of r.idx) this.idx[0].push(base + i);
+    this.vcount += N;
+  }
+
   // ---- xuất ----
   build() {
+    this._emitSdf();
     const bones = this.joints.map((j) => { const b = new THREE.Bone(); b.name = j.name; return b; });
     const root = new THREE.Group();
     root.name = this.id;

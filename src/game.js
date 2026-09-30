@@ -4,6 +4,7 @@ import { DUEL } from './data/maps.js';
 import { HEROES } from './data/heroes/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/renderer.js';
+import { createPost } from './render/post.js';
 import { pickLevel, LEVELS } from './render/quality.js';
 import { addLights } from './render/lights.js';
 import { createCamera } from './render/camera.js';
@@ -58,6 +59,7 @@ const fx = createFx(scene);
 const indicators = createIndicators(scene);
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || '2000') });
 cam.resize(innerWidth, innerHeight);
+const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
@@ -108,7 +110,7 @@ const loop = createLoop({
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt);
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
-    renderer.render(scene, cam.camera);
+    if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
     const i = renderer.info.render;

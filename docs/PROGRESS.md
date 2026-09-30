@@ -7,13 +7,14 @@ Nguồn plan: bộ spec 3D trong `docs/` (bản 3D thay thế bản 2D cũ). L�
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | — | Chép bộ spec 3D vào repo, vendor Three.js r186 (`lib/three/`) | ✅ Xong |
+| Đường hình ảnh (v3) | Thân liền khối SDF mượt + AO khe, mặt anime (mống mắt chuyển sắc, 2 đốm sáng, mi), tóc từng lọn, trang phục có độ dày (6 tướng Alpha); bloom + cảnh trưng bày | ✅ Bản v3 |
 | Đường hình ảnh | Model 3D 30 tướng (16 gốc + 14 port cơ chế từ autobattle) (tạo bằng code, `tools/modelgen/`) | ✅ Bản đầu xong, đạt ngân sách; còn tinh chỉnh |
 | 1 (phần công cụ) | `tools/model-check.html` (trang kiểm tra model theo 11 §8.2) | ✅ Xong |
 | 1 | Khung 3D, vòng lặp 30Hz, joystick/WASD, bản đồ 1v1 trống, nạp model + Idle/Run, `?debug=1` | 🚧 Code xong, đã chạy thử bằng trình duyệt headless; **chờ bạn thử trên điện thoại** |
 | 2 | Chiến đấu và kỹ năng (6 tướng Alpha, hình nộm, HUD nút, chỉ báo ngắm) | 🚧 Code xong, `tools/t_combat.mjs` đạt; **chờ bạn thử trên điện thoại** |
 | 3 | Bản đồ 1v1 hoàn chỉnh (trụ, nhà chính, Suối Đèn, lính, tường, bụi, thắng/thua) | 🚧 Code xong, `simtest` và `t_map` đạt; **chờ bạn thử trên điện thoại** |
 | 4 | Kinh tế, đồ, phép, bùa (+ HUD cửa hàng/thanh đồ/nút phép kiểu video tham khảo) | 🚧 Code xong, `tools/t_items.mjs` đạt (49 kiểm tra); **chờ bạn thử trên điện thoại** |
-| 5 | Bot 1v1, màn chọn tướng luyện tập | ⬜ Chưa |
+| 5 | Bot 1v1, màn chọn tướng luyện tập (cảnh trưng bày 3D) | 🚧 Code xong; `tools/t_bot.mjs` 50 trận: ~92% kết thúc trong 40 phút, không bot kẹt; **chờ bạn thử** |
 | 6 | Hoàn thiện Alpha | ⬜ Chưa |
 | 7–11 | Beta 5v5 | ⬜ Chưa |
 | 12–14 | Bản 1.0 | ⬜ Chưa |
@@ -61,3 +62,5 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - 2026-09-30: Mốc 2: `src/sim/{stats,status,damage,combat,skills,projectiles,ctx,targeting}.js`, HUD nút kéo ngắm `src/hud/skillButtons.js`, `render/{materials,fx,indicators,project}.js`, màn thử 3 hình nộm (`/index.html?hero=<id>`). Kiểm thử: `node tools/t_combat.mjs`.
 - 2026-09-30: Mốc 3: `src/sim/{navgrid,pathfind,structures,minions,match}.js`, `data/{maps,units}.js`, `render/{structures,mapBuilder}.js`; kiểm thử `node tools/simtest.mjs 10`, `node tools/t_map.mjs`; `?ff=<giây>` tua nhanh, `?dummies=1` thêm hình nộm.
 - 2026-09-30: Mốc 4: `data/{items,spells,charms,economy}.js`, `sim/{economy,inventory,items,spells}.js`, `hud/{shop,spellButtons,icons}.js`; kiểm thử `node tools/t_items.mjs`. Vào trận có sẵn đồ khởi đầu theo vai; nút **Cửa hàng** (hoặc phím B), ô **Mua nhanh** góc trái trên, thanh 6 ô đồ giữa dưới, nút Phép/Về/đồ kích hoạt cạnh cụm kỹ năng (phím F / R / E). Bảng lab có nút +3000 vàng để thử mua.
+- 2026-09-30: Mốc 5: `ai/{heroBot,botSkills,perception}.js`, `data/ai.js` (4 độ khó), `ui/select.js` + `showcase/showcase.js` (chọn tướng 07 §7.1: lưới 2 cột có chân dung chụp từ model, tướng 3D trên bệ sen phát sáng, đèn trời, bloom, xoay 360°, Mình VS Máy, phép, trang bùa, độ khó). `game.js` tách từ `main.js`: vào trận 1v1 với bot; tỉ số giữa trên, đếm hồi sinh. Kiểm thử `node tools/t_bot.mjs 50`.
+- 2026-09-30: Model v3: `tools/modelgen/sdf.mjs` (surface nets + meshoptimizer), `costume.mjs`, `humanoid.mjs` (thân SDF, `hairLocks`, mặt anime). Bản đồ: công trình mới (tháp đèn mái cong 2 tầng, nhà chính bệ sen + vòng vàng xoay, suối đèn có mặt nước), lính có nón, bloom trong trận (tắt ở mức Thấp / `?nobloom=1`).

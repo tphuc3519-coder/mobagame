@@ -1,5 +1,6 @@
 // Lồng Đăng — Người Giữ Đèn (09 §4.15)
-import { humanoid, BONE } from '../humanoid.mjs';
+import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
+import { jacket, sleeves, boots } from '../costume.mjs';
 import { swayChain, tube } from '../parts.mjs';
 
 const C = { ivory: '#fff1d8', ivory2: '#f3dcb4', gold: '#e2b04a', red: '#d8452f', hair: '#1c1620', wood: '#7a5230', shade: '#2b2b52', skin: '#f2cdb0' };
@@ -22,13 +23,14 @@ export default {
     const pts = [[0, hc.y - 0.02, hc.z - hr * 0.95], [0, hc.y - 0.2, -0.17], [0, hc.y - 0.44, -0.2], [0, hc.y - 0.68, -0.17], [0, hc.y - 0.9, -0.12]];
     const hb = swayChain(m, head, 'Hair', pts.slice(1));
     tube(m, hb, pts, [0.11, 0.1, 0.085, 0.06, 0.012], { color: C.hair, color2: '#3a2c40', ao: 0.3 });
-    m.sphere(1, { radii: [hr * 1.04, hr * 1.06, hr * 1.06], at: [0, hc.y + hr * 0.1, hc.z - hr * 0.14], bone: head, color: C.hair, wseg: 20, hseg: 14, ao: 0.2 });
-    m.sphere(1, { radii: [hr * 0.98, hr * 0.28, hr * 0.42], at: [0, hc.y + hr * 0.7, hc.z + hr * 0.6], rot: [-14, 0, 0], bone: head, color: C.hair });
-    m.sphere(1, { radii: [hr * 0.2, hr * 0.7, hr * 0.3], at: [hr * 0.88, hc.y - hr * 0.15, hc.z + hr * 0.02], bone: head, color: C.hair, mirror: true });
+    hairLocks(ctx, { color: C.hair, color2: '#3a2c48', shine: '#9a88c8', bangs: 7, side: 1.5, back: 1.2, spiky: 0.15, part: 0.4 });
     m.torus(0.078, 0.014, { at: [0, pts[2][1] + 0.1, -0.2], rot: [90, 0, 0], bone: hb[2], color: C.red, seg: 14 });
     m.sphere(0.03, { at: [0.05, pts[2][1] + 0.1, -0.24], bone: hb[2], color: C.red, mirror: true });
     m.cone(0.024, 0.16, { at: [0.09, pts[2][1] + 0.02, -0.25], rot: [0, 0, 160], bone: hb[2], color: C.red, mirror: true });
     m.torus(0.02, 0.006, { at: [hr * 0.6, hc.y + hr * 0.75, hc.z + hr * 0.3], rot: [70, 0, 30], bone: head, color: C.gold, mirror: true }); // trâm
+    jacket(ctx, { color: C.ivory, hem: 0.5, flare: 1.02, collar: C.gold });
+    sleeves(ctx, { color: C.ivory, cuff: C.gold, len: 0.95, flare: 1.25 });
+    boots(ctx, { color: C.red, cuff: C.gold, top: 0.55 });
     // — áo dài: hai tà trước/sau + vạt, cổ, sash —
     const sf = BONE('SwayFlapF1'), sb = BONE('SwayFlapB1');
     m.joint(sf, BONE('Hips'), 0, waistY, 0.02); m.joint(sb, BONE('Hips'), 0, waistY, -0.02);

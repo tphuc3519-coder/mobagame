@@ -66,7 +66,7 @@ export function buildMap(scene, map, level = 'mid') {
   for (const s of [-1, 1]) for (const dx of [-1, 1]) posts.push({ x: map.river.x + dx * (bw / 2 - 20), z: lane.y + s * (rw / 2 + 4), y: 150, base: 66 });
   const d = new THREE.Object3D();
   const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(6, 9, 1, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2c }), posts.length);
-  const lamp = new THREE.InstancedMesh(new THREE.SphereGeometry(32, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffc46a }), posts.length);
+  const lamp = new THREE.InstancedMesh(new THREE.SphereGeometry(32, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc46a).multiplyScalar(2.2) }), posts.length);
   const cap = new THREE.InstancedMesh(new THREE.ConeGeometry(30, 16, 8), new THREE.MeshLambertMaterial({ color: 0x8a3a2c }), posts.length);
   posts.forEach((p, i) => {
     const len = p.y - p.base;
