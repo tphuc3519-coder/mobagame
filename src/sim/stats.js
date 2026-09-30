@@ -1,9 +1,16 @@
+import { COMBAT_EXTRA } from '../data/economy.js';
+
 /** Chỉ số cuối = gốc + tăng/cấp × (cấp−1), cộng buff (02 §7). Tính lại mỗi tick. */
+const NONE = {};
 export function computeStats(world, e) {
   const d = e.data, b = d.base, p = d.perLevel || {}, L = e.level - 1;
-  const s = { maxHp: b.maxHp + (p.maxHp || 0) * L, maxMana: b.maxMana + (p.maxMana || 0) * L, atk: b.atk + (p.atk || 0) * L, ap: b.ap || 0,
-    armor: b.armor + (p.armor || 0) * L, mr: b.mr + (p.mr || 0) * L, range: b.range, armorPenPct: 0, armorPenFlat: 0 };
-  let asPct = (p.atkSpeedPct || 0) * L, msPct = 0, slow = 0, dmgReduce = 0;
+  const bo = e.bonus || NONE, g = (k) => bo[k] || 0;
+  const s = { maxHp: b.maxHp + (p.maxHp || 0) * L + g('maxHp'), maxMana: b.maxMana + (p.maxMana || 0) * L + g('maxMana'), baseAtk: b.atk + (p.atk || 0) * L, ap: (b.ap || 0) + g('ap'),
+    armor: b.armor + (p.armor || 0) * L + g('armor'), mr: b.mr + (p.mr || 0) * L + g('mr'), range: b.range, armorPenPct: Math.min(COMBAT_EXTRA.penCap, g('armorPenPct')), armorPenFlat: g('armorPenFlat'),
+    mrPen: g('mrPen'), mrPenPct: g('mrPenPct'), crit: Math.min(1, g('crit')), lifesteal: g('lifesteal'), spellvamp: g('spellvamp'), cdr: Math.min(COMBAT_EXTRA.cdrCap, g('cdr')),
+    tenacity: Math.min(COMBAT_EXTRA.tenacityCap, g('tenacity')), basicReduce: g('basicReduce') };
+  s.atk = s.baseAtk + g('atk');
+  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, slow = 0, dmgReduce = 0;
   for (const st of e.statuses) {
     if (st.kind === 'statMod') {
       s.armor += st.armor || 0; s.mr += st.mr || 0; s.atk += st.atk || 0; s.ap += st.ap || 0; asPct += st.atkSpeedPct || 0; dmgReduce += st.dmgReducePct || 0;
@@ -12,10 +19,12 @@ export function computeStats(world, e) {
   }
   if (world.tick > (e.heatUntil || 0)) e.heat = 0;
   if (e.heat > 0) asPct += 0.05 * e.heat;
+  s.ap *= 1 + g('apMult');
   s.atkSpeed = Math.min(2.5, b.atkSpeed * (1 + asPct));
-  s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, b.moveSpeed * (1 + msPct) * (1 - slow)) : 0;
+  s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, (b.moveSpeed + g('moveSpeed')) * (1 + msPct + g('moveSpeedPct')) * (1 - slow)) : 0;
   s.dmgReduce = dmgReduce;
-  s.regenHp = 40 + 4 * L; s.regenMana = 25 + 2.5 * L;
+  s.regenHp = 40 + 4 * L; // hồi thêm từ bùa/đồ cộng riêng trong items.js
+  s.regenMana = 25 + 2.5 * L;
   return s;
 }
 

@@ -5,13 +5,17 @@ import { dealDamage } from './damage.js';
 import { nearestEnemy } from './targeting.js';
 import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
+import { onBasicAttack, onBasicHit } from './items.js';
 
 function nextRange(e) { return e.statuses.find((s) => s.kind === 'nextRange')?.value || 0; }
 
 /** Kết quả một đòn đánh: sát thương thường + phần thêm (nội tại, phục kích), rồi hook onHit. */
 function resolveHit(world, owner, target, pay) {
   if (!owner || !target.alive) return;
-  dealDamage(world, owner, target, pay.amount, 'physical');
+  const it = onBasicAttack(world, owner, { amount: pay.amount, targetMaxHp: target.stats.maxHp });
+  const dealt = dealDamage(world, owner, target, it.amount, 'physical', { basic: true });
+  for (const x of it.extra) dealDamage(world, owner, target, x.amount, x.type);
+  onBasicHit(world, owner, target, dealt);
   if (pay.bonusMagic) dealDamage(world, owner, target, pay.bonusMagic, 'magic');
   if (pay.ambush) {
     dealDamage(world, owner, target, pay.ambush.base + pay.ambush.perLevel * (pay.level - 1) + pay.ambush.adBonus * Math.max(0, owner.stats.atk - owner.data.base.atk), 'physical');

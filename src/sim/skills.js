@@ -6,11 +6,13 @@ import { dealDamage, heal, addShield } from './damage.js';
 import { enemiesOf, alliesOf } from './targeting.js';
 import { spawnProjectile, spawnZone } from './projectiles.js';
 import { makeCtx, amountOf, resolveEffect } from './ctx.js';
+import { onSkillDamage, onCastSkill } from './items.js';
+import { COMBAT_EXTRA } from '../data/economy.js';
 
 /** Sát thương + hiệu ứng lên một mục tiêu, rồi gọi hook onHit/onSkillHit của tướng. */
 export function skillHit(world, owner, target, cast) {
   const { skill, level } = cast;
-  if (skill.damage) dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type);
+  if (skill.damage) { dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type); onSkillDamage(world, owner, target); }
   for (const eff of skill.effects || []) applyStatus(world, target, resolveEffect(eff, level), owner);
   const hooks = owner.data.passive?.hooks;
   const ctx = makeCtx(world, owner, { target, cast, skill });
@@ -111,7 +113,8 @@ export function castSkill(world, e, slot, aim) {
   const handler = HANDLERS[skill.type];
   if (!handler) return { ok: false, reason: 'unsupported' };
   e.mana -= cost;
-  e.cooldowns[slot] = world.tick + T(lv(skill.cooldown, level));
+  e.cooldowns[slot] = world.tick + T(lv(skill.cooldown, level) * (1 - Math.min(COMBAT_EXTRA.cdrCap, e.stats.cdr || 0)));
+  e.recall = null; onCastSkill(world, e);
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
   if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
   const cast = { slot, skill, level, flags: {}, hitHero: false };

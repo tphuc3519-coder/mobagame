@@ -16,5 +16,5 @@ export default {
     s3: { id: 'hoi_den', name: 'Hội Đèn', type: 'aoeSelf', aim: 'none', radius: 650, cooldown: [70, 62, 54], cost: [120, 120, 120],
       allyShield: { base: 200, perLevel: 100, ap: 0.8, duration: 4 }, allyEffects: [{ status: 'haste', pct: 0.25, duration: 3 }] },
   },
-  ai: { combo: ['s2', 's1', 's3'], preferredRange: 520, engageHpRatio: 0.8 }, defaultSpell: 'hoi_phuc', art: 'heroes/long_dang/hero.art.json',
+  ai: { combo: ['s2', 's1', 's3'], preferredRange: 520, engageHpRatio: 0.8 }, defaultSpell: 'hoi_phuc', recommendedBuild: ['giay_tinh_tam', 'giap_den_long', 'ao_choang_suong', 'truong_song', 'khien_da', 'tim_co_thu'], art: 'heroes/long_dang/hero.art.json',
 };

@@ -16,5 +16,5 @@ export default {
     s3: { id: 'mua_ten', name: 'Mưa Tên', type: 'zone', aim: 'point', range: 950, radius: 300, duration: 2.5, tickInterval: 0.25, cooldown: [50, 44, 38], cost: [100, 100, 100],
       damage: { base: 40, perLevel: 20, ad: 0.35, type: 'physical' }, effects: [{ status: 'slow', pct: 0.2, duration: 0.5 }] },
   },
-  ai: { combo: ['s1', 's2', 's3'], preferredRange: 550, engageHpRatio: 0.9 }, defaultSpell: 'chop_buoc', art: 'heroes/canh_dieu/hero.art.json',
+  ai: { combo: ['s1', 's2', 's3'], preferredRange: 550, engageHpRatio: 0.9 }, defaultSpell: 'chop_buoc', recommendedBuild: ['giay_toc_chien', 'cung_gio', 'dao_trang_khuyet', 'huyet_kiem', 'bua_than_ren', 'mat_na_hoi_sinh'], art: 'heroes/canh_dieu/hero.art.json',
 };

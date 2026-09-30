@@ -16,5 +16,5 @@ export default {
     s3: { id: 'den_thieng', name: 'Đền Thiêng', type: 'aoeSelf', aim: 'none', radius: 350, cooldown: [60, 52, 44], cost: [100, 100, 100],
       effects: [{ status: 'taunt', duration: [1.5, 1.75, 2] }], selfEffects: [{ status: 'statMod', armor: [40, 60, 80], mr: [40, 60, 80], duration: 5 }] },
   },
-  ai: { combo: ['s1', 's3', 's2'], preferredRange: 160, engageHpRatio: 0.8 }, defaultSpell: 'chop_buoc', art: 'heroes/thach_quy/hero.art.json',
+  ai: { combo: ['s1', 's3', 's2'], preferredRange: 160, engageHpRatio: 0.8 }, defaultSpell: 'chop_buoc', recommendedBuild: ['giay_chien', 'khien_da', 'giap_den_long', 'giap_gai', 'tim_co_thu', 'ao_choang_suong'], art: 'heroes/thach_quy/hero.art.json',
 };

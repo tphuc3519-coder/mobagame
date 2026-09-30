@@ -17,5 +17,5 @@ export default {
       selfEffects: [{ status: 'stealth', duration: 2.5 }, { status: 'haste', pct: 0.3, duration: 2.5 }],
       ambush: { base: 150, perLevel: 90, adBonus: 1.2, slow: 0.4, slowDuration: 1 } },
   },
-  ai: { combo: ['s3', 's1', 's2'], preferredRange: 160, engageHpRatio: 0.8 }, defaultSpell: 'thu_hoach', art: 'heroes/bong_tre/hero.art.json',
+  ai: { combo: ['s3', 's1', 's2'], preferredRange: 160, engageHpRatio: 0.8 }, defaultSpell: 'thu_hoach', recommendedBuild: ['giay_chien', 'huyet_kiem', 'luoi_huyet_nguyet', 'dao_trang_khuyet', 'thuong_pha_giap', 'mat_na_hoi_sinh'], art: 'heroes/bong_tre/hero.art.json',
 };

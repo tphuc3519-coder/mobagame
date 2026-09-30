@@ -1,13 +1,17 @@
 import { T } from './util.js';
 
 // Hiệu ứng (04 §3). Mỗi status: { id, kind, until, ...dữ liệu }. Thời gian theo tick.
-const HARD = new Set(['stun', 'knockup']);
+const HARD = new Set(['stun', 'knockup', 'stasis']); // stasis: bất động, không hành động (05 §8)
+const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt']);
+const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt']);
 
 /** Áp hiệu ứng. spec: {status, duration(giây), pct, ...}; id tuỳ chọn để thay thế bản cũ cùng id. */
 export function applyStatus(world, target, spec, src) {
   if (!target.alive || target.structure) return null; // công trình miễn nhiễm hiệu ứng
   const kind = spec.status, id = spec.id || kind;
-  const s = { ...spec, kind, id, src: src?.id, until: world.tick + T(spec.duration ?? 0) };
+  if (CC.has(kind) && target.statuses.some((x) => x.kind === 'ccImmune')) return null;
+  const dur = TENACITY.has(kind) ? (spec.duration ?? 0) * (1 - (target.stats?.tenacity || 0)) : spec.duration ?? 0; // kháng hiệu ứng rút ngắn khống chế
+  const s = { ...spec, kind, id, src: src?.id, until: world.tick + T(dur) };
   delete s.status;
   const i = target.statuses.findIndex((x) => x.id === id);
   if (i >= 0) {
@@ -25,7 +29,8 @@ export const isHardCC = (e) => e.statuses.some((s) => HARD.has(s.kind));
 export const isRooted = (e) => isHardCC(e) || e.statuses.some((s) => s.kind === 'root');
 export const isSilenced = (e) => isHardCC(e) || e.statuses.some((s) => s.kind === 'silence');
 export const isStealthed = (e) => e.statuses.some((s) => s.kind === 'stealth');
-export const isUntargetable = (e) => e.statuses.some((s) => s.kind === 'untargetable');
+export const isUntargetable = (e) => e.statuses.some((s) => s.kind === 'untargetable' || s.kind === 'stasis');
+export const isInvulnerable = (e) => e.statuses.some((s) => s.kind === 'stasis' || s.kind === 'invuln');
 export const tauntSource = (e) => e.statuses.find((s) => s.kind === 'taunt')?.src ?? null;
 
 /** Hết hạn, tick sát thương/hồi theo thời gian (2 lần/giây), khiên hết hạn. */

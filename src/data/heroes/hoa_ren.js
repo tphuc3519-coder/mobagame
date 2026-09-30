@@ -23,5 +23,5 @@ export default {
       damage: { base: 200, perLevel: 120, ad: 1.4, type: 'physical' }, effects: [{ status: 'stun', duration: 1 }], heat: 5 },
   },
   ai: { combo: ['s3', 's1', 's2'], preferredRange: 170, engageHpRatio: 0.7 },
-  defaultSpell: 'chop_buoc', art: 'heroes/hoa_ren/hero.art.json',
+  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_chien', 'huyet_kiem', 'bua_than_ren', 'khien_da', 'thuong_pha_giap', 'mat_na_hoi_sinh'], art: 'heroes/hoa_ren/hero.art.json',
 };

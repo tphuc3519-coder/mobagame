@@ -13,6 +13,10 @@ import { buildNavGrid } from './navgrid.js';
 import { spawnStructures, updateStructures, onHeroDamaged } from './structures.js';
 import { updateWaves, updateMinions } from './minions.js';
 import { checkMatch } from './match.js';
+import { initEconomy, updateEconomy } from './economy.js';
+import { SPELLS } from '../data/spells.js';
+import { equip, computeBonus } from './inventory.js';
+import { updateItems } from './items.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
@@ -35,7 +39,8 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     return e;
   };
   const makeHero = (data, team, pos, kind) => {
-    const e = world.spawnEntity({ kind, isHero: true, team, heroId: data.id, data, radius: data.radius ?? 40, pos, skillPoints: 1, autoLevel: true });
+    const e = world.spawnEntity({ kind, isHero: true, team, heroId: data.id, data, radius: data.radius ?? 40, pos, skillPoints: 1, autoLevel: true, teamMode: map.id !== 'duel1v1' });
+    if (kind === 'hero') { initEconomy(e); equip(e, { spellId: SPELLS[data.defaultSpell]?.disabledIn1v1 && !e.teamMode ? 'chop_buoc' : data.defaultSpell || 'chop_buoc' }); refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; }
     autoLevel(e);
     return e;
   };
@@ -47,6 +52,8 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     q.push(cmd);
   };
   world.debug = {
+    /** Bỏ bùa và đồ để đo sát thương thuần (dùng trong kiểm thử). */
+    bare(e) { e.charm = null; e.items = e.items.map(() => null); e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; },
     resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; },
     level15(e) { setLevel(world, e, 15); },
     fullHeal(e) { e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; },
@@ -66,8 +73,10 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
       if (e.kind !== 'hero') continue;
       e.hp = Math.min(e.stats.maxHp, e.hp + e.stats.regenHp / 150);
       e.mana = Math.min(e.stats.maxMana, e.mana + e.stats.regenMana / 150);
+      updateItems(world, e);
       e.data.passive?.hooks?.onTick?.(makeCtx(world, e));
     }
+    updateEconomy(world);
     if (world.waves) updateWaves(world);
     updateMinions(world);
     updateStructures(world);
