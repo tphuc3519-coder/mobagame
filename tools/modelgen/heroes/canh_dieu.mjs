@@ -1,5 +1,6 @@
 // Cánh Diều — Cung Thủ Theo Gió (09 §4.12)
-import { humanoid, BONE } from '../humanoid.mjs';
+import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
+import { jacket, sleeves, belt, boots, scarf } from '../costume.mjs';
 import { swayChain, ribbon, dangle, leaf, handPos, along, place, orient, band, curve, spike } from '../parts.mjs';
 
 const C = { skin: '#e8bf9a', blue: '#2b6cb0', blue2: '#1f4f86', amber: '#f6ad55', cream: '#fff5e1', dark: '#1a202c', wood: '#a5773d', wood2: '#6e4a22', hair: '#4a2c1a', wind: '#a8e6ff' };
@@ -18,8 +19,12 @@ export default {
     const { m, H, hr, hc, y } = ctx;
     const head = BONE('Head'), chest = BONE('Chest'), hips = BONE('Hips');
     // — tóc, kính bảo hộ đẩy lên trán —
-    m.sphere(1, { radii: [hr * 1.04, hr * 1.02, hr * 1.05], at: [0, hc.y + hr * 0.16, hc.z - hr * 0.18], bone: head, color: C.hair, wseg: 16, hseg: 12 });
-    m.sphere(1, { radii: [hr * 0.98, hr * 0.26, hr * 0.42], at: [0, hc.y + hr * 0.74, hc.z + hr * 0.58], rot: [-16, 0, 0], bone: head, color: C.hair });
+    jacket(ctx, { color: C.blue, color2: C.blue2, hem: 0.44, flare: 1.15, trim: C.amber, collar: C.cream, split: 0.5 });
+    sleeves(ctx, { color: C.blue, cuff: C.amber, len: 0.8 });
+    belt(ctx, { color: '#5a3a1f', buckle: C.amber, at: 0.52 });
+    boots(ctx, { color: '#6e4a22', cuff: C.cream, top: 0.15 });
+    scarf(ctx, { color: C.amber });
+    hairLocks(ctx, { color: C.hair, color2: '#6a4028', shine: '#d8a070', bangs: 6, side: 0.7, back: 0.6, spiky: 1, part: 0.5 });
     for (let i = 0; i < 5; i++) spike(m, { at: [(i - 2) * hr * 0.3, hc.y + hr * 0.95, hc.z - hr * 0.3], len: hr * 0.5, r: hr * 0.13, rot: [-60, 0, (i - 2) * -14], bone: head, color: C.hair, seg: 5 });
     m.torus(hr * 1.02, hr * 0.06, { at: [0, hc.y + hr * 0.62, hc.z - hr * 0.02], rot: [90, 0, 0], bone: head, color: C.dark, seg: 20 });
     for (const s of [1, -1]) {

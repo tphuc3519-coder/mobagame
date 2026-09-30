@@ -1,5 +1,6 @@
 // Thạch Quy — Người Gác Đền Rêu Phủ (09 §4.1)
 import { humanoid, BONE } from '../humanoid.mjs';
+import { belt } from '../costume.mjs';
 import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../parts.mjs';
 
 const C = { skin: '#70847a', stone: '#5d6f5f', stone2: '#3f4c40', dark: '#2b2f3a', moss: '#5f8f4a', jade: '#7fd1a8', bronze: '#b8843a', bronze2: '#7a5424', gold: '#c9a24a', root: '#4a5440' };
@@ -17,6 +18,7 @@ export default {
     });
     const { m, H, hr, hc, y } = ctx;
     const head = BONE('Head'), chest = BONE('Chest'), hips = BONE('Hips');
+    belt(ctx, { color: C.bronze2, buckle: C.jade, at: 0.52, thick: 0.03 });
     // — đầu đá: mày dày, gai đá, râu rễ —
     m.box(hr * 1.5, hr * 0.22, hr * 0.3, { at: [0, hc.y + hr * 0.24, hc.z + hr * 0.8], rot: [-8, 0, 0], bone: head, color: C.stone, flat: false });
     for (let i = 0; i < 5; i++) spike(m, { at: [(i - 2) * hr * 0.32, hc.y + hr * (1.0 - Math.abs(i - 2) * 0.08), hc.z - hr * 0.1], len: hr * 0.55, r: hr * 0.13, rot: [-10 - Math.abs(i - 2) * 4, 0, (i - 2) * -14], bone: head, color: C.stone2 });

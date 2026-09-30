@@ -2,6 +2,7 @@
 // tô màu theo đỉnh, gán xương (cứng hoặc pha trộn ở khớp). Đơn vị: mét, mặt nhìn về +Z,
 // bên trái của nhân vật ở +X (chuẩn glTF).
 import * as THREE from 'three';
+import { SdfBody } from './sdf.mjs';
 
 export const D2R = Math.PI / 180;
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -10,6 +11,16 @@ export const smooth = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
+/** Loại chất liệu cho shader vẽ tay: 0 vải, 1 da người, 2 kim loại (sắt/vàng), 3 tóc, 4 da thuộc/gỗ, 5 phát sáng. */
+export const MAT = { cloth: 0, skin: 1, metal: 2, hair: 3, leather: 4, glow: 5 };
+export function classifyMat(hex, skinHex) {
+  const c = new THREE.Color(hex), h = {}; c.getHSL(h);
+  if (skinHex && c.equals(new THREE.Color(skinHex))) return MAT.skin;
+  if (h.s < 0.12 && h.l > 0.2 && h.l < 0.72) return MAT.metal;
+  if (h.h > 0.09 && h.h < 0.16 && h.s > 0.45 && h.l > 0.35 && h.l < 0.72) return MAT.metal; // vàng
+  if (h.h > 0.0 && h.h < 0.12 && h.l < 0.36) return MAT.leather;
+  return MAT.cloth;
+}
 export const mirrorName = (n) => n.replace(/([LR])(_Tip)?$/, (m, s, t) => (s === 'L' ? 'R' : 'L') + (t || ''));
 
 export class Model {
@@ -17,12 +28,16 @@ export class Model {
     this.id = id;
     this.joints = [];            // {name,parent,pos}
     this.jointMap = new Map();
-    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = [];
-    this.idx = [[], []];         // 0 = thân, 1 = phát sáng
+    this.pos = []; this.nor = []; this.col = []; this.si = []; this.sw = []; this.uv = []; this.mat = [];
+    this.skinHex = null;
+    this.idx = [[], [], []];     // 0 = thân, 1 = phát sáng, 2 = mặt (texture vẽ lúc chạy)
     this.vcount = 0;
     this.glowColor = '#ffffff';
     this.glowStrength = 1.5;
     this.userData = {};
+    this.sdf = new SdfBody();
+    this.sdfCell = 0.013;
+    this.sdfTris = 8000;
   }
 
   joint(name, parent, x, y, z) {
@@ -87,9 +102,10 @@ export class Model {
     }
     const base = this.vcount;
     const p = V();
+    const matId = glow ? MAT.glow : o.mat != null ? (typeof o.mat === 'string' ? MAT[o.mat] : o.mat) : classifyMat(color, this.skinHex);
     for (let i = 0; i < n; i++) {
       p.fromBufferAttribute(pos, i);
-      this.pos.push(p.x, p.y, p.z);
+      this.pos.push(p.x, p.y, p.z); this.uv.push(0, 0); this.mat.push(matId);
       this.nor.push(nor.getX(i), nor.getY(i), nor.getZ(i));
       let k = 0;
       if (c2) k = (local[i * 3 + 1] - bb.min.y) / Math.max(1e-6, bb.max.y - bb.min.y);
@@ -224,8 +240,58 @@ export class Model {
     return this.loft(secs, { seg: o.seg || 10, ...o, at: a.clone().add(b).multiplyScalar(0.5).toArray(), rot: [e.x / D2R, e.y / D2R, e.z / D2R] });
   }
 
+  /** Khối SDF của thân liền (xem sdf.mjs). o.mirror: thêm bản đối xứng qua X (đổi tên xương L↔R). */
+  blob(o) {
+    this.sdf.add(o);
+    if (o.mirror) {
+      const mx = (p) => [-p[0], p[1], p[2]];
+      const q = { ...o, mirror: false };
+      if (o.cone) q.cone = [mx(o.cone[0]), mx(o.cone[1]), o.cone[2], o.cone[3]];
+      if (o.ell) q.ell = [mx(o.ell[0]), o.ell[1], o.ell[2] ? [o.ell[2][0], -o.ell[2][1], -o.ell[2][2]] : undefined];
+      if (o.loft) q.loft = o.loft.map((e) => ({ ...e, cx: -(e.cx || 0) }));
+      const w = o.weights, c = o.color;
+      q.weights = (x, y, z) => w(-x, y, z).map(([n, ww]) => [mirrorName(n), ww]);
+      if (typeof c === 'function') q.color = (x, y, z) => c(-x, y, z);
+      this.sdf.add(q);
+    }
+    return this;
+  }
+  /** Mảng da mặt có UV (nhóm 2): lưới bám bề mặt đầu, game vẽ mắt/miệng anime lên texture. */
+  facePatch(sdf, { hc, hr, bone, x0 = -0.82, x1 = 0.82, y0 = -1.0, y1 = 0.55, nx = 18, ny = 16, lift = 0.0015 }) {
+    const base = this.vcount, j = this.jointMap.get(bone), id = [];
+    for (let iy = 0; iy <= ny; iy++) for (let ix = 0; ix <= nx; ix++) {
+      const u = ix / nx, v = iy / ny, x = hc.x + (x0 + (x1 - x0) * u) * hr, yy = hc.y + (y0 + (y1 - y0) * v) * hr;
+      let z = hc.z + hr * 2, hit = false;
+      for (let s = 0; s < 80; s++) { const d = sdf.dist(x, yy, z); if (d < 0.0003) { hit = true; break; } z -= Math.max(d, 0.0008); if (z < hc.z - hr) break; }
+      const e = 0.002, gx = sdf.dist(x + e, yy, z) - sdf.dist(x - e, yy, z), gy = sdf.dist(x, yy + e, z) - sdf.dist(x, yy - e, z), gz = sdf.dist(x, yy, z + e) - sdf.dist(x, yy, z - e), l = Math.hypot(gx, gy, gz) || 1;
+      id.push(hit && gz / l > 0.15);
+      this.pos.push(x + gx / l * lift, yy + gy / l * lift, z + gz / l * lift); this.nor.push(gx / l, gy / l, gz / l); this.col.push(1, 1, 1); this.uv.push(u, v); this.mat.push(MAT.skin);
+      this.si.push(j.index, 0, 0, 0); this.sw.push(1, 0, 0, 0);
+    }
+    const at = (ix, iy) => iy * (nx + 1) + ix;
+    for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
+      const a = at(ix, iy), b = at(ix + 1, iy), c = at(ix + 1, iy + 1), d = at(ix, iy + 1);
+      if (id[a] && id[b] && id[c] && id[d]) this.idx[2].push(base + a, base + b, base + c, base + a, base + c, base + d);
+    }
+    this.vcount += (nx + 1) * (ny + 1);
+  }
+  _emitSdf() {
+    const r = this.sdf.mesh(this.sdfCell, this.sdfTris, (hex) => classifyMat(hex, this.skinHex)); if (!r) return;
+    const base = this.vcount, N = r.pos.length / 3;
+    this.pos.push(...r.pos); this.nor.push(...r.nor); this.col.push(...r.col); for (let i = 0; i < N; i++) this.uv.push(0, 0); this.mat.push(...r.mat);
+    for (const list of r.bones) {
+      const si = [0, 0, 0, 0], sw = [0, 0, 0, 0];
+      const keep = list.filter(([, w]) => w > 1e-3), tot = keep.reduce((a, [, w]) => a + w, 0) || 1;
+      keep.forEach(([nm, w], i) => { const j = this.jointMap.get(nm); if (!j) throw new Error('Thiếu xương ' + nm); si[i] = j.index; sw[i] = w / tot; });
+      this.si.push(...si); this.sw.push(...sw);
+    }
+    for (const i of r.idx) this.idx[0].push(base + i);
+    this.vcount += N;
+  }
+
   // ---- xuất ----
   build() {
+    this._emitSdf();
     const bones = this.joints.map((j) => { const b = new THREE.Bone(); b.name = j.name; return b; });
     const root = new THREE.Group();
     root.name = this.id;
@@ -239,13 +305,16 @@ export class Model {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+    geo.setAttribute('_mat', new THREE.Float32BufferAttribute(this.mat, 1));
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(this.si, 4));
     geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(this.sw, 4));
     const all = [], mats = [];
     const body = new THREE.MeshStandardMaterial({ name: `${this.id}_body`, vertexColors: true, roughness: 0.62, metalness: 0.12 });
     const glow = new THREE.MeshStandardMaterial({ name: `${this.id}_glow`, vertexColors: true, roughness: 0.5, metalness: 0,
       emissive: new THREE.Color(this.glowColor), emissiveIntensity: 1 });
-    [[0, body], [1, glow]].forEach(([k, m]) => {
+    const face = new THREE.MeshStandardMaterial({ name: `${this.id}_face`, color: 0xffffff, transparent: true, alphaTest: 0.4, roughness: 0.6, metalness: 0 });
+    [[0, body], [1, glow], [2, face]].forEach(([k, m]) => {
       if (!this.idx[k].length) return;
       geo.addGroup(all.length, this.idx[k].length, mats.length);
       all.push(...this.idx[k]); mats.push(m);

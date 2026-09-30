@@ -1,5 +1,6 @@
 // Bóng Tre — Sát Thủ Rừng Tre (09 §4.7)
 import { humanoid, BONE } from '../humanoid.mjs';
+import { jacket, sleeves, belt, boots } from '../costume.mjs';
 import { swayChain, tube, dangle, leaf, handPos, along, place, orient, band, flap } from '../parts.mjs';
 
 const C = { skin: '#e6bf9d', green: '#24452f', green2: '#182f21', dark: '#0f1a14', leaf: '#6fbf73', dry: '#d8e8b0', straw: '#dcc98a', straw2: '#a89a5c', steel: '#b9d4c0' };
@@ -17,6 +18,10 @@ export default {
     });
     const { m, H, hr, hc, y } = ctx;
     const head = BONE('Head'), chest = BONE('Chest'), hips = BONE('Hips');
+    jacket(ctx, { color: C.green, color2: C.green2, hem: 0.38, flare: 1.18, trim: C.dark, collar: C.dark, split: 0.53 });
+    sleeves(ctx, { color: C.green, cuff: C.dark, len: 0.55 });
+    belt(ctx, { color: C.dark, buckle: C.leaf, at: 0.545 });
+    boots(ctx, { color: C.dark, cuff: C.green2, top: 0.1 });
     // — nón lá tre cắt vát, khăn che nửa mặt —
     m.cone(hr * 1.85, hr * 0.85, { at: [0, hc.y + hr * 1.02, hc.z], rot: [0, 0, 7], bone: head, color: C.straw, color2: C.straw2, seg: 22, ao: 0.2 });
     m.torus(hr * 1.8, hr * 0.04, { at: [0.0, hc.y + hr * 0.6, hc.z], rot: [90, 0, 7], bone: head, color: C.straw2, seg: 26 });

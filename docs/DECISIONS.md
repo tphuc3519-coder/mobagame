@@ -1,0 +1,41 @@
+# Quyết định
+
+- 2026-09-30 (Mốc 1): thay file thử `assets/test/test_character.glb` bằng chính model Hoả Rèn do `tools/modelgen` sinh (`assets/heroes/hoa_ren/`), vì đã có sẵn clip Idle/Run đúng chuẩn. Không cần tải bộ CC0.
+- 2026-09-30 (Mốc 1): giới hạn FPS vẽ bằng cách bỏ khung hình (30 ở mức Thấp), mô phỏng luôn 30Hz cố định.
+- 2026-09-30 (Mốc 1): tướng bị giữ trong đường (y 750–1650) và trong bản đồ; tường, bụi, khe nước chưa chặn (Mốc 3).
+- 2026-09-30: GLB xuất mét, `hero.art.json.scale = 100` để ra cm trong thế giới.
+- 2026-09-30: roster autobattle (nhân vật có bản quyền) không copy nguyên; port **cơ chế** sang 14 tướng gốc theo lựa chọn của chủ dự án. Đối chiếu: Sakura→Hạnh Hoa, Konohamaru→Tiểu Ảnh, ChiChi→Bà Năm Chảo, Tsubasa→Cầu Mây, Shikamaru→Bóng Đèn, Suzune→Thầy Đồ, Ginyu→Kép Chèo, Doraemon→Mèo Thần Tài, Superman→Phù Đổng, Beatrice→Thư Linh, Tanjiro→Kiếm Thuỷ, Gojo→Lưỡng Cực, Isagi→Nhãn Sư, Conan→Trạng Nhí. Không dùng lại tên chiêu, trang phục, biểu tượng đặc trưng gốc.
+- 2026-09-30: mỗi tướng chỉ có nội tại + K1/K2/K3 (chiêu cuối gộp vào K3); các chiêu phụ của bản gốc được gộp/bỏ. Hook cơ chế mới ở dạng `params` khai báo, chưa có engine.
+- Bản đầu chưa cân bằng; chưa có mặt hàng đồ mới (`recommendedBuild` dùng id giữ chỗ giống 04).
+- 2026-09-30 (Mốc 2): 6 tướng Alpha có engine đầy đủ; 14 tướng port và 10 tướng còn lại giữ dạng khai báo. Kỹ năng kiểu `recast`, `tether`, `trap`, `targetedDash`, `line` chưa có handler (chưa cần cho Alpha).
+- Hình nộm có 6000 HP, giáp/KP 30, hồi đầy sau 5s không bị đánh; chết thì hồi đầy ngay.
+- Đòn đánh chỉ ra đòn khi mục tiêu đã trong tầm (chưa tự đuổi); nút Đánh giữ để đánh liên tục.
+- Ba ví dụ tính tay công thức sát thương (đều nằm trong `tools/t_combat.mjs`): Hoả Rèn K1 cấp 1 = (70 + 1.0×68)×100/130 = 106.15; Nguyệt Hà K1 = 80×100/130 = 61.54 phép; Thạch Quy K2 = (50 + 4%×1000)×100/130 = 69.23.
+- 2026-09-30 (Mốc 3): trụ 1v1 dùng chỉ số ở 03 §B2 (HP 3200/3800/5000); 'nhà chính' đóng vai trụ nhà nên bất tử tới khi trụ trong vỡ; giáp trụ 80/90/100, không có giáp bảo vệ 4 phút.
+- Lính: chưa cho vàng/KN (Mốc 4); model lính là khối đơn giản, mỗi lính vài draw call (chưa InstancedMesh) — 16 lính đồng thời ổn; sẽ instancing khi lên 5v5.
+- Tướng bị giữ trong đường, không đi vào khe hở tường (bãi quái ở Mốc 6); lưới đi được đã dựng sẵn từ tường/biên.
+- Đợt lính theo 03 §B3: đầu 0:15, mỗi 25s, 3 Kiếm + 1 Cung, mỗi 3 đợt thêm Xe Đá. Lính Đèn Lớn chưa có (cần luật phá trụ nhà 5v5).
+- 2026-09-30 (Mốc 4): 38 món đúng 05 §2–§4; giá ghép = giá tổng − thành phần đang có (đệ quy), bán 60% giá tổng. Đồ hỗ trợ/đi rừng khoá ở 1v1 (`teamOnly`), chờ chế độ nhiều người.
+- Vàng thụ động ở 1v1 không có trong tài liệu: chọn **3 vàng/s từ giây 15** (5v5 là 4/s từ 0:20). Chỉnh ở `data/economy.js`.
+- Vàng lính chỉ cho tướng kết liễu; lính chết do lính/trụ thì mất vàng (ai cũng không nhận). KN lính chia đều tướng địch trong 1000. Hạ trụ: +100 vàng cả đội, +100 cho người kết liễu, 120 KN trong 1200.
+- Hạ gục tướng: 200 + 20×chuỗi (tối đa 5) vàng, giảm 20%/lần khi nạn nhân đã chết ≥3 lần liên tiếp (sàn 80); 100 + 30×cấp nạn nhân KN. Chưa có hỗ trợ chia vàng (1v1 không cần).
+- Hồi sinh 4 + 1.5×cấp giây (luật 1v1). Về thành 6s, huỷ khi bị sát thương/di chuyển/đánh/ra chiêu, +40% tốc chạy 4s sau khi về.
+- Bùa: trang mặc định theo vai (`PAGE_BY_ROLE`), cộng phẳng vào chỉ số; chưa có UI chỉnh bùa. Kiểm thử sát thương dùng `world.debug.bare(e)` để bỏ bùa/đồ.
+- Chí mạng dùng `world.rng` (tất định), sát thương chí mạng gốc ×1.75 (+50% từ Dao Trăng Khuyết); tối đa giảm hồi chiêu 40%, kháng hiệu ứng 80%, xuyên giáp 80%.
+- Hút máu chỉ tính đòn đánh thường (vật lý); hút máu phép chỉ tính sát thương phép của kỹ năng.
+- Tên đồ trong `recommendedBuild` của tướng port chưa có trong bảng chính thức được quy về đồ hợp lệ bằng `ALIAS` trong `data/items.js` (`kiem_nhanh`→Lưỡi Huyết Nguyệt…); Bóng Tre mang Thu Hoạch bị đổi sang Chớp Bước ở 1v1.
+- HUD kiểu video tham khảo (bố cục, không sao chép hình): cửa hàng trượt từ trái với 6 tab, chi tiết + công thức bên phải; biểu tượng đồ/phép là SVG tự vẽ (hình theo chỉ số chính, viền theo bậc).
+- `stasis` (Bình Sương Đông) xếp cùng nhóm khống chế cứng để dừng di chuyển/đánh/ra chiêu; thêm `invuln` (Mặt Nạ Hồi Sinh) và `ccImmune` (Giải Trói).
+- 2026-09-30 (bản đồ đẹp): dựng môi trường bằng code trong `src/render/env/` (địa hình dốc + nhiễu, đường lát đá/gạch/cỏ vẽ canvas lúc chạy, sông shader chảy, cầu đá, tường rêu thấp 120, cây/đá/cỏ/hoa/bụi bằng InstancedMesh có gió, quầng đèn lồng, đom đóm, vòm trời). Không có file ảnh ngoài. Mật độ theo mức chất lượng (thấp 0.4 / vừa 0.7 / cao 1): ~66 draw call, ~110k–240k tam giác. Phía gần camera (nam) chỉ đặt vật thấp để không che HUD. Nhịp trận trong video tham khảo đã bị làm chậm nên không dùng làm chuẩn tốc độ.
+- 2026-09-30 (Mốc 5): bot 1v1 theo 06 §5 rút gọn: LANE/PUSH, FIGHT/KITE, RETREAT, RECALL, HEAL tại suối; lách quanh công trình bằng điểm bên hông (lưới A* chưa có công trình). Bot dùng RNG riêng seed theo (world.seed, id) → trận tất định.
+- Lính gây ×2.5 sát thương lên công trình (Xe Đá ×4) để đợt lính có sức đẩy; không có trong tài liệu, chỉnh ở `data/units.js` (`structureMult`).
+- Bot vs bot trung bình ~19 phút (tài liệu mong 6–10 phút với người); vài cặp (Lồng Đăng vs Bóng Tre) còn quá 40 phút. Cân bằng nhịp trận để Mốc 6.
+- Màn chọn tướng: chỉ 6 tướng Alpha chọn được, 14 tướng còn lại hiện "Sắp có". Chân dung thẻ chụp từ model lúc chạy (render target), không có file ảnh.
+- 2026-09-30 (model v3): thân người dựng bằng SDF (loft elip cho thân theo đúng số đo cũ + nón tròn tay chân, hoà trộn smooth-min), lưới surface-nets ô 1.3 cm rồi giảm còn ~8 nghìn tam giác bằng meshoptimizer; pháp tuyến từ gradient, AO khe nướng vào màu đỉnh, trọng số xương hoà theo khoảng cách tới từng khối. Tổng mỗi tướng 9–18 nghìn tam giác.
+- Toon ramp đổi từ 4 nấc cứng sang 2 tông mềm (bóng 60%) để mặt không loang lổ; phần phát sáng ×2.2 để bloom chỉ bắt chỗ đó.
+- 2026-09-30 (model v4 — theo phản hồi "trông như Roblox"): bỏ tỉ lệ chibi, chuyển sang anime bán thực (~7 đầu: `STYLE.head 0.86`, tay chân thon 0.94, cằm nhọn, bắp tay/bắp chân, bàn tay có cụm ngón + ngón cái, mũi giày thon).
+- Mặt anime vẽ bằng canvas lúc chạy (`src/render/face.js`) lên một mảng da mặt có UV bám bề mặt đầu (nhóm vật liệu thứ 3 `<id>_face`); thông số mặt (màu mống mắt, mi, mày, môi, kiểu mắt) nằm trong `userData.face` của mesh (glTF extras). Mặt không chịu ánh sáng để nét mực luôn rõ; có chớp mắt.
+- Cảnh trưng bày thêm phông kiểu tranh splash bằng shader (`src/showcase/splash.js`): mây xoáy, tia sáng, 6 dải "cánh" năng lượng, tàn lửa — màu theo palette tướng. Bloom giảm (0.3 / 0.15 / ngưỡng 1.6) vì bloom mạnh làm tướng bị loá, trông trong suốt.
+- Ảnh splash vẽ tay như game thương mại cần hoạ sĩ hoặc công cụ tạo ảnh; không làm được bằng code trong dự án này.
+- 2026-09-30 (chất vẽ tay): mỗi đỉnh model có thuộc tính `_mat` (0 vải, 1 da, 2 kim loại, 3 tóc, 4 da thuộc/gỗ, 5 phát sáng; tự đoán theo màu, tóc/da gán rõ). Shader toon thêm vệt cọ/vân vải theo toạ độ vật thể, kim loại có dải sáng và điểm loé vẽ tay, tóc có vòng bóng, da có sắc ấm. Không cần texture/UV.
+- Cảnh trưng bày vẽ thẳng không hậu kỳ (thử bloom + lọc tranh sơn Kuwahara: làm tướng nhạt màu, bỏ). Canvas `alpha: false` và shader ghi alpha = diffuse.a để tướng không bị trong suốt khi ghép lớp.

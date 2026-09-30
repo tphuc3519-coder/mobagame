@@ -2,6 +2,8 @@
 // Mọi toạ độ trong spec tính theo tỉ lệ chiều cao H (mét) trừ khi ghi khác.
 import * as THREE from 'three';
 import { Model, V, D2R, smooth } from './kit.mjs';
+import { segWeights, SdfBody } from './sdf.mjs';
+const segWeightsRel = (b1, b2, from, to) => segWeights(b1, b2, from, to, 0, 1, 0, 1);
 
 const ARM_PRESETS = {
   down:   { fwd: 0,  abd: 9,  flex: 6,   inn: 0 },
@@ -14,6 +16,8 @@ const ARM_PRESETS = {
 };
 
 export const BONE = (n) => 'Bone_' + n;
+/** Phong cách chung: đầu to hơn, tay chân dày hơn, mặt lớn để đọc được ở cỡ nhỏ. */
+export const STYLE = { head: 0.86, limb: 0.94 }; // tỉ lệ anime bán thực: ~7 đầu, tay chân thon
 
 /** Tính vị trí khuỷu/cổ tay/đầu ngón bằng FK cho tay bên trái (+X). */
 function armFK(S, Lu, Lf, Lh, p) {
@@ -38,6 +42,7 @@ export function humanoid(id, s = {}) {
     hipY: 0.49, hunch: 0, handR: 0.03, neckR: 0.03, footL: 0.078, kneeBend: 0,
   }, s);
   const m = new Model(id);
+  m.skinHex = S.skin;
   const hips = S.hipY * H;
   const y = (f) => f * H;
   const zs = (f) => S.hunch * H * Math.pow(Math.max(0, (f - 0.5) / 0.35), 1.4); // độ gù về phía trước theo độ cao
@@ -73,95 +78,152 @@ export function humanoid(id, s = {}) {
   m.joint(BONE('FootL'), BONE('ShinL'), lx, y(0.05), 0);
   m.joint(BONE('FootR'), BONE('ShinR'), -lx, y(0.05), 0);
 
-  const hr = 0.083 * H * S.headS;
-  const hc = V(0, y(0.9) + (S.headS - 1) * 0.02 * H, 0.008 * H + zs(0.9));
+  const hs = S.headS * STYLE.head;
+  const hr = 0.083 * H * hs;
+  const hc = V(0, y(0.9) + (hs - 1) * 0.02 * H, 0.008 * H + zs(0.9));
   const ctx = { m, H, S, hr, hc, hips, zs, shoulder, Lu, Lf, Lh, y, hipsRest: [0, hips, 0], legLen: hips,
     armDirs: { L: fkL, R } };
   const skin = S.skin;
   const col = (v, d) => v || d;
   const has = (k) => !S.skip.includes(k);
 
-  // ---- thân (loft liền một khối, trọng số Hips → Spine → Chest) ----
+  // ---- thân liền khối (SDF): thân, cổ, đầu, tay, chân hoà trộn mềm như đất nặn, không lộ khớp nối ----
+  const B = BONE, one = (b) => () => [[B(b), 1]];
   if (has('torso')) {
     const cd = S.chestD * H, cw = S.chestW * H, ww = S.waistW * H, hw = S.hipW * H;
+    const yH = y(0.5), yS = y(0.58), yC = y(0.685), waist = y(0.522);
+    const tw = (x, yy) => {
+      if (yy <= yH) return [[B('Hips'), 1]];
+      if (yy <= yS) { const t = smooth(yH, yS, yy); return [[B('Hips'), 1 - t], [B('Spine'), t]]; }
+      const t = smooth(yS, yC, yy); return [[B('Spine'), 1 - t], [B('Chest'), t]];
+    };
+    const tc = (x, yy) => (yy < waist ? S.pelvis : S.top);
     const secs0 = [
-      { y: y(0.452), rx: hw * 0.72, rz: cd * 0.78 }, { y: y(0.49), rx: hw, rz: cd * 1.0, cz: -0.004 },
-      { y: y(0.53), rx: (hw + ww) * 0.5 * 1.05, rz: cd * 0.96 }, { y: y(0.575), rx: ww, rz: cd * 0.88 },
-      { y: y(0.63), rx: cw * 0.93, rz: cd * 0.98, cz: 0.004 }, { y: y(0.695), rx: cw, rz: cd * 1.1, cz: 0.008 },
-      { y: y(0.745), rx: cw * 1.03, rz: cd * 1.02, cz: 0.004 }, { y: y(0.784), rx: cw * 0.82, rz: cd * 0.78 },
-      { y: y(0.808), rx: S.neckR * H * 1.3, rz: S.neckR * H * 1.2 },
-    ];
-    const secs = secs0.map((q) => ({ ...q, cz: (q.cz || 0) + zs(q.y / H) }));
-    const yH = y(0.5), yS = y(0.58), yC = y(0.685);
-    m.loft(secs, { bone: BONE('Hips'), color: S.top, color2: S.pelvis, seg: 26, ao: 0.28,
-      weights: (p) => {
-        if (p.y <= yH) return [[BONE('Hips'), 1]];
-        if (p.y <= yS) { const t = smooth(yH, yS, p.y); return [[BONE('Hips'), 1 - t], [BONE('Spine'), t]]; }
-        const t = smooth(yS, yC, p.y); return [[BONE('Spine'), 1 - t], [BONE('Chest'), t]];
-      } });
-    m.cyl(S.neckR * H * 0.95, S.neckR * H * 1.05, y(0.07), { at: [0, y(0.812), 0.004 * H + zs(0.812)], bone: BONE('Neck'), color: skin, seg: 12,
-      blend: { b1: BONE('Chest'), b2: BONE('Neck'), from: [0, y(0.78), 0], to: [0, y(0.85), 0], t0: 0, t1: 1, w0: 0, w1: 1 } });
+      { y: y(0.445), rx: hw * 0.6, rz: cd * 0.62 }, { y: y(0.47), rx: hw * 0.92, rz: cd * 0.9 }, { y: y(0.5), rx: hw, rz: cd * 1.0, cz: -0.004 },
+      { y: y(0.535), rx: (hw + ww) * 0.5 * 1.04, rz: cd * 0.95 }, { y: y(0.575), rx: ww, rz: cd * 0.88 },
+      { y: y(0.63), rx: cw * 0.93, rz: cd * 0.98, cz: 0.004 }, { y: y(0.695), rx: cw, rz: cd * 1.08, cz: 0.008 },
+      { y: y(0.745), rx: cw * 1.0, rz: cd * 1.0, cz: 0.004 }, { y: y(0.785), rx: cw * 0.78, rz: cd * 0.74 }, { y: y(0.805), rx: cw * 0.4, rz: cd * 0.5 },
+    ].map((q) => ({ ...q, cz: (q.cz || 0) + zs(q.y / H) }));
+    m.blob({ loft: secs0, k: 0.03, color: tc, weights: tw });
+    for (const sd of [1, -1]) m.blob({ ell: [[sd * cw * 0.45, y(0.525), cd * 0.55], [hw * 0.34, y(0.035), cd * 0.3]], k: 0.05, color: tc, weights: tw }); // hông trước
+    m.blob({ cone: [[0, y(0.775), 0.004 * H + zs(0.775)], [0, y(0.845), 0.006 * H + zs(0.845)], S.neckR * H * 1.15, S.neckR * H * 0.95], k: 0.04, color: skin,
+      weights: segWeightsRel(B('Chest'), B('Neck'), [0, y(0.78), 0], [0, y(0.85), 0]) });
   }
-  // ---- đầu ----
   if (has('head')) {
-    m.sphere(1, { radii: [hr * 0.93, hr * 1.06, hr], at: hc.toArray(), bone: BONE('Head'), color: skin, wseg: 24, hseg: 16, ao: 0.15 });
-    m.sphere(1, { radii: [hr * 0.66, hr * 0.5, hr * 0.68], at: [0, hc.y - hr * 0.55, hc.z + hr * 0.3], bone: BONE('Head'), color: skin, ao: 0.15 });
-    m.sphere(1, { radii: [hr * 0.15, hr * 0.13, hr * 0.17], at: [0, hc.y - hr * 0.1, hc.z + hr * 1.0], bone: BONE('Head'), color: skin, ao: 0.1 }); // mũi
-    m.sphere(1, { radii: [hr * 0.13, hr * 0.2, hr * 0.1], at: [hr * 0.95, hc.y - hr * 0.05, hc.z - hr * 0.05], bone: BONE('Head'), color: skin, mirror: true, ao: 0.1 }); // tai
+    const hb = one('Head');
+    const headPrims = [
+      { ell: [[0, hc.y + hr * 0.04, hc.z - hr * 0.06], [hr * 0.9, hr * 0.96, hr * 0.94]], k: 0.03, color: skin, weights: hb },          // sọ
+      { cone: [[0, hc.y - hr * 0.22, hc.z + hr * 0.0], [0, hc.y - hr * 0.98, hc.z + hr * 0.42], hr * 0.72, hr * 0.12], k: 0.05, color: skin, weights: hb }, // hàm thon, cằm nhọn
+    ];
+    ctx.headSdf = new SdfBody();
+    for (const q of headPrims) { m.blob(q); ctx.headSdf.add({ ...q }); }
+    m.blob({ ell: [[0, hc.y - hr * 0.3, hc.z + hr * 0.86], [hr * 0.05, hr * 0.05, hr * 0.05]], k: 0.03, color: skin, weights: hb });    // chóp mũi rất nhỏ (kiểu anime)
+    m.blob({ ell: [[hr * 0.93, hc.y - hr * 0.05, hc.z - hr * 0.05], [hr * 0.12, hr * 0.2, hr * 0.12]], k: 0.02, color: skin, weights: hb, mirror: true }); // tai
   }
   if (has('head') && S.face) faceFeatures(ctx);
   // ---- tay ----
   if (has('arms')) {
     const ac = col(S.arm, skin), fc = col(S.forearm, ac), hc2 = col(S.hand, skin);
-    const rS = S.armR * H;
-    for (const side of ['L', 'R']) {
-      const sg = side === 'L' ? 1 : -1;
-      const dirs = ctx.armDirs[side];
-      const Sp = [sg * shoulder.x, shoulder.y, shoulder.z];
-      const Ep = dirs.E.toArray(), Wp = dirs.W.toArray(), Tp = dirs.T.toArray();
-      const U = BONE('UpperArm' + side), F = BONE('Forearm' + side), Hd = BONE('Hand' + side);
-      m.limb(Sp, Ep, [[0, 0.7 * rS], [0.1, 1.2 * rS], [0.4, 1.12 * rS], [0.78, 0.9 * rS], [1, 0.82 * rS]], { bone: U, color: ac, ao: 0.3, seg: 12,
-        blend: { b1: U, b2: F, from: Sp, to: Ep, t0: 0.6, t1: 1, w0: 0, w1: 0.5 } });
-      m.sphere(rS * 1.32, { at: Sp, bone: U, color: ac });
-      m.sphere(rS * 0.95, { at: Ep, bone: U, color: fc, blend: { b1: U, b2: F, from: Sp, to: Wp, t0: 0.4, t1: 0.6, w0: 0, w1: 1 } });
-      m.limb(Ep, Wp, [[0, 0.82 * rS], [0.2, 0.96 * rS], [0.5, 0.86 * rS], [0.85, 0.66 * rS], [1, 0.58 * rS]], { bone: F, color: fc, ao: 0.3, seg: 12,
-        blend: { b1: U, b2: F, from: Ep, to: Wp, t0: 0, t1: 0.35, w0: 0.5, w1: 1 } });
-      const hp = [Wp[0] * 0.2 + Tp[0] * 0.8, Wp[1] * 0.2 + Tp[1] * 0.8, Wp[2] * 0.2 + Tp[2] * 0.8];
-      m.sphere(1, { radii: [S.handR * H * 0.9, S.handR * H, S.handR * H * 0.85], at: hp, bone: Hd, color: hc2 });
-    }
+    const rS = S.armR * H * STYLE.limb;
+    const dirs = ctx.armDirs.L;
+    const Sp = [shoulder.x, shoulder.y, shoulder.z];
+    const Ep = dirs.E.toArray(), Wp = dirs.W.toArray(), Tp = dirs.T.toArray();
+    const U = B('UpperArmL'), F = B('ForearmL'), Hd = B('HandL');
+    const lerp3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    const wU = segWeights(U, F, Sp, Ep, 0.6, 1, 0, 0.5), wF = segWeights(U, F, Ep, Wp, 0, 0.35, 0.5, 1);
+    m.blob({ ell: [lerp3(Sp, Ep, 0.1), [rS * 1.4, rS * 1.3, rS * 1.25]], k: 0.04, color: ac, mirror: true, weights: segWeights(B('Chest'), U, [0, Sp[1], Sp[2]], Ep, 0.25, 0.55, 0, 1) }); // cơ vai
+    m.blob({ cone: [lerp3(Sp, Ep, 0.1), Ep, rS * 1.1, rS * 0.78], k: 0.02, color: ac, mirror: true, weights: wU });
+    m.blob({ ell: [lerp3(Sp, Ep, 0.45).map((v, i) => v + (i === 2 ? rS * 0.25 : 0)), [rS * 0.92, (Lu * 0.28), rS * 0.95]], k: 0.03, color: ac, mirror: true, weights: wU }); // bắp tay
+    m.blob({ cone: [Ep, lerp3(Ep, Wp, 0.28), rS * 0.8, rS * 0.98], k: 0.02, color: fc, mirror: true, weights: wF });
+    m.blob({ cone: [lerp3(Ep, Wp, 0.28), Wp, rS * 0.98, rS * 0.56], k: 0.02, color: fc, mirror: true, weights: wF });
+    // bàn tay: lòng bàn tay + hai cụm ngón + ngón cái (không còn kiểu găng tròn)
+    const hr_ = S.handR * H, dir = V(...Tp).sub(V(...Wp)).normalize(), side = new THREE.Vector3().crossVectors(dir, V(0, 0, 1));
+    if (side.lengthSq() < 1e-4) side.set(1, 0, 0); side.normalize();
+    const off = (p, s, k = hr_) => [p[0] + side.x * s * k, p[1] + side.y * s * k, p[2] + side.z * s * k];
+    const wH = segWeights(F, Hd, Wp, Tp, 0, 0.35, 0.3, 1), palm = lerp3(Wp, Tp, 0.55);
+    m.blob({ cone: [lerp3(Wp, Tp, 0.12), palm, hr_ * 0.62, hr_ * 0.7], k: 0.012, color: hc2, mirror: true, weights: wH });
+    for (const s of [0.34, -0.34]) m.blob({ cone: [off(palm, s), off(lerp3(Wp, Tp, 1.05), s * 1.2), hr_ * 0.34, hr_ * 0.2], k: 0.008, color: hc2, mirror: true, weights: one('HandL') });
+    m.blob({ cone: [off(lerp3(Wp, Tp, 0.3), 0.7), off(lerp3(Wp, Tp, 0.7), 1.05).map((v, i) => v + (i === 2 ? hr_ * 0.5 : 0)), hr_ * 0.3, hr_ * 0.2], k: 0.008, color: hc2, mirror: true, weights: one('HandL') }); // ngón cái
   }
   // ---- chân ----
   if (has('legs')) {
-    const tc = col(S.thigh, S.pelvis), sc = col(S.shin, tc);
-    const rL = S.legR * H;
-    for (const sd of ['L', 'R']) {
-      const sg = sd === 'L' ? 1 : -1;
-      const T = BONE('Thigh' + sd), Sh = BONE('Shin' + sd), F = BONE('Foot' + sd);
-      const hp = [sg * S.legOut * H * 0.95, hips, 0], kn = [sg * lx, y(0.265), kneeZ], an = [sg * lx, y(0.05), 0];
-      m.limb(hp, kn, [[0, 0.95 * rL], [0.2, 1.22 * rL], [0.55, 1.05 * rL], [1, 0.82 * rL]], { bone: T, color: tc, seg: 14, ao: 0.28,
-        blend: { b1: T, b2: Sh, from: hp, to: kn, t0: 0.65, t1: 1, w0: 0, w1: 0.5 } });
-      m.sphere(rL * 0.86, { at: kn, bone: T, color: sc, blend: { b1: T, b2: Sh, from: hp, to: an, t0: 0.45, t1: 0.55, w0: 0, w1: 1 } });
-      m.limb(kn, an, [[0, 0.84 * rL], [0.2, 0.98 * rL], [0.45, 0.9 * rL], [0.85, 0.62 * rL], [1, 0.58 * rL]], { bone: Sh, color: sc, seg: 14, ao: 0.28,
-        blend: { b1: T, b2: Sh, from: kn, to: an, t0: 0, t1: 0.3, w0: 0.5, w1: 1 } });
-      if (has('feet')) {
-        m.sphere(1, { radii: [rL * 0.86, y(0.034), y(S.footL)], at: [sg * lx, y(0.03), y(0.032)], bone: F, color: S.boot, wseg: 14 });
-        m.cyl(rL * 0.72, rL * 0.64, y(0.075), { at: [sg * lx, y(0.085), 0], bone: F, color: col(S.bootTop, S.boot), seg: 12 });
-      }
+    const tc2 = col(S.thigh, S.pelvis), sc = col(S.shin, tc2);
+    const rL = S.legR * H * STYLE.limb;
+    const T = B('ThighL'), Sh = B('ShinL'), Ft = B('FootL');
+    const hp = [S.legOut * H * 0.95, hips, 0], kn = [lx, y(0.265), kneeZ], an = [lx, y(0.05), 0];
+    const at = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    m.blob({ cone: [at(hp, kn, 0.05), at(hp, kn, 0.5), rL * 1.18, rL * 1.02], k: 0.04, color: tc2, mirror: true, weights: segWeights(T, Sh, hp, kn, 0.65, 1, 0, 0.5) });
+    m.blob({ cone: [at(hp, kn, 0.5), kn, rL * 1.02, rL * 0.84], k: 0.015, color: tc2, mirror: true, weights: segWeights(T, Sh, hp, kn, 0.65, 1, 0, 0.5) });
+    m.blob({ ell: [[kn[0], kn[1], kn[2] + rL * 0.1], [rL * 0.86, rL * 0.95, rL * 0.86]], k: 0.015, color: sc, mirror: true, weights: segWeights(T, Sh, hp, an, 0.45, 0.55, 0, 1) });
+    m.blob({ cone: [kn, at(kn, an, 0.35), rL * 0.86, rL * 0.95], k: 0.015, color: sc, mirror: true, weights: segWeights(T, Sh, kn, an, 0, 0.3, 0.5, 1) });
+    m.blob({ cone: [at(kn, an, 0.35), an, rL * 0.95, rL * 0.55], k: 0.015, color: sc, mirror: true, weights: segWeights(T, Sh, kn, an, 0, 0.3, 0.5, 1) });
+    m.blob({ ell: [[kn[0], at(kn, an, 0.28)[1], kn[2] - rL * 0.3], [rL * 0.78, rL * 1.8, rL * 0.7]], k: 0.03, color: sc, mirror: true, weights: segWeights(T, Sh, kn, an, 0, 0.3, 0.5, 1) }); // bắp chân
+    if (has('feet')) {
+      const bt = col(S.bootTop, S.boot);
+      m.blob({ cone: [[lx, y(0.13), 0], [lx, y(0.05), 0], rL * 0.74, rL * 0.7], k: 0.012, color: bt, mirror: true, weights: segWeights(Sh, Ft, [lx, y(0.2), 0], an, 0, 1, 0, 1) });
+      m.blob({ ell: [[lx, y(0.028), y(0.02)], [rL * 0.72, y(0.03), y(S.footL) * 0.85]], k: 0.03, color: S.boot, mirror: true, weights: one('FootL') });
+      m.blob({ cone: [[lx, y(0.022), y(0.03)], [lx, y(0.012), y(S.footL) * 1.25], rL * 0.6, rL * 0.18], k: 0.02, color: S.boot, mirror: true, weights: one('FootL') }); // mũi giày thon
     }
   }
   return ctx;
 }
 
 /** Mắt, mày, môi đơn giản; đủ để ở màn trưng bày thấy mặt có hồn. */
+const shade = (hex, k) => { const c = new THREE.Color(hex); const hsl = {}; c.getHSL(hsl); return '#' + new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * (k > 0 ? 0.9 : 1.1)), Math.min(0.92, Math.max(0.04, hsl.l + k))).getHexString(); };
+
+/** Mặt kiểu anime: mắt to có mống chuyển sắc (tối trên, sáng dưới), con ngươi, 2 đốm sáng, viền mi dày, má hồng, miệng nhỏ. */
 export function faceFeatures(ctx, o = {}) {
   const { m, hr, hc, S } = ctx;
-  const ex = hr * 0.34, ey = hc.y + hr * 0.02, ez = hc.z + hr * 0.86;
-  if (o.closedEyes) {
-    m.box(hr * 0.26, hr * 0.03, hr * 0.03, { at: [ex, ey, ez + hr * 0.08], rot: [0, 0, -6], bone: BONE('Head'), color: S.eye, mirror: true, flat: false });
-  } else {
-    m.sphere(1, { radii: [hr * 0.12, hr * 0.17, hr * 0.07], at: [ex, ey, ez + hr * 0.02], bone: BONE('Head'), color: o.eyeColor || S.eye, mirror: true, ao: 0 });
-    m.sphere(1, { radii: [hr * 0.04, hr * 0.05, hr * 0.03], at: [ex + hr * 0.03, ey + hr * 0.06, ez + hr * 0.08], bone: BONE('Head'), color: '#ffffff', mirror: true, ao: 0 });
+  if (m.userData.face) return; // chỉ một lần (hero có thể gọi lại với tuỳ chọn riêng trước khi humanoid gọi)
+  const iris = o.eyeColor || (S.eye && S.eye !== '#1b1b22' ? S.eye : '#7a4a2a');
+  m.userData.face = { iris, lash: o.lash || S.lash || '#1a1216', brow: o.brow || S.brow || '#2a1c14', lip: o.lip || S.lip || '#b5605a', skin: S.skin,
+    closed: !!o.closedEyes, browTilt: o.browTilt ?? -8, style: o.style || S.faceStyle || 'soft', blush: o.blush || '#f39a9a',
+    rect: { x0: -0.82, x1: 0.82, y0: -1.0, y1: 0.55 } };
+  m.facePatch(ctx.headSdf, { hc, hr, bone: BONE('Head') });
+}
+
+/**
+ * Tóc anime từng lọn (SDF, liền với đầu): chỏm tóc ôm sọ + mái + tóc mai + lọn sau gáy, có vệt sáng quanh đỉnh.
+ * o: { color, color2 (đuôi tóc), shine, bangs (số lọn mái), side (dài tóc mai, ×hr), back (dài lọn sau, ×hr), spiky (0..1), part (lệch ngôi, -1..1), volume }
+ */
+export function hairLocks(ctx, o = {}) {
+  const { m, hr, hc } = ctx;
+  const Hd = BONE('Head'), hb = () => [[Hd, 1]];
+  const base = new THREE.Color(o.color || '#2a1c20'), tip = new THREE.Color(o.color2 || o.color || '#2a1c20');
+  const shine = new THREE.Color(o.shine || '#ffffff');
+  const vol = o.volume ?? 1.08, spiky = o.spiky ?? 0.3, part = o.part ?? 0.25;
+  const crownY = hc.y + hr * 0.62;
+  const col = (x, y, z) => {
+    const t = Math.min(1, Math.max(0, (crownY - y) / (hr * 2.2)));
+    const c = base.clone().lerp(tip, t);
+    const band = Math.exp(-Math.pow((y - (hc.y + hr * 0.52)) / (hr * 0.07), 2)) * (z > hc.z - hr * 0.2 ? 1 : 0.3);
+    return '#' + c.lerp(shine, band * 0.45).getHexString();
+  };
+  // chỏm tóc: lệch ra sau-lên để lộ trán
+  m.blob({ ell: [[0, hc.y + hr * 0.16, hc.z - hr * 0.2], [hr * vol, hr * vol * 1.0, hr * vol]], k: 0.012, color: col, weights: hb, mat: 3 });
+  m.blob({ ell: [[0, hc.y + hr * 0.62, hc.z + hr * 0.28], [hr * 0.9, hr * 0.42, hr * 0.62]], k: 0.03, color: col, weights: hb, mat: 3 });
+  const lock = (root, mid, end, r0) => { m.blob({ cone: [root, mid, r0, r0 * 0.7], k: 0.012, color: col, weights: hb, mat: 3 }); m.blob({ cone: [mid, end, r0 * 0.7, 0.004], k: 0.008, color: col, weights: hb, mat: 3 }); };
+  // mái: các lọn rủ xuống trán, xoè nhẹ, ngôi lệch
+  const nb = o.bangs ?? 7;
+  for (let i = 0; i < nb; i++) {
+    const u = nb > 1 ? i / (nb - 1) * 2 - 1 : 0, a = u * 1.05 + part * 0.25;
+    const len = hr * (0.36 + 0.14 * Math.cos(u * 2.3 + part) - 0.1 * Math.abs(u)) * (1 + spiky * 0.2 * ((i % 2) - 0.5));
+    const rx = Math.sin(a) * hr * 0.86, rz = Math.cos(a) * hr * 0.86;
+    const root = [rx * 0.8, hc.y + hr * 0.8, hc.z + rz * 0.72], mid = [rx * 1.02, hc.y + hr * 0.55, hc.z + rz * 1.08 + hr * 0.02];
+    const end = [rx * (1.05 + spiky * 0.1) + u * hr * 0.08, hc.y + hr * 0.55 - len, hc.z + rz * 1.02 + hr * 0.05];
+    lock(root, mid, end, hr * (0.2 - 0.03 * Math.abs(u)));
   }
-  m.box(hr * 0.3, hr * 0.04, hr * 0.04, { at: [ex, ey + hr * 0.26, ez - hr * 0.03], rot: [0, 0, o.browTilt ?? -8], bone: BONE('Head'), color: o.brow || S.brow, mirror: true, flat: false });
-  m.box(hr * 0.22, hr * 0.035, hr * 0.03, { at: [0, hc.y - hr * 0.5, ez - hr * 0.06], bone: BONE('Head'), color: o.lip || S.lip, flat: false });
+  // tóc mai hai bên
+  const sideL = o.side ?? 1.1;
+  for (const s of [1, -1]) for (const [dz, k] of [[0.25, 1], [-0.1, 0.85]]) {
+    const root = [s * hr * 0.85, hc.y + hr * 0.45, hc.z + hr * dz], mid = [s * hr * 1.02, hc.y - hr * 0.1, hc.z + hr * (dz + 0.05)];
+    lock(root, mid, [s * hr * (0.95 + spiky * 0.12), hc.y - hr * (0.1 + sideL * k), hc.z + hr * (dz + 0.12)], hr * 0.2);
+  }
+  // lọn sau gáy
+  const backL = o.back ?? 1.0;
+  if (backL > 0) for (let i = 0; i < 6; i++) {
+    const a = Math.PI + (i / 5 - 0.5) * 2.2, rx = Math.sin(a) * hr, rz = Math.cos(a) * hr;
+    const root = [rx * 0.7, hc.y + hr * 0.5, hc.z + rz * 0.7], mid = [rx * 1.05, hc.y - hr * 0.1, hc.z + rz * 1.08];
+    lock(root, mid, [rx * (1.05 + spiky * 0.25), hc.y - hr * (0.2 + backL * (0.9 + 0.15 * (i % 2))), hc.z + rz * (1.05 + spiky * 0.2)], hr * 0.28);
+  }
 }

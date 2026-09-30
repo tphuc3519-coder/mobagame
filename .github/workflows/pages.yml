@@ -1,0 +1,28 @@
+name: Deploy game to GitHub Pages
+# Chỉ chạy khi bấm tay (Actions → Deploy game to GitHub Pages → Run workflow), sau khi đã bật Pages:
+# Settings → Pages → Source: GitHub Actions. Không tự chạy khi push để khỏi báo lỗi khi Pages chưa bật.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Bỏ thứ không cần khi chơi
+        run: rm -rf tools/modelgen/node_modules docs/previews .git
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

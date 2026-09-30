@@ -1,130 +1,242 @@
 [
   {
     "id": "thach_quy",
-    "tris": 13048,
+    "tris": 16170,
     "bones": 35,
-    "kb": 1132,
-    "mats": 2,
+    "kb": 1338,
+    "mats": 3,
     "runRef": 310
   },
   {
     "id": "trau_dong",
-    "tris": 10736,
+    "tris": 15008,
     "bones": 20,
-    "kb": 691,
+    "kb": 925,
     "mats": 1,
     "runRef": 315
   },
   {
     "id": "co_thu",
-    "tris": 9550,
+    "tris": 12560,
     "bones": 44,
-    "kb": 1083,
+    "kb": 1255,
     "mats": 2,
     "runRef": 305
   },
   {
     "id": "hoa_ren",
-    "tris": 6630,
-    "bones": 24,
-    "kb": 557,
-    "mats": 2,
+    "tris": 10520,
+    "bones": 28,
+    "kb": 815,
+    "mats": 3,
     "runRef": 320
   },
   {
     "id": "kiem_may",
-    "tris": 7606,
+    "tris": 11812,
     "bones": 32,
-    "kb": 701,
-    "mats": 2,
+    "kb": 891,
+    "mats": 3,
     "runRef": 330
   },
   {
     "id": "soi_nui",
-    "tris": 6064,
+    "tris": 10732,
     "bones": 24,
-    "kb": 529,
+    "kb": 742,
     "mats": 2,
     "runRef": 335
   },
   {
     "id": "bong_tre",
-    "tris": 6164,
+    "tris": 10710,
     "bones": 26,
-    "kb": 573,
-    "mats": 2,
+    "kb": 777,
+    "mats": 3,
     "runRef": 345
   },
   {
     "id": "doi_dem",
-    "tris": 6626,
+    "tris": 10952,
     "bones": 26,
-    "kb": 591,
-    "mats": 2,
+    "kb": 788,
+    "mats": 3,
     "runRef": 340
   },
   {
     "id": "nguyet_ha",
-    "tris": 8698,
+    "tris": 12092,
     "bones": 30,
-    "kb": 708,
-    "mats": 2,
+    "kb": 861,
+    "mats": 3,
     "runRef": 315
   },
   {
     "id": "sam_trong",
-    "tris": 7940,
+    "tris": 12146,
     "bones": 22,
-    "kb": 689,
-    "mats": 2,
+    "kb": 910,
+    "mats": 3,
     "runRef": 315
   },
   {
     "id": "hoa_doc",
-    "tris": 10006,
+    "tris": 14508,
     "bones": 23,
-    "kb": 838,
-    "mats": 2,
+    "kb": 1097,
+    "mats": 3,
     "runRef": 315
   },
   {
     "id": "canh_dieu",
-    "tris": 6810,
+    "tris": 10560,
     "bones": 25,
-    "kb": 574,
-    "mats": 2,
+    "kb": 739,
+    "mats": 3,
     "runRef": 325
   },
   {
     "id": "phao_hoa",
-    "tris": 7860,
+    "tris": 12214,
     "bones": 22,
-    "kb": 572,
-    "mats": 2,
+    "kb": 775,
+    "mats": 3,
     "runRef": 320
   },
   {
     "id": "trang_no",
-    "tris": 7872,
+    "tris": 12462,
     "bones": 27,
-    "kb": 654,
-    "mats": 2,
+    "kb": 870,
+    "mats": 3,
     "runRef": 315
   },
   {
     "id": "long_dang",
-    "tris": 7516,
+    "tris": 10938,
     "bones": 26,
-    "kb": 607,
-    "mats": 2,
+    "kb": 756,
+    "mats": 3,
     "runRef": 315
   },
   {
     "id": "moc_cam",
-    "tris": 7704,
+    "tris": 12058,
     "bones": 23,
-    "kb": 604,
-    "mats": 2,
+    "kb": 810,
+    "mats": 3,
     "runRef": 315
+  },
+  {
+    "id": "hanh_hoa",
+    "tris": 10124,
+    "bones": 24,
+    "kb": 660,
+    "mats": 3,
+    "runRef": 325
+  },
+  {
+    "id": "tieu_anh",
+    "tris": 9698,
+    "bones": 23,
+    "kb": 630,
+    "mats": 2,
+    "runRef": 330
+  },
+  {
+    "id": "ba_nam",
+    "tris": 9758,
+    "bones": 21,
+    "kb": 597,
+    "mats": 2,
+    "runRef": 335
+  },
+  {
+    "id": "cau_may",
+    "tris": 9670,
+    "bones": 23,
+    "kb": 662,
+    "mats": 2,
+    "runRef": 320
+  },
+  {
+    "id": "bong_den",
+    "tris": 9548,
+    "bones": 24,
+    "kb": 648,
+    "mats": 3,
+    "runRef": 315
+  },
+  {
+    "id": "thay_do",
+    "tris": 9574,
+    "bones": 28,
+    "kb": 706,
+    "mats": 2,
+    "runRef": 320
+  },
+  {
+    "id": "kep_cheo",
+    "tris": 9388,
+    "bones": 27,
+    "kb": 672,
+    "mats": 2,
+    "runRef": 325
+  },
+  {
+    "id": "meo_than_tai",
+    "tris": 8970,
+    "bones": 23,
+    "kb": 607,
+    "mats": 2,
+    "runRef": 278
+  },
+  {
+    "id": "phu_dong",
+    "tris": 11090,
+    "bones": 23,
+    "kb": 715,
+    "mats": 3,
+    "runRef": 325
+  },
+  {
+    "id": "thu_linh",
+    "tris": 10192,
+    "bones": 25,
+    "kb": 699,
+    "mats": 3,
+    "runRef": 315
+  },
+  {
+    "id": "kiem_thuy",
+    "tris": 10512,
+    "bones": 25,
+    "kb": 703,
+    "mats": 3,
+    "runRef": 325
+  },
+  {
+    "id": "luong_cuc",
+    "tris": 10602,
+    "bones": 25,
+    "kb": 716,
+    "mats": 3,
+    "runRef": 315
+  },
+  {
+    "id": "nhan_su",
+    "tris": 9906,
+    "bones": 23,
+    "kb": 631,
+    "mats": 3,
+    "runRef": 330
+  },
+  {
+    "id": "trang_nhi",
+    "tris": 10088,
+    "bones": 22,
+    "kb": 640,
+    "mats": 3,
+    "runRef": 335
   }
 ]

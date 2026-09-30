@@ -14,6 +14,20 @@ import phao_hoa from './phao_hoa.mjs';
 import trang_no from './trang_no.mjs';
 import long_dang from './long_dang.mjs';
 import moc_cam from './moc_cam.mjs';
+import hanh_hoa from './hanh_hoa.mjs';
+import tieu_anh from './tieu_anh.mjs';
+import ba_nam from './ba_nam.mjs';
+import cau_may from './cau_may.mjs';
+import bong_den from './bong_den.mjs';
+import thay_do from './thay_do.mjs';
+import kep_cheo from './kep_cheo.mjs';
+import meo_than_tai from './meo_than_tai.mjs';
+import phu_dong from './phu_dong.mjs';
+import thu_linh from './thu_linh.mjs';
+import kiem_thuy from './kiem_thuy.mjs';
+import luong_cuc from './luong_cuc.mjs';
+import nhan_su from './nhan_su.mjs';
+import trang_nhi from './trang_nhi.mjs';
 
 // Thứ tự theo bảng chỉ số 04 §5
-export const HEROES = { thach_quy, trau_dong, co_thu, hoa_ren, kiem_may, soi_nui, bong_tre, doi_dem, nguyet_ha, sam_trong, hoa_doc, canh_dieu, phao_hoa, trang_no, long_dang, moc_cam };
+export const HEROES = { thach_quy, trau_dong, co_thu, hoa_ren, kiem_may, soi_nui, bong_tre, doi_dem, nguyet_ha, sam_trong, hoa_doc, canh_dieu, phao_hoa, trang_no, long_dang, moc_cam, hanh_hoa, tieu_anh, ba_nam, cau_may, bong_den, thay_do, kep_cheo, meo_than_tai, phu_dong, thu_linh, kiem_thuy, luong_cuc, nhan_su, trang_nhi };

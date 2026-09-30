@@ -1,0 +1,35 @@
+{
+  "model": "ba_nam.glb",
+  "scale": 100,
+  "height": 160,
+  "runRefSpeed": 335,
+  "hitTime": {
+    "Attack1": 0.26,
+    "Attack2": 0.26
+  },
+  "attach": {
+    "weapon_tip": "Bone_HandR_Tip",
+    "head": "Bone_Head"
+  },
+  "rim": "#ff7a8a",
+  "palette": [
+    "#8a3a52",
+    "#f2ead8",
+    "#2b2b30",
+    "#e04a5a"
+  ],
+  "clips": [
+    "Idle",
+    "Run",
+    "Attack1",
+    "Attack2",
+    "Cast1",
+    "Cast2",
+    "Ult",
+    "Death",
+    "Recall",
+    "Victory",
+    "Showcase"
+  ],
+  "generator": "tools/modelgen"
+}
