@@ -7,3 +7,7 @@
 - 2026-09-30: roster autobattle (nhân vật có bản quyền) không copy nguyên; port **cơ chế** sang 14 tướng gốc theo lựa chọn của chủ dự án. Đối chiếu: Sakura→Hạnh Hoa, Konohamaru→Tiểu Ảnh, ChiChi→Bà Năm Chảo, Tsubasa→Cầu Mây, Shikamaru→Bóng Đèn, Suzune→Thầy Đồ, Ginyu→Kép Chèo, Doraemon→Mèo Thần Tài, Superman→Phù Đổng, Beatrice→Thư Linh, Tanjiro→Kiếm Thuỷ, Gojo→Lưỡng Cực, Isagi→Nhãn Sư, Conan→Trạng Nhí. Không dùng lại tên chiêu, trang phục, biểu tượng đặc trưng gốc.
 - 2026-09-30: mỗi tướng chỉ có nội tại + K1/K2/K3 (chiêu cuối gộp vào K3); các chiêu phụ của bản gốc được gộp/bỏ. Hook cơ chế mới ở dạng `params` khai báo, chưa có engine.
 - Bản đầu chưa cân bằng; chưa có mặt hàng đồ mới (`recommendedBuild` dùng id giữ chỗ giống 04).
+- 2026-09-30 (Mốc 2): 6 tướng Alpha có engine đầy đủ; 14 tướng port và 10 tướng còn lại giữ dạng khai báo. Kỹ năng kiểu `recast`, `tether`, `trap`, `targetedDash`, `line` chưa có handler (chưa cần cho Alpha).
+- Hình nộm có 6000 HP, giáp/KP 30, hồi đầy sau 5s không bị đánh; chết thì hồi đầy ngay.
+- Đòn đánh chỉ ra đòn khi mục tiêu đã trong tầm (chưa tự đuổi); nút Đánh giữ để đánh liên tục.
+- Ba ví dụ tính tay công thức sát thương (đều nằm trong `tools/t_combat.mjs`): Hoả Rèn K1 cấp 1 = (70 + 1.0×68)×100/130 = 106.15; Nguyệt Hà K1 = 80×100/130 = 61.54 phép; Thạch Quy K2 = (50 + 4%×1000)×100/130 = 69.23.
