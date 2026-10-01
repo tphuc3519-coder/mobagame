@@ -17,7 +17,7 @@ export function spawnStructures(world) {
   for (const team of [0, 1]) {
     const f = map.fountain;
     world.spawnEntity({ kind: 'fountain', structure: true, noTarget: true, team, data: { name: 'Suối Đèn', base: { maxHp: 1, maxMana: 0, atk: 0, ap: 0, armor: 0, mr: 0, atkSpeed: 1, moveSpeed: 0, range: f.range }, perLevel: {}, basicAttack: {}, skills: {} },
-      radius: 60, pos: { x: team ? map.w - f.x : f.x, y: f.y } });
+      radius: 60, pos: team ? map.mirror(f.x, f.y) : { x: f.x, y: f.y } });
   }
 }
 
@@ -51,7 +51,10 @@ export function updateStructures(world) {
       continue;
     }
     // luật bất tử: trụ trong chờ trụ ngoài vỡ, nhà chính chờ trụ trong vỡ
-    if (s.invulnUntil) { const peer = world.entities.find((p) => p.structure && p.team === s.team && p.sid === s.invulnUntil); s.invulnerable = !!peer && peer.alive; }
+    if (s.invulnUntil) { // chuỗi: tới khi trụ đứng trước vỡ; mảng: tới khi MỘT trong các trụ vỡ (nhà chính 5v5)
+      const peers = world.entities.filter((p) => p.structure && p.team === s.team && [].concat(s.invulnUntil).includes(p.sid));
+      s.invulnerable = Array.isArray(s.invulnUntil) ? peers.length > 0 && peers.every((p) => p.alive) : peers.some((p) => p.alive);
+    }
     // hồi máu khi lâu không bị đánh (nhà chính)
     if (s.kind === 'core' && world.tick - s.lastDamagedTick > T(8)) s.hp = Math.min(s.stats.maxHp, s.hp + 20 / 30);
     if (world.tick < s.attackReady) continue;

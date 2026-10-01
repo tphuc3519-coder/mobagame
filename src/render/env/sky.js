@@ -34,8 +34,8 @@ export function buildLampGlow(posts) {
 
 /** Đom đóm bay lơ lửng (đổi chỗ và nhấp nháy trong shader, không tốn CPU). */
 export function buildFireflies(map, count = 160) {
-  const r = rngFor(303), base = new Float32Array(count * 3), ph = new Float32Array(count);
-  for (let i = 0; i < count; i++) { base[i * 3] = r.range(-300, map.w + 300); base[i * 3 + 1] = r.range(40, 260); base[i * 3 + 2] = r.range(map.road.y - 1300, map.road.y + 1300); ph[i] = r.range(0, 100); }
+  const r = rngFor(303), zr = map.road ? [map.road.y - 1300, map.road.y + 1300] : [300, map.h - 300], xr = map.road ? [-300, map.w + 300] : [300, map.w - 300], base = new Float32Array(count * 3), ph = new Float32Array(count);
+  for (let i = 0; i < count; i++) { base[i * 3] = r.range(xr[0], xr[1]); base[i * 3 + 1] = r.range(40, 260); base[i * 3 + 2] = r.range(zr[0], zr[1]); ph[i] = r.range(0, 100); }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(base, 3)); geo.setAttribute('ph', new THREE.BufferAttribute(ph, 1));
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,

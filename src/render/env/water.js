@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 /** Dòng sông: mặt phẳng shader tối giản (không phản xạ): màu theo độ sâu, gợn sóng chạy, bọt ở mép. */
 export function buildRiver(map) {
-  const len = map.h + 4400;
+  const diag = !!map.river.diag, len = diag ? Math.hypot(map.w, map.h) + 3200 : map.h + 4400;
   const mat = new THREE.ShaderMaterial({
     transparent: true, fog: false,
     uniforms: { uTime: { value: 0 } },
@@ -22,6 +22,8 @@ export function buildRiver(map) {
       }`,
   });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(map.river.width, len), mat);
-  m.rotation.x = -Math.PI / 2; m.position.set(map.river.x, 3, map.h / 2); m.renderOrder = 1;
+  m.rotation.x = -Math.PI / 2; m.renderOrder = 1;
+  if (diag) { m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI / 4); m.position.set(map.w / 2, 1, map.h / 2); } // chảy theo đường chéo y = x
+  else m.position.set(map.river.x, 3, map.h / 2);
   return { mesh: m, update: (t) => { mat.uniforms.uTime.value = t; } };
 }

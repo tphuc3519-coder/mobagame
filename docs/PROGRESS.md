@@ -16,6 +16,7 @@ Nguồn plan: bộ spec 3D trong `docs/` (bản 3D thay thế bản 2D cũ). L�
 | 4 | Kinh tế, đồ, phép, bùa (+ HUD cửa hàng/thanh đồ/nút phép kiểu video tham khảo) | 🚧 Code xong, `tools/t_items.mjs` đạt (49 kiểm tra); **chờ bạn thử trên điện thoại** |
 | 5 | Bot 1v1, màn chọn tướng luyện tập (cảnh trưng bày 3D) | 🚧 Code xong; `tools/t_bot.mjs` 50 trận: ~92% kết thúc trong 40 phút, không bot kẹt; **chờ bạn thử** |
 | 6 | Hoàn thiện Alpha | ⬜ Chưa |
+| 7 (một phần) | Bản đồ 5v5 chạy được: 3 đường, 9 trụ + nhà chính mỗi đội, lính theo đường, 10 tướng (4 đồng đội + 5 địch là bot), bản đồ nhỏ toàn bản đồ, camera gần hơn | 🚧 Code xong, `tools/t_arena.mjs` đạt; **chưa có quái rừng, mục tiêu lớn, sương mù**; chờ bạn thử |
 | 7–11 | Beta 5v5 | ⬜ Chưa |
 | 12–14 | Bản 1.0 | ⬜ Chưa |
 

@@ -7,6 +7,7 @@ import { isTargetable } from '../sim/targeting.js';
 import { quickBuys } from '../sim/inventory.js';
 import { foeHero, minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
 import { combo, survival } from './botSkills.js';
+import { updateLaneBot } from './laneBot.js';
 
 export function createBot(world, e, difficulty = 'normal') {
   const diff = DIFFICULTY[difficulty] || DIFFICULTY.normal;
@@ -128,6 +129,7 @@ function think(bot) {
 export function updateBots(world) {
   for (const e of world.entities) {
     const bot = e.bot; if (!bot) continue;
+    if (bot.path) { updateLaneBot(world, e); continue; } // bot đội 5v5 (laneBot.js)
     if (world.tick < bot.next) continue;
     bot.next = world.tick + Math.max(3, T(bot.diff.react));
     const moved = dist(e.pos, bot.lastPos); bot.lastPos = { ...e.pos };

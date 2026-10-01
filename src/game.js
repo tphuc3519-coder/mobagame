@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { createLoop } from './core/loop.js';
-import { DUEL } from './data/maps.js';
+import { DUEL, ARENA } from './data/maps.js';
+import { setupTeams } from './sim/lineup.js';
 import { HEROES } from './data/heroes/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/renderer.js';
 import { createPost } from './render/post.js';
 import { pickLevel, LEVELS } from './render/quality.js';
 import { addLights } from './render/lights.js';
-import { createCamera } from './render/camera.js';
+import { createCamera, CAM_DISTANCE } from './render/camera.js';
+import { buildArena } from './render/arenaMap.js';
+import { createMinimap } from './hud/minimap.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
 import { createFx } from './render/fx.js';
@@ -23,8 +26,8 @@ import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
 import { computeBonus } from './sim/inventory.js';
 /**
- * Vào trận 1v1 với bot. opts: { heroId, enemyId, spellId, difficulty, seed, bot=true, onExit }
- * Tham số URL dành cho kiểm thử: ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
+ * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), spellId, difficulty, seed, bot=true, onExit }
+ * Tham số URL dành cho kiểm thử: ?mode=5v5, ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
  */
 export function startMatch(opts) {
 const q = new URLSearchParams(location.search);
@@ -33,18 +36,25 @@ const seed = opts.seed ?? parseInt(q.get('seed') || '1', 10);
 const level = pickLevel();
 const heroId = opts.heroId;
 
-// Mốc 3: bản đồ 1v1 đủ công trình và lính. ?dummies=1 thêm 3 hình nộm cách 400 / 700 / 1000 để tập kỹ năng.
-const world = createWorld({ map: DUEL, seed });
-const player = world.spawnHero(heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.road.y });
+const arena = (opts.mode || q.get('mode')) === '5v5';
+const map = arena ? ARENA : DUEL;
+// 1v1: bản đồ một đường. 5v5: ba đường, 10 tướng (người chơi + 4 bot cùng đội, 5 bot đối thủ). ?dummies=1 (1v1) thêm 3 hình nộm.
+const world = createWorld({ map, seed });
+let player, enemy = null;
+if (arena) {
+  const lineup = setupTeams(world, { heroId, difficulty: opts.difficulty || 'normal', allies: opts.allies, foes: opts.foes });
+  player = lineup.player;
+} else {
+  player = world.spawnHero(heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.road.y });
+  if (opts.enemyId && opts.bot !== false) {
+    enemy = world.spawnHero(opts.enemyId, 1, { x: DUEL.spawn[1].x - 250, y: DUEL.road.y });
+    for (const id of STARTER[HEROES[opts.enemyId].roles[0]] || []) world.command(enemy.id, { type: 'buy', item: id });
+    world.addBot(enemy, opts.difficulty || 'normal');
+  }
+  if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
+}
 if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, ready: 0 };
 if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts.charmId]; player.bonus = computeBonus(player); }
-let enemy = null;
-if (opts.enemyId && opts.bot !== false) {
-  enemy = world.spawnHero(opts.enemyId, 1, { x: DUEL.spawn[1].x - 250, y: DUEL.road.y });
-  for (const id of STARTER[HEROES[opts.enemyId].roles[0]] || []) world.command(enemy.id, { type: 'buy', item: id });
-  world.addBot(enemy, opts.difficulty || 'normal');
-}
-if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(FOG_COLOR, 2600, 6200);
@@ -53,12 +63,13 @@ const { renderer } = createRenderer(document.getElementById('world'), level, {
   onRestored: () => { document.getElementById('lost').classList.remove('on'); loop.resume(); },
 });
 addLights(scene, renderer);
-const env = buildMap(scene, DUEL, level);
+const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 const views = createUnitViews(scene, 0, player.id);
 const fx = createFx(scene);
 const indicators = createIndicators(scene);
-const cam = createCamera({ distance: parseFloat(q.get('camdist') || '2000') });
+const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
 cam.resize(innerWidth, innerHeight);
+const minimap = createMinimap({ world, player, map, cam });
 const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -114,6 +125,7 @@ const loop = createLoop({
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
     const i = renderer.info.render;
+    minimap.draw();
     hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
 });

@@ -63,8 +63,9 @@ export function createHud(canvas, input) {
         const sec = Math.floor(world.tick / 30), cx = w / 2, ty = 10;
         ctx.fillStyle = 'rgba(12,15,32,0.72)'; ctx.beginPath(); ctx.roundRect(cx - 92, ty, 184, 30, 15); ctx.fill();
         ctx.textBaseline = 'middle'; ctx.font = '800 17px system-ui, sans-serif';
-        ctx.textAlign = 'right'; ctx.fillStyle = '#5fe3d0'; ctx.fillText(String(player.kills), cx - 40, ty + 15);
-        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(String(enemy ? enemy.kills : 0), cx + 40, ty + 15);
+        const kills = (team) => world.entities.reduce((a, h) => a + (h.kind === 'hero' && h.team === team ? h.kills : 0), 0); // tổng hạ gục của đội
+        ctx.textAlign = 'right'; ctx.fillStyle = '#5fe3d0'; ctx.fillText(String(kills(player.team)), cx - 40, ty + 15);
+        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(String(kills(1 - player.team)), cx + 40, ty + 15);
         ctx.textAlign = 'center'; ctx.fillStyle = '#f3e9d6'; ctx.font = '700 13px ui-monospace, monospace';
         ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, cx, ty + 15);
         if (!player.alive && player.respawnTick) {

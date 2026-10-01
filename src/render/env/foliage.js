@@ -57,6 +57,8 @@ function scatter(mesh, list, fill) {
   return mesh;
 }
 
+export { sway, treeGeo, rockGeo, tuftGeo, flowerGeo, scatter };
+
 /** Cây, đá, cỏ, hoa quanh đường; đông ở ngoài tường, thưa hai bên đường; chừa lối vào khe (03 §B1). */
 export function buildFoliage(map, density = 1) {
   const g = new THREE.Group(), r = rngFor(101), R = map.road;
@@ -97,7 +99,7 @@ export function buildFoliage(map, density = 1) {
 /** Bụi cỏ chơi được: cụm bụi dày, tối hơn nền để nhìn ra vùng ẩn nấp. */
 export function buildBushes(map) {
   const g = new THREE.Group(), r = rngFor(202);
-  const rects = map.bushes.flatMap((b) => [b, { ...b, x: map.w - b.x }]);
+  const rects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
   const blobs = [], tufts = [];
   for (const b of rects) {
     for (let i = 0; i < 26; i++) blobs.push({ x: b.x + r.range(-0.5, 0.5) * b.w, y: r.range(30, 50), z: b.y + r.range(-0.5, 0.5) * b.h, ry: r.range(0, 7), sx: r.range(42, 72), sy: r.range(38, 62), sz: r.range(42, 72), color: [0x59c66a, 0x3ea85a, 0x7ad46b][r.int(3)] });

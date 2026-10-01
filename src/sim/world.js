@@ -18,6 +18,7 @@ import { SPELLS } from '../data/spells.js';
 import { equip, computeBonus } from './inventory.js';
 import { updateItems } from './items.js';
 import { createBot, updateBots } from '../ai/heroBot.js';
+import { createLaneBot } from '../ai/laneBot.js';
 import { DIFFICULTY } from '../data/ai.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
@@ -49,7 +50,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   world.spawnHero = (heroId, team, pos) => makeHero(HEROES[heroId], team, pos, 'hero');
   world.spawnDummy = (team, pos) => makeHero(DUMMY, team, pos, 'dummy');
   /** Gắn bot điều khiển tướng (06 §5). */
-  world.addBot = (e, difficulty = 'normal') => { e.goldMult = DIFFICULTY[difficulty]?.goldMult ?? 1; return createBot(world, e, difficulty); };
+  world.addBot = (e, difficulty = 'normal', laneIdx = null) => { e.goldMult = DIFFICULTY[difficulty]?.goldMult ?? 1; return laneIdx != null && map.lanes.length > 1 ? createLaneBot(world, e, difficulty, laneIdx) : createBot(world, e, difficulty); };
   world.command = (entityId, cmd) => {
     let q = world.queue.get(entityId); if (!q) world.queue.set(entityId, (q = []));
     if (cmd.type === 'move' || cmd.type === 'attack') { const i = q.findIndex((c) => c.type === cmd.type); if (i >= 0) { q[i] = cmd; return; } }

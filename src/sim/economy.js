@@ -33,9 +33,9 @@ export function onKill(world, src, tgt) {
   const near = (team, pos, r) => heroes(world, team).filter((h) => h.alive && dist(h.pos, pos) <= r);
   if (tgt.kind === 'minion') {
     const d = MINIONS[tgt.minionType], foe = 1 - tgt.team;
-    const xp = (d.xp * ECON.laneMult) / Math.max(1, near(foe, tgt.pos, ECON.xpShareRadius).length);
+    const xp = (d.xp * (world.map.laneMult ?? ECON.laneMult)) / Math.max(1, near(foe, tgt.pos, ECON.xpShareRadius).length);
     for (const h of near(foe, tgt.pos, ECON.xpShareRadius)) gainXp(world, h, xp);
-    if (killer && killer.team === foe) addGold(world, killer, d.gold * ECON.laneMult); // lính không do tướng kết liễu: vàng mất
+    if (killer && killer.team === foe) addGold(world, killer, d.gold * (world.map.laneMult ?? ECON.laneMult)); // lính không do tướng kết liễu: vàng mất
   } else if (tgt.kind === 'tower') {
     const foe = 1 - tgt.team;
     for (const h of heroes(world, foe)) addGold(world, h, ECON.towerGold.team);
