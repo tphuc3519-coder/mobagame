@@ -97,9 +97,9 @@
     --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skw: calc(var(--a) + var(--s) * 2.6); --skh: calc(var(--a) + var(--s) * 1.4); }
   :root { --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skw: calc(var(--a) + var(--s) * 2.6); }
   .atk { right: 0; bottom: 0; width: var(--a); height: var(--a); background: radial-gradient(circle at 50% 35%, #8a3b32, #3a1416 70%); font-size: 17px; border: 3px solid #e9d9a8; box-shadow: 0 0 0 3px #0008, 0 4px 14px #000a; }
-  .atk .ic, .atk svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .atk .ic, .atk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk { width: var(--s); height: var(--s); padding: 0; border: 0; background: none; box-shadow: 0 3px 10px #000a; }
-  .sk svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk[data-k="s1"] { right: calc(var(--a) + 8px); bottom: 2px; } .sk[data-k="s2"] { right: calc(var(--a) * 0.82); bottom: calc(var(--a) * 0.78); } .sk[data-k="s3"] { right: calc(var(--s) * 0.05); bottom: calc(var(--a) + 10px); width: calc(var(--s) * 1.1); height: calc(var(--s) * 1.1); }
   .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 0 4px #000, 0 0 2px #000; } .sk .nm { display: none; }
   .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
@@ -107,16 +107,16 @@
   .lvring .on { stroke: url(#lvg); filter: drop-shadow(0 0 2px #ffcf6a) drop-shadow(0 0 4px #ff9a2a88); }
   .sk .lvl { box-shadow: 0 0 0 2px #1a1200, 0 0 10px #ffcf6a; animation: lvpulse 1.1s ease-in-out infinite; z-index: 5; } @keyframes lvpulse { 50% { transform: scale(1.15); box-shadow: 0 0 0 2px #1a1200, 0 0 18px #ffe08a; } }
   .lvring .fresh { animation: lvup 0.9s ease-out; } @keyframes lvup { 0% { stroke-width: 16; stroke: #fff; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 18px #ffcf6a); } 100% { stroke-width: 8; } }
-  .sk.nomana svg.art { filter: saturate(0.3) brightness(0.75); } .sk.nomana { box-shadow: 0 0 0 3px #4a9cff; }
-  .sk.locked svg.art { filter: grayscale(1) brightness(0.55); } .sk.locked { opacity: 1; }
+  .sk.nomana .art { filter: saturate(0.3) brightness(0.75); } .sk.nomana { box-shadow: 0 0 0 3px #4a9cff; }
+  .sk.locked .art { filter: grayscale(1) brightness(0.55); } .sk.locked { opacity: 1; }
   #extras { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + var(--skw) + 14px); z-index: 4; display: flex; gap: clamp(8px, 1.6vw, 18px); align-items: flex-end; pointer-events: none; }
   .xb { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: auto; } .xb[hidden] { display: none; }
   .xb label { font: 700 12px system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #000, 0 0 4px #000; white-space: nowrap; pointer-events: none; }
   .sb.mini { position: relative; width: clamp(50px, 13vh, 66px); height: clamp(50px, 13vh, 66px); padding: 0; border: 0; background: none; box-shadow: 0 3px 10px #000a; }
-  .sb.mini .ico { position: absolute; inset: 0; } .sb.mini .ico svg.art, .sb.mini .ico .ic { width: 100%; height: 100%; } .sb.mini .cd { z-index: 2; } .sb.mini .cdt { z-index: 3; font-size: 18px; text-shadow: 0 0 4px #000; }
+  .sb.mini .ico { position: absolute; inset: 0; } .sb.mini .ico .art, .sb.mini .ico .ic { width: 100%; height: 100%; } .sb.mini .cd { z-index: 2; } .sb.mini .cdt { z-index: 3; font-size: 18px; text-shadow: 0 0 4px #000; }
   .xb.on .sb.mini { box-shadow: 0 0 0 3px #8fe8ff, 0 0 14px #8fe8ff; } .xb .prog { position: absolute; left: 0; right: 0; bottom: 0; background: #8fe8ff66; z-index: 2; pointer-events: none; }
   .xb.locked { opacity: 0.4; }
-  svg.art { display: block; width: 100%; height: 100%; } .sl-spell svg.art { width: 44px; height: 44px; }
+  .art { display: block; width: 100%; height: 100%; } .sl-spell .art { width: 44px; height: 44px; }
   .hudtip { position: fixed; z-index: 30; background: linear-gradient(180deg, #1c2244f2, #0d1028f2); border: 1px solid #c9b47a; border-radius: 10px; padding: 9px 12px; color: #f3e9d6; font: 13px system-ui, sans-serif; box-shadow: 0 6px 20px #000c; pointer-events: none; }
   .hudtip[hidden] { display: none; } .hudtip b { display: block; font-size: 15px; color: #ffe08a; } .hudtip small { display: block; color: #8fd8ff; margin-top: 2px; } .hudtip p { margin: 6px 0 0; line-height: 1.4; color: #f3e9d6dd; }
   /* khối cửa hàng: nút giỏ + vàng, gợi ý mua nhanh (tên + công dụng), 6 ô đồ */

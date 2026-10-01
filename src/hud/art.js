@@ -1,3 +1,4 @@
+import { paintedSpell } from './paint.js';
 // Icon "huy hiệu" vẽ bằng SVG có chiều sâu (nền chuyển sắc toả tâm, viền kim loại, hình chính có đổ bóng + quầng sáng, vệt bóng kính)
 // cho phép bổ trợ, Biến về và kỹ năng tướng. Tự vẽ, không dùng hình của game khác (docs/01 §5).
 let uid = 0;
@@ -69,11 +70,12 @@ const SPELL_ART = {
   gio_luot: ['haste', '#b8a8ff', '#2a1a5a', '#ffffff', '#d8d0ff'], giai_troi: ['cleanse', '#ffc87a', '#4a2a0a', '#ffffff', '#ffd89a'],
 };
 export function spellArt(id) {
+  const pt = typeof document !== 'undefined' && paintedSpell(id); if (pt) return pt;
   const [g, c0, c1, a, b] = SPELL_ART[id] || ['blink', '#888', '#222', '#fff', '#ccc'];
   return badge(GLYPHS[g](a, b), { c0, c1, glow: b });
 }
-export const restoreArt = () => badge(GLYPHS.flask('#ffd0d8', '#e8243c'), { c0: '#e0506a', c1: '#3a0a18', glow: '#ff6a80' });
-export const recallArt = () => badge(GLYPHS.recall('#ffffff', '#8fd8ff'), { c0: '#5f8fe0', c1: '#10204a', glow: '#8fd8ff' });
+export const restoreArt = () => paintedSpell('restore') || badge(GLYPHS.flask('#ffd0d8', '#e8243c'), { c0: '#e0506a', c1: '#3a0a18', glow: '#ff6a80' });
+export const recallArt = () => paintedSpell('recall') || badge(GLYPHS.recall('#ffffff', '#8fd8ff'), { c0: '#5f8fe0', c1: '#10204a', glow: '#8fd8ff' });
 
 /** Hình kỹ năng: chọn theo cơ chế (móc, xoáy, khiên…) rồi theo kiểu; màu theo chủ đề tướng. */
 export function skillArt(skill, theme = '#ffb84d') {

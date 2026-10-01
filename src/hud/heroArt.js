@@ -3,6 +3,7 @@
 // lớp hiệu ứng phát sáng (lửa, nước, gió, ánh trăng) cộng sáng; khung kim loại mảnh. Toạ độ 0..128.
 // Tự vẽ, không dùng hình của game khác (docs/01 §5).
 import { skillArt } from './art.js';
+import { hasPaintedSkill, paintedSkill, paintedFist } from './paint.js';
 
 let uid = 0;
 
@@ -252,6 +253,7 @@ const ICONS = {
 
 /** Icon kỹ năng theo (tướng, ô chiêu). Tướng chưa có thiết kế riêng → icon chung theo cơ chế. */
 export function heroSkillArt(heroId, slot, skill, theme) {
+  if (typeof document !== 'undefined' && hasPaintedSkill(heroId, slot)) return paintedSkill(heroId, slot); // icon vẽ canvas (paint.js)
   const t = TH[heroId], f = ICONS[heroId]?.[slot];
   if (!t || !f) return skillArt(skill, theme);
   const k = kit(), [body, fx, glowAt] = f(k);
@@ -260,6 +262,7 @@ export function heroSkillArt(heroId, slot, skill, theme) {
 
 /** Nút đánh thường (mọi tướng): nắm đấm bọc giáp tung cú đấm, vụ nổ lực phía trước. */
 export function fistArt() {
+  if (typeof document !== 'undefined') return paintedFist();
   const k = kit();
   const steel = k.lin('st', [[0, '#f0ece8'], [0.3, '#b8b0a8'], [0.7, '#5a524c'], [1, '#221c18']], 0, 0, 1, 1);
   const leather = k.lin('lt', [[0, '#a8643a'], [0.6, '#5a2e16'], [1, '#2a120a']], 0, 0, 1, 1);
