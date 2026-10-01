@@ -1,5 +1,6 @@
 // Mossback — Guardian of the Mossy Temple (09 §4.1)
 import { humanoid, BONE } from '../humanoid.mjs';
+import { mossAnim } from './thach_quy.anim.mjs';
 import { belt } from '../costume.mjs';
 import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../parts.mjs';
 
@@ -12,11 +13,13 @@ export default {
   import: { // model liền khối có texture do hoạ sĩ gửi (diver_pbr_20000.glb): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
     mode: 'fused', file: './imports/diver_pbr_20000.glb',
     centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
-    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.06 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+    rig: { HandEndR: [-0.23, 0.3, 0.07] }, // mút bàn tay: trọng số bàn tay không chạy dọc cả cây gậy
+    cutMixed: { keep: 0.1 }, maxEdge: 0.1, // cắt tam giác nối gậy–thân (ngoài vùng bàn tay) và tam giác sợi chỉ
     joints: { wristR: [-0.23, 0.27], tipR: [-0.23, 0.75] },
     portrait: { dist: 2.7, dy: -0.3 },
   },
-  anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
+  anim: mossAnim,
   build(id) {
     const ctx = humanoid(id, {
       H: 2.5, headS: 0.8, shoulder: 0.215, chestW: 0.205, chestD: 0.15, waistW: 0.175, hipW: 0.18, armR: 0.058, legR: 0.066, legOut: 0.072, hunch: 0.055,

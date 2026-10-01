@@ -149,7 +149,8 @@ export function buildClips(ctx, bones, o = {}) {
   // Chọn chu kỳ chạy để runRefSpeed ≈ tốc chạy của tướng (timeScale trong trận ≈ 1)
   if (o.moveSpeed) run.T = Math.min(1.15, Math.max(0.5, (ctx.legLen * (run.amp * D2R) * 4 * 0.94 * 100) / o.moveSpeed));
   const idle = o.idle || 'calm';
-  const swayBones = bones.filter((b) => /Sway/.test(b.name));
+  const NM = { ...NAMES, ...(o.extra || {}) }; // o.extra: khoá tư thế → tên xương phụ (vải, tóc…) do model nhập thêm
+  const swayBones = bones.filter((b) => /Sway/.test(b.name) && !Object.values(o.extra || {}).includes(b.name.slice(5)));
   const clips = {};
   const mk = (name, dur, fn, loop = false) => {
     const n = Math.max(2, Math.round(dur * FPS) + 1);
@@ -159,7 +160,7 @@ export function buildClips(ctx, bones, o = {}) {
       const t = (i / (n - 1)) * dur, u = i / (n - 1);
       times.push(t);
       const p = fn(u, t);
-      for (const [k, nm] of Object.entries(NAMES)) {
+      for (const [k, nm] of Object.entries(NM)) {
         const r = p[k] || [0, 0, 0];
         const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(r[0] * D2R, r[1] * D2R, r[2] * D2R, 'XYZ'));
         (rots[nm] ||= []).push(q.x, q.y, q.z, q.w);
@@ -246,5 +247,7 @@ export function buildClips(ctx, bones, o = {}) {
     p.swayGain = 0.6;
     return p;
   }, true);
+  // Clip viết tay riêng cho từng tướng: { Tên: { dur, loop, pose: (u, t) => tư thế } } đè lên clip dựng sẵn
+  for (const [name, c] of Object.entries(o.custom || {})) mk(name, c.dur === 'run' ? run.T : c.dur ?? clips[name]?.duration ?? 1, c.pose, !!c.loop);
   return clips;
 }

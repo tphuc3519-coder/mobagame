@@ -25,7 +25,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const q = new URLSearchParams(location.search);
 const ids = (q.get('ids') || '').split(',').filter(Boolean);
 const poses = (q.get('poses') || 'front:Idle:0,side:Run:0.15,side:Attack1:0.3,front:Ult:0.55,game:Idle:0').split(',').map((s) => { const [v, c, t] = s.split(':'); return { v, c: c || 'Idle', t: parseFloat(t || '0') }; });
-const CW = +(q.get('cw') || 300), CH = +(q.get('ch') || 380);
+const ZOOM = +(q.get('zoom') || 1), CW = +(q.get('cw') || 300), CH = +(q.get('ch') || 380);
 const wrap = document.getElementById('wrap');
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1);
@@ -57,10 +57,10 @@ await Promise.all(ids.map(async (id) => { models[id] = await loader.loadAsync(`.
 function frame(H, v) {
   const top = H; H = Math.max(H, 1.6) * 1.06; void top;
   if (v === 'game') { const a = 55 * Math.PI / 180, d = 23; cam.position.set(0, 0.6 + Math.sin(a) * d, Math.cos(a) * d); cam.lookAt(0, 0.6, 0); return; }
-  const d = H * 2.05 * Math.max(1, 0.8 / cam.aspect);
+  const d = H * 2.05 * Math.max(1, 0.8 / cam.aspect) * ZOOM;
   const p = { front: [0, 0.55, 1], side: [1, 0.55, 0.001], back: [0, 0.55, -1], q: [0.7, 0.6, 0.85], face: [0, 0.9, 1] }[v] || [0, 0.55, 1];
   if (v === 'face') { cam.position.set(0, H * 0.9, H * 0.7); cam.lookAt(0, H * 0.88, 0); return; }
-  cam.position.set(p[0] * d, p[1] * H, p[2] * d); cam.lookAt(0, H * 0.5, 0);
+  cam.position.set(p[0] * d, p[1] * H, p[2] * d); cam.lookAt(0, H * 0.5 * (ZOOM > 1 ? 1.1 : 1), 0);
 }
 
 ids.forEach((id, r) => {

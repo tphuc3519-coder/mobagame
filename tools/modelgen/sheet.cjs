@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
   page.on('pageerror', (e) => console.error('pageerror', e.message));
   page.on('console', (m) => { if (m.type() === 'error') console.error('console', m.text()); });
-  const url = `http://localhost:8080/tools/model-sheet.html?ids=${ids}&cw=${cw}&ch=${ch}${poses ? '&poses=' + poses : ''}${process.env.TONE ? '&tone=1' : ''}`;
+  const url = `http://localhost:8080/tools/model-sheet.html?ids=${ids}&cw=${cw}&ch=${ch}${poses ? '&poses=' + poses : ''}${process.env.TONE ? '&tone=1' : ''}${process.env.ZOOM ? '&zoom=' + process.env.ZOOM : ''}`;
   await page.goto(url);
   await page.waitForFunction('window.__ready', null, { timeout: 60000 });
   await page.locator('#wrap').screenshot({ path: out });

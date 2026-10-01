@@ -1,8 +1,10 @@
 // Emberforge — Blacksmith of Furnace Village (09 §4.4)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
+import { emberAnim } from './hoa_ren.anim.mjs';
 import { belt, boots, flaps } from '../costume.mjs';
 import { swayChain, tube, ribbon, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
 
+const dark = ([r, g, b]) => 0.3 * r + 0.59 * g + 0.11 * b < 60; // gỗ tối của cán búa; tóc đỏ (~80), da, vải sáng hơn của búa; da và tóc sáng hơn
 const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e', iron2: '#45454c', leather: '#7a4524', leather2: '#4a2814', hair: '#2a1810', gold: '#ffd166', ember: '#ff7a1a' };
 
 export default {
@@ -17,16 +19,18 @@ export default {
       ThighL: [0.17, 0.85, 0], ShinL: [0.33, 0.46, 0.05], FootL: [0.5, 0.12, 0], ToeL: [0.55, 0.03, 0.17],
       ThighR: [-0.1, 0.85, 0], ShinR: [-0.28, 0.5, 0], FootR: [-0.37, 0.15, 0], ToeR: [-0.38, 0.03, 0.17],
       UpperArmL: [0.2, 1.38, 0], ForearmL: [0.32, 1.18, 0.05], HandL: [0.42, 1.03, 0.1], HandL_Tip: [0.46, 0.93, 0.1],
-      UpperArmR: [-0.22, 1.38, 0], ForearmR: [-0.38, 1.28, 0.25], HandR: [-0.05, 1.38, 0.47], HandR_Tip: [-0.08, 1.68, -0.46], // tip = tâm đầu búa
+      UpperArmR: [-0.22, 1.38, 0], ForearmR: [-0.38, 1.28, 0.25], HandR: [-0.05, 1.38, 0.47], HandR_Tip: [-0.08, 1.68, -0.46], HandEndR: [-0.03, 1.4, 0.62], // tip = tâm đầu búa; HandEndR = mút bàn tay (để trọng số không chạy dọc cả cán búa)
     },
     weapon: [
-      { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.26 }, // đầu búa (trục dọc theo x)
-      { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.05 }, // cán búa, qua vai ra phía trước
+      { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.28, hard: 0.03, cut: 0.002 }, // đầu búa (trục dọc theo x)
+      { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.045, hard: 0.012, cut: 0.002 }, // cán búa, qua vai ra phía trước
     ],
+    maxEdge: 0.3, cutMixed: { keep: 0.3 }, // cắt tam giác nối búa–thân ngoài vùng bàn tay
     radii: { Hips: 1.5, Spine: 1.4, Chest: 1.4 },
+    skirt: { max: 0.9, from: 0.05, span: 0.5, gap0: 0.05, gap1: 0.2 }, // vải/khăn thả dưới hông đi theo 4 xương váy để đung đưa
     portrait: { dist: 1.9, dy: -0.1 },
   },
-  anim: { style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' }, run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6 },
+  anim: emberAnim,
   build(id) {
     const ctx = humanoid(id, {
       H: 1.95, headS: 0.98, shoulder: 0.2, chestW: 0.178, chestD: 0.108, waistW: 0.13, hipW: 0.14, armR: 0.042, legR: 0.052, legOut: 0.062,

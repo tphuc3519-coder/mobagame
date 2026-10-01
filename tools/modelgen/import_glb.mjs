@@ -41,10 +41,10 @@ function classify(name, cx) {
 }
 
 /** Cây xương chuẩn (tên `Bone_*`, quay danh nghĩa bằng 0). W: vị trí thế giới từng khớp theo tên không tiền tố. */
-export function makeRig(W) {
+export function makeRig(W, extra = []) { // extra: [[tên, cha], …] xương phụ (vải, tóc) thêm sau bộ xương chuẩn
   const TREE = [['Root', null], ['Hips', 'Root'], ['Spine', 'Hips'], ['Chest', 'Spine'], ['Neck', 'Chest'], ['Head', 'Neck'],
     ['UpperArmL', 'Chest'], ['UpperArmR', 'Chest'], ['ForearmL', 'UpperArmL'], ['ForearmR', 'UpperArmR'], ['HandL', 'ForearmL'], ['HandR', 'ForearmR'],
-    ['HandL_Tip', 'HandL'], ['HandR_Tip', 'HandR'], ['ThighL', 'Hips'], ['ThighR', 'Hips'], ['ShinL', 'ThighL'], ['ShinR', 'ThighR'], ['FootL', 'ShinL'], ['FootR', 'ShinR']];
+    ['HandL_Tip', 'HandL'], ['HandR_Tip', 'HandR'], ['ThighL', 'Hips'], ['ThighR', 'Hips'], ['ShinL', 'ThighL'], ['ShinR', 'ThighR'], ['FootL', 'ShinL'], ['FootR', 'ShinR'], ...extra];
   const bones = TREE.map(([n]) => { const b = new THREE.Bone(); b.name = B(n); return b; });
   const idx = Object.fromEntries(TREE.map(([n], i) => [B(n), i]));
   const root = new THREE.Group();

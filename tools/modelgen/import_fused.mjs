@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import jpeg from 'jpeg-js';
 import { buildClips } from './anim.mjs';
 import { makeRig } from './import_glb.mjs';
 
@@ -51,7 +52,7 @@ async function readMesh(file) {
     nor.set([N.getX(i), N.getY(i), N.getZ(i)], i * 3);
     uv.set([U.getX(i) * tt.scale[0] + tt.offset[0], U.getY(i) * tt.scale[1] + tt.offset[1]], i * 2); // khôi phục uv thật (gltfpack nén uv rồi bù bằng KHR_texture_transform)
   }
-  return { pos, nor, uv, index: Array.from(g.index.array), imgs, refs, matName: mat.name };
+  return { pos, nor, uv, index: Array.from(g.index.array), imgs, refs, baseImg: json.textures[refs.base]?.source, matName: mat.name };
 }
 
 /** Khoảng cách từ điểm tới đoạn thẳng a→b. */
@@ -65,6 +66,9 @@ export async function importFused(id, def, outRoot, here) {
   const cfg = def.import;
   const src = await readMesh(path.resolve(here, cfg.file));
   const n = src.pos.length / 3;
+  // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
+  const tex = src.refs.base != null ? jpeg.decode(src.imgs[src.baseImg], { useTArray: true }) : null;
+  const rgbOf = (i) => { if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };
   const X = cfg.centerX ?? 0, Z = cfg.centerZ ?? 0; // dời để thân nằm giữa x=0, z=0 (đơn vị file gốc)
   const isStaff = (x) => cfg.staffMaxX != null && x - X < cfg.staffMaxX; // (tuỳ chọn) cắt cứng theo x; mặc định dùng đoạn vũ khí mềm bên dưới
   // chiều cao thân (bỏ vũ khí) → hệ số co
@@ -84,8 +88,11 @@ export async function importFused(id, def, outRoot, here) {
     UpperArmL: V(...J.shoulder), UpperArmR: V(-J.shoulder[0], J.shoulder[1]), ForearmL: V(...J.elbow), ForearmR: V(-J.elbow[0], J.elbow[1]),
     HandL: V(...J.wrist), HandR: V(...J.wristR), HandL_Tip: V(...J.tip), HandR_Tip: V(...J.tipR),
   };
-  for (const [k, q] of Object.entries(cfg.rig || {})) if (W[k]) W[k] = V(q[0], q[1], q[2] || 0); // cfg.rig: đặt thẳng từng khớp [x,y,z] khi tư thế không phải T/đứng thẳng
-  const { bones, idx, root } = makeRig(W);
+  for (const [k, q] of Object.entries(cfg.rig || {})) if (W[k]) W[k] = V(q[0], q[1], q[2] || 0); // (khoá không phải khớp như HandEndR/ToeL/HeadTop chỉ dùng tính trọng số) // cfg.rig: đặt thẳng từng khớp [x,y,z] khi tư thế không phải T/đứng thẳng
+  // xương phụ cho vải/váy: 4 xương quanh hông (trước/sau/trái/phải), quay quanh hông để vải đung đưa trễ nhịp so với thân
+  const SK = cfg.skirt, skDirs = { F: [0, 1], B: [0, -1], L: [1, 0], R: [-1, 0] }, extra = [];
+  if (SK) for (const k of Object.keys(skDirs)) { W['Skirt' + k] = W.Hips.clone(); extra.push(['Skirt' + k, 'Hips']); }
+  const { bones, idx, root } = makeRig(W, extra);
 
   // —— Đoạn xương + bán kính ảnh hưởng (đơn vị file gốc) để tính trọng số ——
   const w3 = (k) => W[k].toArray().map((v) => v);
@@ -93,28 +100,42 @@ export async function importFused(id, def, outRoot, here) {
     ['Hips', 'Hips', 'Spine', 0.12], ['Spine', 'Spine', 'Chest', 0.115], ['Chest', 'Chest', 'Neck', 0.115], ['Neck', 'Neck', 'Head', 0.07],
     ['Head', 'Head', null, 0.11, cfg.rig?.HeadTop ? V(...cfg.rig.HeadTop).toArray() : [W.Head.x, J.headTop * s, W.Head.z]],
     ...['L', 'R'].flatMap((d) => [
-      ['UpperArm' + d, 'UpperArm' + d, 'Forearm' + d, 0.065], ['Forearm' + d, 'Forearm' + d, 'Hand' + d, 0.06], ['Hand' + d, 'Hand' + d, 'Hand' + d + '_Tip', 0.06],
+      ['UpperArm' + d, 'UpperArm' + d, 'Forearm' + d, 0.065], ['Forearm' + d, 'Forearm' + d, 'Hand' + d, 0.06], ['Hand' + d, 'Hand' + d, 'Hand' + d + '_Tip', 0.06, cfg.rig?.['HandEnd' + d] ? V(...cfg.rig['HandEnd' + d]).toArray() : null],
       ['Thigh' + d, 'Thigh' + d, 'Shin' + d, 0.05], ['Shin' + d, 'Shin' + d, 'Foot' + d, 0.045], ['Foot' + d, 'Foot' + d, null, 0.05, cfg.rig?.['Toe' + d] ? V(...cfg.rig['Toe' + d]).toArray() : [W['Foot' + d].x, 0, W['Foot' + d].z + J.toe * s]],
     ]),
   ].map(([bone, a, b, r, end]) => ({ bone, a: w3(a), b: end || w3(b), r: r * K * (cfg.radii?.[bone] ?? 1) * s }));
   // Vũ khí liền khối với thân: coi như một "xương phụ" dạng đoạn thẳng gắn vào tay phải (đơn vị file gốc, x tương đối thân)
-  for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
+  for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s, hard: (w.hard ?? 0.012) * s, test: w.test }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
   const sig = (cfg.softness ?? 0.02) * K * s;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
-  const hand = idx[B('HandR')];
+  const hand = idx[B('HandR')], isHard = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
     if (isStaff(src.pos[3 * i])) { si[4 * i] = hand; sw[4 * i] = 1; continue; }
-    const dd = segs.map((sg) => ({ b: idx[B(sg.bone)], sig: sg.sig || sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r), cut: sg.cut })).filter((c, _, all) => !(c.cut != null && c.d > c.cut && all.length > 1)); // vũ khí chỉ ăn đỉnh nằm sát nó, không cướp vải ở xa
+    const rgb = rgbOf(i), segsI = segs.filter((sg) => !sg.test || sg.test(rgb)); // vũ khí chỉ nhận đỉnh có màu texture hợp lệ (loại da/tóc sát bên)
+    if (segsI.some((sg) => sg.cut != null && segDist(p, sg.a, sg.b) - sg.r <= sg.hard)) { si[4 * i] = hand; sw[4 * i] = 1; isHard[i] = 1; continue; } // nằm trong thân vũ khí: gắn cứng 100% vào tay, không trộn với cẳng tay (tránh méo khi xoay cổ tay mạnh)
+    const dd = segsI.map((sg) => ({ b: idx[B(sg.bone)], sig: sg.sig || sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r), cut: sg.cut })).filter((c, _, all) => !(c.cut != null && c.d > c.cut && all.length > 1)); // vũ khí chỉ ăn đỉnh nằm sát nó, không cướp vải ở xa
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
     const acc = new Map(); for (const c of dd) acc.set(c.b, (acc.get(c.b) || 0) + Math.exp(-Math.pow((c.d - dmin) / c.sig, 2)));
     let cand = [...acc].map(([b, w]) => ({ b, w })).sort((a, b) => b.w - a.w).slice(0, 4);
     cand = cand.filter((c) => c.w > 1e-3 * cand[0].w); // bỏ khe trọng số ~0 (glTF cấm chỉ số khác 0 mà trọng số 0)
-    const tot = cand.reduce((a, c) => a + c.w, 0);
+    let tot = cand.reduce((a, c) => a + c.w, 0);
+    if (SK) { // vải thả dưới hông và cách xa chân: chuyển một phần trọng số sang xương váy theo hướng đỉnh nhìn từ hông
+      const hy = W.Hips.y, v = Math.min(1, Math.max(0, (hy + (SK.from ?? 0.05) * K * s - p[1]) / ((SK.span ?? 0.5) * K * s)));
+      const dLeg = Math.min(...segs.filter((sg) => /^(Thigh|Shin|Foot)/.test(sg.bone)).map((sg) => Math.max(0, segDist(p, sg.a, sg.b) - sg.r)));
+      const g0 = (SK.gap0 ?? 0.04) * K * s, g1 = (SK.gap1 ?? 0.2) * K * s, hz = Math.min(1, Math.max(0, (dLeg - g0) / (g1 - g0)));
+      const sk = (SK.max ?? 0.9) * v * v * (3 - 2 * v) * hz * hz * (3 - 2 * hz);
+      if (sk > 1e-3) {
+        const ux = p[0] - W.Hips.x, uz = p[2] - W.Hips.z, L = Math.hypot(ux, uz) || 1;
+        const dw = Object.entries(skDirs).map(([k, d]) => ({ b: idx[B('Skirt' + k)], w: Math.pow(Math.max(0, (ux * d[0] + uz * d[1]) / L), 2) })).filter((c) => c.w > 1e-3);
+        cand = cand.map((c) => ({ b: c.b, w: (c.w / tot) * (1 - sk) })).concat(dw.map((c) => ({ b: c.b, w: c.w * sk })));
+        cand = cand.sort((a, b) => b.w - a.w).slice(0, 4); tot = cand.reduce((a, c) => a + c.w, 0);
+      }
+    }
     cand.forEach((c, k) => { si[4 * i + k] = c.b; sw[4 * i + k] = c.w / tot; });
   }
 
-  if (process.env.DUMP_WEIGHTS) fs.writeFileSync(process.env.DUMP_WEIGHTS, JSON.stringify({ pos: Array.from(pos), si: Array.from(si), sw: Array.from(sw), names: bones.map((b) => b.name) })); // gỡ lỗi: xuất trọng số để vẽ
+  if (process.env.DUMP_WEIGHTS) fs.writeFileSync(process.env.DUMP_WEIGHTS, JSON.stringify({ pos: Array.from(pos), si: Array.from(si), sw: Array.from(sw), rgb: Array.from({ length: n }, (_, i) => rgbOf(i)), names: bones.map((b) => b.name) })); // gỡ lỗi: xuất trọng số để vẽ
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('normal', new THREE.BufferAttribute(src.nor, 3));
@@ -122,7 +143,23 @@ export async function importFused(id, def, outRoot, here) {
   geo.setAttribute('_mat', new THREE.Float32BufferAttribute(new Float32Array(n).fill(5), 1)); // 5: không tô vệt cọ giả lên texture thật
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4));
   geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
-  geo.setIndex(src.index);
+  // Cắt các tam giác nối vũ khí với thân (lưới liền khối: cán búa dính vai/cổ nên kéo thành dải khi xoay mạnh). Giữ lại vùng quanh bàn tay để cổ tay không hở.
+  let index = src.index;
+  if (cfg.cutMixed) {
+    const keep = cfg.cutMixed.keep * s, hp = W.HandR; let cut = 0; const out = [];
+    for (let t = 0; t < index.length; t += 3) {
+      const a = index[t], b = index[t + 1], c = index[t + 2], k = isHard[a] + isHard[b] + isHard[c];
+      if (k > 0 && k < 3) { const cx = (pos[3 * a] + pos[3 * b] + pos[3 * c]) / 3 - hp.x, cy = (pos[3 * a + 1] + pos[3 * b + 1] + pos[3 * c + 1]) / 3 - hp.y, cz = (pos[3 * a + 2] + pos[3 * b + 2] + pos[3 * c + 2]) / 3 - hp.z; if (Math.hypot(cx, cy, cz) > keep) { cut++; continue; } }
+      out.push(a, b, c);
+    }
+    index = out; console.log(`  cắt ${cut} tam giác nối vũ khí–thân`);
+  }
+  if (cfg.maxEdge) { // tam giác sợi chỉ nối hai chỗ xa nhau (lỗi lưới quét): bỏ
+    const lim = (cfg.maxEdge * s) ** 2, e = (a, b) => (pos[3 * a] - pos[3 * b]) ** 2 + (pos[3 * a + 1] - pos[3 * b + 1]) ** 2 + (pos[3 * a + 2] - pos[3 * b + 2]) ** 2; const out = [];
+    for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; if (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim) continue; out.push(a, b, c); }
+    console.log(`  bỏ ${(index.length - out.length) / 3} tam giác quá dài`); index = out;
+  }
+  geo.setIndex(index);
   geo.computeBoundingBox(); geo.computeBoundingSphere();
   const body = new THREE.MeshStandardMaterial({ name: `${id}_body`, color: 0xffffff, roughness: 1, metalness: 1 });
   const mesh = new THREE.SkinnedMesh(geo, body);
@@ -168,6 +205,6 @@ export async function importFused(id, def, outRoot, here) {
     clips: Object.keys(clips), generator: 'tools/modelgen/import_fused.mjs', source: path.basename(cfg.file), ...(cfg.portrait && { portrait: cfg.portrait }),
   };
   fs.writeFileSync(path.join(dir, 'hero.art.json'), JSON.stringify(art, null, 2) + '\n');
-  console.log(`${id.padEnd(10)} nhập ${path.basename(cfg.file)}: tris ${src.index.length / 3}, xương ${bones.length}, ${Math.round(glb.length / 1024)} KB, hệ số co ${s.toFixed(2)}, runRef ${ctx.runRefSpeed}`);
-  return { id, tris: src.index.length / 3, bones: bones.length, kb: Math.round(glb.length / 1024), mats: 1, runRef: ctx.runRefSpeed };
+  console.log(`${id.padEnd(10)} nhập ${path.basename(cfg.file)}: tris ${index.length / 3}, xương ${bones.length}, ${Math.round(glb.length / 1024)} KB, hệ số co ${s.toFixed(2)}, runRef ${ctx.runRefSpeed}`);
+  return { id, tris: index.length / 3, bones: bones.length, kb: Math.round(glb.length / 1024), mats: 1, runRef: ctx.runRefSpeed };
 }
