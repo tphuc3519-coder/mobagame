@@ -74,7 +74,7 @@ function roundPath(pts, r) {
   return out;
 }
 
-const LANE_W = 880;
+const LANE_W = 1060; // rộng hơn ~20% (trước 880)
 // Ba đường, đi từ nhà chính Xanh sang nhà chính Đỏ (đối xứng nên đường phía Đỏ chỉ là đi ngược lại).
 const BASE = P(800, 5600), FOE = P(5600, 800);
 const LANES = [
@@ -131,12 +131,12 @@ const CAMPS_BLUE = [
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
 const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
-  { id: 'long_ngu', type: 'long_ngu', x: 1450, y: 1880, boss: true, back: -2.2 },
-  { id: 'ho_loi', type: 'ho_loi', x: 4950, y: 4520, boss: true, back: -1.0 },
+  { id: 'long_ngu', type: 'long_ngu', x: 1480, y: 1900, boss: true, back: -2.2 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4920, y: 4500, boss: true, back: -1.0 },
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
-  ...[[600, 2650], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
+  ...[[380, 2650], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
   ...[[1330, 3230], [1750, 3500], [2880, 5100], [380, 4400], [2250, 6050], [4300, 6060]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
@@ -182,6 +182,18 @@ const W_BLUE = [
   ...JUNGLE_ROCKS,
   ...BUSHES_BLUE.flatMap(bushRocks),
 ];
+/** Cắt bỏ phần đoạn tường lấn vào lòng đường (đường rộng hơn thì cung đá trại/đá rừng sát đường tự ngắn lại); giữ đoạn liền dài nhất. */
+function trimToLanes(w) {
+  const half = (w.w ?? 110) / 2, n = 40, ok = [];
+  const laneD = (x, y) => Math.min(...LANES.flatMap((ln) => ln.pts.slice(1).map((q, i) => segDist(x, y, ln.pts[i], q))));
+  for (let i = 0; i <= n; i++) { const t = i / n; ok.push(laneD(w.x1 + (w.x2 - w.x1) * t, w.y1 + (w.y2 - w.y1) * t) >= LANE_W / 2 + half + 10); }
+  let best = null, start = -1;
+  for (let i = 0; i <= n + 1; i++) { if (i <= n && ok[i]) { if (start < 0) start = i; } else if (start >= 0) { if (!best || i - 1 - start > best[1] - best[0]) best = [start, i - 1]; start = -1; } }
+  if (!best || (best[1] - best[0]) / n * Math.hypot(w.x2 - w.x1, w.y2 - w.y1) < 140) return null;
+  const [a, b] = [best[0] / n, best[1] / n], dx = w.x2 - w.x1, dy = w.y2 - w.y1;
+  return { ...w, x1: w.x1 + dx * a, y1: w.y1 + dy * a, x2: w.x1 + dx * b, y2: w.y1 + dy * b };
+}
+const W_BLUE_T = W_BLUE.map(trimToLanes).filter(Boolean);
 const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
 
 export const ARENA = {
@@ -198,7 +210,7 @@ export const ARENA = {
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
-  walls: { thickness: 110, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
+  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg)] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
