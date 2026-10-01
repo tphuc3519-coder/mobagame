@@ -159,3 +159,50 @@ export const roofTileSurface = () => once('roof', () => {
   });
   return finish(c);
 });
+
+/** Đá phân lớp (vân vằn kiểu vách đá Liên Quân): các lớp ngang lượn sóng sáng/tối xen kẽ, khe nứt tối giữa các lớp có viền sáng
+ *  phía trên (giả khối), vết nứt dọc, hạt đá lấm tấm. Xám lam trung tính để nhân với màu đỉnh. Lặp khít. */
+export const strataSurface = () => once('strata', () => {
+  const N = 512, wob = tileFbm(101, 4, 4), fine = tileFbm(103, 64, 3), mid = tileFbm(107, 12, 3), vert = tileFbm(109, 8, 3);
+  const bands = 9, Hm = new Float32Array(N * N), out = new Float32Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const u = i / N, v = j / N, y = (v + (wob(u, v) - 0.5) * 0.12) * bands, f = y - Math.floor(y), id = Math.floor(y);
+    const groove = Math.min(1, f / 0.07) * Math.min(1, (1 - f) / 0.03);                     // rãnh giữa hai lớp
+    const crack = Math.abs(vert(u, v * 0.3) - 0.5) < 0.012 + mid(u, v) * 0.01 ? 0.25 : 1;     // nứt dọc
+    Hm[j * N + i] = groove * crack * (0.86 + ((id * 0.618) % 1) * 0.14) + (mid(u, v) - 0.5) * 0.1;
+    out[j * N + i] = 0.72 + ((id * 0.618) % 1) * 0.22 + (fine(u, v) - 0.5) * 0.22 + (mid(u, v) - 0.5) * 0.18;
+  }
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = j * N + i, hU = Hm[((j + N - 2) % N) * N + i], hD = Hm[((j + 2) % N) * N + i];
+    const light = (hD - hU) * 1.3, shade = 0.42 + 0.58 * Hm[k];
+    const t = Math.max(0, Math.min(1.3, out[k] * shade + light));
+    d[4 * k] = cl(184 * t); d[4 * k + 1] = cl(184 * t); d[4 * k + 2] = cl(186 * t); d[4 * k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  return finish(c);
+});
+
+/** Đá xẻ khối lớn (tường biên): mặt đá mài có vân hạt, vân sọc chéo mờ, mép vát sáng, vết ố + rêu chân. */
+export const cutStoneSurface = () => once('cut', () => {
+  const N = 512, grain = tileFbm(121, 96, 3), stain = tileFbm(123, 6, 4), vein = tileFbm(127, 10, 4), moss = tileFbm(129, 8, 3);
+  const { c } = make(N, (u, v, o) => {
+    const vv = vein(u * 0.6 + v * 0.4, v), vl = Math.abs(Math.sin((u * 2 + v * 5 + vv * 3) * Math.PI)) ; // sọc vân lượn
+    let k = 0.82 + grain(u, v) * 0.22 - Math.pow(1 - vl, 18) * 0.25 + (stain(u, v) - 0.5) * 0.2;
+    let col = [176, 178, 184];
+    if (moss(u, v) + v * 0.9 - 0.95 > 0) col = mixc(col, [92, 120, 70], Math.min(0.7, (moss(u, v) + v * 0.9 - 0.95) * 3));
+    o[0] = cl(col[0] * k); o[1] = cl(col[1] * k); o[2] = cl(col[2] * k);
+  });
+  return finish(c);
+});
+
+/** Đá cẩm thạch trắng ngà (trụ, tế đàn): vân xám mảnh lượn, vân phụ mờ, hạt mịn; không rêu. */
+export const marbleSurface = () => once('marble', () => {
+  const N = 512, w1 = tileFbm(131, 4, 5), w2 = tileFbm(137, 8, 4), grain = tileFbm(139, 96, 2), cloud = tileFbm(141, 5, 4);
+  const { c } = make(N, (u, v, o) => {
+    const a = Math.abs(Math.sin((u * 3 + v * 2 + w1(u, v) * 4) * Math.PI)), b = Math.abs(Math.sin((u * 7 - v * 4 + w2(u, v) * 5) * Math.PI));
+    let k = 0.93 + (cloud(u, v) - 0.5) * 0.12 + (grain(u, v) - 0.5) * 0.06 - Math.pow(1 - a, 30) * 0.35 - Math.pow(1 - b, 40) * 0.15;
+    o[0] = cl(236 * k); o[1] = cl(231 * k); o[2] = cl(222 * k);
+  });
+  return finish(c);
+});

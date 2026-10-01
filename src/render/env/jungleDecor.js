@@ -3,7 +3,7 @@ import { mergeVertices, mergeGeometries } from 'three/addons/utils/BufferGeometr
 import { buildGrass } from './grass.js';
 import { fbm, rngFor } from './noise.js';
 import { scatter } from './foliage.js';
-import { flagstoneSurface, wallStoneSurface } from './surfaces.js';
+import { flagstoneSurface, wallStoneSurface, strataSurface, cutStoneSurface } from './surfaces.js';
 import { MONSTERS } from '../../data/jungle.js';
 
 // Bệ đá kiểu tảng đá tự nhiên (tham khảo các khối đá rêu trong rừng): mỗi đoạn tường là cụm tảng đá tròn gồ ghề xám lam,
@@ -75,6 +75,7 @@ function massGeo(w, H, seed) {
 export function buildRockWalls(map, dens = 1) {
   const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassTop = [], grassFoot = [], flowers = [];
   map.walls.segs.forEach((w, si) => {
+    if (w.border) return; // tường biên dựng riêng (buildBorderWall)
     const W = w.w ?? map.walls.thickness, H = w.bushRock ? 105 : w.ledge ? 115 : Math.min(240, 120 + W * 0.33);
     geos.push(massGeo(w, H, si * 1.37));
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L, nx = -uz, nz = ux;
@@ -98,10 +99,58 @@ export function buildRockWalls(map, dens = 1) {
       grassFoot.push({ x: w.x1 + ux * L * t + nx * sd * o, y: 0, z: w.y1 + uz * L * t + nz * sd * o, ry: r.range(0, 7), sx: r.range(80, 130), sy: r.range(70, 130), color: 0xffffff });
     }
   });
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const mat = strataMat();
   g.add(new THREE.Mesh(mergeGeometries(geos.map((x) => (x.index ? x.toNonIndexed() : x))), mat));
+  g.add(buildBorderWall(map, r));
   boulders.forEach((l, i) => l.length && g.add(scatter(new THREE.InstancedMesh(boulderGeo(i * 7 + 3), mat, l.length), l, true)));
   g.add(buildGrass(grassTop, 'wild', 14), buildGrass(grassFoot, 'wild', 16), buildGrass(flowers, 'blue', 8));
+  return g;
+}
+
+/** Vật liệu đá phân lớp: màu đỉnh × ảnh vân lớp chiếu theo toạ độ thế giới (vách: ngang theo xz, dọc theo y; mặt trên: chiếu từ trên). */
+let _strata = null;
+function strataMat() {
+  if (_strata) return _strata;
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true }), U = { uStrata: { value: strataSurface() } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'varying vec3 vWp; varying vec3 vWn;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 wp4 = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        wp4 = instanceMatrix * wp4;
+      #endif
+      vWp = (modelMatrix * wp4).xyz; vWn = normalize(mat3(modelMatrix) * objectNormal);`);
+    sh.fragmentShader = 'uniform sampler2D uStrata; varying vec3 vWp; varying vec3 vWn;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+      vec3 an = abs(normalize(vWn));
+      vec3 sx = texture2D(uStrata, vec2(vWp.z / 620.0, vWp.y / 300.0)).rgb, sz = texture2D(uStrata, vec2(vWp.x / 620.0, vWp.y / 300.0)).rgb, sy = texture2D(uStrata, vWp.xz / 520.0).rgb;
+      vec3 w = pow(an, vec3(4.0)); w /= (w.x + w.y + w.z);
+      vec3 st = sx * w.x + sy * w.y + sz * w.z;
+      diffuseColor.rgb *= st * 2.1;`);
+  };
+  m.customProgramCacheKey = () => 'rock-strata';
+  return (_strata = m);
+}
+
+/** Tường biên: dãy tấm đá xẻ khối lớn nối liền (đế đá, thân, nắp đá vát rộng hơn), mạch nối mảnh, đèn đá thưa, cỏ lá dài dưới chân. */
+function buildBorderWall(map, r) {
+  const segs = map.walls.segs.filter((w) => w.border); if (!segs.length) return new THREE.Group();
+  const g = new THREE.Group(), body = [], cap = [], plinth = [], foot = [], d = new THREE.Object3D(), H = 190;
+  for (const w of segs) {
+    const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), W = w.w, ang = -Math.atan2(w.y2 - w.y1, w.x2 - w.x1), n = Math.max(1, Math.round(L / 340));
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n, x = w.x1 + (w.x2 - w.x1) * t, z = w.y1 + (w.y2 - w.y1) * t, len = L / n - 8, h = H * r.range(0.94, 1.06);
+      body.push({ x, y: h / 2, z, ry: ang, sx: len + 2, sy: h, sz: W * 0.86 });
+      cap.push({ x, y: h + 9, z, ry: ang, sx: len - 4, sy: 18, sz: W });
+      plinth.push({ x, y: 14, z, ry: ang, sx: len + 14, sy: 28, sz: W * 1.02 });
+    }
+    const nx = -(w.y2 - w.y1) / L, nz = (w.x2 - w.x1) / L;
+    for (let k = 0; k < L / 90; k++) { const t = r.next(), sd = r.next() < 0.5 ? -1 : 1; foot.push({ x: w.x1 + (w.x2 - w.x1) * t + nx * sd * W * 0.56, y: 0, z: w.y1 + (w.y2 - w.y1) * t + nz * sd * W * 0.56, ry: r.range(0, 7), sx: r.range(70, 120), sy: r.range(60, 120) }); }
+  }
+  const tex = cutStoneSurface(), side = tex.clone(); side.repeat.set(1.4, 0.8); side.needsUpdate = true;
+  const box = new THREE.BoxGeometry(1, 1, 1);
+  const mk = (list, mat) => { const m = new THREE.InstancedMesh(box, mat, list.length); list.forEach((it, i) => { d.position.set(it.x, it.y, it.z); d.rotation.set(0, it.ry, 0); d.scale.set(it.sx, it.sy, it.sz); d.updateMatrix(); m.setMatrixAt(i, d.matrix); }); m.receiveShadow = true; return m; };
+  g.add(mk(body, new THREE.MeshLambertMaterial({ map: side, color: 0xc8ccd4 })), mk(cap, new THREE.MeshLambertMaterial({ map: tex, color: 0xe2e2e2 })), mk(plinth, new THREE.MeshLambertMaterial({ map: tex, color: 0x8a8e96 })));
+  g.add(buildGrass(foot, 'wild', 14));
   return g;
 }
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowTexture } from './env/textures.js';
-import { wallStoneSurface, flagstoneSurface, roofTileSurface } from './env/surfaces.js';
+import { wallStoneSurface, flagstoneSurface, roofTileSurface, marbleSurface } from './env/surfaces.js';
 
 // Công trình dựng bằng code (03 §C): tháp đèn đá mái cong hai tầng, nhà chính đèn lồng khổng lồ trên bệ sen,
 // đài Suối Đèn có mặt nước sáng. Mỗi loại gộp hình học theo vật liệu để ít draw call.
@@ -48,7 +48,7 @@ function finish(root, lan, extra = () => {}) {
     update(dt, hp01, dead) {
       t += dt;
       const f = dead ? 0.05 : hp01 < 0.3 ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 22) * Math.sin(t * 7.3)) : 0.85 + 0.15 * Math.sin(t * 2.2);
-      if (lan.core.material.emissive) lan.core.material.emissiveIntensity = 0.15 + 0.45 * f; else lan.core.material.color.copy(lan.base).multiplyScalar(0.8 + 1.4 * f); lan.halo.material.opacity = 0.9 * f; lan.shell.rotation.y += dt * 0.6; lan.shell.rotation.x += dt * 0.25;
+      if (lan.core.material.emissive) lan.core.material.emissiveIntensity = 0.15 + 0.45 * f; else lan.core.material.color.copy(lan.base).multiplyScalar(0.8 + 1.4 * f); lan.halo.material.opacity = (lan.haloA ?? 0.9) * f; lan.shell.rotation.y += dt * 0.6; lan.shell.rotation.x += dt * 0.25;
       lan.object.position.y = lan.y0 + Math.sin(t * 1.6) * 8;
       extra(t, dt, dead);
       if (dead) { root.scale.y += (0.14 - root.scale.y) * Math.min(1, dt * 4); root.rotation.z += (0.22 - root.rotation.z) * Math.min(1, dt * 3); }
@@ -68,60 +68,97 @@ const tileMat = (team) => texMat('roof' + team, roofTileSurface, [0x4ab8a6, 0xd0
 /** Bát giác có UV quấn quanh theo chu vi (đá xếp lặp theo kích thước thật). */
 const octo = (rTop, rBot, h, y, seg = 8, sTile = 140) => uvs(at(new THREE.CylinderGeometry(rTop, rBot, h, seg, 1), 0, y, 0), (2 * Math.PI * rBot) / (sTile * 1.6), h / sTile);
 
+const marbleMat = () => texMat('marble', marbleSurface, 0xf4f0e8);   // cẩm thạch trắng ngà có vân
+const marbleDark = () => texMat('marble', marbleSurface, 0x6e6c78);
+const glowMat = (team, k = 1.6) => new THREE.MeshBasicMaterial({ color: new THREE.Color(TEAM_COL[team]).multiplyScalar(k), side: THREE.DoubleSide });
+const ring = (r, tube, y, seg = 48) => at(new THREE.TorusGeometry(r, tube, 6, seg), 0, y, 0, Math.PI / 2);
+/** Ống cong thon (gân lồng đèn, trụ chống cong). */
+function rib(pts, r0, r1, seg = 16) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z))), g = new THREE.TubeGeometry(curve, seg, 1, 6, false);
+  const p = g.attributes.position, uv = g.attributes.uv, cp = curve.getSpacedPoints(seg);
+  for (let i = 0; i < p.count; i++) { const t = uv.getX(i), c = cp[Math.min(seg, Math.round(t * seg))], rr = r0 + (r1 - r0) * t; p.setXYZ(i, c.x + (p.getX(i) - c.x) * rr, c.y + (p.getY(i) - c.y) * rr, c.z + (p.getZ(i) - c.z) * rr); }
+  g.computeVertexNormals(); return g;
+}
+/** Pha lê nhiều mặt: bát diện kéo dài + lõi sáng bên trong. */
+function crystal(team, rx, ry) {
+  const g = new THREE.Group(), base = new THREE.Color(TEAM_COL[team]);
+  const geo = new THREE.OctahedronGeometry(1, 0); geo.scale(rx, ry, rx);
+  const outer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.25), emissive: base.clone(), emissiveIntensity: 0.55, roughness: 0.12, metalness: 0.1, flatShading: true, transparent: true, opacity: 0.92 }));
+  const ig = new THREE.OctahedronGeometry(1, 0); ig.scale(rx * 0.45, ry * 0.6, rx * 0.45);
+  const inner = new THREE.Mesh(ig, new THREE.MeshBasicMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.6).multiplyScalar(1.8) }));
+  g.add(inner, outer);
+  return { object: g, core: outer, base };
+}
+
 export function createTower(team) {
-  // Tháp canh đá: bệ ba bậc, thân đá xếp thon có 4 trụ chống, sàn lỗ châu mai, tầng đèn 4 cột đá, mái ngói cong màu đội, chóp đồng.
-  const g = new THREE.Group(), stone = [], dark = [], gold = [], flag = [];
-  stone.push(octo(150, 168, 34, 17), octo(128, 142, 30, 49), octo(110, 120, 26, 77));
-  flag.push(at(new THREE.CircleGeometry(150, 8), 0, 34.5, 0, -Math.PI / 2), at(new THREE.CircleGeometry(128, 8), 0, 64.5, 0, -Math.PI / 2));
-  stone.push(octo(66, 92, 300, 240));
-  for (let i = 0; i < 4; i++) { // trụ chống nghiêng
-    const a = i * Math.PI / 2 + Math.PI / 4, b = uvs(new THREE.BoxGeometry(34, 220, 40), 0.3, 1.6);
-    b.rotateZ(0.16); b.rotateY(-a); b.translate(Math.cos(a) * 92, 180, Math.sin(a) * 92); stone.push(b);
+  // Trụ: bệ đá trắng ba bậc viền vàng có ấn sáng màu đội, thân bát giác thon vân đá + kênh sáng dọc + khiên huy hiệu,
+  // 4 trụ chống cong vút như cánh, ban công lỗ châu mai, lồng đèn 4 gân vàng giữ viên pha lê màu đội xoay, mái ngói cong 2 tầng, chóp vàng.
+  const g = new THREE.Group(), stone = [], dark = [], gold = [], glow = [];
+  stone.push(octo(172, 188, 30, 15, 8, 150), octo(150, 164, 28, 44, 8, 150), octo(130, 140, 22, 69, 8, 150));
+  gold.push(ring(166, 3.5, 30, 8), ring(146, 3, 58, 8), ring(128, 3, 80, 8));
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8, rn = new THREE.PlaneGeometry(34, 12); rn.rotateY(-a + Math.PI / 2); rn.translate(Math.cos(a) * 158.5, 44, Math.sin(a) * 158.5); glow.push(rn); }
+  stone.push(octo(72, 102, 340, 250, 8, 120));                                          // thân
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; dark.push(at(uvs(new THREE.BoxGeometry(9, 330, 9), 0.2, 2), Math.cos(a) * 86, 250, Math.sin(a) * 86, 0, -a)); } // gờ góc thân
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 8, ch = new THREE.PlaneGeometry(9, 250); ch.translate(0, 0, 0.5); ch.rotateY(-a + Math.PI / 2); ch.translate(Math.cos(a) * 88, 250, Math.sin(a) * 88); glow.push(ch); }
+  gold.push(ring(98, 4, 115), ring(86, 4, 260), ring(76, 4, 400));
+  for (let i = 0; i < 4; i++) { // 4 trụ chống cong như cánh, đầu vàng
+    const a = i * Math.PI / 2 + Math.PI / 4, c = Math.cos(a), sn = Math.sin(a);
+    stone.push(rib([[c * 150, 56, sn * 150], [c * 150, 150, sn * 150], [c * 120, 290, sn * 120], [c * 92, 392, sn * 92]], 34, 12, 18));
+    gold.push(at(new THREE.ConeGeometry(9, 40, 6), c * 92, 410, sn * 92));
   }
-  for (const y of [100, 250]) dark.push(octo(y === 250 ? 80 : 92, y === 250 ? 80 : 92, 14, y));
-  // sàn + lỗ châu mai
-  dark.push(octo(104, 82, 34, 405)); stone.push(octo(108, 108, 16, 428));
-  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8, m = uvs(new THREE.BoxGeometry(40, 34, 22), 0.4, 0.3); m.rotateY(-a + Math.PI / 2); m.translate(Math.cos(a) * 96, 453, Math.sin(a) * 96); stone.push(m); }
-  // tầng đèn: 4 cột đá + dầm
-  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; stone.push(uvs(at(new THREE.CylinderGeometry(11, 13, 150, 8), Math.cos(a) * 58, 510, Math.sin(a) * 58), 0.5, 1.2)); }
-  dark.push(octo(84, 84, 16, 590));
-  gold.push(at(new THREE.TorusGeometry(90, 4, 6, 32), 0, 600, 0, Math.PI / 2));
-  const r1 = uvs(curvedRoof(118, 60, 0.55), 6, 2); r1.translate(0, 598, 0);
-  const r2 = uvs(curvedRoof(70, 70, 0.6), 4, 2); r2.translate(0, 668, 0);
-  gold.push(at(new THREE.ConeGeometry(9, 80, 6), 0, 778, 0), at(new THREE.SphereGeometry(14, 10, 8), 0, 735, 0));
-  g.add(merged(stone, stoneMat()), merged(dark, stoneMatDark()), merged(gold, M.gold), merged(flag, flagMat()));
-  g.add(new THREE.Mesh(mergeGeometries([r1, r2]), tileMat(team)));
-  // cờ phướn màu đội hai bên
-  for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(36, 150), clothMat[team]); b.position.set(s * 112, 300, 40); b.rotation.y = s * 0.3; g.add(b); }
-  const lan = lanternCore(team, 32); lan.y0 = 512; lan.object.position.y = 512; g.add(lan.object);
+  dark.push(octo(108, 80, 34, 432, 8, 100)); stone.push(octo(124, 124, 16, 457, 8, 120)); gold.push(ring(124, 3, 466, 8));
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8, m = uvs(new THREE.BoxGeometry(40, 30, 20), 0.4, 0.3); m.rotateY(-a + Math.PI / 2); m.translate(Math.cos(a) * 114, 480, Math.sin(a) * 114); stone.push(m); }
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4, c = Math.cos(a), sn = Math.sin(a); gold.push(rib([[c * 96, 470, sn * 96], [c * 112, 560, sn * 112], [c * 70, 640, sn * 70], [c * 30, 668, sn * 30]], 6, 4, 14)); }
+  dark.push(octo(90, 96, 12, 662, 8, 100));
+  const r1 = uvs(curvedRoof(150, 72, 0.6), 7, 2); r1.translate(0, 665, 0);
+  const r2 = uvs(curvedRoof(82, 70, 0.65), 4, 2); r2.translate(0, 740, 0);
+  gold.push(ring(150, 3, 668, 8), at(new THREE.SphereGeometry(14, 12, 8), 0, 815, 0), at(new THREE.ConeGeometry(8, 70, 6), 0, 855, 0));
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; gold.push(at(new THREE.SphereGeometry(6, 8, 6), Math.cos(a) * 160, 700, Math.sin(a) * 160)); } // chuông góc mái
+  g.add(merged(stone, marbleMat()), merged(dark, marbleDark()), merged(gold, M.gold), new THREE.Mesh(mergeGeometries([r1, r2]), tileMat(team)));
+  g.add(new THREE.Mesh(mergeGeometries(glow), glowMat(team)));
+  // khiên huy hiệu màu đội + phướn hai bên
+  for (let i = 0; i < 2; i++) {
+    const a = i * Math.PI, bn = new THREE.Mesh(new THREE.PlaneGeometry(56, 190, 1, 6), bannerMat(team)); bn.geometry.translate(0, -95, 0);
+    bn.position.set(Math.cos(a) * 118, 450, Math.sin(a) * 118 + 30); bn.rotation.y = a === 0 ? 0.25 : -0.25; g.add(bn);
+  }
+  const cr = crystal(team, 44, 82), halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: cr.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 }));
+  halo.scale.setScalar(300); cr.object.add(halo);
+  const orbit = new THREE.Mesh(new THREE.TorusGeometry(70, 2.5, 6, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd27a).multiplyScalar(1.4) })); orbit.rotation.x = 1.2; cr.object.add(orbit);
+  const lan = { object: cr.object, core: cr.core, shell: orbit, halo, base: cr.base, y0: 565 }; cr.object.position.y = 565; g.add(cr.object);
   const flags = g.children.filter((c) => c.geometry?.type === 'PlaneGeometry');
-  return finish(g, lan, (t) => { flags.forEach((f, i) => { f.rotation.x = Math.sin(t * 2 + i) * 0.08; }); });
+  return finish(g, lan, (t) => { cr.core.rotation.y += 0.01; flags.forEach((f, i) => { f.rotation.x = Math.sin(t * 2 + i) * 0.08; }); });
 }
 
 export function createCore(team) {
-  // TẾ ĐÀN (nhà chính): đàn tế đá ba tầng rất lớn (đường kính ~1100), bậc thang bốn phía, vòng 8 cột đá khắc ấn phát sáng màu đội,
-  // bệ sen giữa đàn, viên pha lê khổng lồ lơ lửng xoay chậm, vòng vàng quay quanh, cột sáng lên trời. To gấp ~3 trụ thường.
+  // TẾ ĐÀN: đàn tế đá trắng ba tầng viền vàng, kênh sáng màu đội quanh mỗi tầng, bậc thang bốn phía, 8 cột đá đầu vàng có ấn sáng
+  // nối tia năng lượng tới pha lê; bệ sen; cụm pha lê lớn (1 chính + 6 vệ tinh) lơ lửng xoay, 2 vòng phù văn vàng quay ngược chiều,
+  // 4 cột phướn ở góc, cột sáng lên trời.
   const g = new THREE.Group(), stone = [], dark = [], gold = [], flag = [], glow = [];
   const tiers = [[540, 580, 60, 30], [430, 470, 70, 95], [320, 350, 70, 165]];
-  for (const [rt, rb, h, y] of tiers) { stone.push(octo(rt, rb, h, y, 12, 160)); flag.push(uvs(at(new THREE.CircleGeometry(rt, 12), 0, y + h / 2 + 0.5, 0, -Math.PI / 2), rt / 300, rt / 300)); }
-  for (let k = 0; k < 4; k++) { // bậc thang bốn phía
+  for (const [rt, rb, h, y] of tiers) {
+    stone.push(octo(rt, rb, h, y, 12, 160)); flag.push(uvs(at(new THREE.CircleGeometry(rt, 12), 0, y + h / 2 + 0.5, 0, -Math.PI / 2), rt / 300, rt / 300));
+    gold.push(at(new THREE.TorusGeometry(rt + 2, 5, 6, 12), 0, y + h / 2, 0, Math.PI / 2, Math.PI / 12));
+    const ch = new THREE.RingGeometry(rt - 40, rt - 28, 12, 1, Math.PI / 12); ch.rotateX(-Math.PI / 2); ch.translate(0, y + h / 2 + 1.5, 0); glow.push(ch);
+  }
+  for (let k = 0; k < 4; k++) { // bậc thang bốn phía + lan can vàng
     const a = k * Math.PI / 2;
     for (let i = 0; i < 6; i++) { const st = uvs(new THREE.BoxGeometry(200, 22, 50), 1, 0.15); st.translate(0, 11 + i * 33, 0); st.translate(0, 0, 600 - i * 46); st.rotateY(a); stone.push(st); }
   }
-  // vòng 8 cột đá (trên tầng 1) có đầu vàng + ấn khắc phát sáng
+  const tops = [];
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8, x = Math.cos(a) * 490, z = Math.sin(a) * 490;
     stone.push(uvs(at(new THREE.BoxGeometry(56, 300, 56), x, 210, z, 0, -a), 0.4, 2.2));
-    dark.push(at(new THREE.BoxGeometry(70, 26, 70), x, 70, z, 0, -a), at(new THREE.BoxGeometry(70, 20, 70), x, 365, z, 0, -a));
-    gold.push(at(new THREE.ConeGeometry(30, 70, 4), x, 410, z, 0, -a + Math.PI / 4));
-    const rn = new THREE.PlaneGeometry(26, 120); rn.translate(0, 0, 29); rn.rotateY(-a + Math.PI / 2); rn.translate(x, 220, z); glow.push(rn);
+    dark.push(at(new THREE.BoxGeometry(72, 26, 72), x, 70, z, 0, -a), at(new THREE.BoxGeometry(74, 22, 74), x, 365, z, 0, -a));
+    gold.push(at(new THREE.ConeGeometry(30, 76, 4), x, 414, z, 0, -a + Math.PI / 4), at(new THREE.SphereGeometry(10, 10, 8), x, 460, z));
+    const rn = new THREE.PlaneGeometry(22, 200); rn.translate(0, 0, 29); rn.rotateY(-a + Math.PI / 2); rn.translate(x, 210, z); glow.push(rn);
+    tops.push([x, 460, z]);
   }
-  // trống đá + bệ sen giữa đàn
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, x = Math.cos(a) * 600, z = Math.sin(a) * 600; dark.push(at(new THREE.CylinderGeometry(8, 10, 520, 6), x, 290, z)); gold.push(at(new THREE.SphereGeometry(14, 10, 8), x, 556, z)); }
   dark.push(octo(190, 230, 110, 255, 16, 120));
   gold.push(at(new THREE.TorusGeometry(232, 8, 6, 48), 0, 205, 0, Math.PI / 2), at(new THREE.TorusGeometry(192, 6, 6, 48), 0, 310, 0, Math.PI / 2));
-  g.add(merged(stone, stoneMat()), merged(dark, stoneMatDark()), merged(gold, M.gold), merged(flag, flagMat()));
-  const runeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(TEAM_COL[team]).multiplyScalar(1.8), side: THREE.DoubleSide });
-  g.add(new THREE.Mesh(mergeGeometries(glow), runeMat));
+  g.add(merged(stone, marbleMat()), merged(dark, marbleDark()), merged(gold, M.gold), merged(flag, flagMat()));
+  g.add(new THREE.Mesh(mergeGeometries(glow), glowMat(team, 1.5)));
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, bn = new THREE.Mesh(new THREE.PlaneGeometry(90, 300, 1, 6), bannerMat(team)); bn.geometry.translate(46, -150, 0); bn.position.set(Math.cos(a) * 600, 540, Math.sin(a) * 600); bn.rotation.y = -a; g.add(bn); }
   const petalGeo = (() => { const s = new THREE.Shape(); s.moveTo(0, 0); s.quadraticCurveTo(60, 80, 0, 230); s.quadraticCurveTo(-60, 80, 0, 0);
     const e = new THREE.ExtrudeGeometry(s, { depth: 12, bevelEnabled: true, bevelSize: 5, bevelThickness: 5, bevelSegments: 1, curveSegments: 6 }); e.translate(0, 0, -6); return e; })();
   const petals = [], col = team ? [0xf0a090, 0xc84a3a] : [0x9ff0e4, 0x36b2a2];
@@ -129,19 +166,30 @@ export function createCore(team) {
     const a = (i / n) * Math.PI * 2 + (sc < 1 ? 0.25 : 0); const p = petalGeo.clone(); p.scale(sc, sc, sc); p.rotateX(-tilt); p.rotateY(-a + Math.PI / 2); p.translate(Math.cos(a) * R, y0, Math.sin(a) * R); petals.push(p);
   }
   g.add(new THREE.Mesh(mergeGeometries(petals), new THREE.MeshLambertMaterial({ color: col[1], emissive: col[0], emissiveIntensity: 0.25 })));
-  // pha lê khổng lồ (bát diện kéo dài) thay cho đèn tròn
-  const base = new THREE.Color(TEAM_COL[team]), cg = new THREE.OctahedronGeometry(1, 0); cg.scale(185, 360, 185);
-  const lanG = new THREE.Group();
-  const core = new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ color: base.clone(), emissive: base.clone().multiplyScalar(0.45), emissiveIntensity: 0.6, flatShading: true, roughness: 0.15, metalness: 0.2 })); // pha lê nhiều mặt cắt: mặt sáng/tối rõ
-  const shellG = new THREE.OctahedronGeometry(1, 1); shellG.scale(245, 440, 245);
-  const shell = new THREE.Mesh(shellG, new THREE.MeshBasicMaterial({ color: base.clone(), transparent: true, opacity: 0.18, wireframe: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5 })); halo.scale.setScalar(760);
-  lanG.add(core, shell, halo);
-  const lan = { object: lanG, core, shell, halo, base, y0: 620 }; lanG.position.y = 620; g.add(lanG);
-  const rings = [0, 1, 2].map((i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(300 + i * 60, 8, 6, 72), M.gold); r.position.y = 620; g.add(r); return r; });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(40, 120, 3200, 16, 1, true), new THREE.MeshBasicMaterial({ color: TEAM_COL[team], transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-  beam.position.y = 2000; g.add(beam);
-  return finish(g, lan, (t, dt, dead) => { core.rotation.y += dt * 0.4; rings[0].rotation.set(t * 0.5, t * 0.3, 0); rings[1].rotation.set(-t * 0.35, 0, t * 0.45); rings[2].rotation.set(Math.PI / 2, t * 0.2, 0); beam.visible = !dead; runeMat.color.copy(base).multiplyScalar(dead ? 0.2 : 1.4 + 0.4 * Math.sin(t * 2)); });
+  // cụm pha lê
+  const lanG = new THREE.Group(); lanG.position.y = 640; g.add(lanG);
+  const main = crystal(team, 170, 360); lanG.add(main.object);
+  const sats = [];
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, c = crystal(team, 40, 95); c.object.position.set(Math.cos(a) * 250, -180 + (i % 2) * 50, Math.sin(a) * 250); c.object.rotation.z = Math.cos(a) * 0.35; c.object.rotation.x = -Math.sin(a) * 0.35; lanG.add(c.object); sats.push(c); }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: main.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.55 })); halo.scale.setScalar(900); lanG.add(halo);
+  // vòng phù văn vàng (torus + bản khắc sáng)
+  const rings = [0, 1].map((k) => {
+    const rg = new THREE.Group(), R = 330 + k * 70; rg.add(new THREE.Mesh(new THREE.TorusGeometry(R, 7, 6, 96), M.gold));
+    const plates = []; for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, pl = new THREE.PlaneGeometry(36, 22); pl.rotateY(-a + Math.PI / 2); pl.translate(Math.cos(a) * R, 0, Math.sin(a) * R); plates.push(pl); }
+    rg.add(new THREE.Mesh(mergeGeometries(plates), glowMat(team, 1.7))); rg.position.y = 640; g.add(rg); return rg;
+  });
+  // tia năng lượng từ 8 đầu cột tới pha lê
+  const beamMat = new THREE.MeshBasicMaterial({ color: TEAM_COL[team], transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+  const beams = tops.map(([x, y, z]) => { const L = Math.hypot(x, 640 - y, z), b = new THREE.Mesh(new THREE.CylinderGeometry(3, 6, L, 6, 1, true), beamMat); b.position.set(x / 2, (y + 640) / 2, z / 2); b.lookAt(0, 640, 0); b.rotateX(Math.PI / 2); g.add(b); return b; });
+  const sky = new THREE.Mesh(new THREE.CylinderGeometry(40, 120, 3200, 16, 1, true), new THREE.MeshBasicMaterial({ color: TEAM_COL[team], transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  sky.position.y = 2000; g.add(sky);
+  const lan = { object: lanG, core: main.core, shell: new THREE.Object3D(), halo, haloA: 0.45, base: main.base, y0: 640 };
+  const flags = g.children.filter((c) => c.geometry?.type === 'PlaneGeometry');
+  return finish(g, lan, (t, dt, dead) => {
+    main.object.rotation.y += dt * 0.35; sats.forEach((c, i) => { c.object.rotation.y -= dt * (0.6 + i * 0.05); c.object.position.y = -180 + (i % 2) * 50 + Math.sin(t * 1.4 + i) * 14; });
+    rings[0].rotation.set(0.25 * Math.sin(t * 0.3), t * 0.35, 0.18); rings[1].rotation.set(-0.2, -t * 0.25, 0.25 * Math.cos(t * 0.3));
+    beamMat.opacity = dead ? 0 : 0.25 + 0.15 * Math.sin(t * 3); sky.visible = !dead; flags.forEach((f, i) => { f.rotation.x = Math.sin(t * 1.8 + i) * 0.06; });
+  });
 }
 
 /** SUỐI ĐÈN (chỗ hồi sinh) — khác hẳn trụ/tế đàn: sân thiêng tròn lát đá có vòng ấn sáng màu đội (đúng vùng hồi máu),

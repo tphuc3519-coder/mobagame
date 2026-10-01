@@ -85,7 +85,7 @@ const LANES = [
 
 const tower = (id, tier, x, y, invulnUntil) => {
   const T = { outer: [4000, 80, 220], inner: [4500, 90, 260], home: [5000, 100, 300] }[tier];
-  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 750, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
+  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 950, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
@@ -136,9 +136,8 @@ const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đư�
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
-  ...[[380, 2650], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
-  ...[[1330, 3230], [1750, 3500], [2880, 5100], [380, 4400], [2250, 6050], [4300, 6060]]
+  ...[[1330, 3230], [1750, 3500], [2880, 5100]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
 ];
 const TOWERS_BLUE = [[800, 1700], [800, 3350], [800, 4700], [2750, 3650], [1900, 4500], [1400, 5000], [4700, 5600], [3350, 5600], [1700, 5600]];
@@ -193,17 +192,36 @@ function trimToLanes(w) {
   const [a, b] = [best[0] / n, best[1] / n], dx = w.x2 - w.x1, dy = w.y2 - w.y1;
   return { ...w, x1: w.x1 + dx * a, y1: w.y1 + dy * a, x2: w.x1 + dx * b, y2: w.y1 + dy * b };
 }
-const W_BLUE_T = W_BLUE.map(trimToLanes).filter(Boolean);
+/** Tường biên: tấm đá xẻ lớn chạy suốt mép ngoài hai đường cánh (từ sân nhà này tới sân nhà kia), đóng khung bản đồ —
+ *  phía ngoài không thuộc sân chơi. Chỉ khai nửa phía Xanh (phần còn lại là ảnh đối xứng x↔y); đầu tường có đoạn chặn ra tới viền. */
+const BORDER_W = 260, BX = 440, BR = 860, BC = 1300, BEND = 5100;
+const borderHalf = (() => {
+  const pts = [[BX, BEND]]; // đường Đền: mép trái, lên tới góc, bo cung quanh góc trên-trái tới đường chéo
+  for (let i = 0; i <= 6; i++) { const a = Math.PI + (i / 12) * (Math.PI / 2); pts.push([BC + Math.cos(a) * BR, BC + Math.sin(a) * BR]); }
+  const seg = (a, b) => ({ x1: a[0] * K, y1: a[1] * K, x2: b[0] * K, y2: b[1] * K, w: BORDER_W, border: true });
+  const temple = [seg([60, BEND], [BX, BEND]), ...pts.slice(1).map((p, i) => seg(pts[i], p))];
+  const flip = ([x, y]) => [6400 - y, 6400 - x]; // đường Sông = ảnh của đường Đền qua đường chéo phụ
+  const river = temple.map((w) => { const a = flip([w.x1 / K, w.y1 / K]), b = flip([w.x2 / K, w.y2 / K]); return seg(a, b); });
+  return [...temple, ...river];
+})();
+const W_BLUE_T = [...W_BLUE.map(trimToLanes).filter(Boolean), ...borderHalf];
+/** Điểm (toạ độ thế giới) nằm ngoài tường biên (vùng không thuộc sân chơi) — dùng để trồng rừng dày phía ngoài khung. */
+function outOfBounds(x, y, pad = 0) {
+  const test = (u, v) => { u /= K; v /= K; const p = pad / K, e = BX - BORDER_W / K / 2 - p;
+    return (u < e && v < BEND - p) || (u < BC && v < BC && Math.hypot(u - BC, v - BC) > BR + BORDER_W / K / 2 + p) || (v < e && u < BEND - p); };
+  return test(x, y) || test(A - y, A - x);
+}
 const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
 
 export const ARENA = {
   id: 'arena5v5', w: A, h: A,
   margin: 260,                        // viền ngoài không đi được (vách núi)
+  outOfBounds,                        // ngoài tường biên hai đường cánh
   lanes: LANES,
   river: { width: 500 * K, diag: true },   // chạy theo đường chéo y = x
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
-    { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 850, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
+    { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 1050, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
     tower('temple_outer', 'outer', 800, 1700, null), tower('temple_inner', 'inner', 800, 3350, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
     tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
     tower('river_outer', 'outer', 4700, 5600, null), tower('river_inner', 'inner', 3350, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),

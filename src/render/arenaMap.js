@@ -50,10 +50,10 @@ export function buildArena(scene, map, level = 'mid') {
   });
   const put = (n, ok, make) => { const out = []; for (let t = 0; out.length < n && t < n * 40; t++) { const x = r.range(-1800, map.w + 1800), z = r.range(-1800, map.h + 1800); if (!ok(x, z)) continue; out.push(make(x, heightAt(x, z), z)); } return out; };
   const outside = (x, z) => M - Math.min(x, z, map.w - x, map.h - z);
-  const inPlay = (x, z) => outside(x, z) < 0;
+  const inPlay = (x, z) => outside(x, z) < 0 && !map.outOfBounds?.(x, z, 0);
   const plazas = [0, 1].flatMap((tm) => [tm ? map.mirror(map.fountain.x, map.fountain.y) : map.fountain]);
   const clear = (x, z, lane = halfW + 260) => laneDist(x, z) > lane && plazas.every((q) => Math.hypot(x - q.x, z - q.y) > 900) && riverDist(x, z) > rw / 2 + 160 && !blockedByWall(x, z, 220) && !map.structures.some((s) => [s, map.mirror(s.x, s.y)].some((q) => Math.hypot(x - (q.x ?? s.x), z - (q.y ?? s.y)) < 420));
-  const trees = put(Math.round(620 * dens), (x, z) => outside(x, z) > (z > map.h - M ? 650 : 330), /* mép dưới (phía camera) lùi xa để không che */ /* cây chỉ ở rừng viền ngoài; trong sân chỉ có bụi núp */ (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
+  const trees = put(Math.round(900 * dens), (x, z) => outside(x, z) > (z > map.h - M ? 650 : 330) || !!map.outOfBounds?.(x, z, z > map.h * 0.8 ? 900 : 260), /* phía camera (dưới) lùi xa để cây không che đường */ /* mép dưới (phía camera) lùi xa để không che */ /* cây chỉ ở rừng viền ngoài; trong sân chỉ có bụi núp */ (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
   const tint = new THREE.Color(), tint0 = new THREE.Color();
   trees.forEach((t) => { t.sz = t.sx; t.pine = fbm(t.x / 1600 + 9, t.z / 1600) > 0.56 || r.next() < 0.12; t.color = tint.setRGB(r.range(0.86, 1.0), r.range(0.9, 1.0), r.range(0.8, 0.96), THREE.SRGBColorSpace).getHex(); }); // mỗi cây một sắc độ
   trees.forEach((t) => { t.type = t.pine ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak'; });
