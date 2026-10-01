@@ -126,7 +126,7 @@ export function buildArena(scene, map, level = 'mid') {
 
   // —— đèn lồng dọc hai mép đường ——
   const posts = [];
-  paths.forEach((p) => { let k = 0; for (let s = 900; s < p.length - 600; s += 1500) { const o = pointAt(p, s), sd = k++ % 2 ? -1 : 1; posts.push({ x: o.x - o.dy * sd * (halfW + 90), z: o.y + o.dx * sd * (halfW + 90), y: 215, base: 8 }); } }); // đèn thưa, so le hai bên
+  paths.forEach((p) => { let k = 0; for (let s = 900; s < p.length - 600; s += 1500) { const o = pointAt(p, s), sd = k++ % 2 ? -1 : 1; const x = o.x - o.dy * sd * (halfW + 90), z = o.y + o.dx * sd * (halfW + 90); if (riverDist(x, z) > rw / 2 + 220) posts.push({ x, z, y: 215, base: 8 }); } }); // đèn thưa, so le hai bên; không cắm đèn dưới lòng sông
   const d = new THREE.Object3D();
   const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(6, 9, 1, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2c }), posts.length);
   const lamp = new THREE.InstancedMesh(new THREE.SphereGeometry(32, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc46a).multiplyScalar(2.2) }), posts.length);

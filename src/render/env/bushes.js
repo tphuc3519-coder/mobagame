@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rngFor, fbm } from './noise.js';
 import { WIND } from './foliage.js';
+import { crispAlpha } from './trees.js';
 
 // Bụi núp (vùng giấu tầm nhìn) kiểu bán chân thực: lõi bụi tối + hàng trăm "thẻ lá" (ảnh chùm lá có alpha, cắt alphaTest)
 // phủ lên một vòm bo theo hình chữ nhật của vùng bụi (siêu elip, phủ gần kín góc). Pháp tuyến thẻ lá hướng ra từ tâm vòm
@@ -100,7 +101,7 @@ export function buildBushes(map, density = 1) {
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); geo.setIndex(I);
   geo.computeBoundingSphere();
-  const mat = new THREE.MeshLambertMaterial({ map: leafTexture(), vertexColors: true, alphaTest: 0.42, side: THREE.DoubleSide });
+  const mat = new THREE.MeshLambertMaterial({ map: leafTexture(), vertexColors: true, side: THREE.DoubleSide });
   mat.onBeforeCompile = (sh) => { // gió: lá lay nhẹ, đỉnh lay nhiều hơn gốc
     sh.uniforms.uWind = WIND;
     sh.vertexShader = 'uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -108,6 +109,7 @@ export function buildBushes(map, density = 1) {
       transformed.x += sin(uWind * 1.9 + ph) * 7.0 * hg; transformed.z += cos(uWind * 1.5 + ph * 1.2) * 5.0 * hg; transformed.y += sin(uWind * 2.3 + ph * 2.0) * 2.0 * hg;`);
   };
   mat.customProgramCacheKey = () => 'bush-cards';
+  crispAlpha(mat); // mép lá sắc, không răng cưa
   const g = new THREE.Group();
   // lõi tối: bán cầu gồ ghề co theo từng bụi (InstancedMesh)
   const cg0 = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); cg0.deleteAttribute('uv'); cg0.deleteAttribute('normal');

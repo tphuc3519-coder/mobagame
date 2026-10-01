@@ -10,12 +10,24 @@ import { SUN } from './ground.js';
 
 const SUN3 = new THREE.Vector3(-SUN.x, 1.15, -SUN.z).normalize(); // hướng TỚI mặt trời (bóng đổ theo SUN)
 
+/** Mép lá sắc mà không răng cưa: alpha-to-coverage (khung MSAA) + làm dốc alpha theo fwidth — lá ở xa không bị "mòn" vì mipmap. */
+export function crispAlpha(mat, cut = 0.42) {
+  const prev = mat.onBeforeCompile, prevKey = mat.customProgramCacheKey?.bind(mat);
+  mat.alphaTest = 0; mat.alphaToCoverage = true; mat.transparent = false;
+  mat.onBeforeCompile = (sh, r) => {
+    prev?.(sh, r);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <alphatest_fragment>', `diffuseColor.a = clamp((diffuseColor.a - ${cut.toFixed(2)}) / max(fwidth(diffuseColor.a), 1e-4) + 0.5, 0.0, 1.0); if (diffuseColor.a < 0.004) discard;`);
+  };
+  mat.customProgramCacheKey = () => (prevKey ? prevKey() : '') + '|crisp';
+  return mat;
+}
+
 /** Ảnh chùm lá. kind: 'leaf' (lá rộng xanh lục), 'needle' (lá kim xanh lam sẫm), 'blossom' (hoa hồng lẫn lá). */
 const TEX = {};
 function foliageTexture(kind) {
   if (TEX[kind]) return TEX[kind];
-  const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
-  const g = c.getContext('2d'), r = rngFor(kind.length * 31 + 5);
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N * 2; // vẽ ở hệ 256 nhưng ảnh 512 cho nét
+  const g = c.getContext('2d'), r = rngFor(kind.length * 31 + 5); g.scale(2, 2);
   if (kind === 'needle') {
     for (let i = 0; i < 26; i++) { // cành kim: trục + kim toả hai bên
       const a = r.range(0, Math.PI * 2), d = Math.sqrt(r.next()) * 70, x = N / 2 + Math.cos(a) * d, y = N / 2 + Math.sin(a) * d, ang = r.range(0, Math.PI * 2), len = r.range(60, 100);
@@ -29,7 +41,9 @@ function foliageTexture(kind) {
       g.save(); g.translate(x, y); g.rotate(ang);
       const gr = g.createLinearGradient(0, 0, len, 0); gr.addColorStop(0, `hsl(${h} ${s}% ${l * 0.7}%)`); gr.addColorStop(1, `hsl(${h - 6} ${s + 6}% ${l * 1.12}%)`);
       g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.4, -wid, len, 0); g.quadraticCurveTo(len * 0.4, wid, 0, 0); g.fill();
-      g.strokeStyle = `hsla(${h - 10}, 50%, ${l * 1.5}%, 0.5)`; g.lineWidth = 1; g.beginPath(); g.moveTo(len * 0.06, 0); g.lineTo(len * 0.92, 0); g.stroke();
+      g.strokeStyle = `hsla(${h + 10}, 40%, ${l * 0.45}%, 0.55)`; g.lineWidth = 0.7; g.stroke();                 // viền lá tối: từng lá tách bạch
+      g.strokeStyle = `hsla(${h - 10}, 50%, ${l * 1.6}%, 0.6)`; g.lineWidth = 0.8; g.beginPath(); g.moveTo(len * 0.06, 0); g.lineTo(len * 0.92, 0); g.stroke();
+      g.fillStyle = `hsla(${h - 14}, 60%, ${Math.min(92, l * 2.1)}%, 0.35)`; g.beginPath(); g.ellipse(len * 0.55, -wid * 0.28, len * 0.22, wid * 0.18, 0, 0, Math.PI * 2); g.fill(); // ánh bóng lá
       g.restore();
     };
     // cuống/cành nhỏ phía dưới để chùm lá có "xương"
@@ -40,12 +54,12 @@ function foliageTexture(kind) {
     }
     if (kind === 'blossom') for (let i = 0; i < 170; i++) { // chùm hoa 5 cánh hồng nhạt
       const a = r.range(0, Math.PI * 2), d = Math.sqrt(r.next()) * 100, x = N / 2 + Math.cos(a) * d, y = N / 2 + Math.sin(a) * d, s = r.range(4, 7.5), l = r.range(72, 90);
-      g.fillStyle = `hsl(${340 + r.range(-8, 12)} ${62 + r.range(0, 20)}% ${l}%)`;
-      for (let k = 0; k < 5; k++) { const b = k * 1.2566 + a; g.beginPath(); g.arc(x + Math.cos(b) * s * 0.8, y + Math.sin(b) * s * 0.8, s * 0.62, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = `hsl(${340 + r.range(-8, 12)} ${62 + r.range(0, 20)}% ${l}%)`; g.strokeStyle = 'rgba(150,40,80,0.45)'; g.lineWidth = 0.6;
+      for (let k = 0; k < 5; k++) { const b = k * 1.2566 + a; g.beginPath(); g.arc(x + Math.cos(b) * s * 0.8, y + Math.sin(b) * s * 0.8, s * 0.62, 0, Math.PI * 2); g.fill(); g.stroke(); }
       g.fillStyle = '#f8e070'; g.beginPath(); g.arc(x, y, s * 0.3, 0, Math.PI * 2); g.fill();
     }
   }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return (TEX[kind] = t);
 }
 
@@ -153,7 +167,7 @@ export function buildTrees(list, density = 1, cell = 3200) {
   const grp = new THREE.Group(), types = ['oak', 'tall', 'blossom', 'pine'], variants = 2;
   const barkMat = new THREE.MeshLambertMaterial({ map: barkTexture(), color: 0xc8b8a8 });
   const coreMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.03);
-  const leafMat = {}; for (const t of types) leafMat[t] = sway(new THREE.MeshLambertMaterial({ map: foliageTexture(t === 'pine' ? 'needle' : t === 'blossom' ? 'blossom' : 'leaf'), vertexColors: true, alphaTest: 0.42, side: THREE.DoubleSide }), t === 'pine' ? 0.025 : 0.045);
+  const leafMat = {}; for (const t of types) leafMat[t] = crispAlpha(sway(new THREE.MeshLambertMaterial({ map: foliageTexture(t === 'pine' ? 'needle' : t === 'blossom' ? 'blossom' : 'leaf'), vertexColors: true, side: THREE.DoubleSide }), t === 'pine' ? 0.025 : 0.045));
   const parts = {}; for (const t of types) for (let v = 0; v < variants; v++) parts[t + v] = treeParts(t, v * 13 + 3, density);
   const bins = new Map();
   list.forEach((it, i) => { const k = `${it.type}${i % variants}|${Math.floor(it.x / cell)},${Math.floor(it.z / cell)}`; if (!bins.has(k)) bins.set(k, []); bins.get(k).push(it); });
