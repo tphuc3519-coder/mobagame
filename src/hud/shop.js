@@ -3,14 +3,17 @@ import { ITEMS, SHOP_TABS, SELL_RATE, cleanBuild } from '../data/items.js';
 import { planBuy, quickBuys } from '../sim/inventory.js';
 import { itemIcon, coinIcon, statLines } from './icons.js';
 
+const CART = '<svg class="cart" viewBox="0 0 32 32"><defs><linearGradient id="cartg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c0"/><stop offset="1" stop-color="#e0a83a"/></linearGradient></defs><path d="M3 6h4l3 14h15l3-10H9" fill="none" stroke="url(#cartg)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="25" r="2.4" fill="#ffe08a"/><circle cx="23" cy="25" r="2.4" fill="#ffe08a"/><path d="M13 13h11" stroke="#ffe08a" stroke-width="2"/></svg>';
 const stop = (el) => { for (const t of ['pointerdown', 'pointerup', 'pointermove']) el.addEventListener(t, (e) => e.stopPropagation()); };
 const REASON = { gold: 'Chưa đủ vàng', full: 'Túi đã đầy', limit: 'Chỉ mang 1 món cùng loại (giày/rừng/hỗ trợ)', mode: 'Chỉ dùng ở chế độ nhiều người', spell: 'Cần phép Thu Hoạch', auto: 'Nâng cấp tự động' };
 
 export function createShop(root, { world, player }) {
   root.innerHTML = `
-    <div class="qb" id="qb"></div>
-    <div class="goldPill" id="goldPill"></div>
-    <div class="bar" id="itemBar"></div>
+    <div class="dock" id="dock">
+      <button class="goldPill" id="goldPill" aria-label="Cửa hàng"></button>
+      <div class="qb" id="qb"></div>
+      <div class="bar" id="itemBar"></div>
+    </div>
     <section class="shop" id="shop" aria-hidden="true">
       <header><b>Cửa hàng</b><span class="sg" id="shopGold"></span><button class="x" id="shopX" aria-label="Đóng">×</button></header>
       <div class="sbody">
@@ -21,7 +24,7 @@ export function createShop(root, { world, player }) {
     </section>`;
   const $ = (id) => root.querySelector('#' + id);
   const shop = $('shop'), grid = $('grid'), detail = $('detail'), tabsEl = $('tabs');
-  stop(shop); stop($('qb')); stop($('itemBar')); stop($('goldPill'));
+  stop(shop); stop($('dock'));
   let open = false, tab = 'rec', sel = null, selSlot = null, sig = '';
 
   const cmd = (c) => world.command(player.id, c);
@@ -79,7 +82,8 @@ export function createShop(root, { world, player }) {
   // Mua nhanh: món kế tiếp theo build gợi ý
   const qb = $('qb');
   function renderQb() {
-    qb.innerHTML = quickBuys(player, 2).map((q) => `<button class="q ${q.ok ? 'ready' : ''}" data-i="${q.id}" title="${ITEMS[q.goal].name}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span>${q.id !== q.goal ? `<small>→ ${ITEMS[q.goal].name}</small>` : ''}</button>`).join('');
+    qb.innerHTML = quickBuys(player, 1).map((q) => { const it = ITEMS[q.goal], line = (it.note || statLines(it).join(', ')).replace(/^Duy nhất:\s*/, '').split(/[.;]/)[0];
+      return `<button class="q ${q.ok ? 'ready' : ''}" data-i="${q.id}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span><span class="qn"><b>${ITEMS[q.id].name}</b><small>${q.id !== q.goal ? '→ ' + it.name : line}</small></span></button>`; }).join('');
   }
   qb.onclick = (e) => { const b = e.target.closest('.q'); if (!b) return; cmd({ type: 'buy', item: b.dataset.i }); sig = ''; };
 
@@ -91,9 +95,9 @@ export function createShop(root, { world, player }) {
       const g = Math.floor(player.gold);
       // dựng lại DOM chỉ khi thứ nhìn thấy đổi (không phải mỗi lần vàng nhích), để chạm không bị mất giữa chừng
       const afford = (id) => { const p = planBuy(player, id); return p.ok && player.gold >= Math.ceil(p.cost) ? 1 : 0; };
-      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 2).map((q) => q.id + (q.ok ? 1 : 0)).join();
+      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 1).map((q) => q.id + (q.ok ? 1 : 0)).join();
       const s = [player.items.join(), open, tab, sel, bits].join('|');
-      if (g !== this.lastGold) { this.lastGold = g; $('goldPill').innerHTML = `${coinIcon()}<b>${g}</b><small>Cửa hàng</small>`; $('shopGold').innerHTML = `${coinIcon()} ${g}`; }
+      if (g !== this.lastGold) { this.lastGold = g; $('goldPill').innerHTML = `${CART}<b>${g}</b>`; $('shopGold').innerHTML = `${coinIcon()} ${g}`; }
       if (s === sig) return;
       sig = s;
       renderBar(); renderQb();

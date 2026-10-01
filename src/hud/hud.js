@@ -33,15 +33,32 @@ export function createHud(canvas, input) {
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
         const p = project(cam, e.pos.x, e.kind === 'hero' || e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
-        const bw = e.structure ? 120 : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84, col = e.id === player.id ? '#7ee8a0' : e.team === player.team ? '#5fe3d0' : '#ff6a5a';
-        bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
-        const sh = e.shields.reduce((a, s) => a + s.amount, 0);
-        if (sh > 0) bar(p.x - bw / 2, p.y - 6, bw, 3, sh / e.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
-        if (e.kind === 'hero') { ctx.fillStyle = '#f3e9d6'; ctx.fillText(`${e.level}  ${e.data.name}`, p.x, p.y - 10); }
-        if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - 10); }
+        const isHero = e.kind === 'hero', col = e.id === player.id ? '#52d860' : e.team === player.team ? '#38b8ff' : '#ff4a3a';
+        if (isHero) { // kiểu Liên Quân: huy hiệu cấp lục giác bên trái, thanh máu chia vạch mỗi 250 HP, tên ở trên
+          const bw = 104, bh = 11, x0 = p.x - bw / 2 + 10, y0 = p.y - 8;
+          ctx.fillStyle = 'rgba(8,10,20,0.85)'; ctx.fillRect(x0 - 2, y0 - 2, bw + 4, bh + 9);
+          ctx.fillStyle = e.invulnerable ? '#9a9aa8' : col; ctx.fillRect(x0, y0, bw * Math.max(0, Math.min(1, e.hp / e.stats.maxHp)), bh);
+          const sh = e.shields.reduce((a, q) => a + q.amount, 0);
+          if (sh > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 + bw * Math.min(1, e.hp / e.stats.maxHp), y0, Math.min(bw, bw * sh / e.stats.maxHp), bh); }
+          ctx.fillStyle = 'rgba(8,10,20,0.75)'; for (let v = 250; v < e.stats.maxHp; v += 250) { const tx = x0 + bw * v / e.stats.maxHp; ctx.fillRect(tx, y0, v % 1000 ? 1 : 2, v % 1000 ? bh * 0.55 : bh); }
+          ctx.fillStyle = '#4a9cff'; ctx.fillRect(x0, y0 + bh + 2, bw * (e.mana / Math.max(1, e.stats.maxMana || 1)), 3);
+          const hx = x0 - 12, hy = y0 + bh / 2 + 2, hr = 11; // huy hiệu cấp
+          ctx.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(hx + Math.cos(a) * hr, hy + Math.sin(a) * hr); } ctx.closePath();
+          ctx.fillStyle = '#141830'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col; ctx.stroke();
+          ctx.fillStyle = '#fff'; ctx.font = '800 12px system-ui, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(String(e.level), hx, hy + 0.5);
+          ctx.textBaseline = 'bottom'; ctx.font = '700 12px system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+          ctx.strokeText(e.data.name, p.x + 10, y0 - 4); ctx.fillStyle = e.team === player.team ? '#e8f4ff' : '#ffd8d0'; ctx.fillText(e.data.name, p.x + 10, y0 - 4);
+          ctx.font = '600 11px system-ui, sans-serif';
+        } else {
+          const bw = e.structure ? 120 : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84;
+          bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
+          const sh = e.shields.reduce((a, q) => a + q.amount, 0);
+          if (sh > 0) bar(p.x - bw / 2, p.y - 6, bw, 3, sh / e.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
+        }
+        if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - (isHero ? 26 : 10)); }
         // hiệu ứng khống chế trên đầu
         const cc = e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind));
-        if (cc) { ctx.fillStyle = '#ffd23a'; ctx.fillText({ stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' }[cc.kind], p.x, p.y - 24); }
+        if (cc) { ctx.fillStyle = '#ffd23a'; ctx.font = '800 13px system-ui, sans-serif'; ctx.fillText({ stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' }[cc.kind], p.x, p.y - (isHero ? 40 : 24)); }
       }
       // số bay
       for (let i = floats.length - 1; i >= 0; i--) {
@@ -86,7 +103,7 @@ export function createHud(canvas, input) {
       }
       if (debugLines?.length) {
         ctx.font = '12px ui-monospace, monospace'; ctx.fillStyle = '#f3e9d6'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-        debugLines.forEach((t, i) => ctx.fillText(t, 10, 10 + i * 15));
+        debugLines.forEach((t, i) => ctx.fillText(t, 260, 56 + i * 15));
       }
     },
   };

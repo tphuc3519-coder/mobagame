@@ -4,7 +4,7 @@ import { SPELLS, SPELL_LIST_1V1 } from '../data/spells.js';
 import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
 import { DIFFICULTY } from '../data/ai.js';
 import { createShowcase } from '../showcase/showcase.js';
-import { spellIcon } from '../hud/icons.js';
+import { spellArt } from '../hud/art.js';
 import { pickLevel } from '../render/quality.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
@@ -60,7 +60,7 @@ export function openSelect({ onStart }) {
     $('.sl-mode').innerHTML = `<b>Chế độ</b> ${st.mode}`;
     $('.sl-me').classList.toggle('on', st.side === 'me'); $('.sl-foe').classList.toggle('on', st.side === 'foe');
     $('.sl-go').textContent = st.mode === '5v5' || st.foe ? 'Bắt đầu' : 'Chọn mục tiêu';
-    $('.sl-spell').innerHTML = `${spellIcon(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
+    $('.sl-spell').innerHTML = `${spellArt(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
     $('.sl-charm').innerHTML = `<b>Bùa</b> ${CHARM_PAGES[pageOf()].name}`;
     $('.sl-diff').innerHTML = `<b>Máy</b> ${DIFFICULTY[st.diff].name}`;
     save({ mode: st.mode, me: st.me, foe: st.foe, spell: st.spell, page: st.page, diff: st.diff });

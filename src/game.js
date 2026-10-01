@@ -11,6 +11,8 @@ import { addLights } from './render/lights.js';
 import { createCamera, CAM_DISTANCE } from './render/camera.js';
 import { buildArena } from './render/arenaMap.js';
 import { createMinimap } from './hud/minimap.js';
+import { createPortraits } from './hud/portraits.js';
+import { createHudSettings } from './hud/settings.js';
 import { createFog } from './render/fog.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
@@ -71,7 +73,9 @@ const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_D
 const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
-const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar });
+const portraits = createPortraits(renderer);
+const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
+createHudSettings();
 const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -144,7 +148,7 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : loop.resume()));
 return window.__game;

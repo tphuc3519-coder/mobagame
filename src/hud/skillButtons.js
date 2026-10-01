@@ -3,14 +3,17 @@ import { lv } from '../data/heroes/_levels.js';
 import { nearestEnemy } from '../sim/targeting.js';
 import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
+import { skillArt, badge, GLYPHS } from './art.js';
+import { THEMES } from '../render/vfx/library.js';
 
 const DRAG_MIN = 15, DRAG_MAX = 110, CANCEL = 210;
 const SLOTS = ['s1', 's2', 's3'];
 
 export function createSkillButtons(root, { world, player, indicators }) {
+  const tc = THEMES[player.heroId]?.col, theme = tc != null ? '#' + tc.toString(16).padStart(6, '0') : '#ffb84d'; // màu chủ đề tướng cho icon kỹ năng
   root.innerHTML = `
-    <button class="sb atk" data-k="atk" aria-label="Đánh"><span>Đánh</span></button>
-    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}"><span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><u class="pips"></u></button>`).join('')}
+    <button class="sb atk" data-k="atk" aria-label="Đánh">${badge(GLYPHS.sword('#ffffff', '#ffb08a'), { c0: '#b0443a', c1: '#3a1214', glow: '#ff9a7a' })}</button>
+    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? skillArt(player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><u class="pips"></u></button>`).join('')}
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
