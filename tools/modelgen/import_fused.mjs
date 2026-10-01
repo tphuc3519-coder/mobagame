@@ -65,15 +65,16 @@ export async function importFused(id, def, outRoot, here) {
   const cfg = def.import;
   const src = await readMesh(path.resolve(here, cfg.file));
   const n = src.pos.length / 3;
-  const X = cfg.centerX ?? 0; // dời để thân nằm giữa x=0 (đơn vị file gốc)
+  const X = cfg.centerX ?? 0, Z = cfg.centerZ ?? 0; // dời để thân nằm giữa x=0, z=0 (đơn vị file gốc)
   const isStaff = (x) => cfg.staffMaxX != null && x - X < cfg.staffMaxX; // (tuỳ chọn) cắt cứng theo x; mặc định dùng đoạn vũ khí mềm bên dưới
   // chiều cao thân (bỏ vũ khí) → hệ số co
   let top = 0; for (let i = 0; i < n; i++) if (!isStaff(src.pos[3 * i])) top = Math.max(top, src.pos[3 * i + 1]);
   const H = cfg.height ?? 2.5, s = H / (cfg.bodyTop ?? top);
   const pos = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { pos[3 * i] = (src.pos[3 * i] - X) * s; pos[3 * i + 1] = src.pos[3 * i + 1] * s; pos[3 * i + 2] = src.pos[3 * i + 2] * s; }
+  for (let i = 0; i < n; i++) { pos[3 * i] = (src.pos[3 * i] - X) * s; pos[3 * i + 1] = src.pos[3 * i + 1] * s; pos[3 * i + 2] = (src.pos[3 * i + 2] - Z) * s; }
 
   // —— Khớp (đơn vị file gốc, x tương đối thân; trái nhân vật = +x) ——
+  const K = (cfg.bodyTop ?? top) / 0.66; // bán kính ảnh hưởng mặc định đặt cho thân cao 0.66 (file thợ lặn); co theo chiều cao thân của file khác
   const J = { hips: 0.27, thighX: 0.05, knee: 0.15, ankle: 0.05, spine: 0.34, chest: 0.45, neck: 0.56, head: 0.6, headTop: 0.64,
     shoulder: [0.15, 0.5], elbow: [0.165, 0.37], wrist: [0.17, 0.25], tip: [0.17, 0.2], wristR: [-0.2, 0.27], tipR: [-0.2, 0.75], toe: 0.1, ...(cfg.joints || {}) };
   const V = (x, y, z = 0) => new THREE.Vector3(x * s, y * s, z * s);
@@ -83,35 +84,37 @@ export async function importFused(id, def, outRoot, here) {
     UpperArmL: V(...J.shoulder), UpperArmR: V(-J.shoulder[0], J.shoulder[1]), ForearmL: V(...J.elbow), ForearmR: V(-J.elbow[0], J.elbow[1]),
     HandL: V(...J.wrist), HandR: V(...J.wristR), HandL_Tip: V(...J.tip), HandR_Tip: V(...J.tipR),
   };
+  for (const [k, q] of Object.entries(cfg.rig || {})) if (W[k]) W[k] = V(q[0], q[1], q[2] || 0); // cfg.rig: đặt thẳng từng khớp [x,y,z] khi tư thế không phải T/đứng thẳng
   const { bones, idx, root } = makeRig(W);
 
   // —— Đoạn xương + bán kính ảnh hưởng (đơn vị file gốc) để tính trọng số ——
   const w3 = (k) => W[k].toArray().map((v) => v);
   const segs = [
     ['Hips', 'Hips', 'Spine', 0.12], ['Spine', 'Spine', 'Chest', 0.115], ['Chest', 'Chest', 'Neck', 0.115], ['Neck', 'Neck', 'Head', 0.07],
-    ['Head', 'Head', null, 0.11, [0, J.headTop * s, 0]],
+    ['Head', 'Head', null, 0.11, cfg.rig?.HeadTop ? V(...cfg.rig.HeadTop).toArray() : [W.Head.x, J.headTop * s, W.Head.z]],
     ...['L', 'R'].flatMap((d) => [
       ['UpperArm' + d, 'UpperArm' + d, 'Forearm' + d, 0.065], ['Forearm' + d, 'Forearm' + d, 'Hand' + d, 0.06], ['Hand' + d, 'Hand' + d, 'Hand' + d + '_Tip', 0.06],
-      ['Thigh' + d, 'Thigh' + d, 'Shin' + d, 0.05], ['Shin' + d, 'Shin' + d, 'Foot' + d, 0.045], ['Foot' + d, 'Foot' + d, null, 0.05, [W['Foot' + d].x, 0, J.toe * s]],
+      ['Thigh' + d, 'Thigh' + d, 'Shin' + d, 0.05], ['Shin' + d, 'Shin' + d, 'Foot' + d, 0.045], ['Foot' + d, 'Foot' + d, null, 0.05, cfg.rig?.['Toe' + d] ? V(...cfg.rig['Toe' + d]).toArray() : [W['Foot' + d].x, 0, W['Foot' + d].z + J.toe * s]],
     ]),
-  ].map(([bone, a, b, r, end]) => ({ bone, a: w3(a), b: end || w3(b), r: r * s }));
+  ].map(([bone, a, b, r, end]) => ({ bone, a: w3(a), b: end || w3(b), r: r * K * (cfg.radii?.[bone] ?? 1) * s }));
   // Vũ khí liền khối với thân: coi như một "xương phụ" dạng đoạn thẳng gắn vào tay phải (đơn vị file gốc, x tương đối thân)
-  if (cfg.weapon) segs.push({ bone: 'HandR', a: cfg.weapon.a.map((v) => v * s), b: cfg.weapon.b.map((v) => v * s), r: cfg.weapon.r * s });
-  const sig = (cfg.softness ?? 0.02) * s;
+  for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
+  const sig = (cfg.softness ?? 0.02) * K * s;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
   const hand = idx[B('HandR')];
   for (let i = 0; i < n; i++) {
     const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
     if (isStaff(src.pos[3 * i])) { si[4 * i] = hand; sw[4 * i] = 1; continue; }
-    const dd = segs.map((sg) => ({ b: idx[B(sg.bone)], d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r) }));
+    const dd = segs.map((sg) => ({ b: idx[B(sg.bone)], sig: sg.sig || sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r), cut: sg.cut })).filter((c, _, all) => !(c.cut != null && c.d > c.cut && all.length > 1)); // vũ khí chỉ ăn đỉnh nằm sát nó, không cướp vải ở xa
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
-    const acc = new Map(); for (const c of dd) acc.set(c.b, (acc.get(c.b) || 0) + Math.exp(-Math.pow((c.d - dmin) / sig, 2)));
+    const acc = new Map(); for (const c of dd) acc.set(c.b, (acc.get(c.b) || 0) + Math.exp(-Math.pow((c.d - dmin) / c.sig, 2)));
     let cand = [...acc].map(([b, w]) => ({ b, w })).sort((a, b) => b.w - a.w).slice(0, 4);
     cand = cand.filter((c) => c.w > 1e-3 * cand[0].w); // bỏ khe trọng số ~0 (glTF cấm chỉ số khác 0 mà trọng số 0)
     const tot = cand.reduce((a, c) => a + c.w, 0);
     cand.forEach((c, k) => { si[4 * i + k] = c.b; sw[4 * i + k] = c.w / tot; });
   }
 
+  if (process.env.DUMP_WEIGHTS) fs.writeFileSync(process.env.DUMP_WEIGHTS, JSON.stringify({ pos: Array.from(pos), si: Array.from(si), sw: Array.from(sw), names: bones.map((b) => b.name) })); // gỡ lỗi: xuất trọng số để vẽ
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('normal', new THREE.BufferAttribute(src.nor, 3));

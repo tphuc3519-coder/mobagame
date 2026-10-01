@@ -1,7 +1,7 @@
 {
   "model": "hoa_ren.glb",
   "scale": 100,
-  "height": 195,
+  "height": 250,
   "runRefSpeed": 320,
   "hitTime": {
     "Attack1": 0.3,
@@ -31,5 +31,10 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen"
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "hammer_pbr_20000.glb",
+  "portrait": {
+    "dist": 1.9,
+    "dy": -0.1
+  }
 }

@@ -9,6 +9,23 @@ export default {
   name: 'Emberforge', glow: '#ff5a10',
   palette: ['#2a2a2e', '#ff7a1a', '#ffd166', '#6b3b1e'], rim: '#ff7a1a',
   hitTime: { Attack1: 0.3, Attack2: 0.26 },
+  import: { // model liền khối có texture do hoạ sĩ gửi (hammer_pbr_20000.glb, tư thế vác búa, dạng chân rộng): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    mode: 'fused', file: './imports/hammer_pbr_20000.glb',
+    centerX: 0, centerZ: -0.12, bodyTop: 1.72, // bodyTop = đỉnh đầu (bỏ đầu búa khi tính chiều cao)
+    rig: { // khớp theo tư thế trong file (x phải = trái nhân vật, z + = phía trước), tương đối trục thân
+      Hips: [0.05, 0.88, 0], Spine: [0.04, 1.06, 0], Chest: [0.02, 1.26, 0], Neck: [-0.02, 1.46, 0.02], Head: [-0.03, 1.56, 0.03], HeadTop: [-0.03, 1.74, 0.03],
+      ThighL: [0.17, 0.85, 0], ShinL: [0.33, 0.46, 0.05], FootL: [0.5, 0.12, 0], ToeL: [0.55, 0.03, 0.17],
+      ThighR: [-0.1, 0.85, 0], ShinR: [-0.28, 0.5, 0], FootR: [-0.37, 0.15, 0], ToeR: [-0.38, 0.03, 0.17],
+      UpperArmL: [0.2, 1.38, 0], ForearmL: [0.32, 1.18, 0.05], HandL: [0.42, 1.03, 0.1], HandL_Tip: [0.46, 0.93, 0.1],
+      UpperArmR: [-0.22, 1.38, 0], ForearmR: [-0.38, 1.28, 0.25], HandR: [-0.05, 1.38, 0.47], HandR_Tip: [-0.08, 1.68, -0.46], // tip = tâm đầu búa
+    },
+    weapon: [
+      { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.26 }, // đầu búa (trục dọc theo x)
+      { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.05 }, // cán búa, qua vai ra phía trước
+    ],
+    radii: { Hips: 1.5, Spine: 1.4, Chest: 1.4 },
+    portrait: { dist: 1.9, dy: -0.1 },
+  },
   anim: { style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' }, run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6 },
   build(id) {
     const ctx = humanoid(id, {
