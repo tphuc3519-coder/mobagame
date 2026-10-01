@@ -5,7 +5,10 @@
   "runRefSpeed": 310,
   "hitTime": {
     "Attack1": 0.28,
-    "Attack2": 0.22
+    "Attack2": 0.22,
+    "Cast1": 0.22,
+    "Cast2": 0.34,
+    "Ult": 0.34
   },
   "attach": {
     "weapon_tip": "Bone_HandR_Tip",

@@ -32,14 +32,22 @@ const lost = (d) => d.stats.maxHp - d.hp;
 }
 { // Mossback K2: (50 + 4% × 1000) = 90 phép → 69.23; làm chậm 30%
   const { w, p, d, step } = setup('thach_quy', 200);
-  w.command(p.id, { type: 'cast', slot: 's2' }); step(2);
+  w.command(p.id, { type: 'cast', slot: 's2' }); step(12);
   ok('Mossback K2 ≈69.2', near(lost(d), 69.23), lost(d).toFixed(2));
 }
-{ // Mossback K1 húc: knockup + dừng khi gặp tướng
-  const { w, p, d, step } = setup('thach_quy', 350);
-  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 1, y: 0 } }); step(20);
-  ok('Mossback K1 hất tung', d.statuses.some((s) => s.kind === 'knockup') || lost(d) > 0);
-  ok('Mossback K1 dừng ở mục tiêu', p.pos.x < 1000 + 350);
+{ // Mossback K1 Móc Neo: trúng địch ở xa → kéo về sát trước mặt, choáng
+  const { w, p, d, step } = setup('thach_quy', 700);
+  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 1, y: 0 } }); step(19);
+  ok('Mossback K1 móc trúng gây sát thương', lost(d) > 0, lost(d).toFixed(1));
+  ok('Mossback K1 đang kéo + choáng', d.statuses.some((s) => s.kind === 'stun'));
+  step(25);
+  ok('Mossback K1 kéo về sát trước mặt', d.pos.x - p.pos.x < p.radius + d.radius + 40, (d.pos.x - p.pos.x).toFixed(0));
+}
+{ // Mossback K3 Xoáy Nước Sâu: hút địch trong 420 về quanh mình và khiêu khích
+  const { w, p, d, step } = setup('thach_quy', 400);
+  w.command(p.id, { type: 'cast', slot: 's3' }); step(20);
+  ok('Mossback K3 hút về gần', d.pos.x - p.pos.x < 90 + p.radius + d.radius + 5, (d.pos.x - p.pos.x).toFixed(0));
+  ok('Mossback K3 khiêu khích', d.statuses.some((s) => s.kind === 'taunt'));
 }
 { // Bamboo Shade: dash trúng mọi địch trên đường; K3 tàng hình rồi đòn đánh phục kích
   const { w, p, d, step } = setup('bong_tre', 200);

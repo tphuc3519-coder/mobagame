@@ -45,12 +45,14 @@ const attack2 = spline([
   [1, {}],
 ]);
 
-// Cast1 – Húc Núi: cúi người lao tới, gậy kéo ra sau, vai dẫn đầu.
+// Cast1 – Móc Neo: kéo ống về hông lấy đà, chĩa thẳng ra trước BẮN móc (giật lùi nhẹ), rồi GIẬT mạnh ống về sau kéo địch lại.
 const cast1 = spline([
   [0, {}],
-  [0.2, { chest: [8, -10, 0], spine: [4, 0, 0], head: [-4, 0, 0], hipsPos: [0, -0.06, -0.03], uaR: [10, 0, -8], faR: [-20, 0, 0], hdR: [-30, 0, 0], uaL: [-30, 0, 16], thL: [-20, 0, 0], thR: [18, 0, 0], shL: [30, 0, 0], shR: [22, 0, 0] }],
-  [0.5, { chest: [36, 6, 0], spine: [14, 0, 0], head: [-12, 0, 0], hipsPos: [0, -0.08, 0.12], uaR: [14, 0, -6], faR: [-16, 0, 0], hdR: [-36, 0, 0], uaL: [-60, 0, 8], faL: [-40, 0, 0], thL: [-38, 0, 0], thR: [26, 0, 0], shL: [22, 0, 0], shR: [34, 0, 0] }],
-  [0.75, { chest: [20, 2, 0], spine: [8, 0, 0], head: [-6, 0, 0], hipsPos: [0, -0.04, 0.05], uaR: [4, 0, -4], hdR: [-14, 0, 0], thL: [-14, 0, 0], thR: [10, 0, 0], shR: [14, 0, 0] }],
+  [0.18, { chest: [4, -14, 0], spine: [2, -6, 0], head: [0, 8, 0], hipsPos: [0, -0.04, -0.02], thL: [-14, 0, 0], thR: [10, 0, 0], shL: [18, 0, 0], shR: [12, 0, 0], uaL: [-20, 0, 14] }],
+  [0.34, { chest: [14, 12, 0], spine: [6, 4, 0], head: [-4, -6, 0], hipsPos: [0, -0.06, 0.05], thL: [-26, 0, 0], thR: [14, 0, 0], shL: [24, 0, 0], shR: [18, 0, 0], uaL: [-40, 0, 10], faL: [-30, 0, 0] }],
+  [0.42, { chest: [6, 8, 0], spine: [3, 3, 0], hipsPos: [0, -0.05, 0.02], thL: [-22, 0, 0], thR: [12, 0, 0], shL: [22, 0, 0], shR: [16, 0, 0], uaL: [-34, 0, 12], faL: [-30, 0, 0] }],
+  [0.62, { chest: [-12, -6, 0], spine: [-5, -2, 0], head: [6, 4, 0], hipsPos: [0, -0.05, -0.05], thL: [-8, 0, 0], thR: [16, 0, 0], shL: [10, 0, 0], shR: [22, 0, 0], uaL: [-20, 0, 20], faL: [-20, 0, 0] }],
+  [0.8, { chest: [-2, 0, 0], hipsPos: [0, -0.02, 0], thL: [-4, 0, 0], thR: [4, 0, 0] }],
   [1, {}],
 ]);
 
@@ -63,12 +65,15 @@ const cast2 = spline([
   [1, {}],
 ]);
 
-// Ult – Đền Thiêng: giơ gậy lên cao, ưỡn ngực gầm lên, dang tay trái.
+// Ult – Xoáy Nước Sâu: giơ ống thẳng lên cao (tay trái giơ theo), rồi CẮM mạnh ống xuống đất trước mặt (khuỵu gối, gập người),
+// ghì ống, thân lắc theo vòng xoáy, rồi rút ống đứng dậy.
 const ult = spline([
   [0, {}],
-  [0.25, { chest: [8, 0, 0], head: [6, 0, 0], hipsPos: [0, -0.06, 0], uaR: [-30, 0, -10], faR: [-40, 0, 0], thL: [-12, 0, 0], thR: [-8, 0, 0], shL: [30, 0, 0], shR: [26, 0, 0], uaL: [-20, 0, 24] }],
-  [0.5, { chest: [-16, 0, 0], spine: [-6, 0, 0], head: [-18, 0, 0], hipsPos: [0, 0.03, -0.01], uaR: [-60, 0, -14], faR: [-30, 0, 0], hdR: [-10, 0, 0], uaL: [-30, 0, 46], faL: [-30, 0, 0], thL: [-6, 0, 0], thR: [-6, 0, 0], shL: [10, 0, 0], shR: [10, 0, 0] }],
-  [0.8, { chest: [-14, 0, 0], head: [-16, 0, 0], hipsPos: [0, 0.02, 0], uaR: [-58, 0, -14], faR: [-28, 0, 0], hdR: [-8, 0, 0], uaL: [-30, 0, 48] }],
+  [0.22, { chest: [-14, 0, 0], spine: [-5, 0, 0], head: [-12, 0, 0], hipsPos: [0, 0.03, 0], uaL: [-55, 0, 34], faL: [-85, 0, 0], thL: [-6, 0, 0], thR: [-6, 0, 0] }],
+  [0.4, { chest: [26, 0, 0], spine: [10, 0, 0], head: [8, 0, 0], hipsPos: [0, -0.09, 0.05], thL: [-24, 0, 0], thR: [-20, 0, 0], shL: [40, 0, 0], shR: [36, 0, 0], uaL: [-50, 0, 10], faL: [-30, 0, 0] }],
+  [0.6, { chest: [22, 10, 0], spine: [8, 4, 0], head: [6, -8, 0], hipsPos: [0, -0.085, 0.05], thL: [-23, 0, 0], thR: [-19, 0, 0], shL: [38, 0, 0], shR: [34, 0, 0], uaL: [-46, 0, 14], faL: [-30, 0, 0] }],
+  [0.8, { chest: [22, -10, 0], spine: [8, -4, 0], head: [6, 8, 0], hipsPos: [0, -0.085, 0.05], thL: [-23, 0, 0], thR: [-19, 0, 0], shL: [38, 0, 0], shR: [34, 0, 0], uaL: [-46, 0, 14], faL: [-30, 0, 0] }],
+  [0.92, { chest: [8, 0, 0], hipsPos: [0, -0.04, 0.01], thL: [-8, 0, 0], thR: [-6, 0, 0], shL: [14, 0, 0], shR: [12, 0, 0] }],
   [1, {}],
 ]);
 
@@ -90,9 +95,9 @@ const recall = (u) => {
 const victory = spline([
   [0, {}],
   [0.2, { chest: [8, 0, 0], hipsPos: [0, -0.06, 0], thL: [-16, 0, 0], thR: [-12, 0, 0], shL: [34, 0, 0], shR: [30, 0, 0], uaR: [-20, 0, -8], uaL: [-30, 0, 20] }],
-  [0.4, { chest: [-12, 0, 0], head: [-14, 0, 0], hipsPos: [0, 0.12, 0], uaR: [-70, 0, -14], faR: [-30, 0, 0], hdR: [-6, 0, 0], uaL: [-118, 0, 26], faL: [-20, 0, 0], thL: [-24, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [24, 0, 0] }],
-  [0.62, { chest: [-10, 0, 0], head: [-10, 0, 0], uaR: [-68, 0, -14], faR: [-30, 0, 0], uaL: [-120, 0, 24], faL: [-20, 0, 0] }],
-  [0.9, { chest: [-8, 0, 0], head: [-8, 0, 0], uaR: [-66, 0, -14], faR: [-30, 0, 0], uaL: [-116, 0, 28], faL: [-20, 0, 0] }],
+  [0.4, { chest: [-12, 0, 0], head: [-14, 0, 0], hipsPos: [0, 0.12, 0], uaR: [-70, 0, -14], faR: [-30, 0, 0], hdR: [-6, 0, 0], uaL: [-62, 0, 26], faL: [-95, 0, 0], thL: [-24, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [24, 0, 0] }],
+  [0.62, { chest: [-10, 0, 0], head: [-10, 0, 0], uaR: [-68, 0, -14], faR: [-30, 0, 0], uaL: [-62, 0, 24], faL: [-95, 0, 0] }],
+  [0.9, { chest: [-8, 0, 0], head: [-8, 0, 0], uaR: [-66, 0, -14], faR: [-30, 0, 0], uaL: [-62, 0, 28], faL: [-95, 0, 0] }],
   [1, {}],
 ]);
 
@@ -126,17 +131,19 @@ const G = {
 const P = (...ks) => weaponPath(ks.map(([u, w]) => [u, { R: w }]));
 const ikAttack1 = P([0, REST], [0.2, G.lift], [0.38, G.wind], [0.5, G.top], [0.57, G.smash], [0.74, G.smash], [0.88, G.back], [1, REST]);
 const ikAttack2 = P([0, REST], [0.2, G.pull], [0.5, G.thrust], [0.68, G.thrust], [0.85, G.back], [1, REST]);
-const ikCast1 = P([0, REST], [0.2, G.trail], [0.5, G.trail], [0.75, G.lift], [1, REST]);
-const ikCast2 = P([0, REST], [0.28, G.raise], [0.5, G.stomp], [0.7, G.stomp], [1, REST]);
-const ikUlt = P([0, REST], [0.25, G.raise], [0.5, G.high], [0.8, G.high], [1, REST]);
+const ikCast1 = P([0, REST], [0.18, G.pull], [0.34, G.thrust], [0.42, [[-0.6, 1.5, 0.55], [0.05, 0.15, 1]]], [0.62, [[-0.85, 1.4, 0.0], [0.05, 0.35, 0.94]]], [0.8, G.back], [1, REST]);
+const ikCast2 = P([0, REST], [0.28, [[-0.78, 1.85, 0.3], [0, 1, 0]]], [0.5, G.stomp], [0.7, G.stomp], [1, REST]);
+const ikUlt = P([0, REST], [0.22, G.high], [0.4, [[-0.55, 1.12, 0.5], [0, 1, 0.08]]], [0.6, [[-0.53, 1.12, 0.52], [0.04, 1, 0.08]]], [0.8, [[-0.57, 1.12, 0.48], [-0.04, 1, 0.08]]], [0.92, G.front], [1, REST]);
 const ikDeath = P([0, REST], [0.25, G.lift], [0.6, G.fall], [1, G.down]);
 const ikRecall = (u) => ({ R: { hand: [G.front[0][0], G.front[0][1] + 0.01 * wave(u), G.front[0][2]], dir: G.front[1] } });
 const ikVictory = P([0, REST], [0.2, G.raise], [0.4, G.high], [0.9, G.high], [1, REST]);
 
-const L = (fn) => lagged(fn, { spine: 0.012, chest: 0.028, neck: 0.04, head: 0.065, uaL: 0.035, faL: 0.055, hdL: 0.075 });
+// Thân thợ lặn là khối vỏ cứng chỉ gập ở thắt lưng: giảm biên độ cúi/ngửa (chest/spine) để vỏ không bị kéo giãn ở eo.
+const stiff = (fn) => (u, t) => { const p = { ...fn(u, t) }; for (const k of ['chest', 'spine']) if (p[k]) p[k] = [p[k][0] * 0.6, p[k][1] * 0.8, p[k][2] * 0.6]; return p; };
+const L = (fn) => stiff(lagged(fn, { spine: 0.012, chest: 0.028, neck: 0.04, head: 0.065, uaL: 0.035, faL: 0.055, hdL: 0.075 }));
 
 export const mossAnim = {
-  style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' },
+  style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'slam' },
   run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5,
   ik: { body: 0.42, head: 0.3, headUp: 0.15, leg: 0.18, ground: 0, back: { R: 1.02 } }, // vật cản cho gậy (armik.mjs)
   custom: {
@@ -144,10 +151,10 @@ export const mossAnim = {
     Run: { dur: 'run', loop: true, pose: run },
     Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1, warp: snap([[0.4, 0.5, 'out'], [0.46, 0.57, 'in'], [0.52, 0.585, 'lin'], [0.74, 0.74, 'out'], [1, 1, 'io']]) }, // chạm 0.276s
     Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2, warp: snap([[0.28, 0.2, 'out'], [0.36, 0.5, 'in'], [0.42, 0.515, 'lin'], [0.66, 0.68, 'out'], [1, 1, 'io']]) }, // chạm 0.216s
-    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1, warp: snap([[0.26, 0.2, 'out'], [0.38, 0.5, 'in'], [0.44, 0.51, 'lin'], [0.72, 0.75, 'out'], [1, 1, 'io']]) },
+    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1, warp: snap([[0.2, 0.18, 'out'], [0.28, 0.34, 'in'], [0.34, 0.35, 'lin'], [0.46, 0.42, 'out'], [0.58, 0.62, 'in'], [0.66, 0.63, 'lin'], [1, 1, 'io']]) }, // bắn móc 0.224s
     Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2, warp: snap([[0.34, 0.28, 'out'], [0.42, 0.5, 'in'], [0.48, 0.515, 'lin'], [0.72, 0.7, 'out'], [1, 1, 'io']]) },
-    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt, warp: snap([[0.22, 0.25, 'out'], [0.32, 0.5, 'in'], [0.38, 0.52, 'lin'], [1, 1, 'io']]) },
-    Death: { dur: 1.6, pose: death, ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt, warp: snap([[0.16, 0.22, 'out'], [0.24, 0.4, 'in'], [0.3, 0.41, 'lin'], [0.84, 0.85, 'io'], [1, 1, 'io']]) }, // cắm ống 0.336s
+    Death: { dur: 1.6, pose: stiff(death), ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
     Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
     Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },

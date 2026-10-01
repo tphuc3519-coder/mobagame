@@ -193,6 +193,26 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg) {
   return { n: m, pos: Float32Array.from(P), nor: Float32Array.from(N), uv: Float32Array.from(U), index: out, vlab, rep: repA, reps };
 }
 
+/** Báo cáo độ giãn lưới theo clip (STRETCH=1): số tam giác có cạnh dài ra > 1.5× / 2× so với tư thế gốc, và xương chính của chúng. */
+function stretchReport(mesh, root, clips, pos, index, names) {
+  const n = pos.length / 3, v = new THREE.Vector3(), cur = new Float32Array(n * 3), T = index.length / 3, mixer = new THREE.AnimationMixer(root);
+  const si = mesh.geometry.attributes.skinIndex, sw = mesh.geometry.attributes.skinWeight;
+  const L = (P, a, b) => Math.hypot(P[3 * a] - P[3 * b], P[3 * a + 1] - P[3 * b + 1], P[3 * a + 2] - P[3 * b + 2]);
+  for (const clip of Object.values(clips)) {
+    const worst = new Float32Array(T);
+    mixer.stopAllAction(); mixer.clipAction(clip).play();
+    for (let k = 0; k <= 30; k++) {
+      mixer.setTime((clip.duration * k) / 30); root.updateMatrixWorld(true); mesh.skeleton.update();
+      for (let i = 0; i < n; i++) { v.set(pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]); mesh.applyBoneTransform(i, v); cur[3 * i] = v.x; cur[3 * i + 1] = v.y; cur[3 * i + 2] = v.z; }
+      for (let t = 0; t < T; t++) for (let e = 0; e < 3; e++) { const a = index[3 * t + e], b = index[3 * t + (e + 1) % 3], r = L(cur, a, b) / Math.max(1e-4, L(pos, a, b) + 0.01); if (r > worst[t]) worst[t] = r; }
+    }
+    const bad = {}; let n15 = 0, n2 = 0;
+    for (let t = 0; t < T; t++) { if (worst[t] > 1.5) n15++; if (worst[t] > 2) { n2++; const a = index[3 * t]; let bi = 0, bw = 0; for (let k = 0; k < 4; k++) if (sw.getComponent(a, k) > bw) { bw = sw.getComponent(a, k); bi = si.getComponent(a, k); } const nm = names[bi].replace('Bone_', ''); bad[nm] = (bad[nm] || 0) + 1; } }
+    console.log(`  giãn ${clip.name.padEnd(9)} >1.5×: ${String(n15).padStart(4)}  >2×: ${String(n2).padStart(4)}  ${Object.entries(bad).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, c]) => k + ':' + c).join(' ')}`);
+  }
+  mixer.stopAllAction(); mixer.setTime(0); root.updateMatrixWorld(true);
+}
+
 export async function importFused(id, def, outRoot, here) {
   const cfg = def.import;
   const src = await readMesh(path.resolve(here, cfg.file));
@@ -235,7 +255,7 @@ export async function importFused(id, def, outRoot, here) {
       ['UpperArm' + d, 'UpperArm' + d, 'Forearm' + d, 0.065], ['Forearm' + d, 'Forearm' + d, 'Hand' + d, 0.06], ['Hand' + d, 'Hand' + d, 'Hand' + d + '_Tip', 0.06, cfg.rig?.['HandEnd' + d] ? V(...cfg.rig['HandEnd' + d]).toArray() : null],
       ['Thigh' + d, 'Thigh' + d, 'Shin' + d, 0.05], ['Shin' + d, 'Shin' + d, 'Foot' + d, 0.045], ['Foot' + d, 'Foot' + d, null, 0.05, cfg.rig?.['Toe' + d] ? V(...cfg.rig['Toe' + d]).toArray() : [W['Foot' + d].x, 0, W['Foot' + d].z + J.toe * s]],
     ]),
-  ].map(([bone, a, b, r, end]) => ({ bone, a: w3(a), b: end || w3(b), r: r * K * (cfg.radii?.[bone] ?? 1) * s }));
+  ].map(([bone, a, b, r, end]) => ({ bone: cfg.merge?.[bone] ?? bone, a: w3(a), b: end || w3(b), r: r * K * (cfg.radii?.[bone] ?? 1) * s })); // merge: gộp vùng của xương này vào xương khác (khối vỏ cứng, vd mũ lặn liền ngực)
   // Vũ khí liền khối với thân: coi như một "xương phụ" dạng đoạn thẳng gắn vào tay phải (đơn vị file gốc, x tương đối thân)
   for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: w.bone || 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s, hard: (w.hard ?? 0.012) * s, test: w.test }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
   const sig = (cfg.softness ?? 0.02) * K * s;
@@ -331,6 +351,7 @@ export async function importFused(id, def, outRoot, here) {
 
   const ctx = { H, legLen: W.ThighL.y - W.FootL.y, hipsRest: [W.Hips.x, W.Hips.y, W.Hips.z] };
   const clips = buildClips(ctx, bones, def.anim || {});
+  if (process.env.STRETCH) stretchReport(mesh, root, clips, posN, index, bones.map((b) => b.name));
   if (cfg.deshard && !process.env.NO_DESHARD) index = deshard(mesh, geo, root, clips, posN, index, cfg.deshard, isHard);
   const scene = new THREE.Scene();
   for (const ch of root.children.slice()) scene.add(ch);

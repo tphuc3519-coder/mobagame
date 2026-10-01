@@ -1,10 +1,10 @@
 [
   {
-    "id": "hoa_ren",
-    "tris": 19967,
-    "bones": 24,
-    "kb": 1763,
+    "id": "thach_quy",
+    "tris": 19994,
+    "bones": 20,
+    "kb": 2421,
     "mats": 1,
-    "runRef": 320
+    "runRef": 310
   }
 ]
