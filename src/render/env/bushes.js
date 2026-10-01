@@ -55,23 +55,45 @@ export function buildBushes(map, density = 1) {
   };
   const core = [];
   for (const b of rects) {
-    const hw = b.w / 2, hh = b.h / 2, H = Math.min(230, 120 + Math.min(b.w, b.h) * 0.12) * (b.big ? 1.12 : 1);
-    // lõi: vòm tối gồ ghề (che khe giữa các thẻ lá)
-    core.push({ x: b.x, z: b.y, sx: hw * 0.92, sz: hh * 0.92, h: H * 0.78 });
-    const step = 62 / Math.sqrt(density), area = b.w * b.h, n = Math.round(area / (step * step) * 1.6);
+    // khung cục bộ của bụi: trục dài (cos, sin) — bụi chữ nhật theo trục x; bụi "con nhộng" (cap) xoay theo đoạn thẳng của nó
+    let cx = b.x, cz = b.y, ca = 1, sa = 0, hw = b.w / 2, hh = b.h / 2, half = 0, shape = dome;
+    if (b.cap) {
+      const dx = b.cap[2] - b.cap[0], dz = b.cap[3] - b.cap[1], L = Math.hypot(dx, dz);
+      ca = dx / L; sa = dz / L; half = L / 2; hw = half + b.r; hh = b.r;
+      shape = (u, v) => { const ax = Math.max(0, Math.abs(u * hw) - half), d = Math.hypot(ax, v * hh) / b.r; return d >= 1 ? 0 : Math.pow(1 - Math.pow(d, 4), 0.35); };
+    }
+    const toW = (lx, lz) => [cx + lx * ca - lz * sa, cz + lx * sa + lz * ca]; // cục bộ → thế giới
+    const rotN = (nx, nz) => [nx * ca - nz * sa, nx * sa + nz * ca];
+    const H = Math.min(240, 120 + Math.min(hw, hh) * 0.24) * (b.big ? 1.12 : 1);
+    // lõi: vòm tối gồ ghề (che khe giữa các thẻ lá) — bụi con nhộng dùng vài lõi dọc trục
+    if (b.cap) for (let k = 0; k <= 4; k++) { const [x, z] = toW(-half + (2 * half * k) / 4, 0); core.push({ x, z, sx: hh * 0.92, sz: hh * 0.92, h: H * 0.78 }); }
+    else core.push({ x: cx, z: cz, sx: hw * 0.92, sz: hh * 0.92, h: H * 0.78, rot: 0 });
+    const step = 62 / Math.sqrt(density), area = 4 * hw * hh, n = Math.round(area / (step * step) * 1.6);
     for (let i = 0; i < n; i++) {
-      const u = r.range(-1, 1), v = r.range(-1, 1), d = dome(u, v); if (d <= 0.02) continue;
-      const lump = 0.82 + fbm(b.x / 200 + u * 2.3, b.y / 200 + v * 2.3, 3) * 0.4, y = H * d * lump;
-      const nx = u * (1 - d * 0.6), nz = v * (1 - d * 0.6), ny = 0.35 + d;
+      const u = r.range(-1, 1), v = r.range(-1, 1), d = shape(u, v); if (d <= 0.02) continue;
+      const [x, z] = toW(u * hw, v * hh);
+      const lump = 0.82 + fbm(x / 440, z / 440, 3) * 0.4, y = H * d * lump;
+      const lnx = b.cap ? Math.sign(u) * Math.max(0, Math.abs(u * hw) - half) / b.r : u, lnz = v;
+      const [nx, nz] = rotN(lnx * (1 - d * 0.6), lnz * (1 - d * 0.6)), ny = 0.35 + d;
       const sun = Math.max(0, ny - 0.7) * 0.6 + d * 0.5;  // đỉnh nắng
-      const hueJ = (fbm(b.x / 90 + u * 4, b.y / 90 + v * 4, 2) - 0.5) * 0.08 - sun * 0.03; // đỉnh nắng ngả xanh lá sáng, lòng xanh lam đậm
-      card(b.x + u * hw, y + 6, b.y + v * hh, r.range(110, 170) * (b.big ? 1.1 : 1), nx, ny, nz, 0.6 + sun * 0.7 + r.range(-0.08, 0.08), hueJ);
+      const hueJ = (fbm(x / 200, z / 200, 2) - 0.5) * 0.08 - sun * 0.03; // đỉnh nắng ngả xanh lá sáng, lòng xanh lam đậm
+      card(x, y + 6, z, r.range(110, 170) * (b.big ? 1.1 : 1), nx, ny, nz, 0.6 + sun * 0.7 + r.range(-0.08, 0.08), hueJ);
     }
     // vành lá sát đất quanh mép (che chân lõi)
-    const ring = Math.round((b.w + b.h) * 2 / 70 * Math.sqrt(density));
+    const ring = Math.round((hw + hh) * 4 / 70 * Math.sqrt(density));
     for (let i = 0; i < ring; i++) {
-      const a = (i / ring) * Math.PI * 2 + r.range(-0.1, 0.1), c = Math.cos(a), s = Math.sin(a), k = Math.pow(Math.pow(Math.abs(c), 4) + Math.pow(Math.abs(s), 4), -0.25) * r.range(0.9, 1.02);
-      card(b.x + c * hw * k, 30, b.y + s * hh * k, r.range(90, 130), c, 0.25, s, 0.48 + r.range(-0.05, 0.08), r.range(-0.02, 0.02));
+      let lx, lz, nlx, nlz;
+      if (b.cap) { // chu vi con nhộng: hai cạnh thẳng + hai đầu tròn
+        const per = 4 * half + 2 * Math.PI * b.r, t = (i / ring) * per;
+        if (t < 2 * half) { lx = -half + t; lz = b.r; nlx = 0; nlz = 1; } else if (t < 4 * half) { lx = half - (t - 2 * half); lz = -b.r; nlx = 0; nlz = -1; }
+        else { const a2 = ((t - 4 * half) / (2 * Math.PI * b.r)) * Math.PI * 2, c = Math.cos(a2), s2 = Math.sin(a2); lx = (c >= 0 ? half : -half) + c * b.r; lz = s2 * b.r; nlx = c; nlz = s2; }
+        lx *= r.range(0.97, 1.01); lz *= r.range(0.9, 1.02);
+      } else {
+        const a2 = (i / ring) * Math.PI * 2 + r.range(-0.1, 0.1), c = Math.cos(a2), s2 = Math.sin(a2), k = Math.pow(Math.pow(Math.abs(c), 4) + Math.pow(Math.abs(s2), 4), -0.25) * r.range(0.9, 1.02);
+        lx = c * hw * k; lz = s2 * hh * k; nlx = c; nlz = s2;
+      }
+      const [x, z] = toW(lx, lz), [nx, nz] = rotN(nlx, nlz);
+      card(x, 30, z, r.range(90, 130), nx, 0.25, nz, 0.48 + r.range(-0.05, 0.08), r.range(-0.02, 0.02));
     }
   }
   const geo = new THREE.BufferGeometry();
@@ -99,7 +121,7 @@ export function buildBushes(map, density = 1) {
     const ig0 = new THREE.CylinderGeometry(1, 1.12, 1, 28, 1); ig0.deleteAttribute('uv'); ig0.deleteAttribute('normal'); const ig = mergeVertices(ig0);
     { const p = ig.attributes.position; for (let i = 0; i < p.count; i++) { const a = Math.atan2(p.getZ(i), p.getX(i)), k = 1 + (fbm(Math.cos(a) * 2 + 5, Math.sin(a) * 2, 3) - 0.5) * 0.35; p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); } ig.computeVertexNormals(); }
     const im = new THREE.InstancedMesh(ig, new THREE.MeshLambertMaterial({ color: 0x6a5a42 }), islets.length);
-    islets.forEach((b, i) => { d.position.set(b.x, 4, b.y); d.scale.set(b.w * 0.62, 16, b.h * 0.62); d.rotation.y = i; d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
+    islets.forEach((b, i) => { if (b.cap) { const dx = b.cap[2] - b.cap[0], dz = b.cap[3] - b.cap[1], L = Math.hypot(dx, dz); d.position.set(b.x, 4, b.y); d.rotation.set(0, -Math.atan2(dz, dx), 0); d.scale.set(L / 2 + b.r * 1.05, 16, b.r * 1.15); } else { d.position.set(b.x, 4, b.y); d.rotation.set(0, i, 0); d.scale.set(b.w * 0.62, 16, b.h * 0.62); } d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
     g.add(im);
   }
   return g;

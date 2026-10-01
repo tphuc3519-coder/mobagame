@@ -29,9 +29,21 @@ export const DUEL = {
 /** Mọi bụi cỏ đủ hai phía (đã đối xứng). Bụi nằm đúng trục đối xứng (ảnh đối xứng trùng chính nó, vd bụi giữa sông) chỉ tính một lần. */
 export function bushRects(map) {
   if (map._bushRects) return map._bushRects;
-  const out = [];
-  for (const b of map.bushes || []) { out.push(b); const m = map.mirror(b.x, b.y); if (Math.abs(m.x - b.x) > 1 || Math.abs(m.y - b.y) > 1) out.push({ ...b, ...m }); }
+  const out = [], norm = (b) => (b.cap ? { ...b, x: (b.cap[0] + b.cap[2]) / 2, y: (b.cap[1] + b.cap[3]) / 2, w: Math.abs(b.cap[2] - b.cap[0]) + 2 * b.r, h: Math.abs(b.cap[3] - b.cap[1]) + 2 * b.r } : b);
+  for (const b0 of map.bushes || []) {
+    const b = norm(b0); out.push(b);
+    let m;
+    if (b.cap) { const p = map.mirror(b.cap[0], b.cap[1]), q = map.mirror(b.cap[2], b.cap[3]); m = norm({ ...b, cap: [p.x, p.y, q.x, q.y] }); }
+    else m = { ...b, ...map.mirror(b.x, b.y) };
+    if (Math.abs(m.x - b.x) > 1 || Math.abs(m.y - b.y) > 1) out.push(m);
+  }
   return (map._bushRects = out);
+}
+/** Điểm p có nằm trong bụi b không (bụi chữ nhật theo trục, hoặc bụi "con nhộng" cap = đoạn thẳng + bán kính r — bụi chéo dọc sông). */
+export function inBush(b, p) {
+  if (!b.cap) return Math.abs(p.x - b.x) <= b.w / 2 && Math.abs(p.y - b.y) <= b.h / 2;
+  const [x1, y1, x2, y2] = b.cap, dx = x2 - x1, dy = y2 - y1, t = Math.max(0, Math.min(1, ((p.x - x1) * dx + (p.y - y1) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(p.x - x1 - dx * t, p.y - y1 - dy * t) <= b.r;
 }
 
 /** Danh sách công trình đủ hai phía (đã đối xứng bằng map.mirror). */
@@ -99,14 +111,17 @@ function edgeWalls(path, sides, { off = LANE_W / 2 + 50, from = 0, to = Infinity
 const guard = (path, sides, o) => edgeWalls(path, sides, o);
 // Phía Xanh: dọc Đường Đền (mép trong, về phía rừng), hai bên Đường Giữa (tới sát sông), mép trong Đường Sông.
 const W_BLUE = [
-  ...guard(LANES[0].pts, [1], { from: 1100, to: 6300, phase: 300 }),
-  ...guard(LANES[1].pts, [-1, 1], { from: 1500, to: 3900, phase: 120 }),
-  ...guard(LANES[2].pts, [-1], { from: 1600, to: 6400, phase: 500 }),
+  // bệ đá ngăn rừng với đường, chạy gần hết nửa đường phía Xanh, có khe đi tắt (không có lướt thì phải đi vòng qua khe)
+  ...guard(LANES[0].pts, [1], { from: 1100, to: 9300, phase: 300, gap: 640 }),
+  ...guard(LANES[1].pts, [-1, 1], { from: 1500, to: 6300, phase: 120, gap: 600 }),
+  ...guard(LANES[2].pts, [-1], { from: 1600, to: 9300, phase: 500, gap: 640 }),
+  // bệ đá hai bờ sông kẹp hai bụi giữa sông (cạnh cầu đường Giữa); bờ phía Đỏ là ảnh đối xứng
+  ...[[2613, 3151, 2259, 2797], [3249, 3787, 3603, 4141]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true })),
   // lối mòn trong rừng: mỗi vùng vài khối tường tạo ngã rẽ
   ...[[1500, 2500, 2100, 2500], [2000, 3100, 2000, 3600], [1300, 3700, 1700, 3900], [1700, 2900, 1700, 3300],
     [3000, 4900, 3500, 4900], [3300, 4350, 3300, 4750], [4000, 4500, 4500, 4500], [3800, 5050, 3800, 5350]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K })),
 ];
-const mirrorSeg = (w) => ({ x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
+const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
 
 export const ARENA = {
   id: 'arena5v5', w: A, h: A,
@@ -117,20 +132,21 @@ export const ARENA = {
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 850, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
     tower('temple_outer', 'outer', 800, 2500, null), tower('temple_inner', 'inner', 800, 3700, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
-    tower('mid_outer', 'outer', 2500, 3900, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
+    tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
     tower('river_outer', 'outer', 3900, 5600, null), tower('river_inner', 'inner', 2700, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
-  walls: { thickness: 90, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
+  walls: { thickness: 110, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
     ...[[1300, 1900], [650, 3100], [2050, 3600], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
-    ...[[2150, 2750, 520, 300], [2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
-    // hai bụi lớn NGAY GIỮA SÔNG, hai phía ngã tư giữa: chốt chặn quan trọng nhất (nằm trên trục đối xứng nên mỗi bụi chỉ có một)
-    ...[[2300, 2300], [4100, 4100]].map(([x, y]) => ({ x: x * K, y: y * K, w: 460 * K, h: 460 * K, big: true, river: true })),
-    ...[[1200, 2850], [1480, 3250], [1250, 4200], [1620, 4230], [2500, 3150], [3000, 4700], [4150, 4850], [4300, 5050], [2600, 5150], [380, 4400], [2000, 5950], [4400, 6000]]
+    ...[[2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
+    // hai bụi lớn liền khối NGAY GIỮA SÔNG, ôm sát hai bên cầu đường Giữa (bụi chéo dọc dòng sông): chốt chặn quan trọng nhất.
+    // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
+    ...[[2380, 2880], [3520, 4020]].map(([a, b]) => ({ cap: [a * K, a * K, b * K, b * K], r: 240 * K, big: true, river: true })),
+    ...[[1200, 2850], [1480, 3250], [1250, 4200], [1620, 4230], [2350, 3350], [3000, 4700], [4150, 4850], [4300, 5050], [2600, 5150], [380, 4400], [2000, 5950], [4400, 6000]]
       .map(([x, y], i) => ({ x: x * K, y: y * K, w: (i % 3 ? 220 : 260) * K, h: (i % 2 ? 170 : 200) * K })),
   ],
   vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)

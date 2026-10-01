@@ -37,6 +37,10 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     else if (map.walls?.ys) { c.lineWidth = Math.max(1.5, map.walls.thickness * sy); for (const y of map.walls.ys) { c.beginPath(); c.moveTo(0, wy(y)); c.lineTo(W, wy(y)); c.stroke(); } }
     // bụi cỏ: xanh ngọc đậm viền sáng, nổi hẳn trên nền cỏ (bụi giữa sông viền vàng: chốt quan trọng)
     for (const q of bushRects(map)) {
+      if (q.cap) { // bụi chéo dọc sông: nét dày bo tròn
+        const line = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(wx(q.cap[0]), wy(q.cap[1])); c.lineTo(wx(q.cap[2]), wy(q.cap[3])); c.stroke(); };
+        line(q.r * 2 * sx + 3, q.river ? '#ffd86a' : '#6af0c4'); line(q.r * 2 * sx, '#0b4f45'); line(q.r * sx * 0.6, '#2fbf8f'); continue;
+      }
       const x = wx(q.x - q.w / 2), y = wy(q.y - q.h / 2), w = Math.max(4, q.w * sx), h = Math.max(4, q.h * sy);
       c.beginPath(); c.roundRect(x, y, w, h, Math.min(w, h) * 0.45);
       c.fillStyle = '#0b4f45'; c.fill(); c.lineWidth = q.river ? 1.8 : 1.2; c.strokeStyle = q.river ? '#ffd86a' : '#6af0c4'; c.stroke();
