@@ -11,6 +11,7 @@ export default {
   palette: ['#1f3b2a', '#6fbf73', '#d8e8b0', '#0f1a14'], rim: '#6fbf73',
   hitTime: { Attack1: 0.2, Attack2: 0.2 },
   import: { // model liền khối có texture do hoạ sĩ gửi (ronin_pbr_100000.glb: kiếm sĩ nón lá, hai kiếm): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    deshard: { ratio: 1.6, slack: 0.03, samples: 30, minComponent: 600 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
     mode: 'fused', file: './imports/ronin_pbr_100000.glb', simplify: { tris: 28000, error: 0.08, flags: ['Permissive', 'Prune'] },
     centerX: 0.175, centerZ: -0.14, bodyTop: 1.89, height: 2.2, texMax: 1024,
     rig: { // toạ độ tương đối thân (đơn vị file gốc): x + = bên trái nhân vật, z + = phía trước

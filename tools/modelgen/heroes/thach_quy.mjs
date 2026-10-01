@@ -11,6 +11,7 @@ export default {
   palette: ['#405c57', '#ff8a1e', '#a66119', '#1c302e'], rim: '#ffab47', // màu theo model thợ lặn: thân xanh ngọc cũ, hổ phách, đồng thau
   hitTime: { Attack1: 0.34, Attack2: 0.3 },
   import: { // model liền khối có texture do hoạ sĩ gửi (diver_pbr_20000.glb): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    deshard: { ratio: 2.0, slack: 0.04, samples: 24, minComponent: 400 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
     mode: 'fused', file: './imports/diver_pbr_20000.glb',
     centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
     weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải

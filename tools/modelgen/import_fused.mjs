@@ -56,6 +56,50 @@ async function readMesh(file) {
   return { pos, nor, uv, index: Array.from(g.index.array), imgs, refs, baseImg: json.textures[refs.base]?.source, matName: mat.name };
 }
 
+/** Chạy thử mọi clip và cắt các tam giác bị kéo giãn thành "mảnh vụn" (cạnh dài ra quá nhiều so với tư thế gốc, hoặc có đỉnh bay quá xa thân).
+ *  Đây là lỗi của trọng số xương trên lưới liền khối: tam giác nối hai vùng có trọng số khác nhau bị kéo thành dải khi xoay mạnh.
+ *  Sau khi cắt, bỏ nốt các cụm tam giác nhỏ rời ra (trừ cụm chứa vũ khí). cfg: { ratio, slack, samples, minComponent, report }. */
+function deshard(mesh, geo, root, clips, pos, index0, cfg, isHard) {
+  const { ratio = 2.2, slack = 0.05, samples = 16, minComponent = 150 } = cfg, n = pos.length / 3, v = new THREE.Vector3();
+  const mixer = new THREE.AnimationMixer(root), cur = new Float32Array(n * 3);
+  const tris = index0.length / 3, bad = new Uint8Array(tris), maxStretch = new Float32Array(tris);
+  const bind = (a, b) => Math.hypot(pos[3 * a] - pos[3 * b], pos[3 * a + 1] - pos[3 * b + 1], pos[3 * a + 2] - pos[3 * b + 2]);
+  const bl = new Float32Array(tris * 3);
+  for (let t = 0; t < tris; t++) { const a = index0[3 * t], b = index0[3 * t + 1], c = index0[3 * t + 2]; bl[3 * t] = bind(a, b); bl[3 * t + 1] = bind(b, c); bl[3 * t + 2] = bind(c, a); }
+  const sample = () => {
+    root.updateMatrixWorld(true); mesh.skeleton.update();
+    for (let i = 0; i < n; i++) { v.set(pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]); mesh.applyBoneTransform(i, v); cur[3 * i] = v.x; cur[3 * i + 1] = v.y; cur[3 * i + 2] = v.z; }
+    for (let t = 0; t < tris; t++) {
+      if (bad[t] || isHard[index0[3 * t]] || isHard[index0[3 * t + 1]] || isHard[index0[3 * t + 2]]) continue; // tam giác chạm vũ khí (đã xử lý ở cutMixed): không cắt để kiếm không rời tay
+      const a = index0[3 * t], b = index0[3 * t + 1], c = index0[3 * t + 2], e = [[a, b], [b, c], [c, a]];
+      for (let k = 0; k < 3; k++) {
+        const [p, q] = e[k], d = Math.hypot(cur[3 * p] - cur[3 * q], cur[3 * p + 1] - cur[3 * q + 1], cur[3 * p + 2] - cur[3 * q + 2]), lim = bl[3 * t + k] * ratio + slack;
+        if (d > maxStretch[t]) maxStretch[t] = d;
+        if (d > lim) { bad[t] = 1; break; }
+      }
+    }
+  };
+  for (const clip of Object.values(clips)) {
+    mixer.stopAllAction(); const act = mixer.clipAction(clip); act.play();
+    for (let i = 0; i <= samples; i++) { mixer.setTime((clip.duration * i) / samples); sample(); }
+  }
+  mixer.stopAllAction(); mixer.setTime(0); root.updateMatrixWorld(true);
+  let out = []; for (let t = 0; t < tris; t++) if (!bad[t]) out.push(index0[3 * t], index0[3 * t + 1], index0[3 * t + 2]);
+  const cutN = tris - out.length / 3;
+  // bỏ cụm tam giác nhỏ rời ra (vị trí trùng thì coi như một đỉnh); cụm có đỉnh gắn cứng vào vũ khí thì giữ
+  const par = Int32Array.from({ length: n }, (_, i) => i), f = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+  const key = (i) => `${Math.round(pos[3 * i] * 1e4)},${Math.round(pos[3 * i + 1] * 1e4)},${Math.round(pos[3 * i + 2] * 1e4)}`, wid = new Map(), rep = new Int32Array(n);
+  for (let i = 0; i < n; i++) { const k = key(i); if (!wid.has(k)) wid.set(k, i); rep[i] = wid.get(k); }
+  for (let t = 0; t < out.length; t += 3) { const a = f(rep[out[t]]), b = f(rep[out[t + 1]]), c = f(rep[out[t + 2]]); if (a !== b) par[a] = b; if (f(b) !== f(c)) par[f(c)] = f(b); }
+  const cnt = new Map(), keep = new Set();
+  for (let t = 0; t < out.length; t += 3) { const r = f(rep[out[t]]); cnt.set(r, (cnt.get(r) || 0) + 1); if (isHard[out[t]] || isHard[out[t + 1]] || isHard[out[t + 2]]) keep.add(r); }
+  const fin = []; let drop = 0;
+  for (let t = 0; t < out.length; t += 3) { const r = f(rep[out[t]]); if (cnt.get(r) < minComponent && !keep.has(r)) { drop++; continue; } fin.push(out[t], out[t + 1], out[t + 2]); }
+  geo.setIndex(fin);
+  console.log(`  deshard: cắt ${cutN} tam giác bị kéo giãn + bỏ ${drop} tam giác ở cụm rời nhỏ (< ${minComponent}); còn ${fin.length / 3}`);
+  return fin;
+}
+
 /** Thu nhỏ ảnh JPEG (lọc hộp) về cạnh dài tối đa `max` rồi mã hoá lại; ảnh nhỏ hơn thì giữ nguyên. */
 function shrinkJpeg(buf, max, quality = 84) {
   const im = jpeg.decode(buf, { useTArray: true }), k = Math.floor(Math.max(im.width, im.height) / max);
@@ -192,6 +236,7 @@ export async function importFused(id, def, outRoot, here) {
     const rep = new Int32Array(n); for (let i = 0; i < n; i++) { const k = key(i); if (!wid.has(k)) wid.set(k, i); rep[i] = wid.get(k); }
     for (let t = 0; t < index.length; t += 3) { const a = f(rep[index[t]]), b = f(rep[index[t + 1]]), c = f(rep[index[t + 2]]); if (a !== b) par[a] = b; if (f(b) !== f(c)) par[f(c)] = f(b); }
     const cnt = new Map(); for (let t = 0; t < index.length; t += 3) { const r = f(rep[index[t]]); cnt.set(r, (cnt.get(r) || 0) + 1); }
+    if (process.env.DEBUG_COMP) { const sz = [...cnt.values()].sort((a, b) => b - a); console.log('  thành phần (tam giác):', sz.slice(0, 40).join(' '), '… tổng', sz.length); }
     const minC = cfg.minComponent ?? 60, out = []; let dropped = 0, comps = 0;
     for (let t = 0; t < index.length; t += 3) { const r = f(rep[index[t]]); if (cnt.get(r) < minC) { dropped++; continue; } out.push(index[t], index[t + 1], index[t + 2]); }
     comps = [...cnt.values()].filter((c) => c >= minC).length; index = out; console.log(`  bỏ ${dropped} tam giác ở các mảnh rời nhỏ (< ${minC} tam giác); còn ${comps} khối`);
@@ -207,6 +252,7 @@ export async function importFused(id, def, outRoot, here) {
 
   const ctx = { H, legLen: W.ThighL.y - W.FootL.y, hipsRest: [W.Hips.x, W.Hips.y, W.Hips.z] };
   const clips = buildClips(ctx, bones, def.anim || {});
+  if (cfg.deshard) index = deshard(mesh, geo, root, clips, pos, index, cfg.deshard, isHard);
   const scene = new THREE.Scene();
   for (const ch of root.children.slice()) scene.add(ch);
   const glb0 = Buffer.from(await new GLTFExporter().parseAsync(scene, { binary: true, animations: Object.values(clips), onlyVisible: false }));

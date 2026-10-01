@@ -15,6 +15,9 @@ const A = {
   sweepWind: { uaR: [26, -18, 30], faR: [20, 27, 30], hdR: [53, 21, 5] },
   sweepHit: { uaR: [13, -57, -27], faR: [20, 49, 30], hdR: [103, -28, -8] },
   sweepEnd: { uaR: [24, -39, -15], faR: [20, 59, 26], hdR: [100, -14, -5] },
+  liftHi: { uaR: [-21, -1, -3], faR: [20, 6, 30], hdR: [93, -25, -7] },
+  planted: { uaR: [-22, -1, -13], faR: [-40, -12, -30], hdR: [-73, -32, -14] },
+  braced: { uaR: [-21, -4, -9], faR: [-39, -6, -30], hdR: [-72, -30, -12] },
   ground: { uaR: [-27, -19, -4], faR: [-97, 60, -30], hdR: [-6, -65, -30] },
   leap: { uaR: [-67, 14, 25], faR: [20, -56, 5], hdR: [94, -38, -10] },
 };
@@ -69,12 +72,15 @@ const attack2 = (() => { const b = sweepBody(1); return spline([[0, {}], [0.12, 
 // Cast1 – Vung Búa (hình quạt): quét ngang mạnh hơn, xoay người nhiều hơn, 0.8s.
 const cast1 = (() => { const b = sweepBody(1.25); return spline([[0, {}], [0.15, { chest: [6, -20, 0], hipsPos: [0, -0.03, -0.01], ...A.antic }], [0.34, { ...b.wind, ...A.sweepWind }], [0.5, { ...b.hit, ...A.sweepHit }], [0.7, { ...b.end, ...A.sweepEnd }], [1, {}]]); })();
 
-// Cast2 – Xỉ Sắt (khiên + tăng tốc): chống búa xuống đất, gồng người rồi bật dậy.
+// Cast2 – Xỉ Sắt (khiên + tăng tốc): nhấc búa lên cao, giáng đầu búa xuống đất trước mặt, chống búa gồng người
+// (tay trái siết nắm đấm, vai nhún, vải bung ra), rồi rút búa về vai. Va chạm ở u≈0.42.
 const cast2 = spline([
   [0, {}],
-  [0.22, { chest: [-8, 0, 0], spine: [-3, 0, 0], head: [4, 0, 0], hipsPos: [0, 0.015, -0.01], ...A.antic, uaL: [-10, 0, 14], skF: [-14, 0, 0] }],
-  [0.46, { chest: [18, 0, 0], spine: [8, 0, 0], head: [-4, 0, 0], hipsPos: [0, -0.07, 0.04], ...A.ground, uaL: [-30, 0, 30], faL: [-60, 0, 0], thL: [-14, 0, 0], thR: [10, 0, 0], shL: [30, 0, 0], shR: [26, 0, 0], skF: [20, 0, 0] }],
-  [0.66, { chest: [12, 0, 0], spine: [5, 0, 0], head: [-6, 0, 0], hipsPos: [0, -0.05, 0.03], ...A.ground, uaL: [-40, 0, 40], faL: [-70, 0, 0], thL: [-12, 0, 0], shL: [26, 0, 0], shR: [22, 0, 0], skF: [6, 0, 0] }],
+  [0.12, { chest: [4, 0, 0], hipsPos: [0, -0.03, -0.01], thL: [-10, 0, 0], thR: [8, 0, 0], shR: [12, 0, 0], ...A.antic, uaL: [-8, 0, 10], skF: [-10, 0, 0] }],
+  [0.3, { chest: [-12, 0, 0], spine: [-4, 0, 0], head: [6, 0, 0], hipsPos: [0, 0.02, -0.02], thL: [-8, 0, 0], thR: [6, 0, 0], ...A.liftHi, uaL: [-30, 0, 18], faL: [-40, 0, 0], skF: [-20, 0, 0], skB: [12, 0, 0] }],
+  [0.42, { chest: [20, 0, 0], spine: [8, 0, 0], head: [8, 0, 0], hipsPos: [0, -0.07, 0.05], thL: [-20, 0, 0], thR: [14, 0, 0], shL: [16, 0, 0], shR: [28, 0, 0], ...A.planted, uaL: [-34, 0, 24], faL: [-70, 0, 0], skF: [26, 0, 0], skB: [-16, 0, 0] }],
+  [0.55, { chest: [14, 0, 0], spine: [6, 0, 0], head: [2, 0, 0], hipsPos: [0, -0.055, 0.04], thL: [-16, 0, 0], thR: [12, 0, 0], shL: [14, 0, 0], shR: [24, 0, 0], ...A.braced, uaL: [-36, 0, 28], faL: [-74, 0, 0], skF: [12, 0, 0], skB: [-8, 0, 0] }],
+  [0.72, { chest: [8, 0, 0], spine: [3, 0, 0], hipsPos: [0, -0.03, 0.02], thL: [-8, 0, 0], thR: [6, 0, 0], ...A.antic, uaL: [-14, 0, 12], skF: [-4, 0, 0] }],
   [1, {}],
 ]);
 

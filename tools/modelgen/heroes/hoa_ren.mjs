@@ -12,6 +12,7 @@ export default {
   palette: ['#2a2a2e', '#ff7a1a', '#ffd166', '#6b3b1e'], rim: '#ff7a1a',
   hitTime: { Attack1: 0.3, Attack2: 0.26 },
   import: { // model liền khối có texture do hoạ sĩ gửi (hammer_pbr_20000.glb, tư thế vác búa, dạng chân rộng): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    deshard: { ratio: 2.0, slack: 0.04, samples: 24, minComponent: 400 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
     mode: 'fused', file: './imports/hammer_pbr_20000.glb',
     centerX: 0, centerZ: -0.12, bodyTop: 1.72, // bodyTop = đỉnh đầu (bỏ đầu búa khi tính chiều cao)
     rig: { // khớp theo tư thế trong file (x phải = trái nhân vật, z + = phía trước), tương đối trục thân
