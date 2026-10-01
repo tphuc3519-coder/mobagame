@@ -2,12 +2,13 @@
   "name": "modelgen",
   "private": true,
   "type": "module",
-  "description": "Sinh model GLB cho tướng Lantern Arena (chỉ là công cụ dev, game không cần build)",
+  "description": "Sinh model GLB cho t\u01b0\u1edbng Lantern Arena (ch\u1ec9 l\u00e0 c\u00f4ng c\u1ee5 dev, game kh\u00f4ng c\u1ea7n build)",
   "scripts": {
     "build": "node build.mjs"
   },
   "devDependencies": {
     "jpeg-js": "^0.4.4",
-    "three": "0.186.0"
+    "three": "0.186.0",
+    "meshoptimizer": "*"
   }
 }

@@ -9,6 +9,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import jpeg from 'jpeg-js';
+import { MeshoptSimplifier } from 'meshoptimizer';
 import { buildClips } from './anim.mjs';
 import { makeRig } from './import_glb.mjs';
 
@@ -55,6 +56,16 @@ async function readMesh(file) {
   return { pos, nor, uv, index: Array.from(g.index.array), imgs, refs, baseImg: json.textures[refs.base]?.source, matName: mat.name };
 }
 
+/** Thu nhỏ ảnh JPEG (lọc hộp) về cạnh dài tối đa `max` rồi mã hoá lại; ảnh nhỏ hơn thì giữ nguyên. */
+function shrinkJpeg(buf, max, quality = 84) {
+  const im = jpeg.decode(buf, { useTArray: true }), k = Math.floor(Math.max(im.width, im.height) / max);
+  if (k < 2) return buf;
+  const w = Math.floor(im.width / k), h = Math.floor(im.height / k), out = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 4; c++) { let a = 0; for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) a += im.data[((y * k + j) * im.width + x * k + i) * 4 + c]; out[(y * w + x) * 4 + c] = a / (k * k); }
+  console.log(`  ảnh ${im.width}×${im.height} → ${w}×${h}`);
+  return Buffer.from(jpeg.encode({ data: out, width: w, height: h }, quality).data);
+}
+
 /** Khoảng cách từ điểm tới đoạn thẳng a→b. */
 function segDist(p, a, b) {
   const abx = b[0] - a[0], aby = b[1] - a[1], abz = b[2] - a[2], L = abx * abx + aby * aby + abz * abz || 1e-9;
@@ -62,9 +73,24 @@ function segDist(p, a, b) {
   return Math.hypot(p[0] - a[0] - abx * t, p[1] - a[1] - aby * t, p[2] - a[2] - abz * t);
 }
 
+/** Giảm tam giác bằng meshoptimizer (giữ biên uv/pháp tuyến), rồi dồn lại đỉnh. cfg: { tris, error }. */
+async function simplifyMesh(src, { tris, error = 0.02, flags = [] }) {
+  await MeshoptSimplifier.ready;
+  const n = src.pos.length / 3, attr = new Float32Array(n * 5);
+  for (let i = 0; i < n; i++) { attr.set([src.uv[2 * i], src.uv[2 * i + 1]], i * 5); attr.set([src.nor[3 * i], src.nor[3 * i + 1], src.nor[3 * i + 2]], i * 5 + 2); }
+  const before = src.index.length / 3;
+  const [out] = MeshoptSimplifier.simplifyWithAttributes(Uint32Array.from(src.index), src.pos, 3, attr, 5, [4, 4, 0.6, 0.6, 0.6], null, tris * 3, error, flags);
+  const remap = new Int32Array(n).fill(-1); let m = 0; for (const v of out) if (remap[v] < 0) remap[v] = m++;
+  const pos = new Float32Array(m * 3), nor = new Float32Array(m * 3), uv = new Float32Array(m * 2);
+  for (let i = 0; i < n; i++) { const j = remap[i]; if (j < 0) continue; pos.set(src.pos.subarray(3 * i, 3 * i + 3), 3 * j); nor.set(src.nor.subarray(3 * i, 3 * i + 3), 3 * j); uv.set(src.uv.subarray(2 * i, 2 * i + 2), 2 * j); }
+  src.pos = pos; src.nor = nor; src.uv = uv; src.index = Array.from(out, (v) => remap[v]);
+  console.log(`  giảm ${before} → ${src.index.length / 3} tam giác, ${n} → ${m} đỉnh`);
+}
+
 export async function importFused(id, def, outRoot, here) {
   const cfg = def.import;
   const src = await readMesh(path.resolve(here, cfg.file));
+  if (cfg.simplify) await simplifyMesh(src, cfg.simplify);
   const n = src.pos.length / 3;
   // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
   const tex = src.refs.base != null ? jpeg.decode(src.imgs[src.baseImg], { useTArray: true }) : null;
@@ -105,7 +131,7 @@ export async function importFused(id, def, outRoot, here) {
     ]),
   ].map(([bone, a, b, r, end]) => ({ bone, a: w3(a), b: end || w3(b), r: r * K * (cfg.radii?.[bone] ?? 1) * s }));
   // Vũ khí liền khối với thân: coi như một "xương phụ" dạng đoạn thẳng gắn vào tay phải (đơn vị file gốc, x tương đối thân)
-  for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s, hard: (w.hard ?? 0.012) * s, test: w.test }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
+  for (const w of [].concat(cfg.weapon || [])) segs.push({ bone: w.bone || 'HandR', a: w.a.map((v) => v * s), b: w.b.map((v) => v * s), r: w.r * s, sig: (w.soft ?? 0.01) * s, cut: (w.cut ?? 0.025) * s, hard: (w.hard ?? 0.012) * s, test: w.test }); // sig nhỏ: vũ khí ăn trọng số gắt, không kéo vải/tóc sát bên // toạ độ vũ khí cũng tương đối thân (đã trừ centerX/centerZ)
   const sig = (cfg.softness ?? 0.02) * K * s;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
   const hand = idx[B('HandR')], isHard = new Uint8Array(n);
@@ -113,7 +139,8 @@ export async function importFused(id, def, outRoot, here) {
     const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
     if (isStaff(src.pos[3 * i])) { si[4 * i] = hand; sw[4 * i] = 1; continue; }
     const rgb = rgbOf(i), segsI = segs.filter((sg) => !sg.test || sg.test(rgb)); // vũ khí chỉ nhận đỉnh có màu texture hợp lệ (loại da/tóc sát bên)
-    if (segsI.some((sg) => sg.cut != null && segDist(p, sg.a, sg.b) - sg.r <= sg.hard)) { si[4 * i] = hand; sw[4 * i] = 1; isHard[i] = 1; continue; } // nằm trong thân vũ khí: gắn cứng 100% vào tay, không trộn với cẳng tay (tránh méo khi xoay cổ tay mạnh)
+    const hs = segsI.find((sg) => sg.cut != null && segDist(p, sg.a, sg.b) - sg.r <= sg.hard);
+    if (hs) { si[4 * i] = idx[B(hs.bone)]; sw[4 * i] = 1; isHard[i] = idx[B(hs.bone)] + 1; continue; } // nằm trong thân vũ khí: gắn cứng 100% vào tay, không trộn với cẳng tay (tránh méo khi xoay cổ tay mạnh)
     const dd = segsI.map((sg) => ({ b: idx[B(sg.bone)], sig: sg.sig || sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r), cut: sg.cut })).filter((c, _, all) => !(c.cut != null && c.d > c.cut && all.length > 1)); // vũ khí chỉ ăn đỉnh nằm sát nó, không cướp vải ở xa
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
     const acc = new Map(); for (const c of dd) acc.set(c.b, (acc.get(c.b) || 0) + Math.exp(-Math.pow((c.d - dmin) / c.sig, 2)));
@@ -146,10 +173,10 @@ export async function importFused(id, def, outRoot, here) {
   // Cắt các tam giác nối vũ khí với thân (lưới liền khối: cán búa dính vai/cổ nên kéo thành dải khi xoay mạnh). Giữ lại vùng quanh bàn tay để cổ tay không hở.
   let index = src.index;
   if (cfg.cutMixed) {
-    const keep = cfg.cutMixed.keep * s, hp = W.HandR; let cut = 0; const out = [];
+    const keep = cfg.cutMixed.keep * s; let cut = 0; const out = [];
     for (let t = 0; t < index.length; t += 3) {
-      const a = index[t], b = index[t + 1], c = index[t + 2], k = isHard[a] + isHard[b] + isHard[c];
-      if (k > 0 && k < 3) { const cx = (pos[3 * a] + pos[3 * b] + pos[3 * c]) / 3 - hp.x, cy = (pos[3 * a + 1] + pos[3 * b + 1] + pos[3 * c + 1]) / 3 - hp.y, cz = (pos[3 * a + 2] + pos[3 * b + 2] + pos[3 * c + 2]) / 3 - hp.z; if (Math.hypot(cx, cy, cz) > keep) { cut++; continue; } }
+      const a = index[t], b = index[t + 1], c = index[t + 2], k = (isHard[a] > 0) + (isHard[b] > 0) + (isHard[c] > 0);
+      if (k > 0 && k < 3) { const hp = W[bones[(isHard[a] || isHard[b] || isHard[c]) - 1].name.replace('Bone_', '')]; const cx = (pos[3 * a] + pos[3 * b] + pos[3 * c]) / 3 - hp.x, cy = (pos[3 * a + 1] + pos[3 * b + 1] + pos[3 * c + 1]) / 3 - hp.y, cz = (pos[3 * a + 2] + pos[3 * b + 2] + pos[3 * c + 2]) / 3 - hp.z; if (Math.hypot(cx, cy, cz) > keep) { cut++; continue; } }
       out.push(a, b, c);
     }
     index = out; console.log(`  cắt ${cut} tam giác nối vũ khí–thân`);
@@ -189,7 +216,7 @@ export async function importFused(id, def, outRoot, here) {
   let off = align4(bin.length); const parts = [bin, Buffer.alloc(off - bin.length)];
   json.images = []; json.textures = []; json.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }];
   const addTex = (imgIdx) => {
-    const data = src.imgs[imgIdx]; const bv = json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: data.length }) - 1;
+    const data = cfg.texMax ? shrinkJpeg(src.imgs[imgIdx], cfg.texMax) : src.imgs[imgIdx]; const bv = json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: data.length }) - 1;
     json.images.push({ bufferView: bv, mimeType: 'image/jpeg' }); json.textures.push({ sampler: 0, source: json.images.length - 1 });
     parts.push(data, Buffer.alloc(align4(data.length) - data.length)); off += align4(data.length);
     return json.textures.length - 1;

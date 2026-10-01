@@ -1,7 +1,7 @@
 {
   "model": "bong_tre.glb",
   "scale": 100,
-  "height": 172,
+  "height": 220,
   "runRefSpeed": 345,
   "hitTime": {
     "Attack1": 0.2,
@@ -31,5 +31,10 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen"
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "ronin_pbr_100000.glb",
+  "portrait": {
+    "dist": 2.1,
+    "dy": -0.28
+  }
 }
