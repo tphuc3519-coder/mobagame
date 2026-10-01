@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rngFor, fbm } from './noise.js';
 import { heightAt } from './terrain.js';
+import { buildTrees } from './trees.js';
 
 export const WIND = { value: 0 };
 
@@ -112,8 +113,8 @@ export function buildFoliage(map, density = 1) {
   const trees = put(Math.round(160 * density), (x, z) => (z < R.y ? dzOf(z) > 800 : dzOf(z) > 1500) && !(inGap(x) && dzOf(z) < 1500) && !nearRiver(x, 330), (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.85, 1.55), sy: r.range(0.9, 1.7), sz: 0 }));
   const tint = new THREE.Color();
   trees.forEach((t) => { t.sz = t.sx; t.pine = fbm(t.x / 1600 + 9, t.z / 1600) > 0.56 || r.next() < 0.15; t.color = tint.setRGB(r.range(0.86, 1.0), r.range(0.9, 1.0), r.range(0.8, 0.96), THREE.SRGBColorSpace).getHex(); });
-  g.add(scatterChunked(treeGeo(), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.06), trees.filter((t) => !t.pine), true));
-  g.add(scatterChunked(pineGeo(), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.04), trees.filter((t) => t.pine), true));
+  trees.forEach((t) => { t.type = t.pine ? 'pine' : r.next() < 0.4 ? 'tall' : r.next() < 0.12 ? 'blossom' : 'oak'; t.sy = t.sx; });
+  g.add(buildTrees(trees, density));
   const casters = trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * (t.sy || t.sx), k: 0.6 }));
 
   const rockMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, color: 0xb4ad9e });

@@ -155,9 +155,9 @@ export const ARENA = {
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 850, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
-    tower('temple_outer', 'outer', 800, 2500, null), tower('temple_inner', 'inner', 800, 3700, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
+    tower('temple_outer', 'outer', 800, 1700, null), tower('temple_inner', 'inner', 800, 3350, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
     tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
-    tower('river_outer', 'outer', 3900, 5600, null), tower('river_inner', 'inner', 2700, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),
+    tower('river_outer', 'outer', 4700, 5600, null), tower('river_inner', 'inner', 3350, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
@@ -165,7 +165,7 @@ export const ARENA = {
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
-    ...[[1300, 1700], [650, 3100], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
+    ...[[1300, 1700], [650, 3100], [3650, 4350], [4950, 5850]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
     ...[[2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.

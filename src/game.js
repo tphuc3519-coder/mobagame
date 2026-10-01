@@ -65,7 +65,7 @@ const { renderer } = createRenderer(document.getElementById('world'), level, {
   onLost: () => { loop.pause(); document.getElementById('lost').classList.add('on'); },
   onRestored: () => { document.getElementById('lost').classList.remove('on'); loop.resume(); },
 });
-addLights(scene, renderer);
+const sun = addLights(scene, renderer, level);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 const views = createUnitViews(scene, 0, player.id);
 const indicators = createIndicators(scene);
@@ -129,7 +129,7 @@ const loopCfg = {
     buttons.update(); spells.update(); shop.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
-    cam.follow(px, py, d.x, d.y, dt);
+    cam.follow(px, py, d.x, d.y, dt); sun.follow(px, py);
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
     if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
@@ -148,7 +148,7 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance, portraits }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : loop.resume()));
 return window.__game;

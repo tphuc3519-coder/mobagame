@@ -4,13 +4,17 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { LEVELS } from './quality.js';
 
 /** Chỉnh màu cuối (sau tone map): tương phản nhẹ, giảm bão hoà chút cho bớt "đồ chơi", bóng ngả lạnh, sáng ngả ấm, viền tối (vignette). */
 const GRADE = {
-  uniforms: { tDiffuse: { value: null } },
+  uniforms: { tDiffuse: { value: null }, uPx: { value: new THREE.Vector2(1 / 1280, 1 / 720) }, uSharp: { value: 0.35 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 uPx; uniform float uSharp; varying vec2 vUv;
     void main(){ vec4 c = texture2D(tDiffuse, vUv); vec3 x = c.rgb;
+      // làm nét (unsharp mask 4 lân cận, giới hạn để không tạo viền trắng)
+      vec3 nb = texture2D(tDiffuse, vUv + vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv - vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv + vec2(0.0, uPx.y)).rgb + texture2D(tDiffuse, vUv - vec2(0.0, uPx.y)).rgb;
+      x = clamp(x + clamp((x * 4.0 - nb) * uSharp, -0.08, 0.08), 0.0, 1.0);
       float l = dot(x, vec3(0.299, 0.587, 0.114));
       x = mix(vec3(l), x, 0.9);                                         // bão hoà 90%
       x = (x - 0.5) * 1.08 + 0.5;                                        // tương phản
@@ -21,11 +25,14 @@ const GRADE = {
 
 /** Hậu kỳ trong trận: bloom chỉ bắt phần rất sáng (đèn lồng, lõi trụ, phần phát sáng của tướng, vệt nước). Tắt ở mức Thấp. */
 export function createPost(renderer, scene, camera, level) {
-  const composer = new EffectComposer(renderer);
+  const msaa = LEVELS[level]?.msaa || 0; // khử răng cưa: render target nhiều mẫu (khung mặc định có antialias không áp dụng cho hậu kỳ)
+  const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: msaa });
+  const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), level === 'high' ? 0.55 : 0.45, 0.5, 1.0);
-  composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(new ShaderPass(GRADE));
-  const resize = () => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); bloom.resolution.set(innerWidth / 2, innerHeight / 2); };
+  const grade = new ShaderPass(GRADE); grade.uniforms.uSharp.value = level === 'high' ? 0.4 : 0.32;
+  composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);
+  const resize = () => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); bloom.resolution.set(innerWidth / 2, innerHeight / 2); const pr = renderer.getPixelRatio(); grade.uniforms.uPx.value.set(1 / (innerWidth * pr), 1 / (innerHeight * pr)); };
   addEventListener('resize', resize); resize();
   return { render: () => composer.render(), composer };
 }

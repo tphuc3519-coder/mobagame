@@ -88,7 +88,14 @@ export function groundMaterial(baked) {
       vec3 bed = mix(dt * vec3(0.48, 0.56, 0.55), st * vec3(0.5, 0.58, 0.6), smoothstep(0.4, 0.6, nz2.b));
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
       c *= mix(0.42, 1.0, sp.b);                                                                         // bóng nướng sẵn
-      diffuseColor.rgb *= c;`);
+      diffuseColor.rgb *= c;`).replace('#include <opaque_fragment>', `
+      #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+        // bóng thật của nhân vật: tối thêm cả phần sáng môi trường cho đậm ngang bóng nướng sẵn
+        DirectionalLightShadow dls0 = directionalLightShadows[ 0 ];
+        float unitSh = getShadow( directionalShadowMap[ 0 ], dls0.shadowMapSize, dls0.shadowIntensity, dls0.shadowBias, dls0.shadowRadius, vDirectionalShadowCoord[ 0 ] );
+        outgoingLight *= mix( 0.6, 1.0, unitSh );
+      #endif
+      #include <opaque_fragment>`);
   };
   mat.customProgramCacheKey = () => 'ground-splat';
   return mat;

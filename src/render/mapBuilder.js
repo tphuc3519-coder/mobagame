@@ -55,7 +55,7 @@ export function buildMap(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; g.add(mesh);
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
   }
   const stone = (w, h, d, x, y, z, k = 1.6, color = 0xe8e0d0) => { // khối đá xếp: cả chiều cao một ảnh, chiều dài lặp theo tỉ lệ
     const geo = new THREE.BoxGeometry(w, h, d), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.max(w, d) / (h * k), uv.getY(i));

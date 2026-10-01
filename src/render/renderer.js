@@ -8,6 +8,7 @@ export function createRenderer(canvas, level, { onLost, onRestored }) {
   renderer.setClearColor(0x0f1224);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.9;
+  if (LEVELS[level].shadow) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; } // chỉ nhân vật đổ bóng thật (cảnh tĩnh dùng bóng nướng sẵn)
   const resize = () => {
     renderer.setPixelRatio(Math.min(devicePixelRatio, LEVELS[level].pixelRatio));
     renderer.setSize(innerWidth, innerHeight, false);

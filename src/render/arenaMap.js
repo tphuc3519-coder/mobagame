@@ -6,7 +6,8 @@ import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
 import { buildRockWalls, buildCampSites, campRadius } from './env/jungleDecor.js';
-import { WIND, sway, treeGeo, pineGeo, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
+import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
+import { buildTrees } from './env/trees.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -51,12 +52,24 @@ export function buildArena(scene, map, level = 'mid') {
   const inPlay = (x, z) => outside(x, z) < 0;
   const plazas = [0, 1].flatMap((tm) => [tm ? map.mirror(map.fountain.x, map.fountain.y) : map.fountain]);
   const clear = (x, z, lane = halfW + 260) => laneDist(x, z) > lane && plazas.every((q) => Math.hypot(x - q.x, z - q.y) > 900) && riverDist(x, z) > rw / 2 + 160 && !blockedByWall(x, z, 220) && !map.structures.some((s) => [s, map.mirror(s.x, s.y)].some((q) => Math.hypot(x - (q.x ?? s.x), z - (q.y ?? s.y)) < 420));
-  const trees = put(Math.round(620 * dens), (x, z) => outside(x, z) > 330, /* cây chỉ ở rừng viền ngoài; trong sân chỉ có bụi núp */ (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
-  const tint = new THREE.Color();
+  const trees = put(Math.round(620 * dens), (x, z) => outside(x, z) > (z > map.h - M ? 650 : 330), /* mép dưới (phía camera) lùi xa để không che */ /* cây chỉ ở rừng viền ngoài; trong sân chỉ có bụi núp */ (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
+  const tint = new THREE.Color(), tint0 = new THREE.Color();
   trees.forEach((t) => { t.sz = t.sx; t.pine = fbm(t.x / 1600 + 9, t.z / 1600) > 0.56 || r.next() < 0.12; t.color = tint.setRGB(r.range(0.86, 1.0), r.range(0.9, 1.0), r.range(0.8, 0.96), THREE.SRGBColorSpace).getHex(); }); // mỗi cây một sắc độ
-  const leafMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.06), broad = trees.filter((t) => !t.pine), pines = trees.filter((t) => t.pine);
-  g.add(scatterChunked(treeGeo(), leafMat, broad, true));
-  g.add(scatterChunked(pineGeo(), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.04), pines, true));
+  trees.forEach((t) => { t.type = t.pine ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak'; });
+  // rừng dày ngay sau Suối Đèn mỗi đội (ngoài sân chơi): cây lá rộng to + vài cây hoa hồng hai bên hàng cột cổng
+  for (const f of plazas) {
+    const away = Math.atan2(f.y - map.h / 2, f.x - map.w / 2);
+    for (let i = 0, n = 0; n < Math.round(110 * Math.max(0.6, dens)) && i < 3000; i++) {
+      const a = away + r.range(-1.75, 1.75), d = r.range(780, 2900), x = f.x + Math.cos(a) * d, z = f.y + Math.sin(a) * d, o = outside(x, z);
+      const camSide = z > f.y + 200; // phía camera (+z): lùi xa + thấp hơn để không che sân Suối
+      if (o < 120 || (camSide && o < 750) || trees.some((q) => Math.hypot(q.x - x, q.z - z) < 150)) continue;
+      const near = d < 1500, bl = near && r.next() < 0.45;
+      const tint = tint0.setRGB(r.range(0.88, 1.0), r.range(0.9, 1.0), r.range(0.82, 0.96), THREE.SRGBColorSpace).getHex();
+      trees.push({ x, y: heightAt(x, z) - 8, z, ry: r.range(0, 7), sx: r.range(1.0, 1.45) * (near ? 1 : 1.2) * (camSide ? 0.8 : 1), sz: 0, type: bl ? 'blossom' : r.next() < 0.25 ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak', color: bl ? 0xffffff : tint }); n++;
+    }
+  }
+  trees.forEach((t) => { t.sz = t.sx; });
+  g.add(buildTrees(trees, dens));
   const rockMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, color: 0xb4ad9e }), allRocks = [];
   for (const [seed, n] of [[1, 0.6], [7, 0.6]]) {
     const rocks = put(Math.round(150 * dens * n), (x, z) => outside(x, z) > 220 || (inPlay(x, z) && clear(x, z, halfW + 300) && r.next() < 0.3), (x, y, z) => ({ x, y: y + 6, z, ry: r.range(0, 7), sx: r.range(50, 170), sy: r.range(35, 120), sz: r.range(50, 170), color: r.next() < 0.3 ? 0xc8d0b0 : 0xffffff }));
@@ -99,7 +112,7 @@ export function buildArena(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; g.add(mesh);
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
     groundMap = baked; river.setMask?.(baked);
     // đá vụn lác đác dọc mép đường (thay lề đá thẳng tắp)
     const edge = [];

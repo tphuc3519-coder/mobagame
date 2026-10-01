@@ -11,25 +11,28 @@ import { canSee, bushAt } from '../sim/vision.js';
 import { createMonster } from './monsters.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
+/** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không. */
+const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
 
 /** Entity mô phỏng ↔ object 3D. Render chỉ đọc trạng thái (nội suy prevPos → pos). */
 export function createUnitViews(scene, localTeam, localId) {
   const views = new Map();
-  const spawn = (e) => {
+  const spawn = (e, world) => {
     const root = new THREE.Group();
     if (!e.structure) root.add(createBlobShadow(e.radius));
     scene.add(root);
     const v = { root, animator: null, mats: null, angle: e.facing, lift: null, flash: 0, ghost: false, art: null, part: null, fall: 0 };
     views.set(e.id, v);
     if (e.kind === 'tower' || e.kind === 'core' || e.kind === 'fountain') {
-      v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team);
+      v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team, Math.min(1, (world.map.fountain?.healRadius || 650) / 650));
+      if (e.kind === 'fountain') { const m = world.map, a = Math.atan2(m.h / 2 - e.pos.y, m.w / 2 - e.pos.x); v.part.object.rotation.y = -a + Math.PI / 2; } // lối vào quay ra giữa bản đồ
       if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
       root.add(v.part.object); return v;
     }
-    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); return v; }
-    if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); v.atk = 0; return v; }
+    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); return v; }
+    if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
-    const attach = (obj) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim); };
+    const attach = (obj) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim); castShadows(obj); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
     const useCapsule = () => { const c = createCapsule(); attach(c.object); v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} }; };
     loadHero(e.heroId).then((m) => {
@@ -59,7 +62,7 @@ export function createUnitViews(scene, localTeam, localId) {
       const alive = new Set();
       for (const e of world.entities) {
         alive.add(e.id);
-        const v = views.get(e.id) || spawn(e);
+        const v = views.get(e.id) || spawn(e, world);
         const y = v.lift ? Math.sin(Math.min(1, v.lift.t / v.lift.dur) * Math.PI) * v.lift.h : 0;
         if (v.lift) { v.lift.t += dt; if (v.lift.t >= v.lift.dur) v.lift = null; }
         v.root.position.set(lerp(e.prevPos.x, e.pos.x, alpha), y, lerp(e.prevPos.y, e.pos.y, alpha));

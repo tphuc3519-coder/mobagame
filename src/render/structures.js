@@ -144,27 +144,162 @@ export function createCore(team) {
   return finish(g, lan, (t, dt, dead) => { core.rotation.y += dt * 0.4; rings[0].rotation.set(t * 0.5, t * 0.3, 0); rings[1].rotation.set(-t * 0.35, 0, t * 0.45); rings[2].rotation.set(Math.PI / 2, t * 0.2, 0); beam.visible = !dead; runeMat.color.copy(base).multiplyScalar(dead ? 0.2 : 1.4 + 0.4 * Math.sin(t * 2)); });
 }
 
-export function createFountain(team) {
-  const g = new THREE.Group();
-  const stone = [at(new THREE.CylinderGeometry(260, 275, 30, 32), 0, 15, 0)], gold = [at(new THREE.TorusGeometry(262, 7, 6, 64), 0, 32, 0, Math.PI / 2)];
-  stone.push(at(new THREE.TorusGeometry(245, 16, 8, 48), 0, 34, 0, Math.PI / 2));
-  // trụ đèn quanh hồ
-  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + 0.5; stone.push(at(new THREE.CylinderGeometry(14, 18, 120, 8), Math.sin(a) * 262, 90, Math.cos(a) * 262)); gold.push(at(new THREE.SphereGeometry(20, 10, 8), Math.sin(a) * 262, 160, Math.cos(a) * 262)); }
-  // bệ giữa hình sen nhỏ
-  stone.push(at(new THREE.CylinderGeometry(40, 60, 70, 16), 0, 45, 0));
-  g.add(merged(stone, M.stone), merged(gold, M.gold));
-  const wmat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uT: { value: 0 }, uC: { value: new THREE.Color(TEAM_COL[team]) } },
-    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP; void main(){ float r = length(vP) / 240.0;
-      float ring = 0.5 + 0.5 * sin(r * 38.0 - uT * 3.0); vec3 c = mix(uC * 0.5, uC * 1.3, ring * (1.0 - r)); gl_FragColor = vec4(c + vec3(0.15) * pow(ring, 8.0), 0.78); }` });
-  const water = new THREE.Mesh(new THREE.CircleGeometry(240, 48), wmat); water.rotation.x = -Math.PI / 2; water.position.y = 30; g.add(water);
-  // cột nước sáng ở giữa
-  const jet = new THREE.Mesh(new THREE.CylinderGeometry(10, 26, 160, 12, 1, true), new THREE.MeshBasicMaterial({ color: TEAM_COL[team], transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }));
-  jet.position.y = 160; g.add(jet);
-  const lamps = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(Array.from({ length: 6 }, (_, i) => { const a = (i / 6) * Math.PI * 2 + 0.5; return [Math.sin(a) * 262, 165, Math.cos(a) * 262]; }).flat(), 3)),
-    new THREE.PointsMaterial({ map: glowTexture(), color: TEAM_COL[team], size: 160, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  g.add(lamps);
-  return { object: g, update(dt) { wmat.uniforms.uT.value += dt; jet.scale.y = 1 + Math.sin(wmat.uniforms.uT.value * 5) * 0.08; } };
+/** SUỐI ĐÈN (chỗ hồi sinh) — khác hẳn trụ/tế đàn: sân thiêng tròn lát đá có vòng ấn sáng màu đội (đúng vùng hồi máu),
+ *  giữa sân là đài phun sen ba tầng nước chảy tràn, trên đỉnh treo lơ lửng một chiếc đèn lồng giấy lục giác khổng lồ xoay chậm;
+ *  vòng đèn đá quanh mép, hàng cột cổng có phướn màu đội ôm phía sau, linh hồn đom đóm bay xoắn lên. Lối vào (+Z) quay ra giữa bản đồ.
+ *  scale: 1 ở 5v5 (vùng hồi 650), nhỏ hơn ở 1v1. */
+export function createFountain(team, scale = 1) {
+  const root = new THREE.Group(), g = new THREE.Group(); root.add(g); g.scale.setScalar(scale);
+  const C = new THREE.Color(TEAM_COL[team]), RT = 500;
+  const stone = [], dark = [], gold = [], flag = [];
+  // —— sân: nền lát đá tròn sát đất (tướng đi lại trên đó) + lan can đá thấp chỉ ở nửa sau, chừa trống phía trước (+Z) ——
+  const behind = (a, lim) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a)) - Math.PI / 2) > lim; // xa hướng lối vào
+  stone.push(octo(RT + 4, RT + 22, 8, 4, 48, 150));
+  flag.push(uvs(at(new THREE.CircleGeometry(RT + 4, 48), 0, 8.5, 0, -Math.PI / 2), 2.8, 2.8));
+  for (let i = 0; i < 40; i++) {
+    const a = (i / 40) * Math.PI * 2; if (!behind(a, 1.95)) continue;
+    const b = uvs(new THREE.BoxGeometry(70, 34, 26), 0.5, 0.25); b.rotateY(-a + Math.PI / 2); b.translate(Math.cos(a) * (RT + 10), 22, Math.sin(a) * (RT + 10)); stone.push(b);
+    if (i % 3 === 0) { const c = uvs(new THREE.BoxGeometry(34, 58, 34), 0.3, 0.4); c.rotateY(-a); c.translate(Math.cos(a) * (RT + 10), 29, Math.sin(a) * (RT + 10)); dark.push(c); }
+  }
+  // —— đài phun sen ba tầng ——
+  stone.push(octo(232, 244, 58, 29, 16, 120)); dark.push(octo(212, 212, 6, 60, 16, 120));
+  stone.push(uvs(at(new THREE.CylinderGeometry(34, 56, 150, 12), 0, 110, 0), 2, 1)); // thân sen
+  stone.push(octo(120, 66, 36, 186, 16, 80), octo(58, 26, 26, 276, 12, 60), uvs(at(new THREE.CylinderGeometry(18, 24, 70, 10), 0, 236, 0), 1, 0.6));
+  gold.push(at(new THREE.TorusGeometry(238, 5, 6, 64), 0, 58, 0, Math.PI / 2), at(new THREE.TorusGeometry(120, 4, 6, 48), 0, 204, 0, Math.PI / 2), at(new THREE.TorusGeometry(58, 3, 6, 32), 0, 289, 0, Math.PI / 2));
+  // —— đèn đá quanh mép sân (kiểu đèn đá chùa) ——
+  const lampPos = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8; if (!behind(a, 1.5)) continue; // đèn đá hai bên + phía sau
+    const x = Math.cos(a) * (RT - 34), z = Math.sin(a) * (RT - 34);
+    stone.push(uvs(at(new THREE.CylinderGeometry(30, 38, 26, 6), x, 21, z), 0.6, 0.2), uvs(at(new THREE.CylinderGeometry(13, 16, 140, 6), x, 104, z), 0.4, 0.8), uvs(at(new THREE.CylinderGeometry(34, 26, 16, 6), x, 182, z), 0.6, 0.15));
+    dark.push(at(new THREE.BoxGeometry(40, 46, 40), x, 217, z, 0, -a));
+    const rf = curvedRoof(44, 26, 0.8); rf.translate(x, 240, z); dark.push(rf.index ? rf.toNonIndexed() : rf);
+    gold.push(at(new THREE.SphereGeometry(7, 8, 6), x, 272, z));
+    lampPos.push([x, 217, z, a]);
+  }
+  // —— hàng cột cổng ôm phía sau (−Z), dầm cong nối đầu cột ——
+  const back = [-70, -35, 0, 35, 70].map((d) => d * Math.PI / 180 - Math.PI / 2); // 5 cột trên cung sau (−Z)
+  const RP = RT + 70, tops = [];
+  for (const a of back) {
+    const x = Math.cos(a) * RP, z = Math.sin(a) * RP;
+    stone.push(uvs(at(new THREE.BoxGeometry(56, 440, 56), x, 230, z, 0, -a), 0.45, 3));
+    dark.push(at(new THREE.BoxGeometry(76, 34, 76), x, 17, z, 0, -a), at(new THREE.BoxGeometry(80, 26, 80), x, 460, z, 0, -a));
+    gold.push(at(new THREE.ConeGeometry(26, 60, 4), x, 503, z, 0, -a + Math.PI / 4));
+    tops.push([x, z]);
+  }
+  for (let i = 0; i + 1 < tops.length; i++) { // dầm ngang + mái ngói nhỏ trên dầm
+    const [x1, z1] = tops[i], [x2, z2] = tops[i + 1], L = Math.hypot(x2 - x1, z2 - z1), ang = Math.atan2(z2 - z1, x2 - x1);
+    const bm = uvs(new THREE.BoxGeometry(L + 40, 30, 40), L / 120, 0.25); bm.rotateY(-ang); bm.translate((x1 + x2) / 2, 430, (z1 + z2) / 2); dark.push(bm);
+  }
+  { const fl = merged(flag, flagMat()), st = merged(stone, stoneMat()); fl.receiveShadow = st.receiveShadow = true; g.add(st, merged(dark, stoneMatDark()), merged(gold, M.gold), fl); }
+  // phướn màu đội giữa các cột (đung đưa)
+  const banners = [];
+  for (let i = 0; i + 1 < tops.length; i++) {
+    const [x1, z1] = tops[i], [x2, z2] = tops[i + 1], bn = new THREE.Mesh(new THREE.PlaneGeometry(70, 260, 1, 6), bannerMat(team));
+    bn.geometry.translate(0, -130, 0); bn.position.set((x1 + x2) / 2, 410, (z1 + z2) / 2); bn.rotation.y = -Math.atan2(z2 - z1, x2 - x1); g.add(bn); banners.push(bn);
+  }
+  // —— vòng ấn sáng trên sân (đúng vùng hồi máu) + hoa văn sen mờ giữa sân ——
+  const U = { uT: { value: 0 }, uC: { value: C.clone() } };
+  const rune = new THREE.Mesh(new THREE.RingGeometry(RT - 110, RT - 30, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
+      void main(){ float r = length(vP), a = atan(vP.y, vP.x); float k = (r - ${RT - 110}.0) / 80.0;
+        float edge = smoothstep(0.0, 0.08, k) * smoothstep(1.0, 0.92, k);
+        float lines = smoothstep(0.06, 0.0, abs(k - 0.18)) + smoothstep(0.06, 0.0, abs(k - 0.82));
+        float glyph = step(0.55, fract(a * 24.0 / 6.2832)) * step(0.3, k) * step(k, 0.7) * step(0.35, fract(a * 72.0 / 6.2832 + k));
+        float pulse = 0.6 + 0.4 * sin(uT * 1.6 - a * 2.0);
+        float v = (lines + glyph * 0.8) * edge * pulse;
+        gl_FragColor = vec4(uC * (1.2 + v), v * 0.9); }` }));
+  rune.rotation.x = -Math.PI / 2; rune.position.y = 9.5; g.add(rune);
+  const mandala = new THREE.Mesh(new THREE.RingGeometry(250, RT - 120, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
+      void main(){ float r = length(vP) / ${RT - 120}.0, a = atan(vP.y, vP.x);
+        float petal = abs(cos(a * 6.0)); float shape = smoothstep(0.02, 0.0, abs(r - (0.78 + 0.2 * pow(petal, 3.0))));
+        float v = shape * (0.5 + 0.5 * sin(uT * 2.0 + r * 10.0));
+        gl_FragColor = vec4(uC * 1.4, v * 0.55); }` }));
+  mandala.rotation.x = -Math.PI / 2; mandala.position.y = 9.2; g.add(mandala);
+  // —— mặt nước ba tầng + màn nước chảy tràn ——
+  const W = { uT: U.uT, uC: U.uC };
+  const waterMat = new THREE.ShaderMaterial({ uniforms: W, transparent: true, depthWrite: false,
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
+      void main(){ float r = length(vP); float w = sin(r * 0.11 - uT * 3.0) * 0.5 + 0.5; w = pow(w, 6.0);
+        float c2 = sin(vP.x * 0.05 + uT) * sin(vP.y * 0.06 - uT * 1.3) * 0.5 + 0.5;
+        vec3 deep = mix(vec3(0.05, 0.22, 0.3), uC * 0.5, 0.35), lit = mix(vec3(0.6, 0.95, 1.0), uC, 0.35);
+        gl_FragColor = vec4(mix(deep, lit, w * 0.6 + c2 * 0.25) + vec3(0.9) * pow(w * c2, 3.0), 0.86); }` });
+  for (const [r, y] of [[214, 56], [112, 202], [52, 287]]) { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40), waterMat); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); }
+  const fallMat = new THREE.ShaderMaterial({ uniforms: W, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vUv;
+      void main(){ float x = vUv.x * 6.2832;
+        float lines = 0.5 + 0.5 * sin(x * 38.0 + sin(x * 7.0) * 2.0) * sin(x * 23.0 + 1.3);       // sợi nước mảnh dọc
+        float flow = 0.5 + 0.5 * sin((vUv.y * 9.0 + uT * 4.0) + sin(x * 11.0) * 2.0);             // nhịp chảy xuống
+        float a = (0.05 + 0.28 * lines * lines * (0.4 + 0.6 * flow)) * smoothstep(0.0, 0.25, vUv.y) * (0.6 + 0.4 * vUv.y);
+        gl_FragColor = vec4(mix(vec3(0.75, 0.94, 1.0), uC, 0.3) * (0.85 + 0.4 * lines * flow), a); }` });
+  for (const [r0, r1, y0, y1] of [[121, 150, 186, 60], [59, 86, 276, 204]]) { const f = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, y0 - y1, 40, 1, true), fallMat); f.position.y = (y0 + y1) / 2; g.add(f); }
+  // —— đèn lồng giấy lục giác khổng lồ treo lơ lửng trên đỉnh ——
+  const lanG = new THREE.Group(); lanG.position.y = 470; g.add(lanG);
+  const paper = new THREE.Mesh(new THREE.CylinderGeometry(78, 78, 150, 6, 4, true), lanternPaperMat(team));
+  { const p = paper.geometry.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i) / 75, k = 1 + 0.32 * (1 - y * y); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); } paper.geometry.computeVertexNormals(); }
+  const frame = [at(new THREE.CylinderGeometry(70, 86, 18, 6), 0, 84, 0), at(new THREE.CylinderGeometry(86, 70, 18, 6), 0, -84, 0), at(new THREE.ConeGeometry(30, 50, 6), 0, 116, 0), at(new THREE.SphereGeometry(12, 8, 6), 0, -104, 0)];
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; frame.push(at(new THREE.CylinderGeometry(3.5, 3.5, 160, 4), Math.cos(a) * 96, 0, Math.sin(a) * 96)); }
+  lanG.add(paper, merged(frame, M.gold));
+  const tassel = new THREE.Mesh(new THREE.CylinderGeometry(4, 12, 80, 6), clothMat[team]); tassel.position.y = -150; lanG.add(tassel);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: C.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.75 })); halo.scale.setScalar(720); lanG.add(halo);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(70, 200, 900, 20, 1, true), new THREE.MeshBasicMaterial({ color: C.clone(), transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 470; g.add(beam); // quầng sáng toả xuống mặt nước
+  // quầng sáng ấm của đèn đá
+  const warm = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(lampPos.flatMap(([x, y, z]) => [x, y, z]), 3)),
+    new THREE.PointsMaterial({ map: glowTexture(), color: 0xffb860, size: 150, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  g.add(warm);
+  const winMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc070).multiplyScalar(1.6) });
+  const wins = [];
+  for (const [x, y, z, a] of lampPos) for (let k = 0; k < 4; k++) { const th = -a + k * Math.PI / 2, w = new THREE.PlaneGeometry(22, 26); w.rotateY(th); w.translate(x + Math.sin(th) * 20.5, y, z + Math.cos(th) * 20.5); wins.push(w); }
+  g.add(new THREE.Mesh(mergeGeometries(wins), winMat)); // ô cửa giấy sáng của đèn đá
+  // —— linh hồn đom đóm bay xoắn lên ——
+  const NS = 70, sp = new Float32Array(NS * 3), seed = Array.from({ length: NS }, (_, i) => ({ a: (i * 2.399) % (Math.PI * 2), r: 120 + ((i * 53) % 330), h: (i * 37) % 600, v: 40 + ((i * 29) % 60) }));
+  const spirits = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(sp, 3)),
+    new THREE.PointsMaterial({ map: glowTexture(), color: C.clone().lerp(new THREE.Color(0xffffff), 0.35), size: 38, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  spirits.frustumCulled = false; g.add(spirits);
+  let t = 0;
+  return {
+    object: root,
+    update(dt) {
+      t += dt; U.uT.value = t;
+      lanG.rotation.y += dt * 0.25; lanG.position.y = 470 + Math.sin(t * 1.2) * 12; halo.material.opacity = 0.65 + 0.1 * Math.sin(t * 2.3);
+      banners.forEach((b, i) => { b.rotation.x = Math.sin(t * 1.7 + i) * 0.07; });
+      for (let i = 0; i < NS; i++) { const s = seed[i], h = (s.h + t * s.v) % 600, a = s.a + t * 0.35 + h * 0.004, r = s.r * (1 - h / 1400); sp[i * 3] = Math.cos(a) * r; sp[i * 3 + 1] = 60 + h; sp[i * 3 + 2] = Math.sin(a) * r; }
+      spirits.geometry.attributes.position.needsUpdate = true;
+    },
+  };
+}
+const BANNER = {};
+function bannerMat(team) { // phướn: vải màu đội, viền vàng, hình đèn lồng ở giữa
+  if (BANNER[team]) return BANNER[team];
+  const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d');
+  const col = ['#2f9e90', '#c23c30'][team], dk = ['#1b5e56', '#7a2018'][team];
+  const gr = x.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, dk); gr.addColorStop(0.2, col); gr.addColorStop(1, dk); x.fillStyle = gr; x.fillRect(0, 0, 64, 256);
+  x.strokeStyle = '#e8c070'; x.lineWidth = 4; x.strokeRect(5, 5, 54, 238);
+  x.fillStyle = '#f4dc98'; x.beginPath(); x.ellipse(32, 110, 15, 22, 0, 0, Math.PI * 2); x.fill(); x.fillRect(24, 84, 16, 5); x.fillRect(24, 131, 16, 5); x.fillRect(30, 136, 4, 18);
+  x.beginPath(); x.moveTo(0, 244); x.lineTo(32, 256); x.lineTo(64, 244); x.lineTo(64, 256); x.lineTo(0, 256); x.closePath(); x.globalCompositeOperation = 'destination-out'; x.fill();
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+  return (BANNER[team] = new THREE.MeshLambertMaterial({ map: tx, side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 }));
+}
+function lanternPaperMat(team) { // giấy đèn màu đội sáng từ trong ra, nan tre, dải viền đậm trên/dưới, hoa sen giữa mỗi mặt
+  const c = document.createElement('canvas'); c.width = 384; c.height = 192; const x = c.getContext('2d');
+  const [lt, md, dk] = team ? ['#ffd2a0', '#ff6a3a', '#8a1e10'] : ['#d8fff4', '#3fd8c0', '#0f5a52'];
+  const gr = x.createLinearGradient(0, 0, 0, 192); gr.addColorStop(0, dk); gr.addColorStop(0.12, md); gr.addColorStop(0.5, lt); gr.addColorStop(0.88, md); gr.addColorStop(1, dk);
+  x.fillStyle = gr; x.fillRect(0, 0, 384, 192);
+  x.fillStyle = '#e8c070'; x.fillRect(0, 14, 384, 4); x.fillRect(0, 174, 384, 4);
+  x.strokeStyle = 'rgba(40,20,8,0.55)'; x.lineWidth = 3; for (let i = 0; i <= 6; i++) { x.beginPath(); x.moveTo(i * 64, 0); x.lineTo(i * 64, 192); x.stroke(); }
+  for (let i = 0; i < 6; i++) { // hoa sen cách điệu
+    const cx = i * 64 + 32, cy = 98; x.fillStyle = dk; x.globalAlpha = 0.55;
+    for (let k = -2; k <= 2; k++) { x.save(); x.translate(cx, cy + 14); x.rotate(k * 0.42); x.beginPath(); x.ellipse(0, -16, 7, 18, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+    x.globalAlpha = 1;
+  }
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({ map: tx, color: new THREE.Color(1.15, 1.15, 1.15), side: THREE.DoubleSide });
 }
 
 // Lính: người giấy bồi (kiếm/cung) đội nón, xe đá, người rơm khổng lồ mang đèn. Mỗi loại dùng chung hình học và vật liệu.
