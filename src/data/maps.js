@@ -34,10 +34,10 @@ export function structuresOf(map) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 1.5 → 9600 × 9600
-// cho rộng hơn (băng qua bản đồ ~30 giây thay vì ~20). Chỉ khai báo phía Xanh (dưới trái); phía Đỏ lấy (x, y) → (y, x).
+// Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 2.2 → 14080 × 14080
+// cho rộng hơn (băng qua đường Giữa ~45 giây thay vì ~20 ở bản gốc). Chỉ khai báo phía Xanh (dưới trái); phía Đỏ lấy (x, y) → (y, x).
 // ───────────────────────────────────────────────────────────────────────────
-const K = 1.5, A = 6400 * K;
+const K = 2.2, A = 6400 * K;
 const P = (x, y) => [x * K, y * K];
 const swap = (x, y) => ({ x: y, y: x });
 
@@ -54,7 +54,7 @@ function roundPath(pts, r) {
   return out;
 }
 
-const LANE_W = 800;
+const LANE_W = 880;
 // Ba đường, đi từ nhà chính Xanh sang nhà chính Đỏ (đối xứng nên đường phía Đỏ chỉ là đi ngược lại).
 const BASE = P(800, 5600), FOE = P(5600, 800);
 const LANES = [
@@ -105,18 +105,18 @@ export const ARENA = {
   margin: 260,                        // viền ngoài không đi được (vách núi)
   lanes: LANES,
   river: { width: 500 * K, diag: true },   // chạy theo đường chéo y = x
-  spawn: [{ x: 640, y: 8960 }, { x: 8960, y: 640 }],
+  spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 850, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
     tower('temple_outer', 'outer', 800, 2500, null), tower('temple_inner', 'inner', 800, 3700, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
     tower('mid_outer', 'outer', 2500, 3900, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
     tower('river_outer', 'outer', 3900, 5600, null), tower('river_inner', 'inner', 2700, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),
   ],
-  fountain: { x: 640, y: 8960, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
+  fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
   walls: { thickness: 90, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
-  bushes: [[1250, 1600], [650, 3100], [2050, 3600], [2900, 4050], [3300, 5150], [4800, 5750], [2150, 2750], [3650, 4350]].map(([x, y]) => ({ x: x * K, y: y * K, w: 380, h: 280 })),
+  bushes: [[1250, 1600], [650, 3100], [2050, 3600], [2900, 4050], [3300, 5150], [4800, 5750], [2150, 2750], [3650, 4350]].map(([x, y]) => ({ x: x * K, y: y * K, w: 380 * K / 1.5, h: 280 * K / 1.5 })),
   camps: [], // quái rừng và mục tiêu lớn: chưa có (Mốc 8)
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
   waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, gap: 14, spawnDist: 900 },

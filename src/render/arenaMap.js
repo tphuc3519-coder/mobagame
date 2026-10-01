@@ -101,7 +101,8 @@ export function buildArena(scene, map, level = 'mid') {
   const put = (n, ok, make) => { const out = []; for (let t = 0; out.length < n && t < n * 40; t++) { const x = r.range(-1800, map.w + 1800), z = r.range(-1800, map.h + 1800); if (!ok(x, z)) continue; out.push(make(x, heightAt(x, z), z)); } return out; };
   const outside = (x, z) => M - Math.min(x, z, map.w - x, map.h - z);
   const inPlay = (x, z) => outside(x, z) < 0;
-  const clear = (x, z, lane = halfW + 260) => laneDist(x, z) > lane && riverDist(x, z) > rw / 2 + 160 && !blockedByWall(x, z, 220) && !map.structures.some((s) => [s, map.mirror(s.x, s.y)].some((q) => Math.hypot(x - (q.x ?? s.x), z - (q.y ?? s.y)) < 420));
+  const plazas = [0, 1].flatMap((tm) => [tm ? map.mirror(map.fountain.x, map.fountain.y) : map.fountain]);
+  const clear = (x, z, lane = halfW + 260) => laneDist(x, z) > lane && plazas.every((q) => Math.hypot(x - q.x, z - q.y) > 900) && riverDist(x, z) > rw / 2 + 160 && !blockedByWall(x, z, 220) && !map.structures.some((s) => [s, map.mirror(s.x, s.y)].some((q) => Math.hypot(x - (q.x ?? s.x), z - (q.y ?? s.y)) < 420));
   const trees = put(Math.round(900 * dens), (x, z) => outside(x, z) > 330 || (inPlay(x, z) && clear(x, z, halfW + 420) && fbm(x / 700, z / 700) > 0.45), (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
   trees.forEach((t) => { t.sz = t.sx; });
   g.add(scatter(new THREE.InstancedMesh(treeGeo(), sway(new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x7f9f7c }), 0.06), trees.length), trees, true));

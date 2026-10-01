@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { lerp } from '../core/math.js';
 
-// Camera trận (02 §13.2): FOV 38°, nghiêng 55°. Khoảng cách 1300 (trước là 2000) để tập trung vào tướng; ?camdist= để thử. Đội Đỏ xoay 180° ở Mốc sau.
-export const CAM_DISTANCE = 1300;
-export function createCamera({ distance = CAM_DISTANCE, pitchDeg = 55, fov = 38 } = {}) {
+// Camera trận (02 §13.2): FOV 42°, nghiêng 55°, khoảng cách 1650 (gốc 2000/38°; vòng trước 1300 bị chật); ?camdist= để thử. Đội Đỏ xoay 180° ở Mốc sau.
+export const CAM_DISTANCE = 1650, CAM_FOV = 42;
+export function createCamera({ distance = CAM_DISTANCE, pitchDeg = 55, fov = CAM_FOV } = {}) {
   const camera = new THREE.PerspectiveCamera(fov, 1, 50, 8000);
   const pitch = pitchDeg * Math.PI / 180;
   const target = new THREE.Vector3();
