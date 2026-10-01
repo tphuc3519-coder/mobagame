@@ -116,7 +116,8 @@ export const ARENA = {
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
   walls: { thickness: 90, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
-  bushes: [[1250, 1600], [650, 3100], [2050, 3600], [2900, 4050], [3300, 5150], [4800, 5750], [2150, 2750], [3650, 4350]].map(([x, y]) => ({ x: x * K, y: y * K, w: 380 * K / 1.5, h: 280 * K / 1.5 })),
+  bushes: [[1250, 1600], [650, 3100], [2050, 3600], [2900, 4050], [3300, 5150], [4800, 5750], [2150, 2750], [3650, 4350]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
+  vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)
   camps: [], // quái rừng và mục tiêu lớn: chưa có (Mốc 8)
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
   waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, gap: 14, spawnDist: 900 },

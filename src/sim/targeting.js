@@ -1,5 +1,6 @@
 import { dist, dirTo } from './util.js';
 import { isStealthed, isUntargetable } from './status.js';
+import { canSee } from './vision.js';
 
 export const isTargetable = (viewer, t) => t.alive && !t.noTarget && !isUntargetable(t) && (t.team === viewer.team || !isStealthed(t));
 export const enemiesOf = (world, e) => world.entities.filter((t) => t.team !== e.team && t.alive && !t.noTarget && !isUntargetable(t));
@@ -9,7 +10,7 @@ export const alliesOf = (world, e, range = Infinity) => world.entities.filter((t
 export function nearestEnemy(world, e, range, preferId = null) {
   let best = null, bd = Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || !isTargetable(e, t)) continue;
+    if (t.team === e.team || !isTargetable(e, t) || !canSee(e.team, t)) continue;
     const d = dist(t.pos, e.pos) - t.radius;
     if (d > range) continue;
     if (t.id === preferId) return t;
@@ -21,7 +22,7 @@ export function nearestEnemy(world, e, range, preferId = null) {
 export function enemyAlongDir(world, e, dir, range) {
   let best = null, bd = Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || !isTargetable(e, t)) continue;
+    if (t.team === e.team || !isTargetable(e, t) || !canSee(e.team, t)) continue;
     const d = dist(t.pos, e.pos); if (d > range + t.radius) continue;
     const dd = dirTo(e.pos, t.pos);
     if (dd.x * dir.x + dd.y * dir.y > 0.5 && d < bd) { bd = d; best = t; }

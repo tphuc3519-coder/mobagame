@@ -13,6 +13,7 @@ import { buildNavGrid } from './navgrid.js';
 import { spawnStructures, updateStructures, onHeroDamaged } from './structures.js';
 import { updateWaves, updateMinions } from './minions.js';
 import { checkMatch } from './match.js';
+import { updateVision } from './vision.js';
 import { initEconomy, updateEconomy } from './economy.js';
 import { SPELLS } from '../data/spells.js';
 import { equip, computeBonus } from './inventory.js';
@@ -81,6 +82,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
       updateItems(world, e);
       e.data.passive?.hooks?.onTick?.(makeCtx(world, e));
     }
+    updateVision(world);
     updateEconomy(world);
     if (world.waves) updateWaves(world);
     updateMinions(world);

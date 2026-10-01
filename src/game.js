@@ -11,6 +11,7 @@ import { addLights } from './render/lights.js';
 import { createCamera, CAM_DISTANCE } from './render/camera.js';
 import { buildArena } from './render/arenaMap.js';
 import { createMinimap } from './hud/minimap.js';
+import { createFog } from './render/fog.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
 import { createFx } from './render/fx.js';
@@ -57,7 +58,7 @@ if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, rea
 if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts.charmId]; player.bonus = computeBonus(player); }
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(FOG_COLOR, 2600, 6200);
+scene.fog = new THREE.Fog(FOG_COLOR, 4200, 9500); // xa hơn vì camera đã lùi (2400)
 const { renderer } = createRenderer(document.getElementById('world'), level, {
   onLost: () => { loop.pause(); document.getElementById('lost').classList.add('on'); },
   onRestored: () => { document.getElementById('lost').classList.remove('on'); loop.resume(); },
@@ -69,7 +70,8 @@ const fx = createFx(scene);
 const indicators = createIndicators(scene);
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
 cam.resize(innerWidth, innerHeight);
-const minimap = createMinimap({ world, player, map, cam });
+const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
+const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar });
 const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -125,6 +127,7 @@ const loop = createLoop({
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
     const i = renderer.info.render;
+    fogOfWar?.update(world, dt);
     minimap.draw();
     hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },

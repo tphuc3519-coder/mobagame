@@ -5,6 +5,7 @@ import { mulberry32 } from '../core/rng.js';
 import { T, dist, norm } from '../sim/util.js';
 import { mitigate } from '../sim/damage.js';
 import { isTargetable } from '../sim/targeting.js';
+import { canSee } from '../sim/vision.js';
 import { quickBuys } from '../sim/inventory.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
 import { minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
@@ -65,10 +66,10 @@ function think(bot) {
   const { world, e, cfg, path } = bot;
   if (!e.alive) { bot.state = 'DEAD'; return; }
   const heroesOf = (team) => world.entities.filter((h) => h.kind === 'hero' && h.alive && h.team === team);
-  const foes = heroesOf(1 - e.team).filter((f) => isTargetable(e, f) && dist(f.pos, e.pos) < 1500).sort((a, b) => dist(a.pos, e.pos) - dist(b.pos, e.pos));
+  const foes = heroesOf(1 - e.team).filter((f) => isTargetable(e, f) && canSee(e.team, f) && dist(f.pos, e.pos) < 1500).sort((a, b) => dist(a.pos, e.pos) - dist(b.pos, e.pos));
   const allies = heroesOf(e.team).filter((a) => a !== e && dist(a.pos, e.pos) < 1300);
   const foe = foes[0] || null, fd = foe ? dist(foe.pos, e.pos) : Infinity, h = hp01(e);
-  const mine = minionsOf(world, e.team).filter((m) => m.lane === bot.laneIdx), theirs = minionsOf(world, 1 - e.team).filter((m) => m.lane === bot.laneIdx);
+  const mine = minionsOf(world, e.team).filter((m) => m.lane === bot.laneIdx), theirs = minionsOf(world, 1 - e.team).filter((m) => m.lane === bot.laneIdx && canSee(e.team, m));
   const home = bot.home(), atHome = dist(e.pos, home) < 550, me = project(path, e.pos);
 
   const qb = quickBuys(e, 1)[0]; if (qb?.ok) world.command(e.id, { type: 'buy', item: qb.id });

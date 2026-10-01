@@ -15,7 +15,7 @@ export function buildSky() {
       vec3 c = mix(hor, mid, smoothstep(0.0, 0.22, h)); c = mix(c, top, smoothstep(0.2, 0.85, h));
       gl_FragColor = vec4(c, 1.0); }`,
   });
-  const m = new THREE.Mesh(new THREE.SphereGeometry(7000, 24, 12), mat); m.renderOrder = -10; m.frustumCulled = false;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(10000, 24, 12), mat); m.renderOrder = -10; m.frustumCulled = false;
   return m;
 }
 

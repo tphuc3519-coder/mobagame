@@ -1,4 +1,5 @@
 import { project } from '../render/project.js';
+import { canSee } from '../sim/vision.js';
 
 const DMG = { physical: '#ffd6a0', magic: '#a8c8ff', true: '#ffffff' };
 
@@ -30,7 +31,7 @@ export function createHud(canvas, input) {
       // thanh máu trên đầu
       ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       for (const e of world.entities) {
-        if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth'))) continue;
+        if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
         const p = project(cam, e.pos.x, e.kind === 'hero' || e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
         const bw = e.structure ? 120 : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84, col = e.id === player.id ? '#7ee8a0' : e.team === player.team ? '#5fe3d0' : '#ff6a5a';
         bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);

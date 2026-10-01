@@ -5,6 +5,7 @@ import { T } from './util.js';
 import { dealDamage } from './damage.js';
 import { spawnProjectile } from './projectiles.js';
 import { enemiesOf } from './targeting.js';
+import { canSee } from './vision.js';
 
 export function spawnStructures(world) {
   const { map } = world;
@@ -30,7 +31,7 @@ export function onHeroDamaged(world, src, tgt) {
 }
 
 function pickTarget(world, s) {
-  const range = s.stats.range, inRange = enemiesOf(world, s).filter((t) => !t.noTarget && dist(t.pos, s.pos) - t.radius <= range);
+  const range = s.stats.range, inRange = enemiesOf(world, s).filter((t) => !t.noTarget && canSee(s.team, t) && dist(t.pos, s.pos) - t.radius <= range);
   if (!inRange.length) return null;
   if (s.aggro != null && world.tick < s.aggroUntil) { const a = inRange.find((t) => t.id === s.aggro); if (a) return a; }
   const near = (list) => list.reduce((b, t) => (!b || dist(t.pos, s.pos) < dist(b.pos, s.pos) ? t : b), null);

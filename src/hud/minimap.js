@@ -1,10 +1,12 @@
 // Bản đồ nhỏ toàn bản đồ (07 §9): nền vẽ một lần (đất, sông, đường, tường, bụi), phía trên vẽ lại mỗi khung: công trình, lính, tướng, khung nhìn camera.
 // Chưa có sương mù chiến trường nên hiện mọi đơn vị; sau này chỉ cần lọc theo tầm nhìn tại đây.
 import * as THREE from 'three';
+import { canSee } from '../sim/vision.js';
 
 const TEAM = ['#5fe3d0', '#ff6a5a'];
+// Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
 
-export function createMinimap({ world, player, map, cam }) {
+export function createMinimap({ world, player, map, cam, fog = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
   cv.style.cssText = 'position:fixed;z-index:4;inset:auto;left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 44px);border:2px solid #f3e9d6aa;border-radius:8px;background:#0f1224;box-shadow:0 2px 10px #0008;touch-action:none;pointer-events:auto';
@@ -66,7 +68,8 @@ export function createMinimap({ world, player, map, cam }) {
     draw() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.drawImage(bg, 0, 0, W, H);
-      const ents = world.entities;
+      if (fog) { const r = fog.mapRect; ctx.drawImage(fog.canvas, r.x, r.y, r.w, r.h, 0, 0, W, H); } // vùng chưa thấy tối đi
+      const ents = world.entities.filter((e) => canSee(player.team, e)); // địch ngoài tầm nhìn không hiện
       // công trình
       for (const e of ents) {
         if (!e.structure || e.noTarget || e.kind === 'fountain') continue;

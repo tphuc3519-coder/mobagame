@@ -7,6 +7,7 @@ import { createDummy } from './placeholder/dummy.js';
 import { createBlobShadow } from './shadows.js';
 import { prepareUnitMaterials, RIM } from './materials.js';
 import { createTower, createCore, createFountain, createMinion } from './structures.js';
+import { canSee, bushAt } from '../sim/vision.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
 
@@ -58,12 +59,14 @@ export function createUnitViews(scene, localTeam, localId) {
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
-        if (e.kind === 'minion') { v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
+        const seen = canSee(localTeam, e); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
+        if (e.kind === 'minion') { v.root.visible = seen; v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : 0); v.mats.update(dt);
-          const ghost = e.statuses.some((s) => s.kind === 'stealth');
+          const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
+          const ghost = e.statuses.some((s) => s.kind === 'stealth') || inBush;
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
-          v.root.visible = !(ghost && e.team !== localTeam);
+          v.root.visible = seen && !(ghost && e.team !== localTeam);
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
       }
