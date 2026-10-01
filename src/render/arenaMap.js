@@ -5,9 +5,10 @@ import { bakeGroundMap, groundMaterial } from './env/ground.js';
 import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
-import { buildRockWalls, buildCampSites, campRadius } from './env/jungleDecor.js';
+import { buildRockWalls, buildCampSites, campRadius, LAIR_T } from './env/jungleDecor.js';
 import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildTrees } from './env/trees.js';
+import { buildGrass } from './env/grass.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -45,7 +46,7 @@ export function buildArena(scene, map, level = 'mid') {
 
   // —— cây, đá, cỏ, hoa: rừng đặc ngoài viền, thưa trong rừng giữa các đường, chừa đường và sông ——
   const r = rngFor(101), blockedByWall = (x, z, m) => map.walls.segs.some((w) => {
-    const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.y1) * dy) / L2)); return Math.hypot(x - (w.x1 + dx * t), z - (w.y1 + dy * t)) < m;
+    const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.y1) * dy) / L2)); return Math.hypot(x - (w.x1 + dx * t), z - (w.y1 + dy * t)) < m + ((w.w ?? map.walls.thickness) - map.walls.thickness) / 2;
   });
   const put = (n, ok, make) => { const out = []; for (let t = 0; out.length < n && t < n * 40; t++) { const x = r.range(-1800, map.w + 1800), z = r.range(-1800, map.h + 1800); if (!ok(x, z)) continue; out.push(make(x, heightAt(x, z), z)); } return out; };
   const outside = (x, z) => M - Math.min(x, z, map.w - x, map.h - z);
@@ -80,6 +81,20 @@ export function buildArena(scene, map, level = 'mid') {
   g.add(scatterChunked(tuftGeo(90), tuftMat, tufts, true));
   const reeds = put(Math.round(300 * dens), (x, z) => inPlay(x, z) && riverDist(x, z) < rw / 2 + 120 && riverDist(x, z) > rw / 2 - 20 && laneDist(x, z) > halfW + 60, (x, y, z) => ({ x, y: y + 20, z, ry: r.range(0, 7), sx: 1.1, sy: r.range(1.4, 2.5), sz: 1.1 }));
   g.add(scatterChunked(tuftGeo(90), tuftMat, reeds, true));
+  // —— bờ sông kiểu Liên Quân: lá sen nổi + sen hồng ven nước, cỏ dài và khóm hoa xanh trên bờ ——
+  {
+    const lane = (x, z) => laneDist(x, z) > halfW + 120 && inPlay(x, z);
+    const pads = put(Math.round(520 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 - 190 && riverDist(x, z) < rw / 2 - 25, (x, y, z) => ({ x, y: 4 + r.range(0, 1.5), z, ry: r.range(0, 7), sx: r.range(26, 48), color: [0x4f9a3c, 0x5fae46, 0x3e8a3a][r.int(3)] }));
+    const padGeo = new THREE.CircleGeometry(1, 18, 0.35, Math.PI * 2 - 0.35); padGeo.rotateX(-Math.PI / 2);
+    g.add(scatterChunked(padGeo, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), pads.map((p) => ({ ...p, sy: 1 })), true));
+    const lotus = pads.filter(() => r.next() < 0.12).map((p) => ({ x: p.x, y: 6, z: p.z, ry: r.range(0, 7), sx: r.range(0.9, 1.3) }));
+    const lg = []; for (let k = 0; k < 8; k++) { const c = new THREE.ConeGeometry(5, 18, 4); c.translate(0, 9, 0); c.rotateX(0.55); c.rotateY((k / 8) * Math.PI * 2); lg.push(c.toNonIndexed()); }
+    g.add(scatterChunked(mergeGeometries(lg), new THREE.MeshLambertMaterial({ color: 0xf4a6c4, emissive: 0x3a1020 }), lotus, false));
+    const bank = put(Math.round(700 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 + 10 && riverDist(x, z) < rw / 2 + 170 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(90, 150), sy: r.range(90, 170) }));
+    g.add(buildGrass(bank, 'wild', 16));
+    const blue = put(Math.round(110 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 + 40 && riverDist(x, z) < rw / 2 + 260 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(110, 160), sy: r.range(90, 130) }));
+    g.add(buildGrass(blue, 'blue', 8));
+  }
   const pal = [0xe8a0b8, 0xf0d070, 0xf4f0e8, 0xe8a070, 0xc0b0e8];
   const flowers = put(Math.round(500 * dens), (x, z) => inPlay(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
   g.add(scatterChunked(flowerGeo(), new THREE.MeshLambertMaterial({ vertexColors: true }), flowers, true));
@@ -92,7 +107,7 @@ export function buildArena(scene, map, level = 'mid') {
     const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 780 })), ...structs.filter((q) => q.kind !== 'core').map((q) => ({ x: q.x, z: q.y, r: 260 }))];
     const bushList = bushRects(map);
     const casters = [
-      ...map.walls.segs.flatMap((w) => { const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), n = Math.max(2, Math.round(L / 150)); return Array.from({ length: n }, (_, i) => ({ x: w.x1 + (w.x2 - w.x1) * (i + 0.5) / n, z: w.y1 + (w.y2 - w.y1) * (i + 0.5) / n, r: map.walls.thickness * 0.9, h: w.ledge ? 110 : 170, k: 0.5 })); }),
+      ...map.walls.segs.flatMap((w) => { const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), n = Math.max(2, Math.round(L / 150)); return Array.from({ length: n }, (_, i) => ({ x: w.x1 + (w.x2 - w.x1) * (i + 0.5) / n, z: w.y1 + (w.y2 - w.y1) * (i + 0.5) / n, r: (w.w ?? map.walls.thickness) * 0.55, h: w.ledge ? 110 : 200, k: 0.55 })); }),
       ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.6 })),
       ...allRocks.map((q) => ({ x: q.x, z: q.z, r: q.sx * 0.9, h: q.sy * 1.2, k: 0.45 })),
       ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 520 : 140, h: q.kind === 'core' ? 900 : 700, k: 0.55 })),
@@ -143,6 +158,6 @@ export function buildArena(scene, map, level = 'mid') {
   scene.add(g);
   return {
     group: g,
-    update(t, dt, camera, viewH) { WIND.value = t; river.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
+    update(t, dt, camera, viewH) { WIND.value = t; LAIR_T.value = t; river.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
   };
 }

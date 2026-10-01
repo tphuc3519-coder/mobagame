@@ -33,9 +33,9 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     // bệ đá (tảng đá rêu): nét dày bo tròn màu đá, viền tối — thấy rõ đường đi vòng; không vẽ bụi cỏ
     const segs = map.walls?.segs || (map.walls?.ys || []).map((y) => ({ x1: 0, y1: y, x2: map.w, y2: y }));
     c.lineCap = 'round';
-    for (const [w, col] of [[2.6, '#2a2620'], [0, '#a39a88']]) {
-      c.strokeStyle = col; c.lineWidth = Math.max(2.5, map.walls.thickness * sx * 1.5) + w;
-      for (const s of segs) { c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); }
+    for (const [w, col] of [[2.6, '#1c2026'], [0, '#3a4250']]) { // khối đá rừng: mảng tối như Liên Quân
+      c.strokeStyle = col;
+      for (const s of segs) { c.lineWidth = Math.max(2.5, (s.w ?? map.walls.thickness) * sx * 1.05) + w; c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); }
     }
   }
   function strokePath(c, pts) { c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(wx(x), wy(y)) : c.moveTo(wx(x), wy(y)))); c.stroke(); }

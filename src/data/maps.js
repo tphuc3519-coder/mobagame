@@ -34,7 +34,7 @@ export function bushRects(map) {
     const b = norm(b0); out.push(b);
     let m;
     if (b.cap) { const p = map.mirror(b.cap[0], b.cap[1]), q = map.mirror(b.cap[2], b.cap[3]); m = norm({ ...b, cap: [p.x, p.y, q.x, q.y] }); }
-    else m = { ...b, ...map.mirror(b.x, b.y) };
+    else { const o = map.mirror(0, 0), t = map.mirror(1000, 0), sw = Math.abs(t.y - o.y) > Math.abs(t.x - o.x); m = { ...b, ...map.mirror(b.x, b.y), ...(sw ? { w: b.h, h: b.w } : {}) }; } // phép đối xứng đổi trục x↔y thì đổi luôn rộng/cao
     if (Math.abs(m.x - b.x) > 1 || Math.abs(m.y - b.y) > 1) out.push(m);
   }
   return (map._bushRects = out);
@@ -89,7 +89,7 @@ const tower = (id, tier, x, y, invulnUntil) => {
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
-function edgeWalls(path, sides, { off = LANE_W / 2 + 50, from = 0, to = Infinity, piece = 1100, gap = 520, phase = 0 } = {}) {
+function edgeWalls(path, sides, { w = 300, off = LANE_W / 2 + w / 2 + 40, from = 0, to = Infinity, piece = 1100, gap = 520, phase = 0 } = {}) {
   const out = [];
   let acc = 0;
   for (let i = 0; i + 1 < path.length; i++) {
@@ -99,7 +99,7 @@ function edgeWalls(path, sides, { off = LANE_W / 2 + 50, from = 0, to = Infinity
       let t = Math.max(0, from - acc) + phase;
       while (t < L - 60 && acc + t < to) {
         const t1 = Math.min(L, t + piece, to - acc);
-        if (t1 - t > 250) out.push({ x1: ax + ux * t - uy * off * sd, y1: ay + uy * t + ux * off * sd, x2: ax + ux * t1 - uy * off * sd, y2: ay + uy * t1 + ux * off * sd });
+        if (t1 - t > 250) out.push({ x1: ax + ux * t - uy * off * sd, y1: ay + uy * t + ux * off * sd, x2: ax + ux * t1 - uy * off * sd, y2: ay + uy * t1 + ux * off * sd, w });
         t = t1 + gap;
       }
     }
@@ -111,11 +111,11 @@ function edgeWalls(path, sides, { off = LANE_W / 2 + 50, from = 0, to = Infinity
 const guard = (path, sides, o) => edgeWalls(path, sides, o);
 
 /** Cung đá bao quanh điểm (cx, cy) bán kính r (toạ độ gốc), chừa cửa mở về hướng `face` (độ, 0 = +x, 90 = +y), góc bao `span`. */
-function arcWalls(cx, cy, r, face, span = 200, n = 3) {
-  const out = [], back = face + 180, a0 = back - span / 2, step = span / n;
+function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 320) {
+  const out = [], back = face + 180, a0 = back - span / 2, step = span / n, r = r0 + w / 2 / K; // dày ra phía sau, lòng trại giữ nguyên
   for (let i = 0; i < n; i++) {
     const a = (a0 + i * step + 6) * Math.PI / 180, b = (a0 + (i + 1) * step - 6) * Math.PI / 180;
-    out.push({ x1: (cx + Math.cos(a) * r) * K, y1: (cy + Math.sin(a) * r) * K, x2: (cx + Math.cos(b) * r) * K, y2: (cy + Math.sin(b) * r) * K, rock: true });
+    out.push({ x1: (cx + Math.cos(a) * r) * K, y1: (cy + Math.sin(a) * r) * K, x2: (cx + Math.cos(b) * r) * K, y2: (cy + Math.sin(b) * r) * K, rock: true, w });
   }
   return out;
 }
@@ -136,9 +136,9 @@ const BOSSES = [
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
-  ...[[1350, 2000], [600, 2650], [3650, 4350], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
+  ...[[600, 2650], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
-  ...[[1350, 3150], [1750, 3500], [4300, 5120], [2880, 5250], [380, 4400], [2250, 6050], [4300, 6060]]
+  ...[[1350, 3150], [1750, 3500], [4300, 5120], [2880, 5100], [380, 4400], [2250, 6050], [4300, 6060]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
 ];
 const TOWERS_BLUE = [[800, 1700], [800, 3350], [800, 4700], [2750, 3650], [1900, 4500], [1400, 5000], [4700, 5600], [3350, 5600], [1700, 5600]];
@@ -148,19 +148,26 @@ function bushRocks(b) {
   let best = null, bd = Infinity;
   for (const [tx, ty] of allTowers) { const d = Math.hypot(Math.max(Math.abs(tx - b.x) - b.w / 2, 0), Math.max(Math.abs(ty - b.y) - b.h / 2, 0)); if (d < bd) { bd = d; best = [tx, ty]; } }
   if (bd > 700) return [];
-  const dx = b.x - best[0], dy = b.y - best[1], g = 60;
-  if (Math.abs(dx) / b.w > Math.abs(dy) / b.h) { const x = b.x + Math.sign(dx) * (b.w / 2 + g); return [{ x1: x * K, y1: (b.y - b.h * 0.55) * K, x2: x * K, y2: (b.y + b.h * 0.55) * K, rock: true, bushRock: true }]; }
-  const y = b.y + Math.sign(dy) * (b.h / 2 + g); return [{ x1: (b.x - b.w * 0.55) * K, y1: y * K, x2: (b.x + b.w * 0.55) * K, y2: y * K, rock: true, bushRock: true }];
+  // 4 cạnh ứng viên; bỏ cạnh làm đá lấn vào đường, chọn cạnh xa trụ nhất
+  const g = 60, sides = [
+    [b.x + b.w / 2 + g, b.y - b.h * 0.55, b.x + b.w / 2 + g, b.y + b.h * 0.55], [b.x - b.w / 2 - g, b.y - b.h * 0.55, b.x - b.w / 2 - g, b.y + b.h * 0.55],
+    [b.x - b.w * 0.55, b.y + b.h / 2 + g, b.x + b.w * 0.55, b.y + b.h / 2 + g], [b.x - b.w * 0.55, b.y - b.h / 2 - g, b.x + b.w * 0.55, b.y - b.h / 2 - g]];
+  const onLane = (x, y) => LANES.some((ln) => ln.pts.some((q, i) => i > 0 && segDist(x * K, y * K, ln.pts[i - 1], q) < LANE_W / 2 + 120));
+  const ok = sides.filter(([x1, y1, x2, y2]) => ![0, 0.5, 1].some((t) => onLane(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)));
+  if (!ok.length) return [];
+  const far = ok.reduce((a, c) => (Math.hypot((c[0] + c[2]) / 2 - best[0], (c[1] + c[3]) / 2 - best[1]) > Math.hypot((a[0] + a[2]) / 2 - best[0], (a[1] + a[3]) / 2 - best[1]) ? c : a));
+  return [{ x1: far[0] * K, y1: far[1] * K, x2: far[2] * K, y2: far[3] * K, rock: true, bushRock: true, w: 180 }];
 }
+function segDist(x, y, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2)); return Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t); }
 /** Bệ đá trong rừng (kiểu Liên Quân): chia rừng thành lối đi vòng giữa các trại, chắn bờ sông, túi núp cạnh mục tiêu lớn. */
-const rockLine = (pts) => pts.slice(1).map((p, i) => ({ x1: pts[i][0] * K, y1: pts[i][1] * K, x2: p[0] * K, y2: p[1] * K, rock: true }));
+const rockLine = (pts, w = 340) => pts.slice(1).map((p, i) => ({ x1: pts[i][0] * K, y1: pts[i][1] * K, x2: p[0] * K, y2: p[1] * K, rock: true, w }));
 const JUNGLE_ROCKS = [
   ...rockLine([[1650, 3000], [1850, 2850]]),                 // giữa bùa xanh và trại cóc
-  ...rockLine([[1600, 3500], [1500, 3750]]),                 // giữa trại sói và trại cóc
+  ...rockLine([[1500, 3470], [1420, 3730]]),                 // giữa trại sói và trại cóc
   ...rockLine([[2250, 2900], [2450, 3050]]),                 // túi bờ sông trước trại cóc
-  ...rockLine([[1500, 2150], [1700, 2350]]),                 // bờ sông cạnh đầm Long Ngư
-  ...rockLine([[2600, 5100], [2800, 4950]]),                 // giữa trại sói dưới và bụi lớn
-  ...rockLine([[3380, 4700], [3480, 4520]]),                 // giữa trại cóc dưới và bùa đỏ
+  ...rockLine([[1620, 2260], [1800, 2440]]),                 // bờ sông cạnh đầm Long Ngư
+  ...rockLine([[2540, 5100], [2680, 4980]]),                 // giữa trại sói dưới và bụi lớn
+  ...rockLine([[3330, 4740], [3420, 4580]]),                 // giữa trại cóc dưới và bùa đỏ
   ...rockLine([[4000, 4700], [4250, 4950]]),                 // bờ sông cạnh đài Hổ Lôi
 ];
 // Phía Xanh: dọc Đường Đền (mép trong, về phía rừng), hai bên Đường Giữa (tới sát sông), mép trong Đường Sông.
@@ -170,7 +177,7 @@ const W_BLUE = [
   ...guard(LANES[1].pts, [-1, 1], { from: 1500, to: 6300, phase: 120, gap: 600 }),
   ...guard(LANES[2].pts, [-1], { from: 1600, to: 9300, phase: 500, gap: 640 }),
   // bệ đá trên hai bờ sông nối tiếp đầu hai bụi giữa sông (tạo túi núp); bờ phía Đỏ là ảnh đối xứng
-  ...[[2303, 2803, 1953, 2453], [3597, 4097, 3947, 4447]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true })),
+  ...[[2303, 2803, 1953, 2453], [3597, 4097, 3880, 4380]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true, w: 220 })),
   // bệ đá "lãnh thổ" ôm phía sau mỗi trại quái (cung đá, mở về phía lối đi trong rừng)
   ...CAMPS_BLUE.flatMap((c) => arcWalls(c.x, c.y, c.arc.r, c.arc.face, c.arc.span)),
   ...JUNGLE_ROCKS,
@@ -197,6 +204,8 @@ export const ARENA = {
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
+    // bụi cỏ dài mọc mép nước dọc bờ sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân; phía Đỏ đối xứng
+    ...[[1250, 1560, 1560, 1870], [4530, 4840, 4840, 5150]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: 95 * K, bank: true })),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
     ...[-470, 470].map((d) => { const c = 3200 + d, h = 250; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 190 * K, big: true, river: true }; }),

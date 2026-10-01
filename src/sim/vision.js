@@ -21,12 +21,12 @@ export const bushAt = (map, p) => bushesOf(map).find((b) => inBush(b, p)) || nul
 /** Đoạn a→b có cắt tường (capsule) không — dò thô theo từng 150 đơn vị. */
 function blocked(map, a, b) {
   const segs = map.walls?.segs; if (!segs) return false;
-  const half = map.walls.thickness / 2, n = Math.max(1, Math.ceil(dist(a, b) / 150));
+  const n = Math.max(1, Math.ceil(dist(a, b) / 150));
   for (let i = 1; i < n; i++) {
     const x = a.x + (b.x - a.x) * (i / n), y = a.y + (b.y - a.y) * (i / n);
     for (const w of segs) {
       const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (y - w.y1) * dy) / L2));
-      if (Math.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < half) return true;
+      if (Math.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < (w.w ?? map.walls.thickness) / 2) return true;
     }
   }
   return false;
