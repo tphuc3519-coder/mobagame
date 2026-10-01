@@ -4,8 +4,8 @@
   "height": 220,
   "runRefSpeed": 345,
   "hitTime": {
-    "Attack1": 0.2,
-    "Attack2": 0.2
+    "Attack1": 0.17,
+    "Attack2": 0.17
   },
   "attach": {
     "weapon_tip": "Bone_HandR_Tip",

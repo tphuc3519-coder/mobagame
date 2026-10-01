@@ -1,6 +1,6 @@
 // Animation viết tay cho Bamboo Shade (model ronin_pbr_100000: kiếm sĩ nón lá, hai kiếm đeo ở hai tay, thế tay buông thõng).
 // Tư thế tay lấy từ IK (bong_tre.poses.mjs); thân/chân/vạt áo chỉnh tay. Hai thanh kiếm gắn HandR/HandL nên chuyển động theo cổ tay.
-import { spline, add, wave, lagged, mix, weaponPath } from '../animlib.mjs';
+import { spline, add, wave, lagged, mix, weaponPath, snap } from '../animlib.mjs';
 import { ARM } from './bong_tre.poses.mjs';
 
 const A = (name) => { const p = ARM[name], o = {}; for (const k of ['uaR', 'faR', 'hdR', 'uaL', 'faL', 'hdL']) o[k] = p[k] || [0, 0, 0]; return o; };
@@ -147,12 +147,12 @@ export const ronin = {
   custom: {
     Idle: { dur: 2.6, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: L(slashR), ik: ikSlashR },
-    Attack2: { dur: 0.6, pose: L(slashL), ik: ikSlashL },
-    Cast1: { dur: 0.8, pose: L(dashX), ik: ikDash },
-    Cast2: { dur: 0.8, pose: L(spin), ik: ikSpin },
-    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt },
-    Death: { dur: 1.6, pose: death, ik: ikDeath },
+    Attack1: { dur: 0.6, pose: L(slashR), ik: ikSlashR, warp: snap([[0.22, 0.2, 'out'], [0.29, 0.33, 'in'], [0.34, 0.345, 'lin'], [0.6, 0.55, 'out'], [1, 1, 'io']]) }, // chạm 0.174s
+    Attack2: { dur: 0.6, pose: L(slashL), ik: ikSlashL, warp: snap([[0.22, 0.2, 'out'], [0.29, 0.33, 'in'], [0.34, 0.345, 'lin'], [0.6, 0.55, 'out'], [1, 1, 'io']]) },
+    Cast1: { dur: 0.8, pose: L(dashX), ik: ikDash, warp: snap([[0.24, 0.2, 'out'], [0.34, 0.46, 'in'], [0.4, 0.47, 'lin'], [0.7, 0.7, 'out'], [1, 1, 'io']]) },
+    Cast2: { dur: 0.8, pose: L(spin), ik: ikSpin, warp: snap([[0.22, 0.2, 'out'], [0.5, 0.6, 'in'], [0.76, 0.9, 'out'], [1, 1, 'io']]) },
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt, warp: snap([[0.1, 0.1, 'out'], [0.16, 0.2, 'in'], [0.26, 0.3, 'out'], [0.32, 0.4, 'in'], [0.47, 0.52, 'out'], [0.56, 0.66, 'in'], [0.62, 0.67, 'lin'], [0.82, 0.82, 'out'], [1, 1, 'io']]) },
+    Death: { dur: 1.6, pose: death, ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
     Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
     Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },

@@ -10,9 +10,9 @@ const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e
 export default {
   name: 'Emberforge', glow: '#ff5a10',
   palette: ['#2a2a2e', '#ff7a1a', '#ffd166', '#6b3b1e'], rim: '#ff7a1a',
-  hitTime: { Attack1: 0.3, Attack2: 0.26 },
+  hitTime: { Attack1: 0.26, Attack2: 0.22 },
   import: { // model liền khối có texture do hoạ sĩ gửi (hammer_pbr_20000.glb, tư thế vác búa, dạng chân rộng): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
-    deshard: { ratio: 2.0, slack: 0.04, samples: 24, minComponent: 400 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
+    // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
     mode: 'fused', file: './imports/hammer_pbr_20000.glb',
     centerX: 0, centerZ: -0.12, bodyTop: 1.72, // bodyTop = đỉnh đầu (bỏ đầu búa khi tính chiều cao)
     rig: { // khớp theo tư thế trong file (x phải = trái nhân vật, z + = phía trước), tương đối trục thân
@@ -26,7 +26,7 @@ export default {
       { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.28, hard: 0.03, cut: 0.002 }, // đầu búa (trục dọc theo x)
       { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.045, hard: 0.012, cut: 0.002 }, // cán búa, qua vai ra phía trước
     ],
-    maxEdge: 0.3, cutMixed: { keep: 0.3 }, // cắt tam giác nối búa–thân ngoài vùng bàn tay
+    maxEdge: 0.3, // bỏ tam giác sợi chỉ
     radii: { Hips: 1.5, Spine: 1.4, Chest: 1.4 },
     skirt: { max: 0.9, from: 0.05, span: 0.5, gap0: 0.05, gap1: 0.2 }, // vải/khăn thả dưới hông đi theo 4 xương váy để đung đưa
     portrait: { dist: 1.9, dy: -0.1 },

@@ -61,3 +61,19 @@ export function weaponPath(frames, loop = false) {
   const f = spline(flat, loop), sides = [...new Set(frames.flatMap(([, k]) => Object.keys(k)))];
   return (u) => { const o = f(u), r = {}; for (const s of sides) r[s] = { hand: o['h' + s], dir: o['d' + s] }; return r; };
 }
+
+/** Uốn thời gian cho đòn đánh dứt khoát: keys [[t, u, ease], …] (t = thời gian clip 0..1, u = thời gian của tư thế/quỹ đạo đã viết).
+ *  ease của đoạn kết thúc ở khoá đó: 'in' tăng tốc (giáng đòn), 'out' giảm tốc (lấy đà chậm dần, thu đòn), 'io' mềm hai đầu, 'lin' đều.
+ *  Ví dụ: gồng chậm dần tới đỉnh, giáng 'in' rất nhanh vào điểm chạm, giữ gần như đứng yên vài khung (khựng), rồi 'out' về thế. */
+const EASE = { lin: (x) => x, in: (x) => x ** 2.4, out: (x) => 1 - (1 - x) ** 2.4, io: (x) => x * x * (3 - 2 * x) };
+export function snap(keys) {
+  const K = [[0, 0], ...keys];
+  return (t) => {
+    if (t <= 0) return 0; if (t >= K[K.length - 1][0]) return K[K.length - 1][1];
+    let i = 1; while (t > K[i][0]) i++;
+    const [t0, u0] = K[i - 1], [t1, u1, e = 'io'] = K[i];
+    return u0 + (u1 - u0) * EASE[e]((t - t0) / (t1 - t0 || 1));
+  };
+}
+/** Thời điểm (giây) của tư thế u trong clip đã uốn (để đặt hitTime khớp điểm chạm). */
+export function snapTime(keys, u, dur) { const w = snap(keys); let lo = 0, hi = 1; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (w(m) < u) lo = m; else hi = m; } return +(hi * dur).toFixed(3); }

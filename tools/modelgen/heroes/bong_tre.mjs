@@ -9,9 +9,9 @@ const C = { skin: '#e6bf9d', green: '#24452f', green2: '#182f21', dark: '#0f1a14
 export default {
   name: 'Bamboo Shade', glow: '#9dff9d',
   palette: ['#1f3b2a', '#6fbf73', '#d8e8b0', '#0f1a14'], rim: '#6fbf73',
-  hitTime: { Attack1: 0.2, Attack2: 0.2 },
+  hitTime: { Attack1: 0.17, Attack2: 0.17 },
   import: { // model liền khối có texture do hoạ sĩ gửi (ronin_pbr_100000.glb: kiếm sĩ nón lá, hai kiếm): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
-    deshard: { ratio: 1.6, slack: 0.03, samples: 30, minComponent: 600 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
+    // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
     mode: 'fused', file: './imports/ronin_pbr_100000.glb', simplify: { tris: 28000, error: 0.08, flags: ['Permissive', 'Prune'] },
     centerX: 0.175, centerZ: -0.14, bodyTop: 1.89, height: 2.2, texMax: 1024,
     rig: { // toạ độ tương đối thân (đơn vị file gốc): x + = bên trái nhân vật, z + = phía trước
@@ -25,7 +25,7 @@ export default {
       { bone: 'HandR', a: [-0.4, 0.82, -0.01], b: [-0.855, 0.28, 0.29], r: 0.05, hard: 0.02, cut: 0.002 },
       { bone: 'HandL', a: [0.395, 0.85, 0.02], b: [0.375, 0.25, 0.72], r: 0.05, hard: 0.02, cut: 0.002 },
     ],
-    cutMixed: { keep: 0.14 }, minComponent: 120,
+    minComponent: 120,
     skirt: { max: 0.85, from: 0.02, span: 0.2, gap0: 0.02, gap1: 0.08 }, // vạt áo choàng lá đung đưa
     portrait: { dist: 2.1, dy: -0.28 },
   },

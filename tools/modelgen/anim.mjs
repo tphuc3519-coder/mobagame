@@ -275,8 +275,12 @@ export function buildClips(ctx, bones, o = {}) {
       return p;
     };
   };
-  for (const [name, c] of Object.entries(o.custom || {})) {
-    c.name = name;
+  for (const [name, c0] of Object.entries(o.custom || {})) {
+    let c = { ...c0, name };
+    if (c.warp) { // uốn thời gian (animlib.snap): cùng một hàm cho tư thế và quỹ đạo vũ khí
+      const w = c.warp, p0 = c0.pose, k0 = c0.ik, D = c.dur === 'run' ? run.T : c.dur ?? 1;
+      c = { ...c, pose: (u) => p0(w(u), w(u) * D), ik: k0 && ((u) => k0(w(u), w(u) * D)) };
+    }
     let pose = c.pose;
     if (c.ik && solver) pose = ikPose(c, c.dur === 'run' ? run.T : c.dur ?? 1);
     mk(name, c.dur === 'run' ? run.T : c.dur ?? clips[name]?.duration ?? 1, pose, !!c.loop);

@@ -9,14 +9,14 @@ const C = { skin: '#70847a', stone: '#5d6f5f', stone2: '#3f4c40', dark: '#2b2f3a
 export default {
   name: 'Mossback', glow: '#ff8a1e',
   palette: ['#405c57', '#ff8a1e', '#a66119', '#1c302e'], rim: '#ffab47', // màu theo model thợ lặn: thân xanh ngọc cũ, hổ phách, đồng thau
-  hitTime: { Attack1: 0.34, Attack2: 0.3 },
+  hitTime: { Attack1: 0.28, Attack2: 0.22 },
   import: { // model liền khối có texture do hoạ sĩ gửi (diver_pbr_20000.glb): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
-    deshard: { ratio: 2.0, slack: 0.04, samples: 24, minComponent: 400 }, // cắt tam giác bị kéo giãn thành mảnh vụn khi chạy animation
+    // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
     mode: 'fused', file: './imports/diver_pbr_20000.glb',
     centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
     weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
     rig: { HandEndR: [-0.23, 0.3, 0.07] }, // mút bàn tay: trọng số bàn tay không chạy dọc cả cây gậy
-    cutMixed: { keep: 0.1 }, maxEdge: 0.1, // cắt tam giác nối gậy–thân (ngoài vùng bàn tay) và tam giác sợi chỉ
+    maxEdge: 0.1, // bỏ tam giác sợi chỉ
     joints: { wristR: [-0.23, 0.27], tipR: [-0.23, 0.75] },
     portrait: { dist: 2.7, dy: -0.3 },
   },

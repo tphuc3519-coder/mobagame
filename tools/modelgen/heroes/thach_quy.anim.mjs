@@ -1,7 +1,7 @@
 // Animation viết tay cho Mossback (model diver_pbr_20000: thợ lặn đồng thau cầm cây gậy dài ở tay phải, tay trái buông).
 // Tư thế = độ lệch so với tư thế bind (tay buông, gậy dựng đứng cạnh người). Gậy gắn HandR nên:
 // xoay cổ tay (hdR rx dương) làm đầu gậy đi từ trên ra trước-xuống; nâng cả cánh tay (uaR rx âm) đưa tay lên phía trước.
-import { spline, add, wave, lagged, weaponPath } from '../animlib.mjs';
+import { spline, add, wave, lagged, weaponPath, snap } from '../animlib.mjs';
 
 const cloth = () => ({});
 const idle = (u) => {
@@ -142,12 +142,12 @@ export const mossAnim = {
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1 },
-    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2 },
-    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1 },
-    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2 },
-    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt },
-    Death: { dur: 1.6, pose: death, ik: ikDeath },
+    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1, warp: snap([[0.4, 0.5, 'out'], [0.46, 0.57, 'in'], [0.52, 0.585, 'lin'], [0.74, 0.74, 'out'], [1, 1, 'io']]) }, // chạm 0.276s
+    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2, warp: snap([[0.28, 0.2, 'out'], [0.36, 0.5, 'in'], [0.42, 0.515, 'lin'], [0.66, 0.68, 'out'], [1, 1, 'io']]) }, // chạm 0.216s
+    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1, warp: snap([[0.26, 0.2, 'out'], [0.38, 0.5, 'in'], [0.44, 0.51, 'lin'], [0.72, 0.75, 'out'], [1, 1, 'io']]) },
+    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2, warp: snap([[0.34, 0.28, 'out'], [0.42, 0.5, 'in'], [0.48, 0.515, 'lin'], [0.72, 0.7, 'out'], [1, 1, 'io']]) },
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt, warp: snap([[0.22, 0.25, 'out'], [0.32, 0.5, 'in'], [0.38, 0.52, 'lin'], [1, 1, 'io']]) },
+    Death: { dur: 1.6, pose: death, ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
     Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
     Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },

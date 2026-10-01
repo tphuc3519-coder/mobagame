@@ -2,7 +2,7 @@
 // Tư thế: độ lệch so với tư thế bind. rx âm = vung ra trước (chân/tay), rx dương ở thân = cúi ra trước; rz dương ở bên trái = dạng ra.
 // Búa gắn HandR (đầu búa = HandR_Tip). Góc tay phải (uaR/faR/hdR) giải bằng IK từ đích tay + hướng cán búa cho từng thế (bảng A);
 // thân, chân, tay trái, vải chỉnh tay. Nội suy bằng spline (animlib) nên chuyển động liền mạch, có đà và giật nhẹ khi chạm.
-import { spline, add, wave, lagged, weaponPath } from '../animlib.mjs';
+import { spline, add, wave, lagged, weaponPath, snap } from '../animlib.mjs';
 
 // —— Thế búa (tay phải) ——
 const A = {
@@ -72,15 +72,15 @@ const attack2 = (() => { const b = sweepBody(1); return spline([[0, {}], [0.12, 
 // Cast1 – Vung Búa (hình quạt): quét ngang mạnh hơn, xoay người nhiều hơn, 0.8s.
 const cast1 = (() => { const b = sweepBody(1.25); return spline([[0, {}], [0.15, { chest: [6, -20, 0], hipsPos: [0, -0.03, -0.01], ...A.antic }], [0.34, { ...b.wind, ...A.sweepWind }], [0.5, { ...b.hit, ...A.sweepHit }], [0.7, { ...b.end, ...A.sweepEnd }], [1, {}]]); })();
 
-// Cast2 – Xỉ Sắt (khiên + tăng tốc): nhấc búa lên cao, giáng đầu búa xuống đất trước mặt, chống búa gồng người
-// (tay trái siết nắm đấm, vai nhún, vải bung ra), rồi rút búa về vai. Va chạm ở u≈0.42.
+// Cast2 – Xỉ Sắt (khiên + tăng tốc): nhấc búa khỏi vai, GIƠ THẲNG LÊN CAO qua đầu (ưỡn người, tay trái giơ theo), khựng ở đỉnh,
+// rồi GIÁNG thẳng xuống đất trước mặt (gập người, khuỵu gối, vải bung), ghì búa một nhịp rồi vác lại lên vai. Chạm đất ở u≈0.44.
 const cast2 = spline([
   [0, {}],
-  [0.12, { chest: [4, 0, 0], hipsPos: [0, -0.03, -0.01], thL: [-10, 0, 0], thR: [8, 0, 0], shR: [12, 0, 0], ...A.antic, uaL: [-8, 0, 10], skF: [-10, 0, 0] }],
-  [0.3, { chest: [-12, 0, 0], spine: [-4, 0, 0], head: [6, 0, 0], hipsPos: [0, 0.02, -0.02], thL: [-8, 0, 0], thR: [6, 0, 0], ...A.liftHi, uaL: [-30, 0, 18], faL: [-40, 0, 0], skF: [-20, 0, 0], skB: [12, 0, 0] }],
-  [0.42, { chest: [20, 0, 0], spine: [8, 0, 0], head: [8, 0, 0], hipsPos: [0, -0.07, 0.05], thL: [-20, 0, 0], thR: [14, 0, 0], shL: [16, 0, 0], shR: [28, 0, 0], ...A.planted, uaL: [-34, 0, 24], faL: [-70, 0, 0], skF: [26, 0, 0], skB: [-16, 0, 0] }],
-  [0.55, { chest: [14, 0, 0], spine: [6, 0, 0], head: [2, 0, 0], hipsPos: [0, -0.055, 0.04], thL: [-16, 0, 0], thR: [12, 0, 0], shL: [14, 0, 0], shR: [24, 0, 0], ...A.braced, uaL: [-36, 0, 28], faL: [-74, 0, 0], skF: [12, 0, 0], skB: [-8, 0, 0] }],
-  [0.72, { chest: [8, 0, 0], spine: [3, 0, 0], hipsPos: [0, -0.03, 0.02], thL: [-8, 0, 0], thR: [6, 0, 0], ...A.antic, uaL: [-14, 0, 12], skF: [-4, 0, 0] }],
+  [0.12, { chest: [4, 0, 0], hipsPos: [0, -0.04, -0.01], thL: [-10, 0, 0], thR: [8, 0, 0], shL: [10, 0, 0], shR: [14, 0, 0], ...A.antic, uaL: [-10, 0, 10], skF: [-10, 0, 0] }],
+  [0.32, { chest: [-18, 0, 0], spine: [-6, 0, 0], head: [10, 0, 0], hipsPos: [0, 0.03, -0.03], thL: [-6, 0, 0], thR: [4, 0, 0], ...A.leap, uaL: [-150, 0, 20], faL: [-30, 0, 0], skF: [-22, 0, 0], skB: [14, 0, 0] }],
+  [0.44, { chest: [34, 0, 0], spine: [14, 0, 0], head: [12, 0, 0], hipsPos: [0, -0.1, 0.07], thL: [-30, 0, 0], thR: [18, 0, 0], shL: [30, 0, 0], shR: [36, 0, 0], ...A.impact, uaL: [-40, 0, 20], faL: [-30, 0, 0], skF: [34, 0, 0], skB: [-22, 0, 0] }],
+  [0.6, { chest: [28, 0, 0], spine: [12, 0, 0], head: [10, 0, 0], hipsPos: [0, -0.09, 0.06], thL: [-28, 0, 0], thR: [16, 0, 0], shL: [28, 0, 0], shR: [34, 0, 0], ...A.follow, uaL: [-36, 0, 24], faL: [-40, 0, 0], skF: [14, 0, 0] }],
+  [0.76, { chest: [8, 0, 0], spine: [3, 0, 0], hipsPos: [0, -0.03, 0.02], thL: [-8, 0, 0], thR: [6, 0, 0], ...A.mid, uaL: [-14, 0, 12], skF: [-4, 0, 0] }],
   [1, {}],
 ]);
 
@@ -155,7 +155,7 @@ const P = (...ks) => weaponPath(ks.map(([u, w]) => [u, { R: w }]));
 const ikAttack1 = P([0, REST], [0.15, W.lift], [0.33, W.over], [0.44, W.top], [0.5, W.chop], [0.66, W.chopHold], [0.8, W.fwdUp], [0.9, W.lift], [1, REST]);
 const ikAttack2 = P([0, REST], [0.12, W.antic], [0.3, W.swWind], [0.43, W.swHit], [0.58, W.swEnd], [0.74, W.swBack], [0.87, W.lift], [1, REST]);
 const ikCast1 = P([0, REST], [0.15, W.antic], [0.34, [[-0.85, 1.8, -0.05], [-0.6, 0.05, -0.8]]], [0.5, W.swHit], [0.64, [[0.55, 1.75, 0.45], [0.95, 0, 0.3]]], [0.78, W.swBack], [0.9, W.lift], [1, REST]);
-const ikCast2 = P([0, REST], [0.12, W.lift], [0.3, W.up], [0.42, W.plant], [0.6, W.plant], [0.72, W.fwdUp], [0.86, W.lift], [1, REST]);
+const ikCast2 = P([0, REST], [0.12, W.lift], [0.32, [[-0.15, 2.85, 0.3], [0, 0.95, -0.3]]], [0.44, [[-0.12, 1.5, 0.95], [0, -0.82, 0.57]]], [0.6, [[-0.12, 1.5, 0.92], [0, -0.85, 0.53]]], [0.76, W.fwdUp], [0.88, W.lift], [1, REST]);
 const ikUlt = P([0, REST], [0.12, W.lift], [0.25, W.over], [0.34, W.top], [0.42, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.55, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.7, W.fwdUp], [0.86, W.lift], [1, REST]);
 const ikDeath = P([0, REST], [0.1, W.lift], [0.3, [[-0.45, 2.0, 0.4], [-0.5, 0.6, -0.6]]], [0.6, [[-0.7, 1.7, 0.25], [-0.9, 0.3, -0.3]]], [1, [[-0.75, 1.55, 0.2], [-0.95, 0.3, 0]]]);
 const ikRecall = (u) => ({ R: { hand: W.plant[0].map((x, i) => x + (i === 1 ? 0.01 * wave(u) : 0)), dir: W.plant[1] } });
@@ -172,12 +172,12 @@ export const emberAnim = {
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1 },
-    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2 },
-    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1 },
-    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2 },
-    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt },
-    Death: { dur: 1.6, pose: death, ik: ikDeath },
+    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1, warp: snap([[0.36, 0.34, 'out'], [0.43, 0.5, 'in'], [0.5, 0.515, 'lin'], [0.72, 0.66, 'out'], [1, 1, 'io']]) }, // chạm 0.258s
+    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2, warp: snap([[0.3, 0.3, 'out'], [0.37, 0.43, 'in'], [0.43, 0.445, 'lin'], [0.66, 0.62, 'out'], [1, 1, 'io']]) }, // chạm 0.222s
+    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1, warp: snap([[0.36, 0.34, 'out'], [0.44, 0.5, 'in'], [0.5, 0.515, 'lin'], [0.74, 0.7, 'out'], [1, 1, 'io']]) },
+    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2, warp: snap([[0.34, 0.32, 'out'], [0.4, 0.44, 'in'], [0.46, 0.455, 'lin'], [0.68, 0.6, 'out'], [1, 1, 'io']]) }, // giơ cao 0.27s → giáng chạm đất 0.32s
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt, warp: snap([[0.14, 0.12, 'out'], [0.24, 0.25, 'out'], [0.36, 0.34, 'out'], [0.41, 0.42, 'in'], [0.46, 0.43, 'lin'], [0.64, 0.55, 'out'], [1, 1, 'io']]) },
+    Death: { dur: 1.6, pose: death, ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
     Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
     Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },
