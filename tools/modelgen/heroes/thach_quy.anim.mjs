@@ -1,7 +1,7 @@
 // Animation viết tay cho Mossback (model diver_pbr_20000: thợ lặn đồng thau cầm cây gậy dài ở tay phải, tay trái buông).
 // Tư thế = độ lệch so với tư thế bind (tay buông, gậy dựng đứng cạnh người). Gậy gắn HandR nên:
 // xoay cổ tay (hdR rx dương) làm đầu gậy đi từ trên ra trước-xuống; nâng cả cánh tay (uaR rx âm) đưa tay lên phía trước.
-import { spline, add, wave, lagged } from '../animlib.mjs';
+import { spline, add, wave, lagged, weaponPath } from '../animlib.mjs';
 
 const cloth = () => ({});
 const idle = (u) => {
@@ -102,22 +102,54 @@ const showcase = (u) => {
 };
 
 // Chồng lấp: thân dẫn, đầu/cổ/tay trái theo sau một nhịp ngắn (u).
+
+// —— Quỹ đạo cây gậy (IK từng khung, armik.mjs) ——
+// Toạ độ tư thế gốc (m): x + = bên trái nhân vật, y lên, z + = trước; gắn theo Hông. [tay, hướng gậy (tay → đầu trên)].
+// Cao 2.5 m, vai phải (-0.57, 1.89), tầm với ~0.9 m. Gậy dài 2.84: 1.82 phía trên tay, 1.02 phía dưới (chạm đất khi đứng).
+const REST = [[-0.87, 1.02, 0], [0, 1, 0]];
+const G = {
+  lift: [[-0.8, 1.45, 0.25], [0, 0.95, -0.3]],             // nhấc gậy, ngả đầu gậy ra sau
+  wind: [[-0.7, 2.05, 0.05], [0, 0.55, -0.83]],            // vác gậy qua vai
+  top: [[-0.6, 2.1, 0.55], [0, 0.97, 0.25]],               // gậy dựng trên đầu
+  smash: [[-0.55, 1.45, 0.75], [0, -0.3, 0.95]],           // quật đầu gậy xuống trước mặt
+  back: [[-0.75, 1.35, 0.35], [0, 0.85, 0.5]],
+  pull: [[-0.8, 1.35, -0.15], [0.05, 0.1, 1]],             // kéo gậy về sườn, chĩa ra trước
+  thrust: [[-0.55, 1.45, 0.7], [0.05, 0.05, 1]],           // đâm thẳng
+  trail: [[-0.85, 1.15, -0.05], [0, 0.6, -0.8]],           // kéo lê gậy phía sau khi lao
+  raise: [[-0.8, 1.6, 0.25], [0, 1, 0]],                   // nhấc gậy thẳng đứng
+  stomp: [[-0.8, 1.12, 0.35], [0, 1, 0]],                  // dộng đuôi gậy xuống đất
+  high: [[-0.72, 2.2, 0.2], [0, 1, 0.05]],                 // giơ gậy cao quá đầu
+  front: [[-0.6, 1.3, 0.45], [0, 1, 0]],                   // chống gậy trước mặt
+  fall: [[-1.0, 1.2, 0.05], [-0.7, 0.7, 0]],
+  down: [[-1.0, 1.2, 0.0], [-1, 0.05, 0]],
+};
+const P = (...ks) => weaponPath(ks.map(([u, w]) => [u, { R: w }]));
+const ikAttack1 = P([0, REST], [0.2, G.lift], [0.38, G.wind], [0.5, G.top], [0.57, G.smash], [0.74, G.smash], [0.88, G.back], [1, REST]);
+const ikAttack2 = P([0, REST], [0.2, G.pull], [0.5, G.thrust], [0.68, G.thrust], [0.85, G.back], [1, REST]);
+const ikCast1 = P([0, REST], [0.2, G.trail], [0.5, G.trail], [0.75, G.lift], [1, REST]);
+const ikCast2 = P([0, REST], [0.28, G.raise], [0.5, G.stomp], [0.7, G.stomp], [1, REST]);
+const ikUlt = P([0, REST], [0.25, G.raise], [0.5, G.high], [0.8, G.high], [1, REST]);
+const ikDeath = P([0, REST], [0.25, G.lift], [0.6, G.fall], [1, G.down]);
+const ikRecall = (u) => ({ R: { hand: [G.front[0][0], G.front[0][1] + 0.01 * wave(u), G.front[0][2]], dir: G.front[1] } });
+const ikVictory = P([0, REST], [0.2, G.raise], [0.4, G.high], [0.9, G.high], [1, REST]);
+
 const L = (fn) => lagged(fn, { spine: 0.012, chest: 0.028, neck: 0.04, head: 0.065, uaL: 0.035, faL: 0.055, hdL: 0.075 });
 
 export const mossAnim = {
   style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' },
   run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5,
+  ik: { body: 0.42, head: 0.3, headUp: 0.15, leg: 0.18, ground: 0, back: { R: 1.02 } }, // vật cản cho gậy (armik.mjs)
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: L(attack1) },
-    Attack2: { dur: 0.6, pose: L(attack2) },
-    Cast1: { dur: 0.8, pose: L(cast1) },
-    Cast2: { dur: 0.8, pose: L(cast2) },
-    Ult: { dur: 1.4, pose: L(ult) },
-    Death: { dur: 1.6, pose: death },
-    Recall: { dur: 2.0, loop: true, pose: recall },
-    Victory: { dur: 2.2, pose: L(victory) },
+    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1 },
+    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2 },
+    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1 },
+    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2 },
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt },
+    Death: { dur: 1.6, pose: death, ik: ikDeath },
+    Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
+    Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },
   },
 };

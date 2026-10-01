@@ -2,7 +2,7 @@
 // Tư thế: độ lệch so với tư thế bind. rx âm = vung ra trước (chân/tay), rx dương ở thân = cúi ra trước; rz dương ở bên trái = dạng ra.
 // Búa gắn HandR (đầu búa = HandR_Tip). Góc tay phải (uaR/faR/hdR) giải bằng IK từ đích tay + hướng cán búa cho từng thế (bảng A);
 // thân, chân, tay trái, vải chỉnh tay. Nội suy bằng spline (animlib) nên chuyển động liền mạch, có đà và giật nhẹ khi chạm.
-import { spline, add, wave, lagged } from '../animlib.mjs';
+import { spline, add, wave, lagged, weaponPath } from '../animlib.mjs';
 
 // —— Thế búa (tay phải) ——
 const A = {
@@ -131,6 +131,36 @@ const showcase = (u) => {
 };
 
 // Chồng lấp: thân dẫn, đầu/cổ/tay trái/vải đi sau một nhịp ngắn (u) để chuyển động có đà.
+
+// —— Quỹ đạo búa (IK từng khung, armik.mjs) ——
+// Toạ độ tư thế gốc (m): x + = bên trái nhân vật, y lên, z + = phía trước; gắn theo Hông. [tay, hướng búa (tay → đầu búa)].
+// Búa nằm trên vai: tay trước vai phải, đầu búa ra sau đầu. Chiều cao nhân vật 2.5, búa dài 1.42.
+const REST = [[-0.07, 2.01, 0.68], [-0.035, 0.3, -0.95]];
+const W = {
+  lift: [[-0.25, 2.45, 0.45], [0, 0.85, -0.5]],          // nhấc búa khỏi vai
+  over: [[-0.2, 2.85, 0.2], [0, 0.25, -0.97]],            // giơ qua đầu, đầu búa ngả ra sau
+  top: [[-0.18, 2.6, 0.7], [0, 1, 0.15]],                 // búa dựng thẳng trên đầu
+  chop: [[-0.15, 1.6, 0.95], [0, -0.55, 0.84]],          // bổ xuống trước mặt
+  chopHold: [[-0.15, 1.55, 0.9], [0, -0.62, 0.78]],
+  plant: [[-0.15, 1.75, 0.85], [0, -0.9, 0.42]],          // dộng đầu búa xuống đất trước mặt
+  fwdUp: [[-0.15, 1.95, 0.8], [0, 0.35, 0.94]],           // kéo búa lên phía trước khi rút về
+  up: [[-0.2, 2.35, 0.55], [0, 0.97, 0.1]],
+  antic: [[-0.3, 2.1, 0.5], [-0.3, 0.5, -0.8]],           // lấy đà quét ngang
+  swWind: [[-0.8, 1.85, 0.1], [-0.55, 0.1, -0.83]],       // búa ra sau bên phải
+  swHit: [[-0.15, 1.75, 0.85], [0.1, 0.05, 1]],           // búa thẳng trước mặt
+  swEnd: [[0.35, 1.8, 0.65], [0.85, 0.05, 0.5]],          // quét sang trái
+  swBack: [[0.15, 2.05, 0.6], [0.4, 0.75, 0.5]],          // nâng lên để vác lại
+};
+const P = (...ks) => weaponPath(ks.map(([u, w]) => [u, { R: w }]));
+const ikAttack1 = P([0, REST], [0.15, W.lift], [0.33, W.over], [0.44, W.top], [0.5, W.chop], [0.66, W.chopHold], [0.8, W.fwdUp], [0.9, W.lift], [1, REST]);
+const ikAttack2 = P([0, REST], [0.12, W.antic], [0.3, W.swWind], [0.43, W.swHit], [0.58, W.swEnd], [0.74, W.swBack], [0.87, W.lift], [1, REST]);
+const ikCast1 = P([0, REST], [0.15, W.antic], [0.34, [[-0.85, 1.8, -0.05], [-0.6, 0.05, -0.8]]], [0.5, W.swHit], [0.64, [[0.55, 1.75, 0.45], [0.95, 0, 0.3]]], [0.78, W.swBack], [0.9, W.lift], [1, REST]);
+const ikCast2 = P([0, REST], [0.12, W.lift], [0.3, W.up], [0.42, W.plant], [0.6, W.plant], [0.72, W.fwdUp], [0.86, W.lift], [1, REST]);
+const ikUlt = P([0, REST], [0.12, W.lift], [0.25, W.over], [0.34, W.top], [0.42, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.55, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.7, W.fwdUp], [0.86, W.lift], [1, REST]);
+const ikDeath = P([0, REST], [0.1, W.lift], [0.3, [[-0.45, 2.0, 0.4], [-0.5, 0.6, -0.6]]], [0.6, [[-0.7, 1.7, 0.25], [-0.9, 0.3, -0.3]]], [1, [[-0.75, 1.55, 0.2], [-0.95, 0.3, 0]]]);
+const ikRecall = (u) => ({ R: { hand: W.plant[0].map((x, i) => x + (i === 1 ? 0.01 * wave(u) : 0)), dir: W.plant[1] } });
+const ikVictory = P([0, REST], [0.16, W.lift], [0.32, [[-0.15, 2.95, 0.4], [0, 1, 0.05]]], [0.46, [[-0.15, 2.95, 0.4], [0, 1, 0.05]]], [0.56, W.plant], [0.74, W.fwdUp], [0.88, W.lift], [1, REST]);
+
 const LAG = { spine: 0.012, chest: 0.026, neck: 0.04, head: 0.06, uaL: 0.03, faL: 0.05, hdL: 0.07, skF: 0.07, skB: 0.07, skL: 0.08, skR: 0.08 };
 const L = (fn) => lagged(fn, LAG);
 
@@ -138,17 +168,18 @@ export const emberAnim = {
   style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' },
   run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6,
   extra: { skF: 'SkirtF', skB: 'SkirtB', skL: 'SkirtL', skR: 'SkirtR' },
+  ik: { body: 0.3, head: 0.18, headUp: 0.12, leg: 0.14, back: { R: 0.7 } }, // vật cản cho búa (armik.mjs)
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: L(attack1) },
-    Attack2: { dur: 0.6, pose: L(attack2) },
-    Cast1: { dur: 0.8, pose: L(cast1) },
-    Cast2: { dur: 0.8, pose: L(cast2) },
-    Ult: { dur: 1.4, pose: L(ult) },
-    Death: { dur: 1.6, pose: death },
-    Recall: { dur: 2.0, loop: true, pose: recall },
-    Victory: { dur: 2.2, pose: L(victory) },
+    Attack1: { dur: 0.6, pose: L(attack1), ik: ikAttack1 },
+    Attack2: { dur: 0.6, pose: L(attack2), ik: ikAttack2 },
+    Cast1: { dur: 0.8, pose: L(cast1), ik: ikCast1 },
+    Cast2: { dur: 0.8, pose: L(cast2), ik: ikCast2 },
+    Ult: { dur: 1.4, pose: L(ult), ik: ikUlt },
+    Death: { dur: 1.6, pose: death, ik: ikDeath },
+    Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
+    Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
     Showcase: { dur: 4.0, loop: true, pose: showcase },
   },
 };

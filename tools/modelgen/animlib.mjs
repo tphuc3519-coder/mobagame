@@ -54,3 +54,10 @@ export function mix(a, b, k) {
   const o = {}; for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) { const x = a[key] || [0, 0, 0], y = b[key] || [0, 0, 0]; o[key] = [x[0] + (y[0] - x[0]) * k, x[1] + (y[1] - x[1]) * k, x[2] + (y[2] - x[2]) * k]; }
   return o;
 }
+
+/** Quỹ đạo vũ khí cho IK: khung [[u, { R: [hand, dir], L: [hand, dir] }], …] → hàm u → { R: { hand, dir }, L: … } (nội suy spline). */
+export function weaponPath(frames, loop = false) {
+  const flat = frames.map(([u, k]) => [u, Object.fromEntries(Object.entries(k).flatMap(([s, [h, d]]) => [['h' + s, h], ['d' + s, d]]))]);
+  const f = spline(flat, loop), sides = [...new Set(frames.flatMap(([, k]) => Object.keys(k)))];
+  return (u) => { const o = f(u), r = {}; for (const s of sides) r[s] = { hand: o['h' + s], dir: o['d' + s] }; return r; };
+}

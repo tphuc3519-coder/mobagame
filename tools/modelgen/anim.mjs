@@ -3,6 +3,7 @@
 // ry dương = xoay sang trái (+X); rz dương ở tay trái = dạng tay ra ngoài.
 import * as THREE from 'three';
 import { D2R } from './kit.mjs';
+import { createIK } from './armik.mjs';
 
 export const FPS = 30;
 const NAMES = {
@@ -248,6 +249,38 @@ export function buildClips(ctx, bones, o = {}) {
     return p;
   }, true);
   // Clip viết tay riêng cho từng tướng: { Tên: { dur, loop, pose: (u, t) => tư thế } } đè lên clip dựng sẵn
-  for (const [name, c] of Object.entries(o.custom || {})) mk(name, c.dur === 'run' ? run.T : c.dur ?? clips[name]?.duration ?? 1, c.pose, !!c.loop);
+  // c.ik(u, t) → { R: { hand, dir }, L: … }: quỹ đạo vũ khí; góc tay giải bằng IK từng khung (armik.mjs), cấu hình ở o.ik.
+  const solver = o.ik ? createIK(bones, ctx, NM, o.ik) : null;
+  const ARM = ['ua', 'fa', 'hd'].flatMap((k) => [k + 'R', k + 'L']);
+  // Giải IK cho cả clip trước: bám quỹ đạo xuôi (từ đầu clip) và ngược (từ cuối clip, cũng là tư thế gốc). Khung nào bám xuôi lệch đích
+  // thì dùng nghiệm bám ngược, chuyển dần trong vài khung (không lật tay đột ngột). Trả về hàm tư thế tra theo khung.
+  const ikPose = (c, dur) => {
+    const n = Math.max(2, Math.round(dur * FPS) + 1), us = Array.from({ length: n }, (_, i) => i / (n - 1));
+    const pass = (order) => {
+      solver.reset(); if (process.env.IK_DEBUG) console.log(' clip', c.name || '', order[0] ? '(ngược)' : '(xuôi)');
+      const out = []; let lu = null;
+      for (const i of order) {
+        const u = us[i], p = { ...c.pose(u, u * dur) };
+        if (lu === null) solver.solve(p, c.ik(u, u * dur)); else solver.track(p, (uu) => c.ik(uu, uu * dur), lu, u, 4);
+        out[i] = { a: Object.fromEntries(ARM.filter((k) => p[k]).map((k) => [k, p[k]])), e: solver.lastErr }; lu = u;
+      }
+      return out;
+    };
+    const A = pass(us.map((_, i) => i)), B = c.loop ? null : pass(us.map((_, i) => n - 1 - i));
+    let w = us.map((_, i) => (B && A[i].e > 0.08 && B[i].e < A[i].e ? 1 : 0));
+    for (let r = 0; r < 3; r++) w = w.map((x, i) => (w[Math.max(0, i - 1)] + 2 * x + w[Math.min(n - 1, i + 1)]) / 4); // làm mềm chỗ chuyển
+    return (u, t) => {
+      const i = Math.round(u * (n - 1)), p = { ...c.pose(u, t) };
+      for (const k of Object.keys(A[i].a)) p[k] = w[i] > 0 ? A[i].a[k].map((x, j) => x * (1 - w[i]) + B[i].a[k][j] * w[i]) : A[i].a[k];
+      return p;
+    };
+  };
+  for (const [name, c] of Object.entries(o.custom || {})) {
+    c.name = name;
+    let pose = c.pose;
+    if (c.ik && solver) pose = ikPose(c, c.dur === 'run' ? run.T : c.dur ?? 1);
+    mk(name, c.dur === 'run' ? run.T : c.dur ?? clips[name]?.duration ?? 1, pose, !!c.loop);
+  }
+  solver?.reset(); solver?.restore();
   return clips;
 }
