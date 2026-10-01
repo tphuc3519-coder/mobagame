@@ -18,7 +18,6 @@
   .nm { position: relative; z-index: 1; } .cooling .nm { opacity: 0; }
   .sk.nomana { border-color: #4a9cff; color: #7ab4ff; } .sk.locked { opacity: 0.45; }
   .lvl { position: absolute; top: -2px; right: -2px; width: 26px; height: 26px; border-radius: 50%; background: #ffb84d; color: #1a1200; font-style: normal; display: none; place-items: center; font-size: 18px; z-index: 3; }
-  .pips { position: absolute; bottom: 3px; font-size: 7px; letter-spacing: 1px; color: #ffb84d; text-decoration: none; }
   .cancel { position: absolute; right: 60px; top: -60px; background: #ff5a4acc; color: #fff; padding: 6px 14px; border-radius: 6px; font: 700 13px system-ui, sans-serif; }
 
   .sb[hidden] { display: none; }
@@ -103,7 +102,11 @@
   .sk svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk[data-k="s1"] { right: calc(var(--a) + 8px); bottom: 2px; } .sk[data-k="s2"] { right: calc(var(--a) * 0.82); bottom: calc(var(--a) * 0.78); } .sk[data-k="s3"] { right: calc(var(--s) * 0.05); bottom: calc(var(--a) + 10px); width: calc(var(--s) * 1.1); height: calc(var(--s) * 1.1); }
   .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 0 4px #000, 0 0 2px #000; } .sk .nm { display: none; }
-  .sk .pips { position: absolute; bottom: -1px; left: 0; right: 0; z-index: 3; text-align: center; font-size: 8px; color: #ffe08a; text-decoration: none; text-shadow: 0 0 2px #000; letter-spacing: 1px; }
+  .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
+  .lvring path { fill: none; stroke-width: 8; stroke-linecap: round; } .lvring .off { stroke: #0b0e1e; opacity: 0.8; }
+  .lvring .on { stroke: url(#lvg); filter: drop-shadow(0 0 2px #ffcf6a) drop-shadow(0 0 4px #ff9a2a88); }
+  .sk .lvl { box-shadow: 0 0 0 2px #1a1200, 0 0 10px #ffcf6a; animation: lvpulse 1.1s ease-in-out infinite; z-index: 5; } @keyframes lvpulse { 50% { transform: scale(1.15); box-shadow: 0 0 0 2px #1a1200, 0 0 18px #ffe08a; } }
+  .lvring .fresh { animation: lvup 0.9s ease-out; } @keyframes lvup { 0% { stroke-width: 16; stroke: #fff; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 18px #ffcf6a); } 100% { stroke-width: 8; } }
   .sk.nomana svg.art { filter: saturate(0.3) brightness(0.75); } .sk.nomana { box-shadow: 0 0 0 3px #4a9cff; }
   .sk.locked svg.art { filter: grayscale(1) brightness(0.55); } .sk.locked { opacity: 1; }
   #extras { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + var(--skw) + 14px); z-index: 4; display: flex; gap: clamp(8px, 1.6vw, 18px); align-items: flex-end; pointer-events: none; }
