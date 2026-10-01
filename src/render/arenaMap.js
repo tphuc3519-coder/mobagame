@@ -77,26 +77,27 @@ export function buildArena(scene, map, level = 'mid') {
     g.add(scatterChunked(rockGeo(seed), rockMat, rocks, true)); allRocks.push(...rocks);
   }
   const tuftMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.35);
-  const tufts = put(Math.round(2600 * dens), (x, z) => inPlay(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60), (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.9, 1.7), sy: r.range(0.8, 1.9), sz: r.range(0.9, 1.7) }));
+  const inCamp = (x, z) => (map.camps || []).some((c) => Math.hypot(c.x - x, c.y - z) < campRadius(c.type) * (c.boss ? 1.25 : 1.05));
+  const tufts = put(Math.round(2600 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60), (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.9, 1.7), sy: r.range(0.8, 1.9), sz: r.range(0.9, 1.7) }));
   g.add(scatterChunked(tuftGeo(90), tuftMat, tufts, true));
-  const reeds = put(Math.round(300 * dens), (x, z) => inPlay(x, z) && riverDist(x, z) < rw / 2 + 120 && riverDist(x, z) > rw / 2 - 20 && laneDist(x, z) > halfW + 60, (x, y, z) => ({ x, y: y + 20, z, ry: r.range(0, 7), sx: 1.1, sy: r.range(1.4, 2.5), sz: 1.1 }));
+  const reeds = put(Math.round(300 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && riverDist(x, z) < rw / 2 + 120 && riverDist(x, z) > rw / 2 - 20 && laneDist(x, z) > halfW + 60, (x, y, z) => ({ x, y: y + 20, z, ry: r.range(0, 7), sx: 1.1, sy: r.range(1.4, 2.5), sz: 1.1 }));
   g.add(scatterChunked(tuftGeo(90), tuftMat, reeds, true));
   // —— bờ sông kiểu Liên Quân: lá sen nổi + sen hồng ven nước, cỏ dài và khóm hoa xanh trên bờ ——
   {
     const lane = (x, z) => laneDist(x, z) > halfW + 120 && inPlay(x, z);
-    const pads = put(Math.round(520 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 - 190 && riverDist(x, z) < rw / 2 - 25, (x, y, z) => ({ x, y: 4 + r.range(0, 1.5), z, ry: r.range(0, 7), sx: r.range(26, 48), color: [0x4f9a3c, 0x5fae46, 0x3e8a3a][r.int(3)] }));
+    const pads = put(Math.round(520 * dens), (x, z) => lane(x, z) && !inCamp(x, z) && riverDist(x, z) > rw / 2 - 190 && riverDist(x, z) < rw / 2 - 25, (x, y, z) => ({ x, y: 4 + r.range(0, 1.5), z, ry: r.range(0, 7), sx: r.range(26, 48), color: [0x4f9a3c, 0x5fae46, 0x3e8a3a][r.int(3)] }));
     const padGeo = new THREE.CircleGeometry(1, 18, 0.35, Math.PI * 2 - 0.35); padGeo.rotateX(-Math.PI / 2);
     g.add(scatterChunked(padGeo, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), pads.map((p) => ({ ...p, sy: 1 })), true));
     const lotus = pads.filter(() => r.next() < 0.12).map((p) => ({ x: p.x, y: 6, z: p.z, ry: r.range(0, 7), sx: r.range(0.9, 1.3) }));
     const lg = []; for (let k = 0; k < 8; k++) { const c = new THREE.ConeGeometry(5, 18, 4); c.translate(0, 9, 0); c.rotateX(0.55); c.rotateY((k / 8) * Math.PI * 2); lg.push(c.toNonIndexed()); }
     g.add(scatterChunked(mergeGeometries(lg), new THREE.MeshLambertMaterial({ color: 0xf4a6c4, emissive: 0x3a1020 }), lotus, false));
-    const bank = put(Math.round(700 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 + 10 && riverDist(x, z) < rw / 2 + 170 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(90, 150), sy: r.range(90, 170) }));
+    const bank = put(Math.round(700 * dens), (x, z) => lane(x, z) && !inCamp(x, z) && riverDist(x, z) > rw / 2 + 10 && riverDist(x, z) < rw / 2 + 170 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(90, 150), sy: r.range(90, 170) }));
     g.add(buildGrass(bank, 'wild', 16));
     const blue = put(Math.round(110 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 + 40 && riverDist(x, z) < rw / 2 + 260 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(110, 160), sy: r.range(90, 130) }));
     g.add(buildGrass(blue, 'blue', 8));
   }
   const pal = [0xe8a0b8, 0xf0d070, 0xf4f0e8, 0xe8a070, 0xc0b0e8];
-  const flowers = put(Math.round(500 * dens), (x, z) => inPlay(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
+  const flowers = put(Math.round(500 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
   g.add(scatterChunked(flowerGeo(), new THREE.MeshLambertMaterial({ vertexColors: true }), flowers, true));
 
   // —— nền đất trộn lớp (env/ground.js): đá lát trên đường + sân, đất mòn mép đường/quanh trụ, lòng sông, bóng nướng sẵn ——
@@ -137,6 +138,20 @@ export function buildArena(scene, map, level = 'mid') {
         if (riverDist(x, z) < rw / 2 + 40) continue; edge.push({ x, y: 2, z, ry: r.range(0, 7), sx: r.range(18, 46), sy: r.range(10, 26), sz: r.range(18, 46), color: r.next() < 0.4 ? 0xb8b0a0 : 0xffffff }); }
     }
     g.add(scatterChunked(rockGeo(11), rockMat, edge, true));
+    // cỏ lá dài + khóm hoa mọc tràn mép đường lát (như Liên Quân), thưa ở chỗ có trụ
+    const lg = [], lf = [], structsAll = structuresOf(map);
+    for (const ln of lanes) for (let i = 1; i < ln.pts.length; i++) {
+      const a = ln.pts[i - 1], b = ln.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
+      for (let t = 0; t < L; t += 46 / Math.sqrt(dens)) for (const sd of [-1, 1]) {
+        if (r.next() < 0.35) continue;
+        const off = ln.width / 2 + r.range(-25, 110), x = a[0] + (b[0] - a[0]) * t / L + nx * sd * off + r.range(-20, 20), z = a[1] + (b[1] - a[1]) * t / L + nz * sd * off + r.range(-20, 20);
+        if (riverDist(x, z) < rw / 2 + 30 || blockedByWall(x, z, 30) || structsAll.some((q) => Math.hypot(q.x - x, q.y - z) < (q.kind === 'core' ? 700 : 230))) continue;
+        const inner = off < ln.width / 2 + 20; // khóm lấn vào đá thấp hơn
+        lg.push({ x, y: 0, z, ry: r.range(0, 7), sx: r.range(70, 120) * (inner ? 0.8 : 1), sy: r.range(50, 110) * (inner ? 0.65 : 1) });
+        if (r.next() < 0.05) lf.push({ x: x + nx * sd * 40, y: 0, z: z + nz * sd * 40, ry: r.range(0, 7), sx: r.range(90, 130), sy: r.range(70, 100) });
+      }
+    }
+    g.add(buildGrass(lg, 'wild', 14), buildGrass(lf, 'blue', 8));
   }
 
   // —— đèn lồng dọc hai mép đường ——

@@ -31,7 +31,7 @@ export function bushRects(map) {
   if (map._bushRects) return map._bushRects;
   const out = [], norm = (b) => (b.cap ? { ...b, x: (b.cap[0] + b.cap[2]) / 2, y: (b.cap[1] + b.cap[3]) / 2, w: Math.abs(b.cap[2] - b.cap[0]) + 2 * b.r, h: Math.abs(b.cap[3] - b.cap[1]) + 2 * b.r } : b);
   for (const b0 of map.bushes || []) {
-    const b = norm(b0); out.push(b);
+    const b = norm(b0); out.push(b); if (b0.noMirror) continue;
     let m;
     if (b.cap) { const p = map.mirror(b.cap[0], b.cap[1]), q = map.mirror(b.cap[2], b.cap[3]); m = norm({ ...b, cap: [p.x, p.y, q.x, q.y] }); }
     else { const o = map.mirror(0, 0), t = map.mirror(1000, 0), sw = Math.abs(t.y - o.y) > Math.abs(t.x - o.x); m = { ...b, ...map.mirror(b.x, b.y), ...(sw ? { w: b.h, h: b.w } : {}) }; } // phép đối xứng đổi trục x↔y thì đổi luôn rộng/cao
@@ -122,7 +122,7 @@ function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 320) {
 
 // Trại quái rừng phía Xanh (toạ độ gốc; phía Đỏ đối xứng). type: xem data/jungle.js. arc: bệ đá lãnh thổ sau trại.
 const CAMPS_BLUE = [
-  { id: 'blue', type: 'linh_thuy', x: 1480, y: 2560, arc: { r: 400, face: 75 } },
+  { id: 'blue', type: 'linh_thuy', x: 1480, y: 2560, arc: { r: 400, face: 270 } }, // cửa trại mở lên phía hang Long Ngư
   { id: 'wolves_l', type: 'soi_da', x: 1380, y: 4050, arc: { r: 360, face: -60 } },
   { id: 'toad_l', type: 'coc_reu', x: 2080, y: 3250, arc: { r: 330, face: 200 } },
   { id: 'red', type: 'hoa_nham', x: 3700, y: 4880, arc: { r: 400, face: 200 } },
@@ -130,15 +130,15 @@ const CAMPS_BLUE = [
   { id: 'toad_b', type: 'coc_reu', x: 3150, y: 4470, arc: { r: 330, face: 90 } },
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
-const BOSSES = [
-  { id: 'long_ngu', type: 'long_ngu', x: 1950, y: 1950, boss: true },
-  { id: 'ho_loi', type: 'ho_loi', x: 4450, y: 4450, boss: true },
+const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
+  { id: 'long_ngu', type: 'long_ngu', x: 1450, y: 1880, boss: true, back: -2.2 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4950, y: 4520, boss: true, back: -1.0 },
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
   ...[[600, 2650], [5300, 6000]].map(([x, y]) => ({ x, y, w: 320, h: 240 })),        // bụi vừa
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
-  ...[[1350, 3150], [1750, 3500], [4300, 5120], [2880, 5100], [380, 4400], [2250, 6050], [4300, 6060]]
+  ...[[1330, 3230], [1750, 3500], [2880, 5100], [380, 4400], [2250, 6050], [4300, 6060]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
 ];
 const TOWERS_BLUE = [[800, 1700], [800, 3350], [800, 4700], [2750, 3650], [1900, 4500], [1400, 5000], [4700, 5600], [3350, 5600], [1700, 5600]];
@@ -168,7 +168,6 @@ const JUNGLE_ROCKS = [
   ...rockLine([[1620, 2260], [1800, 2440]]),                 // bờ sông cạnh đầm Long Ngư
   ...rockLine([[2540, 5100], [2680, 4980]]),                 // giữa trại sói dưới và bụi lớn
   ...rockLine([[3330, 4740], [3420, 4580]]),                 // giữa trại cóc dưới và bùa đỏ
-  ...rockLine([[4000, 4700], [4250, 4950]]),                 // bờ sông cạnh đài Hổ Lôi
 ];
 // Phía Xanh: dọc Đường Đền (mép trong, về phía rừng), hai bên Đường Giữa (tới sát sông), mép trong Đường Sông.
 const W_BLUE = [
@@ -205,7 +204,8 @@ export const ARENA = {
   bushes: [
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
     // bụi cỏ dài mọc mép nước dọc bờ sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân; phía Đỏ đối xứng
-    ...[[1250, 1560, 1560, 1870], [4530, 4840, 4840, 5150]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: 95 * K, bank: true })),
+    // (không đối xứng: mỗi bờ đặt riêng vì hai hang boss nằm lệch về hai phía)
+    ...[[1560, 1250, 1870, 1560], [1950, 2270, 2200, 2520], [4530, 4840, 4840, 5150], [4450, 4130, 4200, 3880]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: (a === 1950 || a === 4450 ? 72 : 95) * K, bank: true, noMirror: true })),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
     ...[-470, 470].map((d) => { const c = 3200 + d, h = 250; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 190 * K, big: true, river: true }; }),

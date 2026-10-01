@@ -4,7 +4,7 @@ import { LEVELS } from './quality.js';
 /** Ánh sáng: hemisphere + 1 directional (ấm) + env map nhỏ (02 §13.3). Cảnh tĩnh dùng bóng nướng sẵn (ground.js, cùng hướng nắng);
  *  mức Vừa/Cao: nắng đổ bóng thật cho nhân vật/quái/lính trong khung hình quanh camera (hộp bóng đi theo camera). */
 export function addLights(scene, renderer, level = 'mid') {
-  scene.add(new THREE.HemisphereLight(0xd8e6ff, 0x5a4a38, 0.7));
+  scene.add(new THREE.HemisphereLight(0xd8eaff, 0x34505a, 0.75)); // trời lam nhạt, đất phản lam ngọc → bóng mát kiểu Liên Quân
   const key = new THREE.DirectionalLight(0xffe6c4, 1.75); key.position.set(600, 1200, 800); scene.add(key, key.target);
   const rim = new THREE.DirectionalLight(0x8fc8ff, 0.9); rim.position.set(-800, 700, -800); scene.add(rim);
   const pm = new THREE.PMREMGenerator(renderer), s = new THREE.Scene();

@@ -50,7 +50,7 @@ const once = (k, f) => cache[k] || (cache[k] = f());
 
 /** Cỏ: nền loang nhiều tông (xanh rêu, xanh lá, ngả vàng), rồi hàng nghìn ngọn cỏ ngắn sáng/tối. */
 export const grassSurface = () => once('grass', () => {
-  const N = 512, big = tileFbm(3, 4, 4), fine = tileFbm(9, 32, 3);
+  const N = 1024, big = tileFbm(3, 4, 4), fine = tileFbm(9, 64, 3);
   const dark = [44, 78, 36], mid = [78, 120, 50], light = [118, 150, 64], dry = [146, 140, 78];
   const { c, x } = make(N, (u, v, o) => {
     const b = big(u, v), f = fine(u, v);
@@ -58,10 +58,10 @@ export const grassSurface = () => once('grass', () => {
     const k = 0.78 + f * 0.44; o[0] = cl(col[0] * k); o[1] = cl(col[1] * k); o[2] = cl(col[2] * k);
   });
   const r = rngFor(5); x.lineCap = 'round';
-  for (let i = 0; i < 9000; i++) {
-    const px = r.next() * N, py = r.next() * N, l = 3 + r.next() * 7, a = -Math.PI / 2 + (r.next() - 0.5) * 0.9, lt = r.next();
-    x.strokeStyle = lt < 0.45 ? `rgba(${150 + r.int(50)},${175 + r.int(40)},${80 + r.int(30)},0.55)` : `rgba(${22 + r.int(20)},${48 + r.int(25)},${20 + r.int(15)},0.5)`;
-    x.lineWidth = 0.8 + r.next() * 0.9;
+  for (let i = 0; i < 42000; i++) { // ngọn cỏ sắc: sáng ngả vàng / tối xanh rêu
+    const px = r.next() * N, py = r.next() * N, l = 5 + r.next() * 12, a = -Math.PI / 2 + (r.next() - 0.5) * 0.9, lt = r.next();
+    x.strokeStyle = lt < 0.45 ? `rgba(${140 + r.int(60)},${175 + r.int(45)},${70 + r.int(35)},0.7)` : `rgba(${20 + r.int(20)},${46 + r.int(25)},${18 + r.int(15)},0.6)`;
+    x.lineWidth = 1 + r.next() * 1.3;
     for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) { x.beginPath(); x.moveTo(px + ox, py + oy); x.lineTo(px + ox + Math.cos(a) * l, py + oy + Math.sin(a) * l); x.stroke(); }
   }
   return finish(c);
@@ -83,23 +83,40 @@ export const dirtSurface = () => once('dirt', () => {
   return finish(c);
 });
 
-/** Đá lát tự nhiên: các phiến đá đa giác (Voronoi), mỗi phiến một tông xám-be, vát sáng mép trên trái, khe vữa tối, rêu lấm tấm trong khe. */
+/** Đá lát kiểu Liên Quân (1024²): phiến đá phẳng lớn đa giác, tông xám lam / xám be, mặt hơi gồ có hạt đá, mép vát sắc (sáng trên-trái,
+ *  tối dưới-phải tính từ trường độ cao), khe vữa tối có rêu + ngọn cỏ mọc lên, vết mẻ/nứt nhỏ. */
 export const flagstoneSurface = () => once('flag', () => {
-  const N = 512, vor = tileVoronoi(41, 7, 0.95), grain = tileFbm(43, 64, 3), stain = tileFbm(47, 6, 4), moss = tileFbm(53, 16, 3);
-  const tones = [[138, 130, 116], [124, 119, 110], [146, 136, 118], [118, 113, 104], [132, 124, 108]];
-  const e = 1 / N;
-  const { c } = make(N, (u, v, o) => {
-    const w = vor(u, v), gap = w.f2 - w.f1, t = tones[w.id % tones.length];
-    const edge = Math.min(1, gap * 34); // 0 ở khe → 1 trong phiến
-    // vát: so khe ở điểm lệch lên-trái → mép sáng/tối
-    const w2 = vor(u - 2 * e, v - 2 * e), bevel = Math.min(1, (w2.f2 - w2.f1) * 34) - edge;
-    let col = t.map((q) => q * (0.9 + w.h * 0.14));
-    col = mixc(col, [92, 84, 74], Math.max(0, stain(u, v) - 0.55) * 1.4); // vết ố
-    const g = 0.86 + grain(u, v) * 0.28;
-    let k = g * (0.5 + 0.5 * Math.pow(edge, 0.5)) + bevel * -1.3;
-    if (edge < 0.25 && moss(u, v) > 0.55) col = mixc(col, [70, 98, 46], 0.7); // rêu trong khe
-    o[0] = cl(col[0] * k); o[1] = cl(col[1] * k); o[2] = cl(col[2] * k);
-  });
+  const N = 1024, vor = tileVoronoi(41, 7, 0.95), grain = tileFbm(43, 96, 3), bump = tileFbm(44, 24, 3), stain = tileFbm(47, 6, 4), moss = tileFbm(53, 16, 3);
+  const tones = [[156, 160, 168], [140, 146, 156], [164, 160, 150], [132, 138, 148], [150, 148, 142], [146, 152, 160]];
+  const Hm = new Float32Array(N * N), ID = new Int32Array(N * N), HV = new Float32Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const u = i / N, v = j / N, w = vor(u, v), k = j * N + i, gap = w.f2 - w.f1;
+    const e = Math.min(1, gap / 0.022);                                   // 0 ở khe → 1 trong phiến (mép vát ~2% ô)
+    Hm[k] = (e < 1 ? 1 - Math.pow(1 - e, 2.2) : 1) * (0.94 + w.h * 0.06) + (bump(u, v) - 0.5) * 0.06 + (grain(u, v) - 0.5) * 0.025;
+    ID[k] = w.id; HV[k] = gap;
+  }
+  const c = document.createElement('canvas'); c.width = c.height = N;
+  const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = j * N + i, u = i / N, v = j / N, hL = Hm[j * N + (i + N - 1) % N], hR = Hm[j * N + (i + 1) % N], hU = Hm[((j + N - 1) % N) * N + i], hD = Hm[((j + 1) % N) * N + i];
+    const nx = (hL - hR) * 9, ny = (hU - hD) * 9, light = (nx * -0.6 + ny * -0.8);    // đèn từ trên-trái
+    const t = tones[ID[k] % tones.length], gap = HV[k];
+    let col = t.map((q) => q * (0.92 + (ID[k] * 0.618 % 1) * 0.12));
+    col = mixc(col, [112, 104, 92], Math.max(0, stain(u, v) - 0.56) * 1.3);      // vết ố
+    let kk = (0.86 + grain(u, v) * 0.22) * (0.55 + 0.45 * Hm[k]) + light * 0.9;
+    if (gap < 0.006) { col = moss(u, v) > 0.5 ? [54, 78, 38] : [58, 54, 48]; kk = 0.75 + grain(u, v) * 0.3; }   // khe vữa / rêu
+    else if (gap < 0.014 && moss(u, v) > 0.62) col = mixc(col, [78, 108, 52], 0.55);
+    d[4 * k] = cl(col[0] * kk); d[4 * k + 1] = cl(col[1] * kk); d[4 * k + 2] = cl(col[2] * kk); d[4 * k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  // ngọn cỏ nhỏ mọc từ khe đá (vẽ đè, lặp khít)
+  const r = rngFor(57); x.lineCap = 'round';
+  for (let n = 0; n < 2600; n++) {
+    const i = r.int(N), j = r.int(N); if (HV[j * N + i] > 0.007 || moss(i / N, j / N) < 0.45) continue;
+    const l = 4 + r.next() * 9, a = -Math.PI / 2 + (r.next() - 0.5) * 1.4;
+    x.strokeStyle = r.next() < 0.5 ? `rgba(${110 + r.int(50)},${150 + r.int(40)},${60 + r.int(30)},0.85)` : `rgba(${40 + r.int(20)},${70 + r.int(25)},${30 + r.int(15)},0.8)`; x.lineWidth = 1.2 + r.next();
+    for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) { x.beginPath(); x.moveTo(i + ox, j + oy); x.lineTo(i + ox + Math.cos(a) * l, j + oy + Math.sin(a) * l); x.stroke(); }
+  }
   return finish(c);
 });
 

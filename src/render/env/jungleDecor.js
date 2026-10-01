@@ -132,7 +132,7 @@ export function buildCampSites(map) {
 /** Hang mục tiêu lớn (kiểu hang Tà thần/Rồng của Liên Quân): bệ đá tối thấp gồ ghề giữa sông, hàng "móng đá" cong khổng lồ
  *  ôm phía sau như nanh vuốt, vết nứt phát sáng (tím: Hổ Lôi, vàng cam: Long Ngư) toả ra mặt bệ và lan xuống nước, quả cầu năng lượng. */
 function buildLair(g, c, R, r, glowHex) {
-  const glow = new THREE.Color(glowHex), seed = c.x * 0.001;
+  const glow = new THREE.Color(glowHex), seed = c.x * 0.001, back = c.back ?? -Math.PI / 2; // hướng lưng hang (phía rừng), mặt hở ra sông
   // bệ: đĩa đá thấp, mép vỡ gồ ghề, mặt trên lồi lõm nhẹ
   const pg = new THREE.CylinderGeometry(R * 0.98, R * 1.12, 36, 64, 3); pg.deleteAttribute('uv'); pg.deleteAttribute('normal');
   const plat = mergeVertices(pg), pp = plat.attributes.position;
@@ -146,7 +146,7 @@ function buildLair(g, c, R, r, glowHex) {
   const claws = [], rockM = new THREE.MeshLambertMaterial({ vertexColors: true });
   const nC = 7;
   for (let i = 0; i < nC; i++) {
-    const a = -Math.PI / 2 + (i / (nC - 1) - 0.5) * Math.PI * 1.35, len = R * r.range(0.75, 1.05) * (1 - Math.abs(i / (nC - 1) - 0.5) * 0.5), x0 = Math.cos(a) * R * 1.02, z0 = Math.sin(a) * R * 1.02;
+    const a = back + (i / (nC - 1) - 0.5) * Math.PI * 0.8, len = R * r.range(0.75, 1.05) * (1 - Math.abs(i / (nC - 1) - 0.5) * 0.5), x0 = Math.cos(a) * R * 1.02, z0 = Math.sin(a) * R * 1.02;
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x0 * 1.1, -20, z0 * 1.1), new THREE.Vector3(x0 * 1.05, len * 0.45, z0 * 1.05), new THREE.Vector3(x0 * 0.82, len * 0.85, z0 * 0.82), new THREE.Vector3(x0 * 0.55, len * 1.0, z0 * 0.55)]);
     const tg = new THREE.TubeGeometry(curve, 12, 1, 7, false), tp = tg.attributes.position, uv = tg.attributes.uv, pts = curve.getSpacedPoints(12);
     for (let k = 0; k < tp.count; k++) { const t = uv.getX(k), q = pts[Math.min(12, Math.round(t * 12))], rad = R * 0.11 * Math.pow(1 - t, 1.1) + 4; tp.setXYZ(k, q.x + (tp.getX(k) - q.x) * rad * 1.5, q.y + (tp.getY(k) - q.y) * rad, q.z + (tp.getZ(k) - q.z) * rad * 0.8); }
@@ -158,10 +158,10 @@ function buildLair(g, c, R, r, glowHex) {
   const clawM = new THREE.Mesh(mergeGeometries(claws), rockM); clawM.position.set(c.x, 0, c.y); g.add(clawM);
   // tảng đá lớn chặn mép sau
   const big = [];
-  for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + r.range(-1.2, 1.2), d = R * r.range(1.05, 1.3); big.push({ x: c.x + Math.cos(a) * d, y: -10, z: c.y + Math.sin(a) * d, ry: r.range(0, 7), sx: R * r.range(0.22, 0.32), sy: R * r.range(0.18, 0.3), sz: R * r.range(0.18, 0.26), color: 0x8a86a0 }); }
+  for (let i = 0; i < 6; i++) { const a = back + r.range(-1.2, 1.2), d = R * r.range(1.05, 1.3); big.push({ x: c.x + Math.cos(a) * d, y: -10, z: c.y + Math.sin(a) * d, ry: r.range(0, 7), sx: R * r.range(0.22, 0.32), sy: R * r.range(0.18, 0.3), sz: R * r.range(0.18, 0.26), color: 0x8a86a0 }); }
   g.add(scatter(new THREE.InstancedMesh(boulderGeo(91), rockM, big.length), big, true));
   // vết nứt phát sáng: mặt trên bệ + lan ra nước quanh hang
-  const U = { uT: LAIR_T, uC: { value: glow.clone().multiplyScalar(2.2) }, uR: { value: R }, uS: { value: seed * 37.0 } };
+  const U = { uT: LAIR_T, uC: { value: glow.clone().multiplyScalar(1.8) }, uR: { value: R }, uS: { value: seed * 37.0 } };
   const crack = (rad, y, outer) => { const m = new THREE.Mesh(new THREE.CircleGeometry(rad, 64), new THREE.ShaderMaterial({ uniforms: { ...U, uO: { value: outer ? 1 : 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT, uR, uS, uO; uniform vec3 uC; varying vec2 vP;
@@ -180,7 +180,7 @@ function buildLair(g, c, R, r, glowHex) {
     m.rotation.x = -Math.PI / 2; m.position.set(c.x, y, c.y); m.renderOrder = 2; g.add(m); };
   crack(R * 0.98, 33, false); crack(R * 1.6, 6, true);
   // quả cầu năng lượng trên móng giữa
-  const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x, R * 0.95, c.y - R * 0.55); g.add(orb);
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x + Math.cos(back) * R * 0.55, R * 0.95, c.y + Math.sin(back) * R * 0.55); g.add(orb);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: glow, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 })); halo.scale.setScalar(R * 0.6); halo.position.copy(orb.position); g.add(halo);
 }
 export const LAIR_T = { value: 0 };
