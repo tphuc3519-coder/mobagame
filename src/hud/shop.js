@@ -1,4 +1,4 @@
-// Cửa hàng trượt vào từ trái + thanh đồ 6 ô + ô "Mua nhanh" (05 §1, 07). Mua được mọi lúc khi còn sống.
+// Cửa hàng trượt vào từ trái (hoặc phải) — 6 ô trang bị chỉ hiện trong bảng cửa hàng — + ô "Mua nhanh" dưới bản đồ nhỏ (05 §1, 07). Mua được mọi lúc khi còn sống.
 import { ITEMS, SHOP_TABS, SELL_RATE, cleanBuild } from '../data/items.js';
 import { planBuy, quickBuys } from '../sim/inventory.js';
 import { itemIcon, coinIcon, statLines } from './icons.js';
@@ -12,10 +12,9 @@ export function createShop(root, { world, player }) {
     <div class="dock" id="dock">
       <button class="goldPill" id="goldPill" aria-label="Cửa hàng"></button>
       <div class="qb" id="qb"></div>
-      <div class="bar" id="itemBar"></div>
     </div>
     <section class="shop" id="shop" aria-hidden="true">
-      <header><b>Cửa hàng</b><span class="sg" id="shopGold"></span><button class="x" id="shopX" aria-label="Đóng">×</button></header>
+      <header><b>Cửa hàng</b><span class="inv"><small>Trang bị</small><span class="bar" id="itemBar"></span></span><span class="sg" id="shopGold"></span><button class="x" id="shopX" aria-label="Đóng">×</button></header>
       <div class="sbody">
         <nav id="tabs"></nav>
         <div class="grid" id="grid"></div>

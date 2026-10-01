@@ -1,5 +1,6 @@
 // Bản đồ nhỏ toàn bản đồ (07 §9): nền vẽ một lần (đất, sông, đường, tường, bụi), phía trên vẽ lại mỗi khung: công trình, lính, tướng, khung nhìn camera.
 // Chưa có sương mù chiến trường nên hiện mọi đơn vị; sau này chỉ cần lọc theo tầm nhìn tại đây.
+import { bushRects } from '../data/maps.js';
 import * as THREE from 'three';
 import { canSee } from '../sim/vision.js';
 
@@ -34,9 +35,13 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     c.strokeStyle = '#3b3946'; c.lineCap = 'round';
     if (map.walls?.segs) { c.lineWidth = Math.max(1.5, map.walls.thickness * sx); for (const s of map.walls.segs) { c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); } }
     else if (map.walls?.ys) { c.lineWidth = Math.max(1.5, map.walls.thickness * sy); for (const y of map.walls.ys) { c.beginPath(); c.moveTo(0, wy(y)); c.lineTo(W, wy(y)); c.stroke(); } }
-    // bụi cỏ
-    c.fillStyle = '#2b6a30'; c.strokeStyle = '#1c4a20'; c.lineWidth = 1;
-    for (const b of map.bushes || []) for (const q of [b, { ...b, ...map.mirror(b.x, b.y) }]) { c.beginPath(); c.ellipse(wx(q.x), wy(q.y), b.w * sx * 0.55, b.h * sy * 0.55, 0, 0, 7); c.fill(); c.stroke(); }
+    // bụi cỏ: xanh ngọc đậm viền sáng, nổi hẳn trên nền cỏ (bụi giữa sông viền vàng: chốt quan trọng)
+    for (const q of bushRects(map)) {
+      const x = wx(q.x - q.w / 2), y = wy(q.y - q.h / 2), w = Math.max(4, q.w * sx), h = Math.max(4, q.h * sy);
+      c.beginPath(); c.roundRect(x, y, w, h, Math.min(w, h) * 0.45);
+      c.fillStyle = '#0b4f45'; c.fill(); c.lineWidth = q.river ? 1.8 : 1.2; c.strokeStyle = q.river ? '#ffd86a' : '#6af0c4'; c.stroke();
+      c.fillStyle = '#2fbf8f'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(x + w * (0.3 + k * 0.2), y + h * (k % 2 ? 0.4 : 0.6), Math.min(w, h) * 0.16, 0, 7); c.fill(); }
+    }
   }
   function strokePath(c, pts) { c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(wx(x), wy(y)) : c.moveTo(wx(x), wy(y)))); c.stroke(); }
 

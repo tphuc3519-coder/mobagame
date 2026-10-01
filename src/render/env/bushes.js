@@ -1,3 +1,4 @@
+import { bushRects } from '../../data/maps.js';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rngFor, fbm } from './noise.js';
@@ -16,9 +17,9 @@ function leafTexture() {
   const leaf = (x, y, len, wid, ang, l) => {
     g.save(); g.translate(x, y); g.rotate(ang);
     const gr = g.createLinearGradient(0, 0, len, 0);
-    gr.addColorStop(0, `hsl(${95 + r.range(-10, 10)} 38% ${l * 0.7}%)`); gr.addColorStop(1, `hsl(${86 + r.range(-14, 14)} 44% ${l}%)`);
+    gr.addColorStop(0, `hsl(${168 + r.range(-8, 8)} 55% ${l * 0.6}%)`); gr.addColorStop(1, `hsl(${155 + r.range(-12, 12)} 62% ${l * 1.05}%)`); // xanh ngọc (khác hẳn cỏ vàng-xanh dưới đất)
     g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.45, -wid, len, 0); g.quadraticCurveTo(len * 0.45, wid, 0, 0); g.fill();
-    g.strokeStyle = `hsla(80, 40%, ${l * 1.25}%, 0.55)`; g.lineWidth = 1.1; g.beginPath(); g.moveTo(len * 0.08, 0); g.lineTo(len * 0.9, 0); g.stroke();
+    g.strokeStyle = `hsla(150, 70%, ${l * 1.4}%, 0.6)`; g.lineWidth = 1.1; g.beginPath(); g.moveTo(len * 0.08, 0); g.lineTo(len * 0.9, 0); g.stroke();
     g.restore();
   };
   // chùm lá toả từ gốc dưới giữa ra mọi phía, lá trong tối, lá ngoài sáng; mật độ dày ở giữa để mipmap còn đặc
@@ -35,7 +36,7 @@ const dome = (u, v) => { const e = Math.pow(Math.abs(u), 4) + Math.pow(Math.abs(
 
 /** Dựng toàn bộ bụi của bản đồ. density: 0.4..1 (mức đồ hoạ). */
 export function buildBushes(map, density = 1) {
-  const r = rngFor(202), rects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
+  const r = rngFor(202), rects = bushRects(map);
   const P = [], N = [], U = [], C = [], I = [];
   const col = new THREE.Color(), v3 = new THREE.Vector3(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const nv = new THREE.Vector3(), t1 = new THREE.Vector3(), t2 = new THREE.Vector3(), rv = new THREE.Vector3();
@@ -48,7 +49,7 @@ export function buildBushes(map, density = 1) {
       P.push(cx + (t1.x * x + t2.x * y) * size, cy + (t1.y * x + t2.y * y) * size, cz + (t1.z * x + t2.z * y) * size);
       N.push(nx / ln, ny / ln, nz / ln); // pháp tuyến theo vòm (tô bóng tròn cả bụi)
       U.push(x + 0.5, y + 0.5);
-      col.setHSL(0.25 + hue, 0.42, 0.5).multiplyScalar(shade * r.range(0.92, 1.08)); C.push(col.r, col.g, col.b);
+      col.setHSL(0.45 + hue, 0.55, 0.5).multiplyScalar(shade * r.range(0.92, 1.08)); C.push(col.r, col.g, col.b);
     }
     I.push(base, base + 1, base + 2, base, base + 2, base + 3);
   };
@@ -63,7 +64,7 @@ export function buildBushes(map, density = 1) {
       const lump = 0.82 + fbm(b.x / 200 + u * 2.3, b.y / 200 + v * 2.3, 3) * 0.4, y = H * d * lump;
       const nx = u * (1 - d * 0.6), nz = v * (1 - d * 0.6), ny = 0.35 + d;
       const sun = Math.max(0, ny - 0.7) * 0.6 + d * 0.5;  // đỉnh nắng
-      const hueJ = (fbm(b.x / 90 + u * 4, b.y / 90 + v * 4, 2) - 0.5) * 0.08 - sun * 0.035; // ngả vàng ở đỉnh, xanh lam ở dưới
+      const hueJ = (fbm(b.x / 90 + u * 4, b.y / 90 + v * 4, 2) - 0.5) * 0.08 - sun * 0.03; // đỉnh nắng ngả xanh lá sáng, lòng xanh lam đậm
       card(b.x + u * hw, y + 6, b.y + v * hh, r.range(110, 170) * (b.big ? 1.1 : 1), nx, ny, nz, 0.6 + sun * 0.7 + r.range(-0.08, 0.08), hueJ);
     }
     // vành lá sát đất quanh mép (che chân lõi)
@@ -89,8 +90,17 @@ export function buildBushes(map, density = 1) {
   // lõi tối: bán cầu gồ ghề co theo từng bụi (InstancedMesh)
   const cg0 = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); cg0.deleteAttribute('uv'); cg0.deleteAttribute('normal');
   const cg = mergeVertices(cg0); { const p = cg.attributes.position; for (let i = 0; i < p.count; i++) { const k = 0.85 + fbm(p.getX(i) * 3 + 2, p.getZ(i) * 3 + p.getY(i) * 2, 2) * 0.3; p.setXYZ(i, p.getX(i) * k, p.getY(i) * k, p.getZ(i) * k); } cg.computeVertexNormals(); }
-  const coreMesh = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ color: 0x31562a }), core.length), d = new THREE.Object3D();
+  const coreMesh = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ color: 0x13423a }), core.length), d = new THREE.Object3D();
   core.forEach((c, i) => { d.position.set(c.x, 0, c.z); d.scale.set(c.sx, c.h, c.sz); d.updateMatrix(); coreMesh.setMatrixAt(i, d.matrix); });
   g.add(coreMesh, new THREE.Mesh(geo, mat));
+  // bụi giữa sông mọc trên cồn bùn: đĩa đất gồ ghề nhô khỏi mặt nước, viền đá cuội
+  const islets = rects.filter((b) => b.river);
+  if (islets.length) {
+    const ig0 = new THREE.CylinderGeometry(1, 1.12, 1, 28, 1); ig0.deleteAttribute('uv'); ig0.deleteAttribute('normal'); const ig = mergeVertices(ig0);
+    { const p = ig.attributes.position; for (let i = 0; i < p.count; i++) { const a = Math.atan2(p.getZ(i), p.getX(i)), k = 1 + (fbm(Math.cos(a) * 2 + 5, Math.sin(a) * 2, 3) - 0.5) * 0.35; p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); } ig.computeVertexNormals(); }
+    const im = new THREE.InstancedMesh(ig, new THREE.MeshLambertMaterial({ color: 0x6a5a42 }), islets.length);
+    islets.forEach((b, i) => { d.position.set(b.x, 4, b.y); d.scale.set(b.w * 0.62, 16, b.h * 0.62); d.rotation.y = i; d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
+    g.add(im);
+  }
   return g;
 }

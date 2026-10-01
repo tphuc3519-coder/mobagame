@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { wallStoneSurface } from './env/surfaces.js';
 import { bakeGroundMap, groundMaterial } from './env/ground.js';
-import { structuresOf } from '../data/maps.js';
+import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
 import { WIND, sway, treeGeo, pineGeo, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
@@ -80,16 +80,16 @@ export function buildArena(scene, map, level = 'mid') {
     const pad = 2600, structs = structuresOf(map);
     const lanes = map.lanes.map((ln) => { const pts = []; for (let i = 0; i + 1 < ln.pts.length; i++) { const a = ln.pts[i], b = ln.pts[i + 1], n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 300)); for (let k = 0; k < n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } pts.push(ln.pts[ln.pts.length - 1]); return { pts, width: ln.width }; });
     const fountains = [map.fountain, map.mirror(map.fountain.x, map.fountain.y)];
-    const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 560 })), ...structs.filter((q) => q.kind !== 'core').map((q) => ({ x: q.x, z: q.y, r: 260 }))];
-    const bushRects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
+    const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 780 })), ...structs.filter((q) => q.kind !== 'core').map((q) => ({ x: q.x, z: q.y, r: 260 }))];
+    const bushList = bushRects(map);
     const casters = [
       ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.6 })),
       ...allRocks.map((q) => ({ x: q.x, z: q.z, r: q.sx * 0.9, h: q.sy * 1.2, k: 0.45 })),
-      ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 260 : 120, h: q.kind === 'core' ? 700 : 520, k: 0.55 })),
-      ...bushRects.flatMap((b) => [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
+      ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 520 : 140, h: q.kind === 'core' ? 900 : 700, k: 0.55 })),
+      ...bushList.flatMap((b) => [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = map.walls.segs.map((w) => ({ x1: w.x1, z1: w.y1, x2: w.x2, z2: w.y2, w: map.walls.thickness, h: 150 }));
-    const dirt = structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 820 : 430, k: 0.85 }));
+    const dirt = structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 }));
     const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);

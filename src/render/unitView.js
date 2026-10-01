@@ -21,7 +21,9 @@ export function createUnitViews(scene, localTeam, localId) {
     const v = { root, animator: null, mats: null, angle: e.facing, lift: null, flash: 0, ghost: false, art: null, part: null, fall: 0 };
     views.set(e.id, v);
     if (e.kind === 'tower' || e.kind === 'core' || e.kind === 'fountain') {
-      v.part = (e.kind === 'tower' ? createTower : e.kind === 'core' ? createCore : createFountain)(e.team); root.add(v.part.object); return v;
+      v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team);
+      if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
+      root.add(v.part.object); return v;
     }
     if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;

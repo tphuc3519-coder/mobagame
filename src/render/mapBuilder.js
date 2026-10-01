@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { heightAt } from './env/terrain.js';
 import { flagstoneSurface, wallStoneSurface } from './env/surfaces.js';
 import { bakeGroundMap, groundMaterial } from './env/ground.js';
-import { structuresOf } from '../data/maps.js';
+import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
 import { buildFoliage, WIND } from './env/foliage.js';
@@ -35,14 +35,14 @@ export function buildMap(scene, map, level = 'mid') {
   // —— nền đất trộn lớp: đường + sân lát đá, đất mòn quanh trụ, lòng khe nước, bóng nướng sẵn (env/ground.js) ——
   {
     const pad = 2200, structs = structuresOf(map), fxs = [map.fountain.x, map.w - map.fountain.x];
-    const bushRects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
+    const bushList = bushRects(map);
     const baked = bakeGroundMap({
       x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024,
       lanes: [{ pts: [[-pad, lane.y], [map.w + pad, lane.y]], width: rw }],
-      plazas: [...fxs.map((x) => ({ x, z: lane.y, r: 600 })), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 380 : 230 }))],
+      plazas: [...fxs.map((x) => ({ x, z: lane.y, r: 600 })), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 460 : 230 }))],
       dirt: structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 700 : 420, k: 0.85 })),
-      casters: [...(foliage.userData.casters || []), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 200 : 110, h: q.kind === 'core' ? 650 : 520, k: 0.55 })),
-        ...bushRects.map((b) => ({ x: b.x, z: b.y, r: Math.min(b.w, b.h) * 0.55, h: 160, k: 0.45 }))],
+      casters: [...(foliage.userData.casters || []), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 360 : 130, h: q.kind === 'core' ? 800 : 700, k: 0.55 })),
+        ...bushList.map((b) => ({ x: b.x, z: b.y, r: Math.min(b.w, b.h) * 0.55, h: 160, k: 0.45 }))],
       walls: wallSegs.filter((w) => !w.pillar).map((w) => ({ x1: w.x0, z1: w.wy, x2: w.x1, z2: w.wy, w: wl.thickness, h: 150 })),
       river: { pts: [[map.river.x, -pad], [map.river.x, map.h + pad]], width: map.river.width },
     });

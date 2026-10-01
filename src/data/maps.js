@@ -26,6 +26,14 @@ export const DUEL = {
   mirror: (x, y) => ({ x: mirrorX(x), y }),
 };
 
+/** Mọi bụi cỏ đủ hai phía (đã đối xứng). Bụi nằm đúng trục đối xứng (ảnh đối xứng trùng chính nó, vd bụi giữa sông) chỉ tính một lần. */
+export function bushRects(map) {
+  if (map._bushRects) return map._bushRects;
+  const out = [];
+  for (const b of map.bushes || []) { out.push(b); const m = map.mirror(b.x, b.y); if (Math.abs(m.x - b.x) > 1 || Math.abs(m.y - b.y) > 1) out.push({ ...b, ...m }); }
+  return (map._bushRects = out);
+}
+
 /** Danh sách công trình đủ hai phía (đã đối xứng bằng map.mirror). */
 export function structuresOf(map) {
   const out = [];
@@ -120,6 +128,8 @@ export const ARENA = {
   bushes: [
     ...[[1300, 1900], [650, 3100], [2050, 3600], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
     ...[[2150, 2750, 520, 300], [2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
+    // hai bụi lớn NGAY GIỮA SÔNG, hai phía ngã tư giữa: chốt chặn quan trọng nhất (nằm trên trục đối xứng nên mỗi bụi chỉ có một)
+    ...[[2300, 2300], [4100, 4100]].map(([x, y]) => ({ x: x * K, y: y * K, w: 460 * K, h: 460 * K, big: true, river: true })),
     ...[[1200, 2850], [1480, 3250], [1250, 4200], [1620, 4230], [2500, 3150], [3000, 4700], [4150, 4850], [4300, 5050], [2600, 5150], [380, 4400], [2000, 5950], [4400, 6000]]
       .map(([x, y], i) => ({ x: x * K, y: y * K, w: (i % 3 ? 220 : 260) * K, h: (i % 2 ? 170 : 200) * K })),
   ],

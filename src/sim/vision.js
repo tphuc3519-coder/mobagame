@@ -4,6 +4,7 @@
 //  - nó đang trong bụi cỏ thì chỉ thấy khi có đơn vị phe mình đứng cùng bụi (hoặc sát bên, dưới 220).
 // Công trình luôn hiện (bản đồ đã biết). Kết quả ghi vào e.seenBy[team] (cập nhật mỗi 3 tick); nơi nào cần "thấy được" thì hỏi canSee/canTarget.
 // Chỉ bật khi map.vision có khai báo (bản 5v5); bản 1v1 hiện mọi thứ như cũ.
+import { bushRects } from '../data/maps.js';
 import { dist } from './util.js';
 import { isTargetable } from './targeting.js';
 
@@ -13,7 +14,7 @@ const REVEAL_TICKS = 45, EVERY = 3;
 /** Danh sách bụi (đã đối xứng) với nửa kích thước; tính một lần cho mỗi map. */
 function bushesOf(map) {
   if (map._bushes) return map._bushes;
-  return (map._bushes = (map.bushes || []).flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]).map((b, i) => ({ id: i, x: b.x, y: b.y, hw: b.w / 2, hh: b.h / 2 })));
+  return (map._bushes = bushRects(map).map((b, i) => ({ id: i, x: b.x, y: b.y, hw: b.w / 2, hh: b.h / 2 })));
 }
 export const bushAt = (map, p) => bushesOf(map).find((b) => Math.abs(p.x - b.x) <= b.hw && Math.abs(p.y - b.y) <= b.hh) || null;
 

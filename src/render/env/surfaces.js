@@ -104,7 +104,7 @@ export const flagstoneSurface = () => once('flag', () => {
 });
 
 /** Tường đá xếp: hàng đá chữ nhật lệch nhau, cạnh bo, rêu leo từ chân tường (v lớn = chân). */
-export const wallStoneSurface = () => once('wall', () => {
+export const wallStoneSurface = (mossy = true) => once(mossy ? 'wall' : 'block', () => {
   const N = 512, grain = tileFbm(61, 48, 3), moss = tileFbm(67, 8, 4), r = rngFor(71);
   const rows = 6, rowH = 1 / rows, stones = [];
   for (let j = 0; j < rows; j++) { let u = (j % 2) * 0.13; const list = []; while (u < 1 + 0.3) { const w = 0.16 + r.next() * 0.16; list.push([u, w, r.next()]); u += w; } stones.push(list); }
@@ -115,8 +115,8 @@ export const wallStoneSurface = () => once('wall', () => {
     const uu = ((u - s[0]) % 1 + 1) % 1 / s[1];
     const ex = Math.min(uu, 1 - uu) * s[1] * N / 6, ey = Math.min(vv, 1 - vv) * rowH * N / 6, edge = Math.min(1, Math.min(ex, ey));
     const tone = 128 + s[2] * 44;
-    let col = [tone * 1.02, tone, tone * 1.05];
-    const m = moss(u, v) + (v - 0.7) * 2.2 - 0.35; if (m > 0) col = mixc(col, [62, 92, 44], Math.min(0.85, m * 2.5)); // rêu chỉ leo từ chân tường
+    let col = mossy ? [tone * 1.02, tone, tone * 1.05] : [tone * 1.06, tone * 1.0, tone * 0.92]; // đá khối công trình: ngả vàng ấm, rêu chỉ lấm tấm
+    const m = mossy ? moss(u, v) + (v - 0.7) * 2.2 - 0.35 : moss(u, v) - 0.72; if (m > 0) col = mixc(col, [62, 92, 44], Math.min(0.85, m * 2.5)); // rêu chỉ leo từ chân tường
     const k = (0.4 + 0.6 * Math.pow(edge, 0.5)) * (0.85 + grain(u, v) * 0.3) * (vv < 0.18 ? 1.08 : 1);
     o[0] = cl(col[0] * k); o[1] = cl(col[1] * k); o[2] = cl(col[2] * k);
   });
@@ -128,4 +128,17 @@ export const noiseSurface = () => once('noise', () => {
   const N = 256, a = tileFbm(81, 4, 4), b = tileFbm(83, 12, 3), cN = tileFbm(87, 40, 2);
   const { c } = make(N, (u, v, o) => { o[0] = a(u, v) * 255; o[1] = b(u, v) * 255; o[2] = cN(u, v) * 255; });
   return finish(c, false);
+});
+
+/** Ngói âm dương (mái trụ/tế đàn): hàng ngói cong xếp chồng, đầu ngói tối, có rêu lấm tấm. Trắng-xám để tô màu đội bằng color của vật liệu. */
+export const roofTileSurface = () => once('roof', () => {
+  const N = 256, grain = tileFbm(91, 32, 3), moss = tileFbm(93, 6, 3), rows = 8, cols = 8;
+  const { c } = make(N, (u, v, o) => {
+    const ry = v * rows, j = Math.floor(ry), fy = ry - j, cx = u * cols + (j % 2) * 0.5, fx = cx - Math.floor(cx);
+    const roll = Math.sin(fx * Math.PI); // ống ngói tròn
+    let k = (0.55 + 0.45 * roll) * (0.75 + 0.25 * fy) * (fy > 0.9 ? 0.55 : 1) * (0.88 + grain(u, v) * 0.24);
+    let col = [210, 205, 200]; const m = moss(u, v); if (m > 0.62) col = [150, 175, 120];
+    o[0] = Math.min(255, col[0] * k); o[1] = Math.min(255, col[1] * k); o[2] = Math.min(255, col[2] * k);
+  });
+  return finish(c);
 });
