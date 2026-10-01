@@ -16,6 +16,8 @@ function resolveHit(world, owner, target, pay) {
   const dealt = dealDamage(world, owner, target, it.amount, 'physical', { basic: true });
   for (const x of it.extra) dealDamage(world, owner, target, x.amount, x.type);
   onBasicHit(world, owner, target, dealt);
+  const burn = owner.statuses.find((s) => s.burn)?.burn; // Ấn Hoả: thiêu đốt + làm chậm
+  if (burn && target.alive) { applyStatus(world, target, { status: 'dot', id: 'an_hoa_burn', dps: burn.dps + burn.perLevel * (owner.level - 1), duration: burn.duration, type: 'true' }, owner); applyStatus(world, target, { status: 'slow', id: 'an_hoa_slow', pct: burn.slow, duration: 1 }, owner); }
   if (pay.bonusMagic) dealDamage(world, owner, target, pay.bonusMagic, 'magic');
   if (pay.ambush) {
     dealDamage(world, owner, target, pay.ambush.base + pay.ambush.perLevel * (pay.level - 1) + pay.ambush.adBonus * Math.max(0, owner.stats.atk - owner.data.base.atk), 'physical');

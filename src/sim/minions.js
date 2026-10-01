@@ -55,7 +55,7 @@ function pickTarget(world, e) {
   if (cur && cur.alive && isTargetable(e, cur) && canSee(e.team, cur) && dist(cur.pos, e.pos) <= range + 700) return cur;
   let best = null, bs = Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || t.noTarget || !isTargetable(e, t) || !canSee(e.team, t)) continue;
+    if (t.team === e.team || t.team === 2 || t.noTarget || !isTargetable(e, t) || !canSee(e.team, t)) continue;
     const d = dist(t.pos, e.pos) - t.radius;
     // lính ưu tiên lính địch, rồi công trình/tướng trong tầm đánh
     const lim = t.kind === 'minion' ? 450 : range + 40;

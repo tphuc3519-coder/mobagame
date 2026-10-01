@@ -7,7 +7,7 @@ const DMG = { physical: '#ffd6a0', magic: '#a8c8ff', true: '#ffffff' };
 export function createHud(canvas, input) {
   const ctx = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1;
-  const floats = [];
+  const floats = [], banners = [];
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
   addEventListener('resize', resize); resize();
 
@@ -21,11 +21,13 @@ export function createHud(canvas, input) {
       for (const ev of events) {
         const e = world.byId(ev.id);
         if (!e) continue;
+        if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
         if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, t: 0, text: ev.shield ? 'Khiên' : String(ev.amount), color: DMG[ev.dmgType] || '#fff', size: ev.amount > 150 ? 22 : 16 });
         else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, text: '+' + ev.amount, color: '#8affb0', size: 16 });
       }
     },
     draw(world, cam, player, enemy, debugLines) {
+      world.__localTeam = player.team;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
@@ -49,8 +51,18 @@ export function createHud(canvas, input) {
           ctx.textBaseline = 'bottom'; ctx.font = '700 12px system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
           ctx.strokeText(e.data.name, p.x + 10, y0 - 4); ctx.fillStyle = e.team === player.team ? '#e8f4ff' : '#ffd8d0'; ctx.fillText(e.data.name, p.x + 10, y0 - 4);
           ctx.font = '600 11px system-ui, sans-serif';
+          const buffs = e.statuses.filter((q) => q.buff); // huy hiệu bùa rừng cạnh huy hiệu cấp
+          buffs.forEach((q, i) => { const bx2 = x0 - 12, by2 = y0 - 22 - i * 20, c2 = { an_thuy: '#3fa8ff', an_hoa: '#ff5a2a', uy_ho: '#b98aff' }[q.buff] || '#fff';
+            ctx.beginPath(); ctx.arc(bx2, by2, 8, 0, 7); ctx.fillStyle = '#141830'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = c2; ctx.stroke();
+            const left = Math.max(0, (q.until - world.tick) / 30), tot = q.duration || 90; ctx.beginPath(); ctx.moveTo(bx2, by2); ctx.arc(bx2, by2, 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, left / tot)); ctx.fillStyle = c2; ctx.fill(); });
         } else {
-          const bw = e.structure ? 120 : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84;
+          const mon = e.kind === 'monster';
+          const bw = e.structure ? 120 : mon ? (e.boss ? 150 : e.monsterType === 'linh_thuy' || e.monsterType === 'hoa_nham' ? 96 : 60) : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84;
+          if (mon) { // quái rừng: thanh vàng cam, có tên với bùa và mục tiêu lớn
+            bar(p.x - bw / 2, p.y - 6, bw, e.boss ? 9 : 6, e.hp / e.stats.maxHp, '#f2b33a');
+            if (e.boss || bw > 90) { ctx.font = '700 12px system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, p.y - 10); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, p.y - 10); ctx.font = '600 11px system-ui, sans-serif'; }
+            continue;
+          }
           bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
           const sh = e.shields.reduce((a, q) => a + q.amount, 0);
           if (sh > 0) bar(p.x - bw / 2, p.y - 6, bw, 3, sh / e.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
@@ -91,6 +103,14 @@ export function createHud(canvas, input) {
           ctx.fillStyle = 'rgba(10,6,12,0.55)'; ctx.fillRect(0, 0, w, h);
           ctx.font = '800 26px system-ui, sans-serif'; ctx.fillStyle = '#ffb84d'; ctx.fillText(`Hồi sinh sau ${left}s`, cx, h * 0.42);
         }
+      }
+      // thông báo hạ mục tiêu lớn
+      for (let i = banners.length - 1; i >= 0; i--) {
+        const b = banners[i]; b.t += 1 / 60; if (b.t > 3.2) { banners.splice(i, 1); continue; }
+        const a = Math.min(1, b.t * 4, (3.2 - b.t) * 2), cy = h * 0.22;
+        ctx.globalAlpha = a; ctx.fillStyle = b.ally ? 'rgba(20,60,110,0.85)' : 'rgba(110,20,20,0.85)';
+        ctx.beginPath(); ctx.roundRect(w / 2 - 190, cy - 22, 380, 44, 22); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffd86a'; ctx.stroke();
+        ctx.fillStyle = '#fff4d0'; ctx.font = '800 18px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.text, w / 2, cy + 1); ctx.globalAlpha = 1;
       }
       // joystick
       const { js, R } = input;

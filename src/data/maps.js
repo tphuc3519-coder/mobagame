@@ -109,17 +109,41 @@ function edgeWalls(path, sides, { off = LANE_W / 2 + 50, from = 0, to = Infinity
 }
 
 const guard = (path, sides, o) => edgeWalls(path, sides, o);
+
+/** Cung đá bao quanh điểm (cx, cy) bán kính r (toạ độ gốc), chừa cửa mở về hướng `face` (độ, 0 = +x, 90 = +y), góc bao `span`. */
+function arcWalls(cx, cy, r, face, span = 200, n = 3) {
+  const out = [], back = face + 180, a0 = back - span / 2, step = span / n;
+  for (let i = 0; i < n; i++) {
+    const a = (a0 + i * step + 6) * Math.PI / 180, b = (a0 + (i + 1) * step - 6) * Math.PI / 180;
+    out.push({ x1: (cx + Math.cos(a) * r) * K, y1: (cy + Math.sin(a) * r) * K, x2: (cx + Math.cos(b) * r) * K, y2: (cy + Math.sin(b) * r) * K, rock: true });
+  }
+  return out;
+}
+
+// Trại quái rừng phía Xanh (toạ độ gốc; phía Đỏ đối xứng). type: xem data/jungle.js. arc: bệ đá lãnh thổ sau trại.
+const CAMPS_BLUE = [
+  { id: 'blue', type: 'linh_thuy', x: 1480, y: 2560, arc: { r: 400, face: 75 } },
+  { id: 'wolves_l', type: 'soi_da', x: 1380, y: 4050, arc: { r: 360, face: -60 } },
+  { id: 'toad_l', type: 'coc_reu', x: 2080, y: 3250, arc: { r: 330, face: 200 } },
+  { id: 'red', type: 'hoa_nham', x: 3700, y: 4880, arc: { r: 400, face: 200 } },
+  { id: 'wolves_b', type: 'soi_da', x: 2350, y: 4900, arc: { r: 360, face: -15 } },
+  { id: 'toad_b', type: 'coc_reu', x: 3150, y: 4470, arc: { r: 330, face: 90 } },
+];
+// Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
+const BOSSES = [
+  { id: 'long_ngu', type: 'long_ngu', x: 1950, y: 1950, boss: true },
+  { id: 'ho_loi', type: 'ho_loi', x: 4450, y: 4450, boss: true },
+];
 // Phía Xanh: dọc Đường Đền (mép trong, về phía rừng), hai bên Đường Giữa (tới sát sông), mép trong Đường Sông.
 const W_BLUE = [
   // bệ đá ngăn rừng với đường, chạy gần hết nửa đường phía Xanh, có khe đi tắt (không có lướt thì phải đi vòng qua khe)
   ...guard(LANES[0].pts, [1], { from: 1100, to: 9300, phase: 300, gap: 640 }),
   ...guard(LANES[1].pts, [-1, 1], { from: 1500, to: 6300, phase: 120, gap: 600 }),
   ...guard(LANES[2].pts, [-1], { from: 1600, to: 9300, phase: 500, gap: 640 }),
-  // bệ đá hai bờ sông kẹp hai bụi giữa sông (cạnh cầu đường Giữa); bờ phía Đỏ là ảnh đối xứng
-  ...[[2613, 3151, 2259, 2797], [3249, 3787, 3603, 4141]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true })),
-  // lối mòn trong rừng: mỗi vùng vài khối tường tạo ngã rẽ
-  ...[[1500, 2500, 2100, 2500], [2000, 3100, 2000, 3600], [1300, 3700, 1700, 3900], [1700, 2900, 1700, 3300],
-    [3000, 4900, 3500, 4900], [3300, 4350, 3300, 4750], [4000, 4500, 4500, 4500], [3800, 5050, 3800, 5350]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K })),
+  // bệ đá trên hai bờ sông nối tiếp đầu hai bụi giữa sông (tạo túi núp); bờ phía Đỏ là ảnh đối xứng
+  ...[[2303, 2803, 1953, 2453], [3597, 4097, 3947, 4447]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true })),
+  // bệ đá "lãnh thổ" ôm phía sau mỗi trại quái (cung đá, mở về phía lối đi trong rừng)
+  ...CAMPS_BLUE.flatMap((c) => arcWalls(c.x, c.y, c.arc.r, c.arc.face, c.arc.span)),
 ];
 const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
 
@@ -141,16 +165,20 @@ export const ARENA = {
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
-    ...[[1300, 1900], [650, 3100], [2050, 3600], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
+    ...[[1300, 1700], [650, 3100], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
     ...[[2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
-    // hai bụi lớn liền khối NGAY GIỮA SÔNG, ôm sát hai bên cầu đường Giữa (bụi chéo dọc dòng sông): chốt chặn quan trọng nhất.
+    // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
-    ...[[2380, 2880], [3520, 4020]].map(([a, b]) => ({ cap: [a * K, a * K, b * K, b * K], r: 240 * K, big: true, river: true })),
-    ...[[1200, 2850], [1480, 3250], [1250, 4200], [1620, 4230], [2350, 3350], [3000, 4700], [4150, 4850], [4300, 5050], [2600, 5150], [380, 4400], [2000, 5950], [4400, 6000]]
+    ...[-470, 470].map((d) => { const c = 3200 + d, h = 250; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 190 * K, big: true, river: true }; }),
+    ...[[1150, 3050], [1750, 3500], [1150, 4600], [1900, 4300], [2700, 3500], [2750, 4700], [4300, 5120], [2880, 5250], [380, 4400], [2000, 5950], [4400, 6000]]
       .map(([x, y], i) => ({ x: x * K, y: y * K, w: (i % 3 ? 220 : 260) * K, h: (i % 2 ? 170 : 200) * K })),
   ],
   vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)
-  camps: [], // quái rừng và mục tiêu lớn: chưa có (Mốc 8)
+  // quái rừng (đủ hai phía) + mục tiêu lớn; toạ độ thế giới. Phía Đỏ lấy đối xứng của phía Xanh.
+  camps: [
+    ...CAMPS_BLUE.flatMap((c) => [{ ...c, x: c.x * K, y: c.y * K, side: 0 }, { ...c, id: c.id + '_r', x: c.y * K, y: c.x * K, side: 1 }]),
+    ...BOSSES.map((b) => ({ ...b, x: b.x * K, y: b.y * K, side: null })),
+  ],
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
   waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, gap: 14, spawnDist: 900 },
   laneMult: 1,

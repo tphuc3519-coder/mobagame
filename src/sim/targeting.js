@@ -14,7 +14,8 @@ export function nearestEnemy(world, e, range, preferId = null) {
     const d = dist(t.pos, e.pos) - t.radius;
     if (d > range) continue;
     if (t.id === preferId) return t;
-    if (d < bd) { bd = d; best = t; }
+    const sc = d + (t.team === 2 ? 400 : 0); // quái rừng xếp sau tướng/lính/trụ
+    if (sc < bd) { bd = sc; best = t; }
   }
   return best;
 }

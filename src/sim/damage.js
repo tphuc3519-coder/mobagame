@@ -40,7 +40,7 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   tgt.shields = tgt.shields.filter((s) => s.amount > 0.01);
   dmg = Math.max(0, dmg);
   tgt.hp -= dmg;
-  tgt.lastDamagedTick = world.tick;
+  tgt.lastDamagedTick = world.tick; if (src) tgt.lastAttacker = src.id;
   if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu (đòn đánh) và hút máu phép (kỹ năng)
     const rate = opts.basic && type === 'physical' ? src.stats.lifesteal : !opts.basic && type === 'magic' ? src.stats.spellvamp : 0;
     if (rate > 0) heal(world, src, dmg * rate);

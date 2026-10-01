@@ -31,7 +31,7 @@ export function onHeroDamaged(world, src, tgt) {
 }
 
 function pickTarget(world, s) {
-  const range = s.stats.range, inRange = enemiesOf(world, s).filter((t) => !t.noTarget && canSee(s.team, t) && dist(t.pos, s.pos) - t.radius <= range);
+  const range = s.stats.range, inRange = enemiesOf(world, s).filter((t) => t.team !== 2 && !t.noTarget && canSee(s.team, t) && dist(t.pos, s.pos) - t.radius <= range);
   if (!inRange.length) return null;
   if (s.aggro != null && world.tick < s.aggroUntil) { const a = inRange.find((t) => t.id === s.aggro); if (a) return a; }
   const near = (list) => list.reduce((b, t) => (!b || dist(t.pos, s.pos) < dist(b.pos, s.pos) ? t : b), null);
@@ -44,7 +44,7 @@ export function updateStructures(world) {
     if (!s.structure || !s.alive) continue;
     if (s.kind === 'fountain') {
       for (const t of world.entities) {
-        if (!t.alive || t.kind === 'minion' || t.structure) continue;
+        if (!t.alive || t.kind === 'minion' || t.kind === 'monster' || t.structure) continue;
         const d = dist(t.pos, s.pos);
         if (t.team !== s.team && d - t.radius <= map.fountain.range) dealDamage(world, s, t, map.fountain.dps / 30, 'true');
         else if (t.team === s.team && d <= map.fountain.healRadius && t.kind === 'hero') { t.hp = Math.min(t.stats.maxHp, t.hp + (t.stats.maxHp * map.fountain.healPct) / 30); t.mana = Math.min(t.stats.maxMana, t.mana + (t.stats.maxMana * map.fountain.healPct) / 30); }

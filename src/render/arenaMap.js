@@ -5,6 +5,7 @@ import { bakeGroundMap, groundMaterial } from './env/ground.js';
 import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
+import { buildRockWalls, buildCampSites, campRadius } from './env/jungleDecor.js';
 import { WIND, sway, treeGeo, pineGeo, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
@@ -36,27 +37,8 @@ export function buildArena(scene, map, level = 'mid') {
   // —— sông chéo ——
   const river = buildRiver(map); g.add(river.mesh);
 
-  // —— bệ đá ngăn rừng/đường: mỗi đoạn là một dãy khối đá tảng xếp (cao thấp, lệch nhau) trên nền đá thấp;
-  //      bệ hai bờ sông (ledge) thấp và thô hơn. Gộp hình học theo vật liệu → vài draw call cho cả bản đồ.
-  {
-    const th = map.walls.thickness, rr = rngFor(77), body = [], base = [], top = [];
-    for (const w of map.walls.segs) {
-      const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L = Math.hypot(dx, dy), ux = dx / L, uz = dy / L, ang = -Math.atan2(dy, dx);
-      const WH = w.ledge ? 110 : 150;
-      const pl = new THREE.BoxGeometry(L + 60, 24, th + 70); pl.rotateY(ang); pl.translate((w.x1 + w.x2) / 2, 10, (w.y1 + w.y2) / 2); base.push(pl);
-      for (let t = 0; t < L;) { // khối đá tảng
-        const bl = Math.min(L - t, rr.range(140, 240)), h = WH * rr.range(0.82, 1.12), dpt = th * rr.range(0.92, 1.12), cx = w.x1 + ux * (t + bl / 2), cz = w.y1 + uz * (t + bl / 2);
-        const bx = new THREE.BoxGeometry(bl - 8, h, dpt), uv = bx.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * bl / (WH * 1.4) + rr.next(), uv.getY(i) * 0.9);
-        bx.rotateZ(rr.range(-0.03, 0.03)); bx.rotateY(ang + rr.range(-0.04, 0.04)); bx.translate(cx, h / 2 + 18, cz); body.push(bx);
-        const cp = new THREE.BoxGeometry(bl + 6, 16, dpt + 14); cp.rotateY(ang + rr.range(-0.04, 0.04)); cp.translate(cx, h + 24, cz); top.push(cp);
-        t += bl;
-      }
-    }
-    const merge = (list, mat) => { const m = new THREE.Mesh(mergeGeometries(list.map((q) => (q.index ? q.toNonIndexed() : q))), mat); g.add(m); };
-    merge(body, new THREE.MeshLambertMaterial({ map: wallStoneSurface(), color: 0xe8e0d0 }));
-    merge(top, new THREE.MeshLambertMaterial({ map: wallStoneSurface(false), color: 0xc8c0b0 }));
-    merge(base, new THREE.MeshLambertMaterial({ color: 0x6e665a }));
-  }
+  // —— bệ đá: cụm tảng đá rêu tự nhiên; lãnh thổ trại quái (env/jungleDecor.js) ——
+  g.add(buildRockWalls(map, dens), buildCampSites(map));
 
   g.add(buildBushes(map, dens));
 
@@ -97,13 +79,14 @@ export function buildArena(scene, map, level = 'mid') {
     const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 780 })), ...structs.filter((q) => q.kind !== 'core').map((q) => ({ x: q.x, z: q.y, r: 260 }))];
     const bushList = bushRects(map);
     const casters = [
+      ...map.walls.segs.flatMap((w) => { const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), n = Math.max(2, Math.round(L / 150)); return Array.from({ length: n }, (_, i) => ({ x: w.x1 + (w.x2 - w.x1) * (i + 0.5) / n, z: w.y1 + (w.y2 - w.y1) * (i + 0.5) / n, r: map.walls.thickness * 0.9, h: w.ledge ? 110 : 170, k: 0.5 })); }),
       ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.6 })),
       ...allRocks.map((q) => ({ x: q.x, z: q.z, r: q.sx * 0.9, h: q.sy * 1.2, k: 0.45 })),
       ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 520 : 140, h: q.kind === 'core' ? 900 : 700, k: 0.55 })),
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
-    const walls = map.walls.segs.map((w) => ({ x1: w.x1, z1: w.y1, x2: w.x2, z2: w.y2, w: map.walls.thickness, h: 150 }));
-    const dirt = structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 }));
+    const walls = []; // bóng tường tính theo từng tảng đá (casters)
+    const dirt = [...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
     const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);

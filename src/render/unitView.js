@@ -8,6 +8,7 @@ import { createBlobShadow } from './shadows.js';
 import { prepareUnitMaterials, RIM } from './materials.js';
 import { createTower, createCore, createFountain, createMinion } from './structures.js';
 import { canSee, bushAt } from '../sim/vision.js';
+import { createMonster } from './monsters.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
 
@@ -26,6 +27,7 @@ export function createUnitViews(scene, localTeam, localId) {
       root.add(v.part.object); return v;
     }
     if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); return v; }
+    if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
     const attach = (obj) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
@@ -43,6 +45,7 @@ export function createUnitViews(scene, localTeam, localId) {
     handle(events) {
       for (const ev of events) {
         const v = views.get(ev.id);
+        if (ev.type === 'attack' && v && v.atk !== undefined) v.atk = 0.001;
         if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, ev.delay);
         else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, ev.delay ?? 0);
         else if (ev.type === 'damage' && v) v.flash = 0.08;
@@ -64,6 +67,12 @@ export function createUnitViews(scene, localTeam, localId) {
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
         const seen = canSee(localTeam, e); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
+        if (e.kind === 'monster') {
+          v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.7; if (v.atk >= 1) v.atk = 0; }
+          v.part?.update(dt, e.speed > 1, v.atk);
+          if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 1.5); v.root.scale.setScalar(1 - v.fall * 0.95); v.root.position.y -= v.fall * 60; }
+          continue;
+        }
         if (e.kind === 'minion') { v.root.visible = seen; v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : 0); v.mats.update(dt);

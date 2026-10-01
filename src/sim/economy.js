@@ -4,6 +4,7 @@ import { MINIONS } from '../data/units.js';
 import { T, dist } from './util.js';
 import { refreshStats, autoLevel } from './stats.js';
 import { applyStatus, isHardCC } from './status.js';
+import { onMonsterKilled } from './jungle.js';
 
 const heroes = (world, team) => world.entities.filter((h) => h.kind === 'hero' && h.team === team);
 
@@ -36,6 +37,8 @@ export function onKill(world, src, tgt) {
     const xp = (d.xp * (world.map.laneMult ?? ECON.laneMult)) / Math.max(1, near(foe, tgt.pos, ECON.xpShareRadius).length);
     for (const h of near(foe, tgt.pos, ECON.xpShareRadius)) gainXp(world, h, xp);
     if (killer && killer.team === foe) addGold(world, killer, d.gold * (world.map.laneMult ?? ECON.laneMult)); // lính không do tướng kết liễu: vàng mất
+  } else if (tgt.kind === 'monster') {
+    onMonsterKilled(world, killer, tgt, { addGold, gainXp });
   } else if (tgt.kind === 'tower') {
     const foe = 1 - tgt.team;
     for (const h of heroes(world, foe)) addGold(world, h, ECON.towerGold.team);

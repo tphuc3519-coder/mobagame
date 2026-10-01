@@ -1,6 +1,5 @@
 // Bản đồ nhỏ toàn bản đồ (07 §9): nền vẽ một lần (đất, sông, đường, tường, bụi), phía trên vẽ lại mỗi khung: công trình, lính, tướng, khung nhìn camera.
 // Chưa có sương mù chiến trường nên hiện mọi đơn vị; sau này chỉ cần lọc theo tầm nhìn tại đây.
-import { bushRects } from '../data/maps.js';
 import * as THREE from 'three';
 import { canSee } from '../sim/vision.js';
 
@@ -31,20 +30,12 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     // đường
     c.lineJoin = 'round'; c.lineCap = 'butt';
     for (const ln of map.lanes) { c.strokeStyle = '#d6c79e'; c.lineWidth = ln.width * sx; strokePath(c, ln.pts); }
-    // tường
-    c.strokeStyle = '#3b3946'; c.lineCap = 'round';
-    if (map.walls?.segs) { c.lineWidth = Math.max(1.5, map.walls.thickness * sx); for (const s of map.walls.segs) { c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); } }
-    else if (map.walls?.ys) { c.lineWidth = Math.max(1.5, map.walls.thickness * sy); for (const y of map.walls.ys) { c.beginPath(); c.moveTo(0, wy(y)); c.lineTo(W, wy(y)); c.stroke(); } }
-    // bụi cỏ: xanh ngọc đậm viền sáng, nổi hẳn trên nền cỏ (bụi giữa sông viền vàng: chốt quan trọng)
-    for (const q of bushRects(map)) {
-      if (q.cap) { // bụi chéo dọc sông: nét dày bo tròn
-        const line = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(wx(q.cap[0]), wy(q.cap[1])); c.lineTo(wx(q.cap[2]), wy(q.cap[3])); c.stroke(); };
-        line(q.r * 2 * sx + 3, q.river ? '#ffd86a' : '#6af0c4'); line(q.r * 2 * sx, '#0b4f45'); line(q.r * sx * 0.6, '#2fbf8f'); continue;
-      }
-      const x = wx(q.x - q.w / 2), y = wy(q.y - q.h / 2), w = Math.max(4, q.w * sx), h = Math.max(4, q.h * sy);
-      c.beginPath(); c.roundRect(x, y, w, h, Math.min(w, h) * 0.45);
-      c.fillStyle = '#0b4f45'; c.fill(); c.lineWidth = q.river ? 1.8 : 1.2; c.strokeStyle = q.river ? '#ffd86a' : '#6af0c4'; c.stroke();
-      c.fillStyle = '#2fbf8f'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(x + w * (0.3 + k * 0.2), y + h * (k % 2 ? 0.4 : 0.6), Math.min(w, h) * 0.16, 0, 7); c.fill(); }
+    // bệ đá (tảng đá rêu): nét dày bo tròn màu đá, viền tối — thấy rõ đường đi vòng; không vẽ bụi cỏ
+    const segs = map.walls?.segs || (map.walls?.ys || []).map((y) => ({ x1: 0, y1: y, x2: map.w, y2: y }));
+    c.lineCap = 'round';
+    for (const [w, col] of [[2.6, '#2a2620'], [0, '#a39a88']]) {
+      c.strokeStyle = col; c.lineWidth = Math.max(2.5, map.walls.thickness * sx * 1.5) + w;
+      for (const s of segs) { c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); }
     }
   }
   function strokePath(c, pts) { c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(wx(x), wy(y)) : c.moveTo(wx(x), wy(y)))); c.stroke(); }
@@ -90,6 +81,17 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         else { const r = 5.2; ctx.beginPath(); ctx.moveTo(x, y - r * 1.5); ctx.lineTo(x + r, y - r * 0.2); ctx.lineTo(x + r * 0.8, y + r); ctx.lineTo(x - r * 0.8, y + r); ctx.lineTo(x - r, y - r * 0.2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#0b0d1a99'; ctx.fillRect(x - r * 0.35, y - r * 0.2, r * 0.7, r * 0.6); }
       }
       for (const e of ents) if (e.kind === 'fountain') { ctx.strokeStyle = col(e); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(wx(e.pos.x), wy(e.pos.y), 6, 0, 7); ctx.stroke(); }
+      // trại quái: bùa xanh/đỏ, quái nhỏ, mục tiêu lớn; trại đã bị hạ thì mờ + đếm ngược (bùa/mục tiêu lớn)
+      for (const cp of world.camps || []) {
+        const x = wx(cp.x), y = wy(cp.y), up = cp.respawnAt == null, big = cp.boss, buff = cp.type === 'linh_thuy' || cp.type === 'hoa_nham';
+        const col = cp.type === 'linh_thuy' ? '#3fa8ff' : cp.type === 'hoa_nham' ? '#ff5a2a' : big ? (cp.type === 'long_ngu' ? '#ffc23a' : '#b98aff') : '#e8d48a';
+        const R = big ? 7.5 : buff ? 5 : 3.2;
+        ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = col; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);
+        ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cp.type === 'long_ngu' ? 'L' : 'H', x, y + 0.5); }
+        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
+      }
       // lính
       for (const e of ents) if (e.kind === 'minion' && e.alive) { ctx.fillStyle = col(e); ctx.fillRect(wx(e.pos.x) - 1, wy(e.pos.y) - 1, 2, 2); }
       // khung nhìn camera

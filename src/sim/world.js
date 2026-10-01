@@ -21,6 +21,7 @@ import { updateItems } from './items.js';
 import { createBot, updateBots } from '../ai/heroBot.js';
 import { createLaneBot } from '../ai/laneBot.js';
 import { DIFFICULTY } from '../data/ai.js';
+import { initJungle, updateJungle } from './jungle.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
@@ -65,6 +66,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     fullHeal(e) { e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; },
   };
   if (structures) spawnStructures(world);
+  if (structures) initJungle(world);
 
   world.update = (tick) => {
     if (world.over) return;
@@ -87,6 +89,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     if (world.waves) updateWaves(world);
     updateMinions(world);
     updateStructures(world);
+    updateJungle(world);
     const due = world.pending.filter((p) => p.tick <= world.tick);
     if (due.length) { world.pending = world.pending.filter((p) => p.tick > world.tick); for (const p of due) p.run(); }
     updateProjectiles(world); updateZones(world);
