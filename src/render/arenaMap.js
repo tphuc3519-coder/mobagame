@@ -54,7 +54,7 @@ export function buildArena(scene, map, level = 'mid') {
   const inPlay = (x, z) => outside(x, z) < 0;
   const plazas = [0, 1].flatMap((tm) => [tm ? map.mirror(map.fountain.x, map.fountain.y) : map.fountain]);
   const clear = (x, z, lane = halfW + 260) => laneDist(x, z) > lane && plazas.every((q) => Math.hypot(x - q.x, z - q.y) > 900) && riverDist(x, z) > rw / 2 + 160 && !blockedByWall(x, z, 220) && !map.structures.some((s) => [s, map.mirror(s.x, s.y)].some((q) => Math.hypot(x - (q.x ?? s.x), z - (q.y ?? s.y)) < 420));
-  const trees = put(Math.round(900 * dens), (x, z) => outside(x, z) > 330 || (inPlay(x, z) && clear(x, z, halfW + 420) && fbm(x / 700, z / 700) > 0.45), (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
+  const trees = put(Math.round(620 * dens), (x, z) => outside(x, z) > 330, /* cây chỉ ở rừng viền ngoài; trong sân chỉ có bụi núp */ (x, y, z) => ({ x, y: y - 8, z, ry: r.range(0, 7), sx: r.range(0.8, 1.5) * (outside(x, z) > 300 ? 1.4 : 1) }));
   const tint = new THREE.Color();
   trees.forEach((t) => { t.sz = t.sx; t.pine = fbm(t.x / 1600 + 9, t.z / 1600) > 0.56 || r.next() < 0.12; t.color = tint.setRGB(r.range(0.86, 1.0), r.range(0.9, 1.0), r.range(0.8, 0.96), THREE.SRGBColorSpace).getHex(); }); // mỗi cây một sắc độ
   const leafMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.06), broad = trees.filter((t) => !t.pine), pines = trees.filter((t) => t.pine);
@@ -62,7 +62,7 @@ export function buildArena(scene, map, level = 'mid') {
   g.add(scatterChunked(pineGeo(), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.04), pines, true));
   const rockMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, color: 0xb4ad9e }), allRocks = [];
   for (const [seed, n] of [[1, 0.6], [7, 0.6]]) {
-    const rocks = put(Math.round(200 * dens * n), (x, z) => outside(x, z) > 220 || (inPlay(x, z) && clear(x, z, halfW + 300)), (x, y, z) => ({ x, y: y + 6, z, ry: r.range(0, 7), sx: r.range(50, 170), sy: r.range(35, 120), sz: r.range(50, 170), color: r.next() < 0.3 ? 0xc8d0b0 : 0xffffff }));
+    const rocks = put(Math.round(150 * dens * n), (x, z) => outside(x, z) > 220 || (inPlay(x, z) && clear(x, z, halfW + 300) && r.next() < 0.3), (x, y, z) => ({ x, y: y + 6, z, ry: r.range(0, 7), sx: r.range(50, 170), sy: r.range(35, 120), sz: r.range(50, 170), color: r.next() < 0.3 ? 0xc8d0b0 : 0xffffff }));
     g.add(scatterChunked(rockGeo(seed), rockMat, rocks, true)); allRocks.push(...rocks);
   }
   const tuftMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.35);
@@ -85,7 +85,7 @@ export function buildArena(scene, map, level = 'mid') {
       ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.6 })),
       ...allRocks.map((q) => ({ x: q.x, z: q.z, r: q.sx * 0.9, h: q.sy * 1.2, k: 0.45 })),
       ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 260 : 120, h: q.kind === 'core' ? 700 : 520, k: 0.55 })),
-      ...bushRects.flatMap((b) => [-0.3, 0, 0.3].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.42, h: 90, k: 0.35 }))),
+      ...bushRects.flatMap((b) => [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = map.walls.segs.map((w) => ({ x1: w.x1, z1: w.y1, x2: w.x2, z2: w.y2, w: map.walls.thickness, h: 150 }));
     const dirt = structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 820 : 430, k: 0.85 }));
@@ -115,7 +115,7 @@ export function buildArena(scene, map, level = 'mid') {
 
   // —— đèn lồng dọc hai mép đường ——
   const posts = [];
-  paths.forEach((p) => { for (let s = 700; s < p.length - 400; s += 560) { const o = pointAt(p, s); for (const sd of [-1, 1]) posts.push({ x: o.x - o.dy * sd * (halfW + 90), z: o.y + o.dx * sd * (halfW + 90), y: 215, base: 8 }); } });
+  paths.forEach((p) => { let k = 0; for (let s = 900; s < p.length - 600; s += 1500) { const o = pointAt(p, s), sd = k++ % 2 ? -1 : 1; posts.push({ x: o.x - o.dy * sd * (halfW + 90), z: o.y + o.dx * sd * (halfW + 90), y: 215, base: 8 }); } }); // đèn thưa, so le hai bên
   const d = new THREE.Object3D();
   const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(6, 9, 1, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2c }), posts.length);
   const lamp = new THREE.InstancedMesh(new THREE.SphereGeometry(32, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc46a).multiplyScalar(2.2) }), posts.length);

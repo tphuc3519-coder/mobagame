@@ -41,7 +41,7 @@ export function buildMap(scene, map, level = 'mid') {
       plazas: [...fxs.map((x) => ({ x, z: lane.y, r: 600 })), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 380 : 230 }))],
       dirt: structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 700 : 420, k: 0.85 })),
       casters: [...(foliage.userData.casters || []), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 200 : 110, h: q.kind === 'core' ? 650 : 520, k: 0.55 })),
-        ...bushRects.map((b) => ({ x: b.x, z: b.y, r: Math.min(b.w, b.h) * 0.5, h: 90, k: 0.35 }))],
+        ...bushRects.map((b) => ({ x: b.x, z: b.y, r: Math.min(b.w, b.h) * 0.55, h: 160, k: 0.45 }))],
       walls: wallSegs.filter((w) => !w.pillar).map((w) => ({ x1: w.x0, z1: w.wy, x2: w.x1, z2: w.wy, w: wl.thickness, h: 150 })),
       river: { pts: [[map.river.x, -pad], [map.river.x, map.h + pad]], width: map.river.width },
     });
@@ -81,7 +81,7 @@ export function buildMap(scene, map, level = 'mid') {
 
   // đèn lồng dọc hai mép đường: cột gỗ + lồng giấy phát sáng; quầng sáng gộp một Points
   const posts = [];
-  for (let x = 400; x < map.w; x += 400) for (const s of [-1, 1]) if (Math.abs(x - map.river.x) > 60) posts.push({ x, z: lane.y + s * 500, y: 215, base: H + 22 });
+  for (let x = 600, k = 0; x < map.w - 300; x += 1100, k++) if (Math.abs(x - map.river.x) > 200) posts.push({ x, z: lane.y + (k % 2 ? -1 : 1) * 500, y: 215, base: H + 22 }); // đèn thưa, so le
   for (const s of [-1, 1]) for (const dx of [-1, 1]) posts.push({ x: map.river.x + dx * (bw / 2 - 20), z: lane.y + s * (rw / 2 + 4), y: 150, base: 66 });
   const d = new THREE.Object3D();
   const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(6, 9, 1, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2c }), posts.length);
