@@ -58,7 +58,7 @@ const HANDLERS = {
   },
   aoeSelf(world, e, cast) {
     const { skill, level } = cast;
-    world.emit('aoe', { x: e.pos.x, y: e.pos.y, radius: skill.radius, dur: 0.35, slot: cast.slot, team: e.team });
+    world.emit('aoe', { id: e.id, x: e.pos.x, y: e.pos.y, radius: skill.radius, dur: 0.35, slot: cast.slot, team: e.team });
     for (const t of inRadius(world, e, e.pos, skill.radius)) {
       skillHit(world, e, t, cast);
       if (skill.pullIn != null && dist(t.pos, e.pos) > skill.pullIn + e.radius) { // xoáy: hút địch về quanh mình
@@ -75,19 +75,19 @@ const HANDLERS = {
   },
   aoeCircle(world, e, cast, aim) {
     const { skill, level } = cast, p = aimPoint(world, e, aim, skill.range), delay = skill.delay || 0.5;
-    world.emit('aoe', { x: p.x, y: p.y, radius: skill.radius, dur: delay, slot: cast.slot, team: e.team, warn: true });
+    world.emit('aoe', { id: e.id, x: p.x, y: p.y, radius: skill.radius, dur: delay, slot: cast.slot, team: e.team, warn: true });
     if (skill.untargetableDuringDelay) { applyStatus(world, e, { status: 'untargetable', duration: delay }, e); world.emit('jump', { id: e.id, dur: delay }); }
     world.pending.push({ tick: world.tick + T(delay), run: () => {
       if (!e.alive) return;
       if (skill.untargetableDuringDelay) { e.pos.x = p.x; e.pos.y = p.y; e.prevPos.x = p.x; e.prevPos.y = p.y; }
-      world.emit('impact', { x: p.x, y: p.y, radius: skill.radius, slot: cast.slot });
+      world.emit('impact', { id: e.id, x: p.x, y: p.y, radius: skill.radius, slot: cast.slot });
       for (const t of inRadius(world, e, p, skill.radius)) skillHit(world, e, t, cast);
       if (skill.heat && cast.hitHero) makeCtx(world, e).addHeat(e, skill.heat);
     } });
   },
   cone(world, e, cast, aim) {
     const { skill } = cast, d = aimDir(e, aim), half = ((skill.angle || 90) / 2) * Math.PI / 180;
-    world.emit('cone', { x: e.pos.x, y: e.pos.y, dx: d.x, dy: d.y, range: skill.range, angle: skill.angle, slot: cast.slot, team: e.team });
+    world.emit('cone', { id: e.id, x: e.pos.x, y: e.pos.y, dx: d.x, dy: d.y, range: skill.range, angle: skill.angle, slot: cast.slot, team: e.team });
     for (const t of enemiesOf(world, e)) {
       if (dist(t.pos, e.pos) - t.radius > skill.range) continue;
       const dd = dirTo(e.pos, t.pos);
@@ -96,7 +96,7 @@ const HANDLERS = {
   },
   zone(world, e, cast, aim) {
     const { skill } = cast, p = aimPoint(world, e, aim, skill.range);
-    world.emit('aoe', { x: p.x, y: p.y, radius: skill.radius, dur: skill.duration, slot: cast.slot, team: e.team, zone: true });
+    world.emit('aoe', { id: e.id, x: p.x, y: p.y, radius: skill.radius, dur: skill.duration, slot: cast.slot, team: e.team, zone: true });
     spawnZone(world, { owner: e.id, x: p.x, y: p.y, radius: skill.radius, until: world.tick + T(skill.duration), interval: T(skill.tickInterval),
       onTick: () => { for (const t of inRadius(world, e, p, skill.radius)) skillHit(world, e, t, cast); } });
   },
@@ -113,7 +113,7 @@ const HANDLERS = {
     for (const a of alliesOf(world, e, skill.range)) { const dd = dirTo(e.pos, a.pos), s = dd.x * d.x + dd.y * d.y; if (s > 0.6 && s > bs) { bs = s; best = a; } }
     if (skill.heal) heal(world, best, amountOf(skill.heal, level, e));
     if (skill.shield) addShield(world, best, amountOf(skill.shield, level, e), skill.shield.duration);
-    world.emit('aoe', { x: best.pos.x, y: best.pos.y, radius: 120, dur: 0.5, slot: cast.slot, team: e.team });
+    world.emit('aoe', { id: e.id, target: best.id, x: best.pos.x, y: best.pos.y, radius: 120, dur: 0.5, slot: cast.slot, team: e.team });
   },
 };
 

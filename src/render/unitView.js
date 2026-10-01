@@ -32,10 +32,12 @@ export function createUnitViews(scene, localTeam, localId) {
       if (!m) return useCapsule();
       const inst = instantiate(m); attach(inst.object);
       v.art = inst.art; v.animator = createAnimator(inst);
+      v.bones = Object.fromEntries(['HandR', 'HandR_Tip', 'HandL', 'HandL_Tip', 'Head', 'Chest'].map((n) => [n, inst.object.getObjectByName('Bone_' + n)]).filter(([, b]) => b)); // cho hiệu ứng bám xương (vệt vũ khí, sao choáng)
     }).catch(useCapsule);
     return v;
   };
   return {
+    get: (id) => views.get(id),
     handle(events) {
       for (const ev of events) {
         const v = views.get(ev.id);

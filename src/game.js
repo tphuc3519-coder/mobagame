@@ -66,9 +66,9 @@ const { renderer } = createRenderer(document.getElementById('world'), level, {
 addLights(scene, renderer);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 const views = createUnitViews(scene, 0, player.id);
-const fx = createFx(scene);
 const indicators = createIndicators(scene);
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
+const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar });
@@ -102,22 +102,26 @@ function showResult(winner) {
 document.getElementById('again').onclick = () => (opts.onExit ? opts.onExit() : location.reload());
 
 const minFrame = 1000 / LEVELS[level].fps - 2;
+let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
+const fxSlow = parseFloat(q.get('fxslow') || '1'); // kiểm thử: quay chậm hiệu ứng
 let lastDraw = 0, fpsAcc = 0, fpsN = 0, fps = 0;
 
-const loop = createLoop({
+const loopRender = (...a) => loopCfg.render(...a);
+const loopCfg = {
   update() {
     const d = input.dir();
     world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } });
     world.update(loop.tick);
   },
-  render(alpha, dt) {
+  render(alpha, dt, force) {
+    if (manual && !force) return;
     const now = performance.now();
-    if (now - lastDraw < minFrame) return;
+    if (!force && now - lastDraw < minFrame) return;
     lastDraw = now;
     const events = world.drainEvents();
     for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
-    views.handle(events); fx.handle(events); hud.handle(events, world);
-    views.update(world, alpha, dt); fx.update(world, dt, player);
+    views.handle(events); fx.handle(events, world); hud.handle(events, world);
+    views.update(world, alpha, dt); fx.update(world, dt * fxSlow, player);
     buttons.update(); spells.update(); shop.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
@@ -131,10 +135,16 @@ const loop = createLoop({
     minimap.draw();
     hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
-});
+};
+const loop = createLoop(loopCfg);
 if (q.has('ff')) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
 loop.start();
-window.__game = { world, player, enemy, loop, renderer }; // phục vụ kiểm thử tự động
+let acc = 0;
+const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
+  manual = true; loop.pause();
+  for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
+};
+window.__game = { world, player, enemy, loop, renderer, advance }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : loop.resume()));
 return window.__game;
