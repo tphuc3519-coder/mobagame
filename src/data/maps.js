@@ -54,10 +54,10 @@ export function structuresOf(map) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 2.2 → 14080 × 14080
+// Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 2.4 → 15360 × 15360
 // cho rộng hơn (băng qua đường Giữa ~45 giây thay vì ~20 ở bản gốc). Chỉ khai báo phía Xanh (dưới trái); phía Đỏ lấy (x, y) → (y, x).
 // ───────────────────────────────────────────────────────────────────────────
-const K = 2.2, A = 6400 * K;
+const K = 2.4, A = 6400 * K;
 const P = (x, y) => [x * K, y * K];
 const swap = (x, y) => ({ x: y, y: x });
 
@@ -74,7 +74,7 @@ function roundPath(pts, r) {
   return out;
 }
 
-const LANE_W = 1060; // rộng hơn ~20% (trước 880)
+const LANE_W = 1200; // rộng hơn (880 → 1060 → 1200)
 // Ba đường, đi từ nhà chính Xanh sang nhà chính Đỏ (đối xứng nên đường phía Đỏ chỉ là đi ngược lại).
 const BASE = P(800, 5600), FOE = P(5600, 800);
 const LANES = [
