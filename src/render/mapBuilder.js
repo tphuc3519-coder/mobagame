@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { pathTexture, brickTexture } from './env/textures.js';
-import { buildTerrain } from './env/terrain.js';
+import { heightAt } from './env/terrain.js';
+import { flagstoneSurface, wallStoneSurface } from './env/surfaces.js';
+import { bakeGroundMap, groundMaterial } from './env/ground.js';
+import { structuresOf } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildFoliage, buildBushes, WIND } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
@@ -15,50 +17,67 @@ export function buildMap(scene, map, level = 'mid') {
   const lane = map.road, rw = lane.width;
   const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
 
-  g.add(buildTerrain(map, dens));
+  // cây cỏ trước (cần vị trí cây để nướng bóng xuống nền)
+  const foliage = buildFoliage(map, dens);
   const sky = buildSky(); scene.add(sky);
-
-  // đường lát đá + lề đá
-  const path = pathTexture(); path.repeat.set(map.w / 380, rw / 380);
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(map.w, rw), new THREE.MeshLambertMaterial({ map: path })); road.rotation.x = -Math.PI / 2; road.position.set(map.w / 2, 1.5, lane.y); g.add(road);
-  const curb = new THREE.MeshLambertMaterial({ color: 0x8d8a92 });
-  for (const s of [-1, 1]) box(map.w, 14, 34, curb, map.w / 2, 6, lane.y + s * (rw / 2 + 8));
-
-  // sân lát đá quanh Suối Đèn hai phía, viền đá tròn
-  for (const fx of [map.fountain.x, map.w - map.fountain.x]) {
-    const pt = path.clone(); pt.repeat.set(2.2, 2.2); pt.needsUpdate = true;
-    const plaza = new THREE.Mesh(new THREE.CircleGeometry(560, 36), new THREE.MeshLambertMaterial({ map: pt })); plaza.rotation.x = -Math.PI / 2; plaza.position.set(fx, 1.6, lane.y); g.add(plaza);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(560, 16, 5, 40), curb); ring.rotation.x = -Math.PI / 2; ring.position.set(fx, 8, lane.y); g.add(ring);
-  }
-
-  // sông + cầu đá có lan can
-  const river = buildRiver(map); g.add(river.mesh);
-  const stoneTop = new THREE.MeshLambertMaterial({ map: path.clone() }); stoneTop.map.repeat.set(1, rw / 380); stoneTop.map.needsUpdate = true;
-  const brickSide = brickTexture(); brickSide.repeat.set(1.2, 0.2);
-  const bw = map.river.width + 90;
-  box(bw, 22, rw + 30, new THREE.MeshLambertMaterial({ map: brickSide }), map.river.x, 6, lane.y);
-  const deck = new THREE.Mesh(new THREE.PlaneGeometry(bw - 30, rw), stoneTop); deck.rotation.x = -Math.PI / 2; deck.position.set(map.river.x, 18, lane.y); g.add(deck);
-  const rail = new THREE.MeshLambertMaterial({ color: 0xa9a4ae });
-  for (const s of [-1, 1]) { box(bw, 46, 26, rail, map.river.x, 40, lane.y + s * (rw / 2 + 4)); box(bw + 16, 12, 38, curb, map.river.x, 66, lane.y + s * (rw / 2 + 4)); }
-
-  // tường rêu: hai dải dọc đường, có khe hở (03 §B3)
-  const wl = map.walls, H = 120, capMat = new THREE.MeshLambertMaterial({ color: 0x9a97a6 });
+  const wl = map.walls, H = 120;
+  const wallSegs = []; // các đoạn tường (giữa các khe) — dùng chung cho hình và bóng
   for (const wy of wl.ys) {
     let x0 = -400;
     for (const gap of [...wl.gaps, { x: map.river.x, w: map.river.width + 130, river: true }, { x: map.w + 550, w: 0 }].sort((a, b) => a.x - b.x)) {
       const x1 = Math.min(map.w + 400, gap.x - gap.w / 2);
-      if (x1 > x0) {
-        const t = brickTexture(); t.repeat.set((x1 - x0) / 300, H / 300);
-        box(x1 - x0, H, wl.thickness, new THREE.MeshLambertMaterial({ map: t }), (x0 + x1) / 2, H / 2, wy);
-        box(x1 - x0 + 14, 26, wl.thickness + 26, capMat, (x0 + x1) / 2, H + 10, wy);
-      }
-      if (gap.river) for (const sx of [-1, 1]) box(60, H + 50, wl.thickness + 40, capMat, gap.x + sx * (gap.w / 2 + 20), (H + 50) / 2, wy); // trụ đá đỡ đầu tường hai bờ sông
+      if (x1 > x0) wallSegs.push({ x0, x1, wy });
+      if (gap.river) wallSegs.push({ pillar: true, x: gap.x, w: gap.w, wy });
       x0 = gap.x + gap.w / 2;
     }
   }
+  // —— nền đất trộn lớp: đường + sân lát đá, đất mòn quanh trụ, lòng khe nước, bóng nướng sẵn (env/ground.js) ——
+  {
+    const pad = 2200, structs = structuresOf(map), fxs = [map.fountain.x, map.w - map.fountain.x];
+    const bushRects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
+    const baked = bakeGroundMap({
+      x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024,
+      lanes: [{ pts: [[-pad, lane.y], [map.w + pad, lane.y]], width: rw }],
+      plazas: [...fxs.map((x) => ({ x, z: lane.y, r: 600 })), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 380 : 230 }))],
+      dirt: structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 700 : 420, k: 0.85 })),
+      casters: [...(foliage.userData.casters || []), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 200 : 110, h: q.kind === 'core' ? 650 : 520, k: 0.55 })),
+        ...bushRects.map((b) => ({ x: b.x, z: b.y, r: Math.min(b.w, b.h) * 0.5, h: 90, k: 0.35 }))],
+      walls: wallSegs.filter((w) => !w.pillar).map((w) => ({ x1: w.x0, z1: w.wy, x2: w.x1, z2: w.wy, w: wl.thickness, h: 150 })),
+      river: { pts: [[map.river.x, -pad], [map.river.x, map.h + pad]], width: map.river.width },
+    });
+    const w = map.w + pad * 2, d = map.h + pad * 2, sx = Math.round(110 * dens), sz = Math.round(80 * dens);
+    const geo = new THREE.PlaneGeometry(w, d, sx, sz); geo.rotateX(-Math.PI / 2);
+    const p = geo.attributes.position, col = new Float32Array(p.count * 3), c = new THREE.Color(), rock = new THREE.Color(0.62, 0.6, 0.58);
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i) + map.w / 2, z = p.getZ(i) + map.h / 2; p.setXYZ(i, x, heightAt(map, x, z), z); c.setRGB(1, 1, 1);
+      const dxo = Math.max(0, -x, x - map.w); if (dxo > 60) c.lerp(rock, Math.min(0.8, (dxo - 60) / 500)); // vách đá sau chuồng
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; g.add(mesh);
+  }
+  const stone = (w, h, d, x, y, z, k = 1.6, color = 0xe8e0d0) => { // khối đá xếp: cả chiều cao một ảnh, chiều dài lặp theo tỉ lệ
+    const geo = new THREE.BoxGeometry(w, h, d), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.max(w, d) / (h * k), uv.getY(i));
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: wallStoneSurface(), color })); m.position.set(x, y, z); g.add(m); return m;
+  };
+
+  // sông + cầu đá có lan can
+  const river = buildRiver(map); g.add(river.mesh);
+  const bw = map.river.width + 90;
+  stone(bw, 22, rw + 30, map.river.x, 6, lane.y, 0.5);
+  const deckTex = flagstoneSurface().clone(); deckTex.repeat.set(bw / 340, rw / 340); deckTex.needsUpdate = true;
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(bw - 30, rw), new THREE.MeshLambertMaterial({ map: deckTex })); deck.rotation.x = -Math.PI / 2; deck.position.set(map.river.x, 18, lane.y); g.add(deck);
+  for (const s of [-1, 1]) { stone(bw, 46, 26, map.river.x, 40, lane.y + s * (rw / 2 + 4)); stone(bw + 16, 12, 38, map.river.x, 66, lane.y + s * (rw / 2 + 4), 4, 0xd0c8b8); }
+
+  // tường rêu: hai dải dọc đường, có khe hở (03 §B3)
+  for (const w of wallSegs) {
+    if (w.pillar) { for (const sx of [-1, 1]) stone(60, H + 50, wl.thickness + 40, w.x + sx * (w.w / 2 + 20), (H + 50) / 2, w.wy, 0.6, 0xd0c8b8); continue; } // trụ đá đỡ đầu tường hai bờ
+    stone(w.x1 - w.x0, H, wl.thickness, (w.x0 + w.x1) / 2, H / 2, w.wy);
+    stone(w.x1 - w.x0 + 14, 26, wl.thickness + 26, (w.x0 + w.x1) / 2, H + 10, w.wy, 4, 0xd0c8b8);
+  }
 
   g.add(buildBushes(map));
-  g.add(buildFoliage(map, dens));
+  g.add(foliage);
 
   // đèn lồng dọc hai mép đường: cột gỗ + lồng giấy phát sáng; quầng sáng gộp một Points
   const posts = [];

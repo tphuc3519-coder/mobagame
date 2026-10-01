@@ -24,8 +24,8 @@ export function buildLampGlow(posts) {
   const g = new THREE.Group();
   const pos = new Float32Array(posts.length * 3); posts.forEach((p, i) => { pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z; });
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.add(new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTexture(), color: 0xffb45c, size: 300, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })));
-  const pool = new THREE.InstancedMesh(new THREE.CircleGeometry(190, 20), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xff9a44, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }), posts.length);
+  g.add(new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTexture(), color: 0xffb45c, size: 240, sizeAttenuation: true, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })));
+  const pool = new THREE.InstancedMesh(new THREE.CircleGeometry(190, 20), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xff9a44, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending }), posts.length);
   const d = new THREE.Object3D(); d.rotation.x = -Math.PI / 2;
   posts.forEach((p, i) => { d.position.set(p.x, 6, p.z); d.updateMatrix(); pool.setMatrixAt(i, d.matrix); });
   g.add(pool);

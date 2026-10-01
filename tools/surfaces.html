@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>Surfaces</title>
+<style>body{margin:0;background:#111;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}canvas{width:100%;image-rendering:auto}</style>
+<script type="importmap">{ "imports": { "three": "../lib/three/build/three.module.js", "three/addons/": "../lib/three/examples/jsm/" } }</script>
+<script type="module">
+// Xem nhanh texture bề mặt sinh bằng code (src/render/env/surfaces.js), mỗi ô lặp 2×2 để thấy chỗ ghép.
+import * as S from '../src/render/env/surfaces.js';
+const t0 = performance.now();
+for (const k of ['grassSurface', 'dirtSurface', 'flagstoneSurface', 'wallStoneSurface', 'noiseSurface']) {
+  const t = S[k](), src = t.image, c = document.createElement('canvas'); c.width = c.height = src.width * 2;
+  const x = c.getContext('2d'); for (const i of [0, 1]) for (const j of [0, 1]) x.drawImage(src, i * src.width, j * src.width); document.body.append(c);
+}
+document.title = 'ms ' + Math.round(performance.now() - t0); window.__ready = true;
+</script>
