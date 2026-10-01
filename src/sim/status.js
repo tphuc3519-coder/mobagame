@@ -34,11 +34,11 @@ export const isInvulnerable = (e) => e.statuses.some((s) => s.kind === 'stasis' 
 export const tauntSource = (e) => e.statuses.find((s) => s.kind === 'taunt')?.src ?? null;
 
 /** Hết hạn, tick sát thương/hồi theo thời gian (2 lần/giây), khiên hết hạn. */
-export function updateStatuses(world, e, dealDamage) {
+export function updateStatuses(world, e, dealDamage, heal) {
   const now = world.tick;
   for (const s of e.statuses) {
     if (s.kind === 'dot' && now % 15 === 0 && now < s.until) dealDamage(world, world.byId(s.src), e, s.dps / 2, s.type || 'magic', { dot: true });
-    if (s.kind === 'hot' && now % 15 === 0 && now < s.until) e.hp = Math.min(e.stats.maxHp, e.hp + s.hps / 2);
+    if (s.kind === 'hot' && now % 15 === 0 && now < s.until) { if (heal) heal(world, e, s.hps / 2); else e.hp = Math.min(e.stats.maxHp, e.hp + s.hps / 2); }
   }
   e.statuses = e.statuses.filter((s) => s.until > now);
   e.shields = e.shields.filter((s) => s.until > now && s.amount > 0);

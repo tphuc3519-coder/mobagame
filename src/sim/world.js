@@ -6,7 +6,7 @@ import { updateMovement } from './movement.js';
 import { updateCombat } from './combat.js';
 import { updateProjectiles, updateZones } from './projectiles.js';
 import { updateStatuses } from './status.js';
-import { dealDamage } from './damage.js';
+import { dealDamage, heal } from './damage.js';
 import { refreshStats, setLevel, autoLevel } from './stats.js';
 import { makeCtx } from './ctx.js';
 import { buildNavGrid } from './navgrid.js';
@@ -45,7 +45,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   };
   const makeHero = (data, team, pos, kind) => {
     const e = world.spawnEntity({ kind, isHero: true, team, heroId: data.id, data, radius: data.radius ?? 40, pos, skillPoints: 1, autoLevel: true, teamMode: map.id !== 'duel1v1' });
-    if (kind === 'hero') { initEconomy(e); equip(e, { spellId: SPELLS[data.defaultSpell]?.disabledIn1v1 && !e.teamMode ? 'chop_buoc' : data.defaultSpell || 'chop_buoc' }); refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; }
+    if (kind === 'hero') { initEconomy(e); equip(e, { spellId: SPELLS[data.defaultSpell]?.disabledIn1v1 && !e.teamMode ? 'chop_buoc' : data.defaultSpell || 'chop_buoc' }); refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; e.restore = { ready: 0 }; }
     autoLevel(e);
     return e;
   };
@@ -75,7 +75,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     for (const [id, q] of world.queue) { const e = world.byId(id); for (const c of q) applyCommand(world, e, c); world.queue.delete(id); }
     for (const e of world.entities) {
       if (!e.alive) { if (e.isHero && e.kind === 'hero' && world.tick >= e.respawnTick) { e.alive = true; e.pos.x = e.spawn.x; e.pos.y = e.spawn.y; e.prevPos.x = e.pos.x; e.prevPos.y = e.pos.y; refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; world.emit('respawn', { id: e.id }); } continue; }
-      updateStatuses(world, e, dealDamage);
+      updateStatuses(world, e, dealDamage, heal);
       refreshStats(world, e);
       if (e.kind === 'dummy') { if (world.tick - e.lastDamagedTick > 150) e.hp = Math.min(e.stats.maxHp, e.hp + e.stats.maxHp / 30); continue; }
       if (e.kind !== 'hero') continue;

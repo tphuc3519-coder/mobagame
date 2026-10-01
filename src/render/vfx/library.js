@@ -283,6 +283,7 @@ export function createLibrary({ A, N, sh, views, shake, team }) {
         aura(ev.dur || 6, () => { const r = rootOf(e.id); if (r && Math.random() < 0.6) A.spawn({ x: r.x + R(-60, 60), y: 10, z: r.z + R(-60, 60), vy: R(150, 300), life: 0.8, size: [20, 4], color: [0xd8f4ff, 0x4fa8ff] }); }, () => !e.recall || world.tick > until);
         break;
       }
+      case 'restore': { const r = e?.pos; if (!r || !visible(e)) break; sh.ring(r.x, r.y, 20, 170, { color: 0xff5a74, width: 0.12, life: 0.6 }); sh.pillar(r.x, r.y, 60, 260, { color: 0xff6a80, top: 0xffffff, life: 0.6 }); burst(A, r.x, 40, r.y, { n: 22, r: 70, speed: [5, 25], up: [140, 320], life: [0.8, 1.3], size: [24, 6], color: [0xffe0e6, 0xff4a64], tile: TILE.star, drag: 1 }); break; }
       case 'recalled': { const r = e?.pos; if (r && visible(e)) sh.pillar(r.x, r.y, 90, 500, { color: 0x4fa8ff, top: 0xffffff, life: 0.5 }); break; }
       case 'towerShot': break;
       default: break;

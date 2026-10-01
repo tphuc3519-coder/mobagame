@@ -41,6 +41,8 @@ export const GLYPHS = {
   haste: (a, b) => withGrad(a, b, `<path d="M8 22h30a7 7 0 10-7-7M8 34h40a8 8 0 11-8 8M8 46h22" fill="none" stroke="FILL" stroke-width="5" stroke-linecap="round"/>`),
   // Giải Trói: xích đứt
   cleanse: (a, b) => withGrad(a, b, `<rect x="8" y="24" width="20" height="12" rx="6" fill="none" stroke="FILL" stroke-width="5" transform="rotate(-25 18 30)"/><rect x="36" y="28" width="20" height="12" rx="6" fill="none" stroke="FILL" stroke-width="5" transform="rotate(-25 46 34)"/><path d="M30 18l2 8M36 16l-2 9M33 40l-1 8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`),
+  // Hồi Máu: bình thuốc tròn, chất lỏng đỏ có trái tim sáng
+  flask: (a, b) => withGrad(a, b, `<path d="M27 8h10v4h-2v8c8 3 13 9 13 17 0 10-7 17-16 17s-16-7-16-17c0-8 5-14 13-17v-8h-2z" fill="#eaf6ff" fill-opacity="0.25" stroke="#f4fbff" stroke-width="2" stroke-linejoin="round"/><path d="M19 37c4-2 8 1 13 0s9-3 13 0c0 8-6 14-13 14s-13-6-13-14z" fill="FILL"/><path d="M32 47s-7-4-7-9a3.6 3.6 0 017-1.4 3.6 3.6 0 017 1.4c0 5-7 9-7 9z" fill="#fff" opacity="0.9"/><path d="M23 30c1-3 3-5 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7" fill="none"/>`),
   // Biến về: cổng xoáy + mái nhà
   recall: (a, b) => withGrad(a, b, `<circle cx="32" cy="34" r="20" fill="none" stroke="FILL" stroke-width="3" stroke-dasharray="20 6"/><path d="M32 16L14 32h5v16h10V38h6v10h10V32h5z" fill="FILL" stroke="#f0f8ff" stroke-width="1.5" stroke-linejoin="round"/>`),
   // —— kỹ năng theo kiểu ——
@@ -70,6 +72,7 @@ export function spellArt(id) {
   const [g, c0, c1, a, b] = SPELL_ART[id] || ['blink', '#888', '#222', '#fff', '#ccc'];
   return badge(GLYPHS[g](a, b), { c0, c1, glow: b });
 }
+export const restoreArt = () => badge(GLYPHS.flask('#ffd0d8', '#e8243c'), { c0: '#e0506a', c1: '#3a0a18', glow: '#ff6a80' });
 export const recallArt = () => badge(GLYPHS.recall('#ffffff', '#8fd8ff'), { c0: '#5f8fe0', c1: '#10204a', glow: '#8fd8ff' });
 
 /** Hình kỹ năng: chọn theo cơ chế (móc, xoáy, khiên…) rồi theo kiểu; màu theo chủ đề tướng. */

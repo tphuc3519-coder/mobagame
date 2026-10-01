@@ -1,5 +1,5 @@
 // Phép bổ trợ (05 §6). Dùng chung một kiểu Command với kỹ năng: { type:'spell', aim }.
-import { SPELLS } from '../data/spells.js';
+import { SPELLS, RESTORE } from '../data/spells.js';
 import { T, dist, norm } from './util.js';
 import { applyStatus, removeStatus, isHardCC } from './status.js';
 import { dealDamage, heal } from './damage.js';
@@ -63,5 +63,17 @@ export function castSpell(world, e, aim) {
       break;
     default: break;
   }
+  return { ok: true };
+}
+
+/** Hồi Máu (nút cố định): hồi theo thời gian, không cần chọn trước trận. */
+export function castRestore(world, e) {
+  if (!e.alive) return { ok: false, reason: 'none' };
+  if (!e.restore) e.restore = { ready: 0 };
+  if (world.tick < e.restore.ready) return { ok: false, reason: 'cooldown' };
+  e.restore.ready = world.tick + T(RESTORE.cooldown);
+  e.recall = null;
+  applyStatus(world, e, { status: 'hot', id: 'hoiMau', hps: (e.stats.maxHp * RESTORE.healPct) / RESTORE.duration, duration: RESTORE.duration }, e);
+  world.emit('restore', { id: e.id, dur: RESTORE.duration });
   return { ok: true };
 }
