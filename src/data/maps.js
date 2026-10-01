@@ -18,7 +18,7 @@ export const DUEL = {
   // Tường dọc đường (y=700 và y=1700), khe hở ở x=1800 và 3800; dày 80.
   walls: { ys: [700, 1700], thickness: 80, gaps: [{ x: 1800, w: 300 }, { x: 3800, w: 300 }] },
   // Bụi cỏ ở mép trong của đường (chỉ hình ở Mốc 3; ẩn đơn vị ở Mốc 9).
-  bushes: [{ x: 2250, y: 850, w: 300, h: 200 }, { x: 2250, y: 1550, w: 300, h: 200 }],
+  bushes: [{ x: 2250, y: 850, w: 360, h: 220 }, { x: 2250, y: 1550, w: 360, h: 220 }, { x: 1650, y: 1520, w: 240, h: 180 }, { x: 1150, y: 880, w: 220, h: 160 }],
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
   waves: { first: 15, every: 25, sword: 3, archer: 1, siegeEvery: 3, spawnX: 900, gap: 14 },
   // Đường duy nhất cho lính, đi từ Xanh sang Đỏ (cùng định dạng với bản 5v5).
@@ -116,7 +116,13 @@ export const ARENA = {
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
   walls: { thickness: 90, segs: [...W_BLUE, ...W_BLUE.map(mirrorSeg)] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
-  bushes: [[1250, 1600], [650, 3100], [2050, 3600], [2900, 4050], [3300, 5150], [4800, 5750], [2150, 2750], [3650, 4350]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
+  // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
+  bushes: [
+    ...[[1300, 1900], [650, 3100], [2050, 3600], [3650, 4350], [4800, 5750]].map(([x, y]) => ({ x: x * K, y: y * K, w: 320 * K, h: 240 * K })),
+    ...[[2150, 2750, 520, 300], [2900, 4050, 480, 320], [3300, 5150, 520, 280]].map(([x, y, w, h]) => ({ x: x * K, y: y * K, w: w * K, h: h * K, big: true })),
+    ...[[1200, 2850], [1480, 3250], [1250, 4200], [1620, 4230], [2500, 3150], [3000, 4700], [4150, 4850], [4300, 5050], [2600, 5150], [380, 4400], [2000, 5950], [4400, 6000]]
+      .map(([x, y], i) => ({ x: x * K, y: y * K, w: (i % 3 ? 220 : 260) * K, h: (i % 2 ? 170 : 200) * K })),
+  ],
   vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)
   camps: [], // quái rừng và mục tiêu lớn: chưa có (Mốc 8)
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },

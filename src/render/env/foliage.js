@@ -142,31 +142,3 @@ export function buildFoliage(map, density = 1) {
   g.userData.casters = casters; // cho bóng nướng sẵn trên nền (ground.js)
   return g;
 }
-
-/** Bụi núp (chơi được, giấu tầm nhìn): khối bụi lớn rậm rạp phủ kín vùng bụi, viền bo tròn, cao ~ ngang vai tướng,
- *  để nhìn là biết ngay chỗ có thể núp. Cụm lá gồ ghề nhiều lớp + dương xỉ nhô trên đỉnh + cỏ cao quanh mép. */
-export function buildBushes(map) {
-  const g = new THREE.Group(), r = rngFor(202);
-  const rects = map.bushes.flatMap((b) => [b, { ...b, ...map.mirror(b.x, b.y) }]);
-  const blobs = [], ferns = [], tufts = [];
-  const shade = () => [0xdcdcd0, 0xc8d4b8, 0xb4c4a4, 0xd4d8c4][r.int(4)]; // các cụm đậm nhạt khác nhau
-  for (const b of rects) {
-    const hw = b.w / 2, hh = b.h / 2, step = Math.max(70, Math.min(b.w, b.h) / 4.2);
-    for (let x = -hw; x <= hw; x += step) for (let z = -hh; z <= hh; z += step) {
-      const px = x + r.range(-0.35, 0.35) * step, pz = z + r.range(-0.35, 0.35) * step, e = (px / hw) ** 2 + (pz / hh) ** 2; // hình elip bo tròn
-      if (e > 1.05) continue;
-      const edge = Math.sqrt(e), k = 1 - edge * 0.45; // giữa cao, mép thấp → khối bụi tròn trịa
-      const sz = step * r.range(0.85, 1.15);
-      blobs.push({ x: b.x + px, y: 30 + 70 * k, z: b.y + pz, ry: r.range(0, 7), sx: sz, sy: sz * (0.75 + 0.45 * k), sz: sz * r.range(0.85, 1.1), color: shade() });
-      if (r.next() < 0.35 * k) ferns.push({ x: b.x + px, y: 90 + 70 * k, z: b.y + pz, ry: r.range(0, 7), sx: 1.5, sy: r.range(1.4, 2.0), sz: 1.5 });
-    }
-    for (let i = 0; i < 28; i++) { const a = r.range(0, Math.PI * 2), q = r.range(0.95, 1.12); tufts.push({ x: b.x + Math.cos(a) * hw * q, y: 0, z: b.y + Math.sin(a) * hh * q, ry: r.range(0, 7), sx: 1.5, sy: r.range(1.3, 2.1), sz: 1.5 }); }
-  }
-  const bg = lumpy(new THREE.IcosahedronGeometry(100, 2), 0.55, 4.2); bg.scale(0.01, 0.01, 0.01);
-  paint(bg, (t, ny, x, z) => C(0.3 + (fbm(x * 9, z * 9, 2) - 0.5) * 0.06, 0.6, 0.04 + Math.max(0, ny) * 0.1 + t * 0.04 + (fbm(x * 9 + 3, z * 9, 2) - 0.5) * 0.07));
-  g.add(scatter(new THREE.InstancedMesh((bg.index ? bg.toNonIndexed() : bg), sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.03), blobs.length), blobs, true));
-  const leafy = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.3);
-  g.add(scatter(new THREE.InstancedMesh(tuftGeo(110), leafy, ferns.length), ferns, true));
-  g.add(scatter(new THREE.InstancedMesh(tuftGeo(90), leafy, tufts.length), tufts, true));
-  return g;
-}

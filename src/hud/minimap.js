@@ -34,8 +34,8 @@ export function createMinimap({ world, player, map, cam, fog = null }) {
     if (map.walls?.segs) { c.lineWidth = Math.max(1.5, map.walls.thickness * sx); for (const s of map.walls.segs) { c.beginPath(); c.moveTo(wx(s.x1), wy(s.y1)); c.lineTo(wx(s.x2), wy(s.y2)); c.stroke(); } }
     else if (map.walls?.ys) { c.lineWidth = Math.max(1.5, map.walls.thickness * sy); for (const y of map.walls.ys) { c.beginPath(); c.moveTo(0, wy(y)); c.lineTo(W, wy(y)); c.stroke(); } }
     // bụi cỏ
-    c.fillStyle = '#2f7a3a';
-    for (const b of map.bushes || []) for (const q of [b, { ...b, ...map.mirror(b.x, b.y) }]) c.fillRect(wx(q.x - b.w / 2), wy(q.y - b.h / 2), b.w * sx, b.h * sy);
+    c.fillStyle = '#2b6a30'; c.strokeStyle = '#1c4a20'; c.lineWidth = 1;
+    for (const b of map.bushes || []) for (const q of [b, { ...b, ...map.mirror(b.x, b.y) }]) { c.beginPath(); c.ellipse(wx(q.x), wy(q.y), b.w * sx * 0.55, b.h * sy * 0.55, 0, 0, 7); c.fill(); c.stroke(); }
   }
   function strokePath(c, pts) { c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(wx(x), wy(y)) : c.moveTo(wx(x), wy(y)))); c.stroke(); }
 

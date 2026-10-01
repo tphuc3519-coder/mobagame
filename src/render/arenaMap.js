@@ -3,7 +3,8 @@ import { wallStoneSurface } from './env/surfaces.js';
 import { bakeGroundMap, groundMaterial } from './env/ground.js';
 import { structuresOf } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
-import { buildBushes, WIND, sway, treeGeo, pineGeo, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
+import { buildBushes } from './env/bushes.js';
+import { WIND, sway, treeGeo, pineGeo, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -43,7 +44,7 @@ export function buildArena(scene, map, level = 'mid') {
     const cap = new THREE.Mesh(new THREE.BoxGeometry(L + 16, 26, th + 26), capMat); cap.position.set(cx, WH + 10, cz); cap.rotation.y = ang; g.add(cap);
   }
 
-  g.add(buildBushes(map));
+  g.add(buildBushes(map, dens));
 
   // —— cây, đá, cỏ, hoa: rừng đặc ngoài viền, thưa trong rừng giữa các đường, chừa đường và sông ——
   const r = rngFor(101), blockedByWall = (x, z, m) => map.walls.segs.some((w) => {

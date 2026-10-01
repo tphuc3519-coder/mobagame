@@ -4,7 +4,8 @@ import { flagstoneSurface, wallStoneSurface } from './env/surfaces.js';
 import { bakeGroundMap, groundMaterial } from './env/ground.js';
 import { structuresOf } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
-import { buildFoliage, buildBushes, WIND } from './env/foliage.js';
+import { buildBushes } from './env/bushes.js';
+import { buildFoliage, WIND } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 
 export { FOG_COLOR };
@@ -76,7 +77,7 @@ export function buildMap(scene, map, level = 'mid') {
     stone(w.x1 - w.x0 + 14, 26, wl.thickness + 26, (w.x0 + w.x1) / 2, H + 10, w.wy, 4, 0xd0c8b8);
   }
 
-  g.add(buildBushes(map));
+  g.add(buildBushes(map, dens));
   g.add(foliage);
 
   // đèn lồng dọc hai mép đường: cột gỗ + lồng giấy phát sáng; quầng sáng gộp một Points
