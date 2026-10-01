@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Icon kỹ năng</title>
+<style>body{background:#1a1d2e;color:#eee;font:13px system-ui;margin:12px} .row{display:flex;gap:14px;align-items:center;margin:8px 0} .row b{width:120px} .i{width:96px;height:96px} .i svg{width:100%;height:100%} small{display:block;text-align:center;width:96px}</style>
+<div id="o"></div>
+<script type="importmap">{"imports":{"three":"../lib/three/build/three.module.js","three/addons/":"../lib/three/examples/jsm/"}}</script>
+<script type="module">
+import { heroSkillArt, fistArt } from '../src/hud/heroArt.js';
+import { HEROES, ALPHA } from '../src/data/heroes/index.js';
+const o = document.getElementById('o');
+o.innerHTML = `<div class="row"><b>Đánh thường</b><div><div class="i">${fistArt()}</div><small>Nắm đấm</small></div></div>` + ALPHA.map((id) => `<div class="row"><b>${HEROES[id].name}</b>${['s1', 's2', 's3'].map((s) => `<div><div class="i">${heroSkillArt(id, s, HEROES[id].skills[s])}</div><small>${HEROES[id].skills[s].name}</small></div>`).join('')}</div>`).join('');
+</script>

@@ -3,7 +3,7 @@ import { lv } from '../data/heroes/_levels.js';
 import { nearestEnemy } from '../sim/targeting.js';
 import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
-import { skillArt, badge, GLYPHS } from './art.js';
+import { heroSkillArt, fistArt } from './heroArt.js';
 import { THEMES } from '../render/vfx/library.js';
 
 /** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
@@ -25,8 +25,8 @@ const SLOTS = ['s1', 's2', 's3'];
 export function createSkillButtons(root, { world, player, indicators }) {
   const tc = THEMES[player.heroId]?.col, theme = tc != null ? '#' + tc.toString(16).padStart(6, '0') : '#ffb84d'; // màu chủ đề tướng cho icon kỹ năng
   root.innerHTML = `
-    <button class="sb atk" data-k="atk" aria-label="Đánh">${badge(GLYPHS.sword('#ffffff', '#ffb08a'), { c0: '#b0443a', c1: '#3a1214', glow: '#ff9a7a' })}</button>
-    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? skillArt(player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
+    <button class="sb atk" data-k="atk" aria-label="Đánh">${fistArt()}</button>
+    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? heroSkillArt(player.heroId, s, player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
