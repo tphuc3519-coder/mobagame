@@ -1,7 +1,7 @@
 // Animation viết tay cho Mossback (model diver_pbr_20000: thợ lặn đồng thau cầm cây gậy dài ở tay phải, tay trái buông).
 // Tư thế = độ lệch so với tư thế bind (tay buông, gậy dựng đứng cạnh người). Gậy gắn HandR nên:
 // xoay cổ tay (hdR rx dương) làm đầu gậy đi từ trên ra trước-xuống; nâng cả cánh tay (uaR rx âm) đưa tay lên phía trước.
-import { spline, add, wave } from '../animlib.mjs';
+import { spline, add, wave, lagged } from '../animlib.mjs';
 
 const cloth = () => ({});
 const idle = (u) => {
@@ -74,9 +74,12 @@ const ult = spline([
 
 const death = spline([
   [0, {}],
-  [0.25, { chest: [-8, 0, 0], head: [-12, 0, 0], hipsPos: [0, -0.02, -0.03], uaR: [-12, 0, -6], hdR: [-10, 0, 0], uaL: [-20, 0, 40] }],
-  [0.6, { root: [-40, 0, 0], rootPos: [0, 0.05, -0.14], chest: [-12, 0, 0], head: [-18, 0, 0], hipsPos: [0, -0.12, 0], uaR: [-26, 0, -20], hdR: [-30, 0, 0], uaL: [-30, 0, 55], thL: [-14, 0, 0], shL: [34, 0, 0], shR: [26, 0, 0] }],
-  [1, { root: [-88, 0, 0], rootPos: [0, 0.07, -0.3], chest: [-6, 0, 0], head: [-10, 10, 0], hipsPos: [0, -0.12, 0], uaR: [-12, 0, -30], hdR: [-20, 0, 0], uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0] }],
+  [0.1, { chest: [-12, 4, 0], spine: [-5, 0, 0], head: [-20, 6, 0], hipsPos: [0, -0.01, -0.04], uaR: [-12, 0, -6], hdR: [-14, 0, 0], uaL: [-18, 0, 30], thL: [4, 0, 0], thR: [-6, 0, 0] }],
+  [0.3, { chest: [-8, 0, 0], head: [-18, 0, 0], hipsPos: [0, -0.07, -0.05], uaR: [-22, 0, -16], hdR: [-30, 0, 0], uaL: [-36, 0, 46], thL: [-20, 0, 0], thR: [-12, 0, 0], shL: [44, 0, 0], shR: [38, 0, 0] }],
+  [0.58, { root: [-52, 0, 0], rootPos: [0, 0.05, -0.2], chest: [-10, 0, 0], head: [-20, 0, 0], hipsPos: [0, -0.1, 0], uaR: [-30, 0, -24], hdR: [-34, 0, 0], uaL: [-30, 0, 58], thL: [-18, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [32, 0, 0] }],
+  [0.74, { root: [-90, 0, 0], rootPos: [0, 0.07, -0.32], chest: [-6, 0, 0], head: [-14, 10, 0], hipsPos: [0, -0.12, 0], uaR: [-12, 0, -34], hdR: [-20, 0, 0], uaL: [-12, 0, 64], thL: [-6, 0, 8], thR: [4, 0, -8], shL: [14, 0, 0], shR: [12, 0, 0] }],
+  [0.84, { root: [-84, 0, 0], rootPos: [0, 0.08, -0.31], chest: [-4, 0, 0], head: [-10, 10, 0], hipsPos: [0, -0.11, 0], uaR: [-10, 0, -32], hdR: [-18, 0, 0], uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0] }],
+  [1, { root: [-88, 0, 0], rootPos: [0, 0.07, -0.31], chest: [-5, 0, 0], head: [-12, 10, 0], hipsPos: [0, -0.12, 0], uaR: [-10, 0, -32], hdR: [-18, 0, 0], uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0] }],
 ]);
 
 const recall = (u) => {
@@ -87,9 +90,9 @@ const recall = (u) => {
 const victory = spline([
   [0, {}],
   [0.2, { chest: [8, 0, 0], hipsPos: [0, -0.06, 0], thL: [-16, 0, 0], thR: [-12, 0, 0], shL: [34, 0, 0], shR: [30, 0, 0], uaR: [-20, 0, -8], uaL: [-30, 0, 20] }],
-  [0.4, { chest: [-12, 0, 0], head: [-14, 0, 0], hipsPos: [0, 0.12, 0], uaR: [-70, 0, -14], faR: [-30, 0, 0], hdR: [-6, 0, 0], uaL: [-160, 0, 24], thL: [-24, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [24, 0, 0] }],
-  [0.62, { chest: [-10, 0, 0], head: [-10, 0, 0], uaR: [-68, 0, -14], faR: [-30, 0, 0], uaL: [-162, 0, 22] }],
-  [0.9, { chest: [-8, 0, 0], head: [-8, 0, 0], uaR: [-66, 0, -14], faR: [-30, 0, 0], uaL: [-158, 0, 26] }],
+  [0.4, { chest: [-12, 0, 0], head: [-14, 0, 0], hipsPos: [0, 0.12, 0], uaR: [-70, 0, -14], faR: [-30, 0, 0], hdR: [-6, 0, 0], uaL: [-118, 0, 26], faL: [-20, 0, 0], thL: [-24, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [24, 0, 0] }],
+  [0.62, { chest: [-10, 0, 0], head: [-10, 0, 0], uaR: [-68, 0, -14], faR: [-30, 0, 0], uaL: [-120, 0, 24], faL: [-20, 0, 0] }],
+  [0.9, { chest: [-8, 0, 0], head: [-8, 0, 0], uaR: [-66, 0, -14], faR: [-30, 0, 0], uaL: [-116, 0, 28], faL: [-20, 0, 0] }],
   [1, {}],
 ]);
 
@@ -98,20 +101,23 @@ const showcase = (u) => {
   return add(accent, idle(u));
 };
 
+// Chồng lấp: thân dẫn, đầu/cổ/tay trái theo sau một nhịp ngắn (u).
+const L = (fn) => lagged(fn, { spine: 0.012, chest: 0.028, neck: 0.04, head: 0.065, uaL: 0.035, faL: 0.055, hdL: 0.075 });
+
 export const mossAnim = {
   style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' },
   run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5,
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: attack1 },
-    Attack2: { dur: 0.6, pose: attack2 },
-    Cast1: { dur: 0.8, pose: cast1 },
-    Cast2: { dur: 0.8, pose: cast2 },
-    Ult: { dur: 1.4, pose: ult },
+    Attack1: { dur: 0.6, pose: L(attack1) },
+    Attack2: { dur: 0.6, pose: L(attack2) },
+    Cast1: { dur: 0.8, pose: L(cast1) },
+    Cast2: { dur: 0.8, pose: L(cast2) },
+    Ult: { dur: 1.4, pose: L(ult) },
     Death: { dur: 1.6, pose: death },
     Recall: { dur: 2.0, loop: true, pose: recall },
-    Victory: { dur: 2.2, pose: victory },
+    Victory: { dur: 2.2, pose: L(victory) },
     Showcase: { dur: 4.0, loop: true, pose: showcase },
   },
 };

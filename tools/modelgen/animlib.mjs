@@ -39,3 +39,18 @@ export const scale = (p, f) => Object.fromEntries(Object.entries(p).map(([k, v])
 const TAU = Math.PI * 2;
 /** Sóng trễ pha: s(u, pha, tần số). */
 export const wave = (u, phase = 0, f = 1) => Math.sin(TAU * (u * f - phase));
+
+/** Chuyển động chồng lấp (follow-through): các khoá liệt kê chạy trễ `delays[khoá]` (đơn vị u) so với phần còn lại, nên thân dẫn trước,
+ *  đầu/vai/vải theo sau thay vì cả người cứng đờ cùng pha. Chỉ dùng cho clip không lặp. */
+export function lagged(fn, delays) {
+  return (u, t) => {
+    const out = { ...fn(u, t) };
+    for (const [k, d] of Object.entries(delays)) { const p = fn(Math.max(0, u - d), t); out[k] = p[k] || [0, 0, 0]; }
+    return out;
+  };
+}
+/** Trộn tư thế a→b theo k (0..1), dùng để nối clip với tư thế đứng yên. */
+export function mix(a, b, k) {
+  const o = {}; for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) { const x = a[key] || [0, 0, 0], y = b[key] || [0, 0, 0]; o[key] = [x[0] + (y[0] - x[0]) * k, x[1] + (y[1] - x[1]) * k, x[2] + (y[2] - x[2]) * k]; }
+  return o;
+}

@@ -2,7 +2,7 @@
 // Tư thế: độ lệch so với tư thế bind. rx âm = vung ra trước (chân/tay), rx dương ở thân = cúi ra trước; rz dương ở bên trái = dạng ra.
 // Búa gắn HandR (đầu búa = HandR_Tip). Góc tay phải (uaR/faR/hdR) giải bằng IK từ đích tay + hướng cán búa cho từng thế (bảng A);
 // thân, chân, tay trái, vải chỉnh tay. Nội suy bằng spline (animlib) nên chuyển động liền mạch, có đà và giật nhẹ khi chạm.
-import { spline, add, wave } from '../animlib.mjs';
+import { spline, add, wave, lagged } from '../animlib.mjs';
 
 // —— Thế búa (tay phải) ——
 const A = {
@@ -90,24 +90,32 @@ const ult = spline([
   [1, {}],
 ]);
 
+// Chết: bị đánh trúng giật ngửa đầu, búa văng lên, khuỵu gối rồi ngã ngửa, nảy nhẹ khi chạm đất và nằm yên.
 const death = spline([
   [0, {}],
-  [0.2, { chest: [-10, 0, 0], spine: [-4, 0, 0], head: [-14, 0, 0], hipsPos: [0, -0.02, -0.03], ...A.antic, uaL: [-20, 0, 40], skF: [-20, 0, 0] }],
-  [0.55, { root: [-36, 0, 0], rootPos: [0, 0.04, -0.14], chest: [-14, 0, 0], head: [-22, 0, 0], hipsPos: [0, -0.1, 0], ...A.windup, uaL: [-30, 0, 55], thL: [-14, 0, 0], thR: [6, 0, 0], shL: [34, 0, 0], shR: [26, 0, 0], skF: [-30, 0, 0], skB: [18, 0, 0] }],
-  [1, { root: [-88, 0, 0], rootPos: [0, 0.07, -0.32], chest: [-6, 0, 0], head: [-12, 12, 0], hipsPos: [0, -0.12, 0], ...A.mid, uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0], skF: [-10, 0, 0] }],
+  [0.1, { chest: [-14, 4, 0], spine: [-6, 0, 0], head: [-22, 6, 0], neck: [-6, 0, 0], hipsPos: [0, -0.01, -0.04], ...A.antic, hdR: [34, -17, -6], uaL: [-18, 0, 30], thL: [4, 0, 0], thR: [-6, 0, 0], skF: [-26, 0, 0], skB: [18, 0, 0] }],
+  [0.3, { chest: [-8, 0, 0], spine: [-3, 0, 0], head: [-18, 0, 0], hipsPos: [0, -0.07, -0.05], ...A.windup, uaL: [-36, 0, 46], thL: [-20, 0, 0], thR: [-12, 0, 0], shL: [44, 0, 0], shR: [38, 0, 0], skF: [-20, 0, 0], skB: [14, 0, 0] }],
+  [0.58, { root: [-52, 0, 0], rootPos: [0, 0.05, -0.2], chest: [-10, 0, 0], head: [-20, 0, 0], hipsPos: [0, -0.1, 0], ...A.raise, uaL: [-30, 0, 58], thL: [-18, 0, 0], thR: [-8, 0, 0], shL: [40, 0, 0], shR: [32, 0, 0], skF: [-26, 0, 0], skB: [16, 0, 0] }],
+  [0.74, { root: [-90, 0, 0], rootPos: [0, 0.07, -0.34], chest: [-6, 0, 0], head: [-14, 10, 0], hipsPos: [0, -0.12, 0], ...A.raise, hdR: [126, -32, -9], uaL: [-12, 0, 64], thL: [-6, 0, 8], thR: [4, 0, -8], shL: [14, 0, 0], shR: [12, 0, 0], skF: [-8, 0, 0] }],
+  [0.84, { root: [-84, 0, 0], rootPos: [0, 0.08, -0.33], chest: [-4, 0, 0], head: [-10, 10, 0], hipsPos: [0, -0.11, 0], ...A.raise, hdR: [118, -32, -9], uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0] }],
+  [1, { root: [-88, 0, 0], rootPos: [0, 0.07, -0.33], chest: [-5, 0, 0], head: [-12, 10, 0], hipsPos: [0, -0.12, 0], ...A.raise, hdR: [120, -32, -9], uaL: [-10, 0, 62], thL: [-4, 0, 6], thR: [4, 0, -8], shL: [12, 0, 0], shR: [10, 0, 0] }],
 ]);
 
+// Về thành: búa chống xuống đất, thân nghiêng về trước, gió lùa vải; hơi đổi trọng tâm và ngẩng nhìn.
 const recall = (u) => {
-  const s = wave(u), lag = (p) => wave(u, p);
-  return add({ chest: [18 + 1.5 * s, 0, 0], spine: [8, 0, 0], head: [-6 + 1.5 * lag(0.2), 0, 0], hipsPos: [0, -0.07 + 0.004 * s, 0.04], ...A.ground, uaL: [-30, 0, 30], faL: [-60, 0, 0], thL: [-14, 0, 0], thR: [10, 0, 0], shL: [30, 0, 0], shR: [26, 0, 0] }, cloth(u, 0.15, 1.4));
+  const s = wave(u), lag = (p) => wave(u, p), s2 = wave(u, 0.2, 2);
+  return add({ chest: [16 + 1.8 * s, 3 * wave(u, 0.3), 0], spine: [7 + s, 0, 0], neck: [-3 * lag(0.15), 0, 0], head: [-9 + 3 * lag(0.2), 6 * wave(u, 0.4), 0], hipsPos: [0.006 * lag(0.3), -0.07 + 0.005 * s2, 0.04], ...A.ground, uaR: [-27 + 1.5 * lag(0.1), -19, -4], uaL: [-28 + 3 * lag(0.12), 0, 30], faL: [-62, 0, 0], hdL: [4 * lag(0.3), 0, 0], thL: [-14, 0, 0], thR: [10, 0, 0], shL: [30 + 2 * s2, 0, 0], shR: [26 + 2 * s2, 0, 0] }, cloth(u, 0.15, 1.8));
 };
 
+// Thắng: hạ thấp lấy đà, bật lên giơ búa, dộng búa xuống đất ăn mừng, rồi đứng ưỡn ngực, búa trên vai.
 const victory = spline([
   [0, {}],
-  [0.2, { chest: [10, 0, 0], hipsPos: [0, -0.07, 0], thL: [-18, 0, 0], thR: [-14, 0, 0], shL: [40, 0, 0], shR: [36, 0, 0], ...A.antic, uaL: [-30, 0, 20], skF: [-16, 0, 0] }],
-  [0.4, { chest: [-14, 0, 0], spine: [-6, 0, 0], head: [-16, 0, 0], hipsPos: [0, 0.14, 0], ...A.raise, uaL: [-165, 0, 25], faL: [-14, 0, 0], thL: [-26, 0, 0], thR: [-10, 0, 0], shL: [44, 0, 0], shR: [26, 0, 0], skF: [-28, 0, 0] }],
-  [0.62, { chest: [-10, 0, 0], head: [-12, 0, 0], hipsPos: [0, 0.0, 0], ...A.raise, uaL: [-165, 0, 22], skF: [4, 0, 0] }],
-  [0.9, { chest: [-8, 0, 0], head: [-8, 0, 0], hipsPos: [0, 0.01, 0], ...A.raise, uaL: [-160, 0, 26] }],
+  [0.16, { chest: [12, 0, 0], spine: [5, 0, 0], hipsPos: [0, -0.08, 0], thL: [-20, 0, 0], thR: [-16, 0, 0], shL: [44, 0, 0], shR: [38, 0, 0], ...A.antic, uaL: [-30, 0, 20], skF: [-18, 0, 0] }],
+  [0.32, { chest: [-16, 0, 0], spine: [-6, 0, 0], head: [-16, 0, 0], hipsPos: [0, 0.16, 0], ...A.raise, uaL: [-165, 0, 25], faL: [-14, 0, 0], thL: [-26, 0, 0], thR: [-10, 0, 0], shL: [44, 0, 0], shR: [26, 0, 0], skF: [-28, 0, 0], skB: [18, 0, 0] }],
+  [0.46, { chest: [-12, 0, 0], head: [-12, 0, 0], hipsPos: [0, 0.02, 0], ...A.raise, uaL: [-165, 0, 22], skF: [6, 0, 0] }],
+  [0.56, { chest: [28, 0, 0], spine: [11, 0, 0], head: [8, 0, 0], hipsPos: [0, -0.09, 0.05], ...A.impact, uaL: [-24, 0, 12], thL: [-30, 0, 0], thR: [-24, 0, 0], shL: [48, 0, 0], shR: [44, 0, 0], skF: [30, 0, 0] }],
+  [0.74, { chest: [-10, 0, 0], spine: [-4, 0, 0], head: [-10, 0, 0], hipsPos: [0, 0.01, 0], ...A.antic, uaL: [-70, 0, 20], faL: [-100, 0, 0], thL: [-8, 0, 0], thR: [-6, 0, 0], skF: [-6, 0, 0] }],
+  [0.9, { chest: [-6, 0, 0], head: [-6, 0, 0], hipsPos: [0, 0.005, 0], uaL: [-72, 0, 18], faL: [-100, 0, 0] }],
   [1, {}],
 ]);
 
@@ -116,6 +124,10 @@ const showcase = (u) => {
   return add(accent, idle(u));
 };
 
+// Chồng lấp: thân dẫn, đầu/cổ/tay trái/vải đi sau một nhịp ngắn (u) để chuyển động có đà.
+const LAG = { spine: 0.012, chest: 0.026, neck: 0.04, head: 0.06, uaL: 0.03, faL: 0.05, hdL: 0.07, skF: 0.07, skB: 0.07, skL: 0.08, skR: 0.08 };
+const L = (fn) => lagged(fn, LAG);
+
 export const emberAnim = {
   style: { atk1: 'chopR', atk2: 'swingR', cast1: 'pushR', cast2: 'smash2', ult: 'slam' },
   run: { hold: 'R', amp: 34, arm: 0.7, bob: 0.03, lean: 9 }, idle: 'heavy', moveSpeed: 320, swayAmp: 6,
@@ -123,14 +135,14 @@ export const emberAnim = {
   custom: {
     Idle: { dur: 2.8, loop: true, pose: idle },
     Run: { dur: 'run', loop: true, pose: run },
-    Attack1: { dur: 0.6, pose: attack1 },
-    Attack2: { dur: 0.6, pose: attack2 },
-    Cast1: { dur: 0.8, pose: cast1 },
-    Cast2: { dur: 0.8, pose: cast2 },
-    Ult: { dur: 1.4, pose: ult },
+    Attack1: { dur: 0.6, pose: L(attack1) },
+    Attack2: { dur: 0.6, pose: L(attack2) },
+    Cast1: { dur: 0.8, pose: L(cast1) },
+    Cast2: { dur: 0.8, pose: L(cast2) },
+    Ult: { dur: 1.4, pose: L(ult) },
     Death: { dur: 1.6, pose: death },
     Recall: { dur: 2.0, loop: true, pose: recall },
-    Victory: { dur: 2.2, pose: victory },
+    Victory: { dur: 2.2, pose: L(victory) },
     Showcase: { dur: 4.0, loop: true, pose: showcase },
   },
 };

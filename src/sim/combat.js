@@ -56,8 +56,8 @@ export function updateCombat(world) {
     e.attackReady = world.tick + T(iv);
     e.atkIndex = (e.atkIndex || 0) + 1;
     e.facing = Math.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
-    world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv });
     const delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
+    world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay }); // delay: thời điểm gây sát thương, để animation khớp cú chạm
     world.pending.push({ tick: world.tick + T(delay), run: () => fire(world, e, target, iv) });
   }
 }

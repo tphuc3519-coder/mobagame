@@ -118,7 +118,7 @@ export function castSkill(world, e, slot, aim) {
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
   if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
   const cast = { slot, skill, level, flags: {}, hitHero: false };
-  world.emit('cast', { id: e.id, slot, skillType: skill.type });
+  world.emit('cast', { id: e.id, slot, skillType: skill.type, delay: skill.delay ?? 0 }); // delay: độ trễ tới lúc chiêu trúng (animation khớp theo art.hitTime)
   handler(world, e, cast, aim);
   return { ok: true };
 }

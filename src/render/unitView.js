@@ -38,8 +38,8 @@ export function createUnitViews(scene, localTeam, localId) {
     handle(events) {
       for (const ev of events) {
         const v = views.get(ev.id);
-        if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95));
-        else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7);
+        if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, ev.delay);
+        else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, ev.delay ?? 0);
         else if (ev.type === 'damage' && v) v.flash = 0.08;
         else if (ev.type === 'knockup' && v) v.lift = { t: 0, dur: ev.dur, h: 130 };
         else if (ev.type === 'jump' && v) v.lift = { t: 0, dur: ev.dur, h: 320 };

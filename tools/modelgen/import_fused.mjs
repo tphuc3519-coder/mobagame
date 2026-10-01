@@ -159,6 +159,16 @@ export async function importFused(id, def, outRoot, here) {
     for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; if (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim) continue; out.push(a, b, c); }
     console.log(`  bỏ ${(index.length - out.length) / 3} tam giác quá dài`); index = out;
   }
+  { // bỏ mảnh vụn rời (sau khi cắt, vài cụm tam giác nhỏ mất liên kết sẽ bay lơ lửng khi vung mạnh)
+    const par = Int32Array.from({ length: n }, (_, i) => i), f = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+    const wid = new Map(), key = (i) => `${Math.round(pos[3 * i] * 1e4)},${Math.round(pos[3 * i + 1] * 1e4)},${Math.round(pos[3 * i + 2] * 1e4)}`; // gộp đỉnh trùng vị trí (lưới chưa hàn)
+    const rep = new Int32Array(n); for (let i = 0; i < n; i++) { const k = key(i); if (!wid.has(k)) wid.set(k, i); rep[i] = wid.get(k); }
+    for (let t = 0; t < index.length; t += 3) { const a = f(rep[index[t]]), b = f(rep[index[t + 1]]), c = f(rep[index[t + 2]]); if (a !== b) par[a] = b; if (f(b) !== f(c)) par[f(c)] = f(b); }
+    const cnt = new Map(); for (let t = 0; t < index.length; t += 3) { const r = f(rep[index[t]]); cnt.set(r, (cnt.get(r) || 0) + 1); }
+    const minC = cfg.minComponent ?? 60, out = []; let dropped = 0, comps = 0;
+    for (let t = 0; t < index.length; t += 3) { const r = f(rep[index[t]]); if (cnt.get(r) < minC) { dropped++; continue; } out.push(index[t], index[t + 1], index[t + 2]); }
+    comps = [...cnt.values()].filter((c) => c >= minC).length; index = out; console.log(`  bỏ ${dropped} tam giác ở các mảnh rời nhỏ (< ${minC} tam giác); còn ${comps} khối`);
+  }
   geo.setIndex(index);
   geo.computeBoundingBox(); geo.computeBoundingSphere();
   const body = new THREE.MeshStandardMaterial({ name: `${id}_body`, color: 0xffffff, roughness: 1, metalness: 1 });
