@@ -31,8 +31,8 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen/import_glb.mjs",
-  "source": "thach_quy_prototype.glb",
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "diver_pbr_20000.glb",
   "portrait": {
     "dist": 2.7,
     "dy": -0.3

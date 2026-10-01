@@ -40,6 +40,22 @@ function classify(name, cx) {
   return { kind: 'rigid', bone: B('Chest') }; // thân, cửa sổ hổ phách, bu-lông, bình khí, ống, ba lô
 }
 
+/** Cây xương chuẩn (tên `Bone_*`, quay danh nghĩa bằng 0). W: vị trí thế giới từng khớp theo tên không tiền tố. */
+export function makeRig(W) {
+  const TREE = [['Root', null], ['Hips', 'Root'], ['Spine', 'Hips'], ['Chest', 'Spine'], ['Neck', 'Chest'], ['Head', 'Neck'],
+    ['UpperArmL', 'Chest'], ['UpperArmR', 'Chest'], ['ForearmL', 'UpperArmL'], ['ForearmR', 'UpperArmR'], ['HandL', 'ForearmL'], ['HandR', 'ForearmR'],
+    ['HandL_Tip', 'HandL'], ['HandR_Tip', 'HandR'], ['ThighL', 'Hips'], ['ThighR', 'Hips'], ['ShinL', 'ThighL'], ['ShinR', 'ThighR'], ['FootL', 'ShinL'], ['FootR', 'ShinR']];
+  const bones = TREE.map(([n]) => { const b = new THREE.Bone(); b.name = B(n); return b; });
+  const idx = Object.fromEntries(TREE.map(([n], i) => [B(n), i]));
+  const root = new THREE.Group();
+  TREE.forEach(([n, p], i) => {
+    bones[i].position.copy(W[n]);
+    if (p) { bones[i].position.sub(W[p]); bones[idx[B(p)]].add(bones[i]); } else root.add(bones[i]);
+  });
+
+  return { bones, idx, root, TREE };
+}
+
 export async function importHero(id, def, outRoot, here) {
   const cfg = def.import;
   const src = await loadGlb(path.resolve(here, cfg.file));
@@ -69,16 +85,7 @@ export async function importHero(id, def, outRoot, here) {
     HandL_Tip: jp(...J.tip), HandR_Tip: jp(...(J.tipR || [-J.tip[0], J.tip[1]])),
   };
   for (const k of Object.keys(W)) if (Array.isArray(W[k])) W[k] = new THREE.Vector3(...W[k]);
-  const TREE = [['Root', null], ['Hips', 'Root'], ['Spine', 'Hips'], ['Chest', 'Spine'], ['Neck', 'Chest'], ['Head', 'Neck'],
-    ['UpperArmL', 'Chest'], ['UpperArmR', 'Chest'], ['ForearmL', 'UpperArmL'], ['ForearmR', 'UpperArmR'], ['HandL', 'ForearmL'], ['HandR', 'ForearmR'],
-    ['HandL_Tip', 'HandL'], ['HandR_Tip', 'HandR'], ['ThighL', 'Hips'], ['ThighR', 'Hips'], ['ShinL', 'ThighL'], ['ShinR', 'ThighR'], ['FootL', 'ShinL'], ['FootR', 'ShinR']];
-  const bones = TREE.map(([n]) => { const b = new THREE.Bone(); b.name = B(n); return b; });
-  const idx = Object.fromEntries(TREE.map(([n], i) => [B(n), i]));
-  const root = new THREE.Group();
-  TREE.forEach(([n, p], i) => {
-    bones[i].position.copy(W[n]);
-    if (p) { bones[i].position.sub(W[p]); bones[idx[B(p)]].add(bones[i]); } else root.add(bones[i]);
-  });
+  const { bones, idx, root } = makeRig(W);
 
   // —— Gộp hình học ——
   const pos = [], nor = [], col = [], uv = [], mat = [], si = [], sw = [], idxBody = [], idxGlow = [];

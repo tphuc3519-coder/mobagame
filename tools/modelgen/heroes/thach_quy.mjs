@@ -9,15 +9,13 @@ export default {
   name: 'Mossback', glow: '#ff8a1e',
   palette: ['#405c57', '#ff8a1e', '#a66119', '#1c302e'], rim: '#ffab47', // màu theo model thợ lặn: thân xanh ngọc cũ, hổ phách, đồng thau
   hitTime: { Attack1: 0.34, Attack2: 0.3 },
-  import: {
-    file: './imports/thach_quy_prototype.glb',
-    // File gốc: hệ số màu ghi theo sRGB; nắp đồng thau che kín cửa sổ hổ phách và cả hai lọt trong thân → đẩy cửa sổ nhô ra khỏi nắp, nắp và bu-lông ra sát mặt thân;
-    // găng tay phải dời vào cán gậy để cầm được.
-    srgb: true,
-    portrait: { dist: 2.7, dy: -0.3 }, // khung chân dung rộng hơn để thấy cả mũ và cửa sổ hổ phách
-    nudge: (name, cx) => (/amber_chest/i.test(name) ? [0, -0.28, 0] : /porthole_brass/i.test(name) ? [0, -0.12, 0] : /chest_bolt/i.test(name) ? [0, -0.17, 0] : /glove/i.test(name) && cx < 0 ? [-0.63, 0, 0] : null),
-    joints: { wristR: [-1.85, 2.1], tipR: [-1.85, 4.55] },
-  }, // model hoạ sĩ (bộ thợ lặn đồng thau); build() bên dưới là bản sinh bằng code cũ, không còn dùng
+  import: { // model liền khối có texture do hoạ sĩ gửi (diver_pbr_20000.glb): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    mode: 'fused', file: './imports/diver_pbr_20000.glb',
+    centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
+    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.06 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+    joints: { wristR: [-0.23, 0.27], tipR: [-0.23, 0.75] },
+    portrait: { dist: 2.7, dy: -0.3 },
+  },
   anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 34, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
   build(id) {
     const ctx = humanoid(id, {
