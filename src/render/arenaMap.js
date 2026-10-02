@@ -9,6 +9,7 @@ import { buildRockWalls, buildCampSites, campRadius, LAIR_T } from './env/jungle
 import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
+import { buildLaneDecor } from './env/laneDecor.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -138,20 +139,7 @@ export function buildArena(scene, map, level = 'mid') {
         if (riverDist(x, z) < rw / 2 + 40) continue; edge.push({ x, y: 2, z, ry: r.range(0, 7), sx: r.range(18, 46), sy: r.range(10, 26), sz: r.range(18, 46), color: r.next() < 0.4 ? 0xb8b0a0 : 0xffffff }); }
     }
     g.add(scatterChunked(rockGeo(11), rockMat, edge, true));
-    // viền đá bó vỉa dọc hai mép đường lát: khối đá xẻ thấp nối nhau, lệch nhẹ, thỉnh thoảng sứt/thiếu viên (bỏ qua chỗ qua sông, sân trụ, sân nhà)
-    const curbs = [], ct = new THREE.Color();
-    for (const ln of lanes) for (let i = 1; i < ln.pts.length; i++) {
-      const a = ln.pts[i - 1], b = ln.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, nx = -uz, nz = ux;
-      for (let t = 0; t < L; t += 150) for (const sd of [-1, 1]) {
-        const off = ln.width / 2 - 26, x = a[0] + ux * (t + 75) + nx * sd * off, z = a[1] + uz * (t + 75) + nz * sd * off;
-        if (r.next() < 0.06 || riverDist(x, z) < rw / 2 + 90 || plazas.some((q) => Math.hypot(x - q.x, z - q.z) < q.r + 140)) continue;
-        ct.setHSL(0.6, 0.04, r.range(0.62, 0.82));
-        curbs.push({ x, y: r.range(5, 9), z, ry: -Math.atan2(uz, ux) + r.range(-0.04, 0.04), sx: r.range(132, 146), sy: r.range(14, 20), sz: r.range(52, 62), rz: r.range(-0.03, 0.03), color: ct.getHex() });
-      }
-    }
-    const cTex = cutStoneSurface().clone(); cTex.repeat.set(0.5, 0.25); cTex.needsUpdate = true;
-    const cGeo = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1);
-    g.add(scatterChunked(cGeo, new THREE.MeshLambertMaterial({ map: cTex }), curbs, true));
+    g.add(buildLaneDecor(map, baked, structs)); // đường đá mài khắc hoa văn + vòng khắc chân trụ/nhà chính
   }
 
   // —— đèn lồng dọc hai mép đường ——

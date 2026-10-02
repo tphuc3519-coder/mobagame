@@ -12,7 +12,7 @@ function periodicNoise(seed, P) {
   return (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = sm(x - xi), fy = sm(y - yi); const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1); return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy; };
 }
 /** fbm lặp chu kỳ: u, v trong [0,1), base = số ô lưới ở tầng đầu. */
-function tileFbm(seed, base, oct = 4) {
+export function tileFbm(seed, base, oct = 4) {
   const ns = Array.from({ length: oct }, (_, i) => periodicNoise(seed + i * 17, base << i));
   return (u, v) => { let s = 0, a = 0.5, t = 0; for (let i = 0; i < oct; i++) { s += a * ns[i](u * (base << i), v * (base << i)); t += a; a *= 0.5; } return s / t; };
 }
