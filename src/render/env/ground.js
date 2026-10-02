@@ -87,9 +87,9 @@ export function groundMaterial(baked) {
       // đường ngoài sân nhà: NỀN CỎ MƯỢT (cỏ mịn sáng, lấy mẫu mip cao cho mượt) XEN CÁC MẢNG ĐÁ LÁT, viền đất mòn quanh mảng đá
       float patchN = texture2D(uNoise, vGxz / 2600.0).g * 0.78 + texture2D(uNoise, vGxz / 700.0).b * 0.22;
       float stPatch = smoothstep(0.515, 0.545, patchN);
-      vec3 smoothG = mix(texture2D(uGrass, vGxz / 700.0, 3.0).rgb, gr, 0.45) * vec3(0.98, 1.0, 0.96);
-      vec3 laneC = mix(smoothG, st, stPatch);
-      laneC = mix(laneC, dt * 1.05, (1.0 - stPatch) * smoothstep(0.46, 0.515, patchN) * 0.6);       // đất mòn viền quanh mảng đá
+      vec3 smoothG = mix(texture2D(uGrass, vGxz / 700.0, 1.2).rgb, gr, 0.7) * vec3(0.98, 1.0, 0.96);
+      vec3 laneC = smoothG; // đường ngoài sân nhà: cỏ mượt (phiến đá lớn vẽ ở laneDecor)
+      laneC = mix(laneC, dt * 1.02, smoothstep(0.62, 0.7, patchN) * 0.35); // vệt đất mòn thưa       // đất mòn viền quanh mảng đá
       c = mix(c, laneC, pm);
       vec3 bed = mix(dt * vec3(0.48, 0.56, 0.55), st * vec3(0.5, 0.58, 0.6), smoothstep(0.4, 0.6, nz2.b));
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
@@ -98,7 +98,7 @@ export function groundMaterial(baked) {
       { // đá lát nổi khối: pháp tuyến từ trường độ cao của phiến đá (chỉ ở vùng lát), sáng mép trên-nắng, tối mép khuất
         vec2 su = vGxz / 460.0; float e = 1.5 / 1024.0;
         float h0 = texture2D(uStoneH, su).r, hx = texture2D(uStoneH, su + vec2(e, 0.0)).r, hz = texture2D(uStoneH, su + vec2(0.0, e)).r;
-        vec3 dW = vec3((h0 - hx) * 6.0, 0.0, (h0 - hz) * 6.0) * pm * stPatch;
+        vec3 dW = vec3((h0 - hx) * 6.0, 0.0, (h0 - hz) * 6.0) * pm * 0.0;
         normal = normalize(normal + (viewMatrix * vec4(dW, 0.0)).xyz);
       }`).replace('#include <opaque_fragment>', `
       #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0

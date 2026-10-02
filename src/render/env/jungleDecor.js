@@ -264,7 +264,7 @@ function buildLair(g, c, R, r, glowHex) {
   for (let i = 0; i < 6; i++) {
     const a0 = back + (i / 6 - 0.5) * Math.PI * 1.25, a1 = back + ((i + 1) / 6 - 0.5) * Math.PI * 1.25;
     const seg = { x1: c.x + Math.cos(a0) * RW, y1: c.y + Math.sin(a0) * RW, x2: c.x + Math.cos(a1) * RW, y2: c.y + Math.sin(a1) * RW, w: R * 0.34 };
-    const mid = 1 - Math.abs((i + 0.5) / 6 - 0.5) * 2; wallGeos.push(slabStackGeo(seg, 170 + 170 * mid, seed + i * 3.3, wr));
+    const mid = 1 - Math.abs((i + 0.5) / 6 - 0.5) * 2; wallGeos.push(slabStackGeo(seg, 120 + 110 * mid, seed + i * 3.3, wr));
   }
   const wallM = new THREE.Mesh(mergeGeometries(wallGeos), ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
   // vài khối đá lởm chởm nhô lên quanh mép bệ

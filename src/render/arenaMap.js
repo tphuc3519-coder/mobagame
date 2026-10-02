@@ -79,7 +79,7 @@ export function buildArena(scene, map, level = 'mid') {
   }
   const tuftMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.35);
   const inCamp = (x, z) => (map.camps || []).some((c) => Math.hypot(c.x - x, c.y - z) < campRadius(c.type) * (c.boss ? 1.25 : 1.05));
-  const tufts = put(Math.round(2600 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 260 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60), (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.9, 1.7), sy: r.range(0.8, 1.9), sz: r.range(0.9, 1.7) }));
+  const tufts = put(0 * Math.round(2600 * dens), /* bỏ chỏm cỏ lẻ rải rác (thừa) */ (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 260 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60), (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.9, 1.7), sy: r.range(0.8, 1.9), sz: r.range(0.9, 1.7) }));
   g.add(scatterChunked(tuftGeo(90), tuftMat, tufts, true));
   const reeds = put(Math.round(300 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && riverDist(x, z) < rw / 2 + 120 && riverDist(x, z) > rw / 2 - 20 && laneDist(x, z) > halfW + 60, (x, y, z) => ({ x, y: y + 20, z, ry: r.range(0, 7), sx: 1.1, sy: r.range(1.4, 2.5), sz: 1.1 }));
   g.add(scatterChunked(tuftGeo(90), tuftMat, reeds, true));
@@ -98,7 +98,7 @@ export function buildArena(scene, map, level = 'mid') {
     g.add(buildGrass(blue, 'blue', 8));
   }
   const pal = [0xe8a0b8, 0xf0d070, 0xf4f0e8, 0xe8a070, 0xc0b0e8];
-  const flowers = put(Math.round(500 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 260 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
+  const flowers = put(0 * Math.round(500 * dens), /* bỏ hoa lẻ */ (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 260 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
   g.add(scatterChunked(flowerGeo(), new THREE.MeshLambertMaterial({ vertexColors: true }), flowers, true));
 
   // —— nền đất trộn lớp (env/ground.js): đá lát trên đường + sân, đất mòn mép đường/quanh trụ, lòng sông, bóng nướng sẵn ——

@@ -57,7 +57,7 @@ export function structuresOf(map) {
 // Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 2.4 → 15360 × 15360
 // cho rộng hơn (băng qua đường Giữa ~45 giây thay vì ~20 ở bản gốc). Chỉ khai báo phía Xanh (dưới trái); phía Đỏ lấy (x, y) → (y, x).
 // ───────────────────────────────────────────────────────────────────────────
-const K = 2.4, A = 6400 * K;
+const K = 2.7, A = 6400 * K;
 const P = (x, y) => [x * K, y * K];
 const swap = (x, y) => ({ x: y, y: x });
 
@@ -122,7 +122,7 @@ function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 320) {
 
 // Trại quái rừng phía Xanh (toạ độ gốc; phía Đỏ đối xứng). type: xem data/jungle.js. arc: bệ đá lãnh thổ sau trại.
 const CAMPS_BLUE = [
-  { id: 'blue', type: 'linh_thuy', x: 1480, y: 2560, arc: { r: 400, face: 270 } }, // cửa trại mở lên phía hang Long Ngư
+  { id: 'blue', type: 'linh_thuy', x: 1400, y: 2800, arc: { r: 400, face: 300 } }, // cửa trại mở lên phía hang Long Ngư
   { id: 'wolves_l', type: 'soi_da', x: 1380, y: 4050, arc: { r: 360, face: -60 } },
   { id: 'toad_l', type: 'coc_reu', x: 2080, y: 3250, arc: { r: 330, face: 200 } },
   { id: 'red', type: 'hoa_nham', x: 3700, y: 4880, arc: { r: 400, face: 200 } },
@@ -131,8 +131,8 @@ const CAMPS_BLUE = [
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
 const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
-  { id: 'long_ngu', type: 'long_ngu', x: 1480, y: 1900, boss: true, back: -2.2 },
-  { id: 'ho_loi', type: 'ho_loi', x: 4920, y: 4500, boss: true, back: -1.0 },
+  { id: 'long_ngu', type: 'long_ngu', x: 1340, y: 2020, boss: true, back: 2.36 }, // hang trong mé rừng phía Xanh, cửa mở ra sông
+  { id: 'ho_loi', type: 'ho_loi', x: 5060, y: 4380, boss: true, back: -0.785 }, // đối xứng tâm của Long Ngư
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
@@ -140,7 +140,7 @@ const BUSHES_BLUE = [
   ...[[1330, 3230], [1750, 3500], [2880, 5100]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
 ];
-const TOWERS_BLUE = [[800, 1700], [800, 3350], [800, 4700], [2750, 3650], [1900, 4500], [1400, 5000], [4700, 5600], [3350, 5600], [1700, 5600]];
+const TOWERS_BLUE = [[800, 1700], [800, 3150], [800, 4600], [2750, 3650], [2100, 4300], [1450, 4950], [4700, 5600], [3250, 5600], [1800, 5600]];
 const allTowers = [...TOWERS_BLUE, ...TOWERS_BLUE.map(([x, y]) => [y, x])];
 /** Bụi gần trụ (cách vùng bắn < ~700 gốc): một dải tảng đá áp sát cạnh bụi phía xa trụ, làm chỗ núp có lưng tựa như Liên Quân. */
 function bushRocks(b) {
@@ -229,9 +229,9 @@ export const ARENA = {
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 1050, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
-    tower('temple_outer', 'outer', 800, 1700, null), tower('temple_inner', 'inner', 800, 3350, 'temple_outer'), tower('temple_home', 'home', 800, 4700, 'temple_inner'),
-    tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 1900, 4500, 'mid_outer'), tower('mid_home', 'home', 1400, 5000, 'mid_inner'),
-    tower('river_outer', 'outer', 4700, 5600, null), tower('river_inner', 'inner', 3350, 5600, 'river_outer'), tower('river_home', 'home', 1700, 5600, 'river_inner'),
+    tower('temple_outer', 'outer', 800, 1700, null), tower('temple_inner', 'inner', 800, 3150, 'temple_outer'), tower('temple_home', 'home', 800, 4600, 'temple_inner'),
+    tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 2100, 4300, 'mid_outer'), tower('mid_home', 'home', 1450, 4950, 'mid_inner'),
+    tower('river_outer', 'outer', 4700, 5600, null), tower('river_inner', 'inner', 3250, 5600, 'river_outer'), tower('river_home', 'home', 1800, 5600, 'river_inner'),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
@@ -242,7 +242,7 @@ export const ARENA = {
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
     // bụi cỏ dài mọc mép nước dọc bờ sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân; phía Đỏ đối xứng
     // (không đối xứng: mỗi bờ đặt riêng vì hai hang boss nằm lệch về hai phía)
-    ...[[1560, 1250, 1870, 1560], [1950, 2270, 2200, 2520], [4530, 4840, 4840, 5150], [4450, 4130, 4200, 3880]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: (a === 1950 || a === 4450 ? 72 : 95) * K, bank: true, noMirror: true })),
+    ...[[1560, 1250, 1870, 1560], [4530, 4840, 4840, 5150]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: 95 * K, bank: true, noMirror: true })), // đối xứng tâm (như hai hang): mỗi đường cánh một bụi bờ đối diện hang
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
     ...[-470, 470].map((d) => { const c = 3200 + d, h = 250; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 190 * K, big: true, river: true }; }),

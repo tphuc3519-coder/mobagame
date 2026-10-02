@@ -131,11 +131,18 @@ function stoneMat(t, baked, repeat, cores = []) {
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat; uniform vec4 uXf, uCores; uniform vec2 uTerr; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+    sh.fragmentShader = 'uniform sampler2D uSplat; uniform vec4 uXf, uCores; uniform vec2 uTerr; varying vec2 vGxz;\nvec2 h22(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
       diffuseColor.rgb *= mix(0.42, 1.0, texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw).b) * 0.88;
       { // chỉ lát trong lãnh thổ nhà chính: mờ dần ra ngoài (mép xé theo nhiễu từ hoa văn)
         float dc = min(length(vGxz - uCores.xy), length(vGxz - uCores.zw)) + (diffuseColor.r - 0.5) * 300.0;
-        diffuseColor.a *= 1.0 - smoothstep(uTerr.x, uTerr.x + uTerr.y, dc);
+        float terr = 1.0 - smoothstep(uTerr.x, uTerr.x + uTerr.y, dc);
+        // ngoài sân nhà: PHIẾN ĐÁ LỚN rời nhau trên nền cỏ (ô Voronoi lớn, mỗi ô giữ hoặc bỏ theo băm; mép ô có khe cỏ, cạnh hơi vát tối)
+        vec2 q = vGxz / 640.0, qi = floor(q), qf = fract(q); float d1 = 9.0, d2 = 9.0; vec2 id = vec2(0.0);
+        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) { vec2 g = vec2(float(x), float(y)), o = h22(qi + g); float d = length(g + o - qf); if (d < d1) { d2 = d1; d1 = d; id = qi + g; } else if (d < d2) d2 = d; }
+        float keep = step(0.3, h22(id + 17.0).x), gap = smoothstep(0.035, 0.075, d2 - d1);
+        float slab = keep * gap;
+        diffuseColor.rgb *= mix(0.72, 1.0, smoothstep(0.075, 0.16, d2 - d1));        // cạnh phiến vát tối
+        diffuseColor.a *= max(terr, slab);
       }`).replace('#include <opaque_fragment>', `
       #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
         DirectionalLightShadow dls0 = directionalLightShadows[ 0 ];
