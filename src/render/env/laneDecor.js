@@ -171,7 +171,7 @@ export function buildLaneDecor(map, baked, structs) {
     for (let i = 0; i < pts.length; i++) {
       if (i) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
       const a = pts[Math.max(0, i - 3)], b = pts[Math.min(pts.length - 1, i + 3)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l, nz = dx / l;
-      P.push(pts[i][0] - nx * W / 2, 0.6, pts[i][1] - nz * W / 2, pts[i][0] + nx * W / 2, 0.6, pts[i][1] + nz * W / 2);
+      P.push(pts[i][0] - nx * W / 2, 0.2, pts[i][1] - nz * W / 2, pts[i][0] + nx * W / 2, 0.2, pts[i][1] + nz * W / 2);
       UV.push(0, s / rep, 1, s / rep);
       if (i) { const q = (i - 1) * 2; I.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); }
     }
