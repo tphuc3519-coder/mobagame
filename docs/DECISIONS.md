@@ -114,3 +114,14 @@
 - Bệ đá (`slabStackGeo`): 3–4 lớp phiến dày, mỗi lớp chỉ 1–2 khối dài (~600), vát nhỏ, hàn đỉnh → pháp tuyến mượt (không còn mặt vát góc cạnh, cũng không phồng như gối). Màu xám lam, đỉnh sáng hơn vách.
 - `ROCK_FACET`: shader vân sọc ngang lượn theo nhiễu chỉ chạy trên vách (theo pháp tuyến thế giới): dải sáng/tối, vạch tối mảnh + gờ sáng ngay trên; mặt đỉnh loang mảng 2 tầng nhiễu; chân đá tối dần.
 - Sàn đường (`laneTexture`): đá lam tím vẽ tay — tấm lớn chia bởi rãnh cong ngang lòng đường + rãnh dọc xen kẽ, rãnh mềm (lõi tối nhạt dần ra mép), viền sáng mảnh phía trên rãnh, bóng AO về mép tấm, vệt mòn sáng giữa đường, loang mây, tối dần sát gờ viền; gờ viền bo tròn ngắt đoạn. Tông hạ thấp cho đỡ chói.
+
+## Đá tròn nhẵn liền khối + sàn đá phiến thật + sông tự nhiên (bỏ kiểu hoạt hình)
+- Bỏ đá chồng phiến. Mọi bệ đá/tường rừng, bệ nhà, vách hang boss dùng `roundRockGeo`: mặt bằng capsule bo tròn hai đầu, mặt cắt phồng
+  vòm tròn, sống lưng nhấp nhô thành các tảng liền nhau, biến dạng nhiễu nhẹ theo pháp tuyến, pháp tuyến mượt. Màu đỉnh chỉ là che khuất.
+- Vật liệu đá chung `ROCK_FACET` (MeshStandard): nhiễu 3D theo toạ độ thế giới → vân lớp lượn sóng (vằn), gân thạch anh mảnh, hạt mịn,
+  loang ấm/lạnh, bump từ nhiễu (đạo hàm màn hình), độ nhám thay đổi (chỗ mài bóng phản chiếu môi trường). Đá tảng ghé chân, đá viền bệ
+  trại, trụ đá quanh hang cũng dùng vật liệu này. Quầng dưới chân đá đổi từ tím sang bóng tối trung tính.
+- Sàn đường: phiến đá lớn xếp so le theo hàng (1–2 mạch dọc mỗi hàng), mạch lượn nhẹ, góc bo, mép vát (normal map), mạch lõm đầy sạn
+  tối, mỗi tấm một tông xám lam/tím khác nhau, loang + gân mảnh + hạt + ố; bó vỉa đá dài hai mép. Vật liệu đường đổi sang MeshStandard.
+- Sông: bờ lượn theo nhiễu (không thẳng tắp), vũng sâu/bãi cạn loang, màu xanh rêu → lam sẫm, phản chiếu trời dịu hơn, bọt bờ mỏng
+  đứt quãng, bớt vệt dòng/lá trôi, nước ở mép đục hơn (đáy ít lộ), đoạn đè lên đường tối hơn, bớt gợn trắng.

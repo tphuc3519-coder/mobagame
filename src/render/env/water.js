@@ -38,42 +38,48 @@ export function buildRiver(map) {
       float hash(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
       void main(){
         vec2 p = vW.xz, fl = uFlow, pr = vec2(-fl.y, fl.x);
-        float edge = abs(vUv.x - 0.5) * 2.0;                                   // 0 giữa dòng → 1 ở bờ
+        float edge0 = abs(vUv.x - 0.5) * 2.0;
+        vec2 stp = vec2(dot(p, uFlow), dot(p, vec2(-uFlow.y, uFlow.x)));
+        float side = vUv.x > 0.5 ? 0.0 : 0.5;                                    // hai bờ lượn khác nhau
+        float shore = (texture2D(uNoise, vec2(stp.x / 3800.0, 0.21 + side)).r - 0.5) * 0.16 + (texture2D(uNoise, vec2(stp.x / 900.0, 0.63 + side)).g - 0.5) * 0.07;
+        float edge = clamp(edge0 + shore + 0.11, 0.0, 1.2);                      // 0 giữa dòng → 1 ở bờ (bờ lượn tự nhiên, không thẳng tắp)
         float spd = mix(1.0, 0.35, edge * edge);                                // giữa dòng nhanh
         vec2 st = vec2(dot(p, fl), dot(p, pr));
         float ford = uHasMask > 0.5 ? texture2D(uSplat, (p - uXf.xy) * uXf.zw).r : 0.0; // đường đá băng qua → nước cạn chảy xiết
-        float depth = (1.0 - smoothstep(0.12, 0.95, edge)) * (1.0 - ford * 0.15); // sông chảy liền một mạch, đè lên cả mặt đường (đường chỉ mờ dưới nước)
+        float pool = texture2D(uNoise, st / vec2(2200.0, 900.0)).r;                  // vũng sâu / bãi cạn loang lổ
+        float depth = clamp((1.0 - smoothstep(0.05, 0.92, edge)) * (0.75 + pool * 0.5), 0.0, 1.0) * (1.0 - ford * 0.05); // sông chảy liền một mạch, đè lên cả mặt đường (đường chỉ mờ dưới nước)
         vec3 g = waveN(st, spd * (1.0 + ford * 1.5));
         vec3 n = normalize(vec3((g.x * fl.x + g.z * pr.x) * 0.35, 0.06, (g.x * fl.y + g.z * pr.y) * 0.35));
         vec3 V = normalize(cameraPosition - vW);
-        vec3 shallow = vec3(0.16, 0.40, 0.36), mid = vec3(0.04, 0.24, 0.29), deep = vec3(0.01, 0.08, 0.13);
+        vec3 shallow = vec3(0.19, 0.30, 0.24), mid = vec3(0.05, 0.17, 0.18), deep = vec3(0.012, 0.06, 0.085);   // nước sông: xanh rêu trong → lam sẫm
         vec3 col = mix(mix(shallow, mid, smoothstep(0.0, 0.5, depth)), deep, smoothstep(0.45, 1.0, depth));
         // ánh sáng đáy nước cạn
         float ca = caustic(st / 170.0 + vec2(uTime * 0.25 * spd, 0.0), uTime * 0.55 + 23.0);
-        col += vec3(0.45, 0.75, 0.62) * ca * (1.0 - depth) * 0.3 * (1.0 - ford);
+        col += vec3(0.5, 0.7, 0.55) * ca * (1.0 - depth) * 0.16 * (1.0 - ford);
         float fres = pow(1.0 - max(0.0, dot(n, V)), 5.0);
         vec3 R = reflect(-V, n);
-        vec3 sky = mix(vec3(0.42, 0.58, 0.70), vec3(0.78, 0.88, 0.95), clamp(R.y, 0.0, 1.0));
-        col = mix(col, sky, (0.05 + fres * 0.4) * (1.0 - ford * 0.6));
-        col *= mix(1.0, 0.78, smoothstep(0.55, 0.9, edge));                     // bóng bờ đổ xuống mép nước
+        vec3 sky = mix(vec3(0.30, 0.40, 0.46), vec3(0.62, 0.72, 0.80), clamp(R.y, 0.0, 1.0));
+        col = mix(col, sky, (0.04 + fres * 0.32) * (1.0 - ford * 0.6));
+        col *= mix(1.0, 0.72, smoothstep(0.6, 0.95, edge)) * (1.0 - 0.18 * ford);                     // bóng bờ đổ xuống mép nước
         vec3 L = normalize(vec3(0.5, 1.0, 0.67)); vec3 H = normalize(L + V);
-        float spec = pow(max(0.0, dot(n, H)), 260.0) * 1.8 + pow(max(0.0, dot(n, H)), 50.0) * 0.08;
+        float spec = pow(max(0.0, dot(n, H)), 300.0) * 1.1 + pow(max(0.0, dot(n, H)), 40.0) * 0.05;
         col += vec3(1.0, 0.95, 0.85) * spec;
         // vệt bọt/dòng chảy kéo dài theo dòng (thấy rõ nước đang trôi)
         float lane = texture2D(uNoise, vec2(st.x / 1500.0 - uTime * 0.11 * spd, st.y / 140.0)).b;
-        float streak = smoothstep(0.68, 0.74, lane) * smoothstep(0.82, 0.74, lane) * (0.3 + 0.5 * depth);
+        float streak = smoothstep(0.7, 0.74, lane) * smoothstep(0.8, 0.74, lane) * (0.2 + 0.3 * depth) * smoothstep(0.45, 0.6, texture2D(uNoise, st / 600.0 - vec2(uTime * 0.05, 0.0)).g);
         float nz = texture2D(uNoise, st / 260.0 - vec2(uTime * 0.16 * spd, 0.0)).b;
-        float foam = smoothstep(0.80, 0.97, edge + (nz - 0.5) * 0.35)                                         // bọt vỗ bờ
-                   + smoothstep(0.3, 0.7, ford) * smoothstep(0.62, 0.8, nz + 0.12 * sin(uTime * 3.0 + st.x * 0.02)) * 0.35 // gợn nước chảy qua mặt đường
-                   + streak * 0.35;
+        float nz2 = texture2D(uNoise, st / vec2(520.0, 90.0) - vec2(uTime * 0.07 * spd, 0.0)).r;
+        float foam = smoothstep(0.86, 0.985, edge + (nz - 0.5) * 0.25) * smoothstep(0.35, 0.7, nz2) * 0.75     // bọt vỗ bờ: đứt quãng, mỏng
+                   + smoothstep(0.3, 0.7, ford) * smoothstep(0.7, 0.85, nz + 0.12 * sin(uTime * 3.0 + st.x * 0.02)) * 0.12 // gợn nước chảy qua mặt đường
+                   + streak * 0.18;
         // lá/cánh hoa trôi theo dòng
         vec2 cell = vec2(st.x - uTime * 95.0 * spd, st.y) / vec2(320.0, 150.0), ci = floor(cell), cf = fract(cell) - 0.5;
         float hs = hash(ci), leaf = 0.0;
-        if (hs > 0.86 && edge < 0.8) { float a = hs * 40.0 + uTime * 0.6; vec2 q = mat2(cos(a), -sin(a), sin(a), cos(a)) * (cf * vec2(320.0, 150.0)); leaf = smoothstep(1.0, 0.75, length(q / vec2(13.0, 6.5))); }
-        col = mix(col, vec3(0.86, 0.94, 0.93), clamp(foam, 0.0, 1.0) * 0.65);
+        if (hs > 0.97 && edge < 0.75) { float a = hs * 40.0 + uTime * 0.6; vec2 q = mat2(cos(a), -sin(a), sin(a), cos(a)) * (cf * vec2(320.0, 150.0)); leaf = smoothstep(1.0, 0.75, length(q / vec2(13.0, 6.5))); }
+        col = mix(col, vec3(0.72, 0.80, 0.78), clamp(foam, 0.0, 1.0) * 0.5);
         col = mix(col, hs > 0.95 ? vec3(0.95, 0.62, 0.70) : vec3(0.42, 0.55, 0.18), leaf * 0.9);
-        float a = mix(0.58, 0.95, depth) + foam * 0.2 + leaf;
-        a = max(a, 0.8 * ford); a *= smoothstep(1.0, 0.94, edge);                // trên mặt đường nước vẫn đậm (~80%): đá lát chỉ thấp thoáng bên dưới
+        float a = mix(0.7, 0.95, depth) + foam * 0.15 + leaf;
+        a = max(a, 0.86 * ford); a *= smoothstep(1.0, 0.9, edge) * smoothstep(1.0, 0.97, edge0);                  // mép nước tan dần vào bờ                // trên mặt đường nước vẫn đậm (~80%): đá lát chỉ thấp thoáng bên dưới
         gl_FragColor = vec4(clamp(col, 0.0, 3.0), clamp(a, 0.0, 0.96));
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
