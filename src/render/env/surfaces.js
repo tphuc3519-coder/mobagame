@@ -109,6 +109,7 @@ export const flagstoneSurface = () => once('flag', () => {
     d[4 * k] = cl(col[0] * kk); d[4 * k + 1] = cl(col[1] * kk); d[4 * k + 2] = cl(col[2] * kk); d[4 * k + 3] = 255;
   }
   x.putImageData(img, 0, 0);
+  cache.flagH = heightTex(Hm, N); // trường độ cao → pháp tuyến trên shader nền (đá nổi khối dưới nắng)
   // ngọn cỏ nhỏ mọc từ khe đá (vẽ đè, lặp khít)
   const r = rngFor(57); x.lineCap = 'round';
   for (let n = 0; n < 2600; n++) {
@@ -205,4 +206,63 @@ export const marbleSurface = () => once('marble', () => {
     o[0] = cl(236 * k); o[1] = cl(231 * k); o[2] = cl(222 * k);
   });
   return finish(c);
+});
+
+/** Trường độ cao (Float32Array N×N, 0..1) → texture xám tuyến tính (lặp khít). */
+function heightTex(H, N) {
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N);
+  for (let i = 0; i < N * N; i++) { const v = cl(H[i] * 255); img.data[4 * i] = v; img.data[4 * i + 1] = v; img.data[4 * i + 2] = v; img.data[4 * i + 3] = 255; }
+  x.putImageData(img, 0, 0); return finish(c, false);
+}
+export const flagstoneHeight = () => { flagstoneSurface(); return cache.flagH; };
+
+/** Trường độ cao → bản đồ pháp tuyến (tangent space, RGB) lặp khít. */
+function normalTex(H, N, k) {
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const hx = H[j * N + (i + 1) % N] - H[j * N + (i + N - 1) % N], hy = H[((j + 1) % N) * N + i] - H[((j + N - 1) % N) * N + i];
+    let nx = -hx * k, ny = hy * k, nz = 1; const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    const o = 4 * (j * N + i); d[o] = (nx * 0.5 + 0.5) * 255; d[o + 1] = (ny * 0.5 + 0.5) * 255; d[o + 2] = (nz * 0.5 + 0.5) * 255; d[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0); return finish(c, false);
+}
+
+/** Đá khối xây (trụ, tế đàn): hàng đá chữ nhật lệch mạch, mặt đá đẽo có vết đục, mép sứt, mạch vữa sâu, mỗi viên một tông xám ấm,
+ *  ố bẩn loang. Trả về { map, normal } (1024²). */
+export const ashlarSurface = () => once('ashlar', () => {
+  const N = 1024, rows = 8, r = rngFor(151), chis = tileFbm(153, 64, 3), big = tileFbm(157, 6, 4), chip = tileFbm(159, 24, 3), grain = tileFbm(161, 160, 2);
+  const stones = []; for (let j = 0; j < rows; j++) { let u = (j % 2) * 0.17; const list = []; while (u < 1.3) { const w = 0.2 + r.next() * 0.2; list.push([u, w, r.next()]); u += w; } stones.push(list); }
+  const H = new Float32Array(N * N), C = new Float32Array(N * N * 3);
+  for (let jj = 0; jj < N; jj++) for (let ii = 0; ii < N; ii++) {
+    const u = ii / N, v = jj / N, j = Math.min(rows - 1, Math.floor(v * rows)), vv = v * rows - j, list = stones[j];
+    let st = list[0]; for (const q of list) { const uu = ((u - q[0]) % 1 + 1) % 1; if (uu < q[1]) { st = q; break; } }
+    const uu = ((u - st[0]) % 1 + 1) % 1 / st[1], ex = Math.min(uu, 1 - uu) * st[1] * rows, ey = Math.min(vv, 1 - vv);
+    const e = Math.min(ex, ey) + (chip(u, v) - 0.5) * 0.06;                               // mép sứt không đều
+    const bevel = Math.min(1, Math.max(0, e / 0.09)), k = jj * N + ii;
+    H[k] = (bevel < 1 ? Math.sqrt(bevel) : 1) * (0.9 + st[2] * 0.08) + (chis(u, v) - 0.5) * 0.08 + (grain(u, v) - 0.5) * 0.03;
+    const tone = 0.82 + st[2] * 0.2 + (big(u, v) - 0.5) * 0.25, mort = e < 0.012;
+    const base = mort ? [70, 66, 62] : [168 * tone, 160 * tone, 148 * tone];
+    const ao = mort ? 0.7 : 0.75 + 0.25 * bevel;
+    C.set([base[0] * ao, base[1] * ao, base[2] * ao], k * 3);
+  }
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N);
+  for (let i = 0; i < N * N; i++) { img.data[4 * i] = cl(C[3 * i]); img.data[4 * i + 1] = cl(C[3 * i + 1]); img.data[4 * i + 2] = cl(C[3 * i + 2]); img.data[4 * i + 3] = 255; }
+  x.putImageData(img, 0, 0);
+  const map = finish(c); map.anisotropy = 16;
+  return { map, normal: normalTex(H, N, 9) };
+});
+
+/** Ngói men chi tiết 512² + pháp tuyến: hàng ngói ống tròn, đầu ngói tối, men loang. Màu trắng-xám, tô màu đội bằng color vật liệu. */
+export const roofTileHD = () => once('roofHD', () => {
+  const N = 512, grain = tileFbm(171, 48, 3), glaze = tileFbm(173, 8, 4), rows = 10, cols = 10, H = new Float32Array(N * N);
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const u = i / N, v = j / N, ry = v * rows, row = Math.floor(ry), fy = ry - row, cx = u * cols + (row % 2) * 0.5, fx = cx - Math.floor(cx);
+    const roll = Math.sin(fx * Math.PI), lip = fy > 0.86 ? 0.45 : 1, k = j * N + i;
+    H[k] = roll * (0.6 + 0.4 * fy) * (fy > 0.86 ? 0.6 : 1);
+    const t = (0.5 + 0.5 * roll) * (0.72 + 0.28 * fy) * lip * (0.86 + grain(u, v) * 0.22) * (0.9 + (glaze(u, v) - 0.5) * 0.3);
+    img.data[4 * k] = cl(235 * t); img.data[4 * k + 1] = cl(232 * t); img.data[4 * k + 2] = cl(228 * t); img.data[4 * k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  return { map: finish(c), normal: normalTex(H, N, 5) };
 });
