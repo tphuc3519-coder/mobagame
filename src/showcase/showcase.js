@@ -172,7 +172,8 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     sc.add(h.g); h.mixer.update(0.01); h.g.updateMatrixWorld(true);
     const head = new THREE.Vector3(); let bone = null; h.g.traverse((o) => { if (o.name === 'Bone_Head') bone = o; });
     if (bone) bone.getWorldPosition(head); else head.set(0, h.h * 0.85, 0);
-    const cam = new THREE.PerspectiveCamera(26, 1, 0.05, 20); cam.position.set(head.x + 0.1, head.y + 0.2, head.z + 1.2); cam.lookAt(head.x, head.y + 0.1, head.z);
+    const pf = h.art.portrait || {}; // art.json có thể chỉnh khung cho tướng đầu to / người lớn (dist: khoảng cách, dy: dịch xuống)
+    const cam = new THREE.PerspectiveCamera(26, 1, 0.05, 20); cam.position.set(head.x + 0.1, head.y + 0.2 + (pf.dy || 0), head.z + (pf.dist || 1.2)); cam.lookAt(head.x, head.y + 0.1 + (pf.dy || 0), head.z);
     const rt = new THREE.WebGLRenderTarget(size, size, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cam); renderer.setRenderTarget(null);
     const px = new Uint8Array(size * size * 4); renderer.readRenderTargetPixels(rt, 0, 0, size, size, px); rt.dispose();

@@ -22,11 +22,31 @@ function updateDash(world, e) {
   if (d.left <= 0.01) e.dash = null;
 }
 
+/** Kéo/đẩy cưỡng bức (móc neo, xoáy nước): đơn vị bị dời thẳng tới điểm đích với tốc độ cố định, mất lượt lướt đang có. */
+export function forceMove(world, t, to, speed) {
+  if (!t.alive || t.structure) return;
+  const d = dist(t.pos, to);
+  if (d < 1) return;
+  t.dash = null; t.forced = { x: to.x, y: to.y, perTick: speed * TICK };
+  return d / speed; // thời gian kéo (giây)
+}
+function updateForced(world) {
+  for (const e of world.entities) {
+    const f = e.forced; if (!f) continue;
+    if (!e.alive) { e.forced = null; continue; }
+    const dx = f.x - e.pos.x, dy = f.y - e.pos.y, d = Math.hypot(dx, dy), step = Math.min(d, f.perTick);
+    if (d > 0.01) { e.pos.x += (dx / d) * step; e.pos.y += (dy / d) * step; }
+    clampToMap(world.map, e.pos, e.radius);
+    if (d - step <= 0.5) e.forced = null;
+  }
+}
+
 /** Di chuyển tướng theo moveDir; giữ trong đường; không xuyên công trình. */
 export function updateMovement(world) {
+  updateForced(world);
   const solids = world.entities.filter((s) => s.alive && s.structure && !s.noTarget);
   for (const e of world.entities) {
-    if (!e.alive || e.kind !== 'hero') continue;
+    if (!e.alive || e.kind !== 'hero' || e.forced) continue;
     if (e.dash) { updateDash(world, e); e.speed = 0; }
     else {
       let { x, y } = e.moveDir;

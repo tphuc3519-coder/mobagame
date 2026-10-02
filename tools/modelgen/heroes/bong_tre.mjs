@@ -1,15 +1,35 @@
-// Bóng Tre — Sát Thủ Rừng Tre (09 §4.7)
+// Bamboo Shade — Bamboo Forest Assassin (09 §4.7)
 import { humanoid, BONE } from '../humanoid.mjs';
+import { ronin } from './bong_tre.anim.mjs';
 import { jacket, sleeves, belt, boots } from '../costume.mjs';
 import { swayChain, tube, dangle, leaf, handPos, along, place, orient, band, flap } from '../parts.mjs';
 
 const C = { skin: '#e6bf9d', green: '#24452f', green2: '#182f21', dark: '#0f1a14', leaf: '#6fbf73', dry: '#d8e8b0', straw: '#dcc98a', straw2: '#a89a5c', steel: '#b9d4c0' };
 
 export default {
-  name: 'Bóng Tre', glow: '#9dff9d',
+  name: 'Bamboo Shade', glow: '#9dff9d',
   palette: ['#1f3b2a', '#6fbf73', '#d8e8b0', '#0f1a14'], rim: '#6fbf73',
-  hitTime: { Attack1: 0.2, Attack2: 0.2 },
-  anim: { style: { atk1: 'jabR', atk2: 'jabL', cast1: 'slashR', cast2: 'spin', ult: 'slashCombo' }, run: { amp: 41, arm: 0.9, bob: 0.022, lean: 15 }, idle: 'sneak', moveSpeed: 345, swayAmp: 10 },
+  hitTime: { Attack1: 0.17, Attack2: 0.17 },
+  import: { // model liền khối có texture do hoạ sĩ gửi (ronin_pbr_100000.glb: kiếm sĩ nón lá, hai kiếm): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
+    mode: 'fused', file: './imports/ronin_pbr_100000.glb', simplify: { tris: 28000, error: 0.08, flags: ['Permissive', 'Prune'] },
+    centerX: 0.175, centerZ: -0.14, bodyTop: 1.89, height: 2.2, texMax: 1024,
+    rig: { // toạ độ tương đối thân (đơn vị file gốc): x + = bên trái nhân vật, z + = phía trước
+      Hips: [0, 1.0, 0], Spine: [0, 1.13, 0], Chest: [0, 1.3, 0], Neck: [0, 1.5, 0], Head: [0, 1.6, 0], HeadTop: [0, 1.89, 0],
+      ThighL: [0.2, 1.0, 0], ShinL: [0.22, 0.52, 0.03], FootL: [0.225, 0.12, 0], ToeL: [0.225, 0.03, 0.22],
+      ThighR: [-0.2, 1.0, 0], ShinR: [-0.22, 0.52, 0.03], FootR: [-0.225, 0.12, 0], ToeR: [-0.225, 0.03, 0.22],
+      UpperArmL: [0.28, 1.45, 0], ForearmL: [0.36, 1.15, 0], HandL: [0.4, 0.86, 0], HandL_Tip: [0.375, 0.25, 0.72], HandEndL: [0.4, 0.78, 0.04],
+      UpperArmR: [-0.28, 1.45, 0], ForearmR: [-0.36, 1.15, 0], HandR: [-0.4, 0.86, 0], HandR_Tip: [-0.855, 0.28, 0.29], HandEndR: [-0.4, 0.78, 0.04],
+    },
+    weapon: [ // hai thanh kiếm gắn cứng vào hai tay
+      { bone: 'HandR', a: [-0.4, 0.82, -0.01], b: [-0.855, 0.28, 0.29], r: 0.05, hard: 0.02, cut: 0.002 },
+      { bone: 'HandL', a: [0.395, 0.85, 0.02], b: [0.375, 0.25, 0.72], r: 0.05, hard: 0.02, cut: 0.002 },
+    ],
+    minComponent: 120,
+    skirt: { max: 0.85, from: 0.02, span: 0.2, gap0: 0.02, gap1: 0.08 }, // vạt áo choàng lá đung đưa
+    portrait: { dist: 2.1, dy: -0.28 },
+  },
+  anim: ronin,
   build(id) {
     const ctx = humanoid(id, {
       H: 1.72, headS: 1.05, shoulder: 0.15, chestW: 0.118, chestD: 0.072, waistW: 0.084, hipW: 0.106, armR: 0.024, legR: 0.036, legOut: 0.05,

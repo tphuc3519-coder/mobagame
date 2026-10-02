@@ -62,16 +62,16 @@ function setup(hero = 'hoa_ren', foe = 'hoa_ren') {
 }
 { // KN, vàng từ lính
   const { w, p, step } = setup();
-  const m = spawnMinion(w, 'sword', 1, 1200); m.pos.x = 1600; m.hp = 1; step(1);
+  const m = spawnMinion(w, 'sword', 1, 0, 0); m.pos.x = 1600; m.hp = 1; step(1);
   const g0 = p.gold; dealDamage(w, p, m, 999, 'true'); step(1);
   ok('kết liễu lính kiếm: +28.6 vàng (22×1.3)', Math.abs(p.gold - g0 - 28.6) < 0.01, String(p.gold - g0));
   ok('KN từ lính (32×1.3 = 41.6)', Math.abs(p.xp - 41.6) < 0.01, String(p.xp));
-  const m2 = spawnMinion(w, 'sword', 1, 1200); m2.hp = 1; const g1 = p.gold; dealDamage(w, null, m2, 999, 'true'); step(1);
+  const m2 = spawnMinion(w, 'sword', 1, 0, 0); m2.hp = 1; const g1 = p.gold; dealDamage(w, null, m2, 999, 'true'); step(1);
   ok('lính chết không do tướng: không ai nhận vàng', Math.abs(p.gold - g1) < 0.001);
-  for (let i = 0; i < 4; i++) { const x = spawnMinion(w, 'siege', 1, 1200); x.pos.x = 1600; dealDamage(w, p, x, 99999, 'true'); }
+  for (let i = 0; i < 4; i++) { const x = spawnMinion(w, 'siege', 1, 0, 0); x.pos.x = 1600; dealDamage(w, p, x, 99999, 'true'); }
   step(1); ok('farm lính lên cấp 3 (338 KN)', p.level === 3, `cấp ${p.level} kn ${p.xp.toFixed(0)}`);
   ok('lên cấp: +1 điểm kỹ năng đã tự nâng', p.skillLevels.s1 + p.skillLevels.s2 + p.skillLevels.s3 >= 2);
-  p.xp = 0; for (let i = 0; i < 160; i++) { const x = spawnMinion(w, 'giant', 1, 1200); x.pos.x = 1600; dealDamage(w, p, x, 99999, 'true'); }
+  p.xp = 0; for (let i = 0; i < 160; i++) { const x = spawnMinion(w, 'giant', 1, 0, 0); x.pos.x = 1600; dealDamage(w, p, x, 99999, 'true'); }
   step(1); ok('cấp tối đa 15', p.level === 15, `cấp ${p.level}`);
 }
 { // hạ gục tướng, hồi sinh

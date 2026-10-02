@@ -3,14 +3,30 @@ import { lv } from '../data/heroes/_levels.js';
 import { nearestEnemy } from '../sim/targeting.js';
 import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
+import { heroSkillArt, fistArt } from './heroArt.js';
+import { THEMES } from '../render/vfx/library.js';
+
+/** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
+ *  đoạn vừa nâng (fresh) loé sáng một nhịp. */
+function levelRing(max, level, fresh) {
+  const R = 46, gap = max > 4 ? 7 : 10, seg = 360 / max, pt = (a) => [50 + R * Math.sin(a * Math.PI / 180), 50 - R * Math.cos(a * Math.PI / 180)];
+  let out = '<defs><linearGradient id="lvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c8"/><stop offset="1" stop-color="#f0a83a"/></linearGradient></defs>';
+  for (let i = 0; i < max; i++) {
+    const a0 = i * seg + gap / 2, a1 = (i + 1) * seg - gap / 2, [x0, y0] = pt(a0), [x1, y1] = pt(a1), d = `M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+    const on = i < level;
+    out += `<path d="${d}" class="${on ? 'on' : 'off'}${on && fresh && i === level - 1 ? ' fresh' : ''}"/>`;
+  }
+  return out;
+}
 
 const DRAG_MIN = 15, DRAG_MAX = 110, CANCEL = 210;
 const SLOTS = ['s1', 's2', 's3'];
 
 export function createSkillButtons(root, { world, player, indicators }) {
+  const tc = THEMES[player.heroId]?.col, theme = tc != null ? '#' + tc.toString(16).padStart(6, '0') : '#ffb84d'; // màu chủ đề tướng cho icon kỹ năng
   root.innerHTML = `
-    <button class="sb atk" data-k="atk" aria-label="Đánh"><span>Đánh</span></button>
-    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}"><span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><u class="pips"></u></button>`).join('')}
+    <button class="sb atk" data-k="atk" aria-label="Đánh">${fistArt()}</button>
+    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? heroSkillArt(player.heroId, s, player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
@@ -82,7 +98,8 @@ export function createSkillButtons(root, { world, player, indicators }) {
         el.classList.toggle('nomana', level > 0 && player.mana < cost);
         el.classList.toggle('locked', !level); el.classList.toggle('cooling', left > 0.05);
         el.querySelector('.lvl').style.display = canLevelSkill(player, slot) ? 'grid' : 'none';
-        el.querySelector('.pips').textContent = '●'.repeat(level);
+        const max = Array.isArray(sk.cooldown) ? sk.cooldown.length : 3;
+        if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }
         el.title = `${sk.name}: ${sk.desc || ''}`;
       }
       if (active?.aiming) {

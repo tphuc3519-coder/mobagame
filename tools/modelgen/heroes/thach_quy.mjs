@@ -1,15 +1,26 @@
-// Thạch Quy — Người Gác Đền Rêu Phủ (09 §4.1)
+// Mossback — Guardian of the Mossy Temple (09 §4.1)
 import { humanoid, BONE } from '../humanoid.mjs';
+import { mossAnim } from './thach_quy.anim.mjs';
 import { belt } from '../costume.mjs';
 import { dangle, orient, onEllipsoid, pauldron, handPos, band, spike } from '../parts.mjs';
 
 const C = { skin: '#70847a', stone: '#5d6f5f', stone2: '#3f4c40', dark: '#2b2f3a', moss: '#5f8f4a', jade: '#7fd1a8', bronze: '#b8843a', bronze2: '#7a5424', gold: '#c9a24a', root: '#4a5440' };
 
 export default {
-  name: 'Thạch Quy', glow: '#5fe0a8',
-  palette: ['#4b5a4a', '#7fd1a8', '#c9a24a', '#2b2f3a'], rim: '#7fd1a8',
-  hitTime: { Attack1: 0.34, Attack2: 0.3 },
-  anim: { style: { atk1: 'smash2', atk2: 'chopR', cast1: 'push2', cast2: 'slam', ult: 'raise2' }, run: { hold: 'R', amp: 26, arm: 0.18, bob: 0.03, lean: 6, twist: 3 }, idle: 'heavy', moveSpeed: 310, swayAmp: 5 },
+  name: 'Mossback', glow: '#ff8a1e',
+  palette: ['#405c57', '#ff8a1e', '#a66119', '#1c302e'], rim: '#ffab47', // màu theo model thợ lặn: thân xanh ngọc cũ, hổ phách, đồng thau
+  hitTime: { Attack1: 0.28, Attack2: 0.22, Cast1: 0.22, Cast2: 0.34, Ult: 0.34 },
+  import: { // model liền khối có texture do hoạ sĩ gửi (diver_pbr_20000.glb): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
+    mode: 'fused', file: './imports/diver_pbr_20000.glb',
+    centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
+    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+    rig: { HandEndR: [-0.23, 0.3, 0.07] }, // mút bàn tay: trọng số bàn tay không chạy dọc cả cây gậy
+    smoothWeights: 64, merge: { Spine: 'Chest', Neck: 'Chest', Head: 'Chest' }, maxEdge: 0.1, // mũ lặn + thân là một khối vỏ cứng: chỉ gập ở thắt lưng, không bẻ cong vỏ // bỏ tam giác sợi chỉ
+    joints: { wristR: [-0.23, 0.27], tipR: [-0.23, 0.75] },
+    portrait: { dist: 2.7, dy: -0.3 },
+  },
+  anim: mossAnim,
   build(id) {
     const ctx = humanoid(id, {
       H: 2.5, headS: 0.8, shoulder: 0.215, chestW: 0.205, chestD: 0.15, waistW: 0.175, hipW: 0.18, armR: 0.058, legR: 0.066, legOut: 0.072, hunch: 0.055,

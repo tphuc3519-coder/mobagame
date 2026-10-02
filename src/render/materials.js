@@ -63,8 +63,8 @@ function patch(mat, u) {
   mat.customProgramCacheKey = () => 'unit-toon-paint';
 }
 
-function toToon(m, u) {
-  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity * (m.emissive.getHex() ? 1.6 : 1), gradientMap: gradientMap() }); // phần phát sáng mạnh hơn để bloom chỉ bắt chỗ này
+function toToon(m, u) { // map/normalMap: model có texture (Mossback dùng ảnh); model tô màu theo đỉnh thì để trống
+  const t = new THREE.MeshToonMaterial({ color: m.color.clone(), map: m.map, normalMap: m.normalMap, vertexColors: m.vertexColors, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity * (m.emissive.getHex() ? 1.6 : 1), gradientMap: gradientMap() }); // phần phát sáng mạnh hơn để bloom chỉ bắt chỗ này
   t.name = m.name; patch(t, u);
   return t;
 }

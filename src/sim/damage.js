@@ -2,6 +2,7 @@ import { T, dist } from './util.js';
 import { removeStatus, isStealthed, isInvulnerable } from './status.js';
 import { onKill, respawnSeconds } from './economy.js';
 import { tryRevive, onMagicTaken } from './items.js';
+import { revealOnAttack } from './vision.js';
 
 /** Sát thương nhận = raw × 100 / (100 + giáp hiệu dụng) (02 §7). Chuẩn không giảm. */
 export function mitigate(src, tgt, raw, type) {
@@ -26,6 +27,7 @@ function backdoorFactor(world, src, tgt) {
 export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}) {
   if (!tgt || !tgt.alive || amount <= 0 || tgt.noTarget) return 0;
   if (tgt.invulnerable || isInvulnerable(tgt)) { world.emit('immune', { id: tgt.id }); return 0; }
+  if (src && src !== tgt) revealOnAttack(world, src, tgt); // đánh người thì lộ mặt (bụi, sương mù)
   const hook = src?.data?.passive?.hooks?.onDealDamage;
   if (hook) { const ctx = { world, self: src, target: tgt, amount, type }; hook(ctx); amount = ctx.amount; }
   let dmg = mitigate(src, tgt, amount, type) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0)) * (opts.basic ? 1 - (tgt.stats.basicReduce || 0) : 1) * backdoorFactor(world, src, tgt);
@@ -38,7 +40,7 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   tgt.shields = tgt.shields.filter((s) => s.amount > 0.01);
   dmg = Math.max(0, dmg);
   tgt.hp -= dmg;
-  tgt.lastDamagedTick = world.tick;
+  tgt.lastDamagedTick = world.tick; if (src) tgt.lastAttacker = src.id;
   if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu (đòn đánh) và hút máu phép (kỹ năng)
     const rate = opts.basic && type === 'physical' ? src.stats.lifesteal : !opts.basic && type === 'magic' ? src.stats.spellvamp : 0;
     if (rate > 0) heal(world, src, dmg * rate);

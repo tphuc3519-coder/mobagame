@@ -1,40 +1,27 @@
 import * as THREE from 'three';
+import { createParticles } from './vfx/particles.js';
+import { createShapes } from './vfx/shapes.js';
+import { createLibrary } from './vfx/library.js';
 
-// Hiệu ứng tối thiểu dạng khối phát sáng, vòng và quạt (đủ đọc được kỹ năng; hạt để Mốc 6).
-const COL = { 0: 0x5fe3d0, 1: 0xff6a4a };
+// Hiệu ứng trận: hạt (cộng sáng + trộn thường), hình (sóng, vệt đất, cung chém, xoáy, khiên, cột sáng, xích, vệt vũ khí)
+// và bộ hiệu ứng riêng từng tướng (vfx/library.js). Thêm vòng tầm bắn trụ địch (03 §A4 luật 7).
 const add = (color, op = 0.5) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 const flat = (m) => { m.rotation.x = -Math.PI / 2; m.renderOrder = 2; return m; };
 
-export function createFx(scene) {
-  const projs = new Map();
-  const rings = [];
-  const towerRings = new Map();
-  const ballGeo = new THREE.SphereGeometry(1, 10, 8);
+/** opts: { views (unitView), camera, renderer, shake(amount, dur), team (đội người chơi) } */
+export function createFx(scene, opts = {}) {
+  const A = createParticles(scene, { max: 2600, additive: true });
+  const N = createParticles(scene, { max: 1600, additive: false });
+  const sh = createShapes(scene);
+  const lib = createLibrary({ A, N, sh, views: opts.views || { get: () => null }, shake: opts.shake || (() => {}), team: opts.team ?? 0 });
+  const towerRings = new Map(), seenProj = new Set(), sz = new THREE.Vector2();
 
-  const ring = (x, z, r, life, color, o = {}) => {
-    const m = flat(new THREE.Mesh(new THREE.RingGeometry(r * 0.94, r, 48), add(color, o.op ?? 0.7)));
-    const disc = flat(new THREE.Mesh(new THREE.CircleGeometry(r, 40), add(color, o.fill ?? 0.14)));
-    m.position.set(x, 4, z); disc.position.set(x, 3, z);
-    scene.add(m, disc); rings.push({ m, disc, t: 0, life, grow: o.grow, r });
-  };
-  const cone = (ev, color) => {
-    const half = (ev.angle * Math.PI) / 360, ang = Math.atan2(ev.dy, ev.dx);
-    const m = flat(new THREE.Mesh(new THREE.CircleGeometry(ev.range, 24, -half, half * 2), add(color, 0.35)));
-    const g = new THREE.Group(); g.position.set(ev.x, 4, ev.y); g.rotation.y = -ang; g.add(m); // +X cục bộ quay về hướng ra đòn
-    scene.add(g); rings.push({ m: g, disc: null, t: 0, life: 0.25, fadeMats: [m.material] });
-  };
-
+  if (typeof window !== 'undefined') window.__fxdbg = () => ({ add: A.count, norm: N.count, shapes: sh.count, trails: lib.dbg() });
   return {
-    handle(events) {
-      for (const ev of events) {
-        const c = COL[ev.team] ?? 0xffffff;
-        if (ev.type === 'aoe') ring(ev.x, ev.y, ev.radius, ev.dur, c, { op: ev.warn ? 0.9 : 0.6 });
-        else if (ev.type === 'impact') ring(ev.x, ev.y, ev.radius, 0.35, 0xffffff, { op: 0.9, fill: 0.3 });
-        else if (ev.type === 'cone') cone(ev, c);
-      }
-    },
+    lib,
+    handle(events, world) { lib.handle(events, world); },
     update(world, dt, player) {
-      // vòng tầm bắn của trụ địch: hiện khi tướng mình lại gần 900, đỏ khi đang nhắm mình (03 §A4 luật 7)
+      // vòng tầm bắn của trụ địch: hiện khi tướng mình lại gần 900, đỏ khi đang nhắm mình
       for (const s2 of world.entities) {
         if (!s2.structure || s2.noTarget || s2.team === player.team) continue;
         let r = towerRings.get(s2.id);
@@ -43,28 +30,14 @@ export function createFx(scene) {
         r.visible = s2.alive && player.alive && d < s2.stats.range + 900;
         r.material.color.setHex(s2.streakTarget === player.id && world.tick < s2.attackReady + 30 ? 0xff3a2a : 0xffd27a);
       }
-      // đạn
-      const seen = new Set();
-      for (const p of world.projectiles) {
-        seen.add(p.id);
-        let m = projs.get(p.id);
-        if (!m) {
-          const owner = world.byId(p.owner);
-          m = new THREE.Mesh(ballGeo, add(COL[owner?.team] ?? 0xffffff, 0.95));
-          const basic = p.kind === 'basic'; m.scale.set(basic ? 14 : Math.max(18, (p.width || 40) * 0.4), basic ? 14 : Math.max(18, (p.width || 40) * 0.4), basic ? 14 : 40);
-          scene.add(m); projs.set(p.id, m);
-        }
-        m.position.set(p.x, 100, p.y); m.rotation.y = -Math.atan2(p.dy, p.dx) + Math.PI / 2;
-      }
-      for (const [id, m] of projs) if (!seen.has(id)) { scene.remove(m); m.material.dispose(); projs.delete(id); }
-      // vòng
-      for (let i = rings.length - 1; i >= 0; i--) {
-        const r = rings[i]; r.t += dt;
-        const k = Math.min(1, r.t / r.life);
-        if (r.disc) { r.m.material.opacity *= 1 - dt * 1.5; if (r.grow) r.m.scale.setScalar(1 + k * 0.1); r.disc.material.opacity = Math.max(0, r.disc.material.opacity * (1 - dt * 0.5)); }
-        for (const mt of r.fadeMats || []) mt.opacity = 0.35 * (1 - k);
-        if (r.t >= r.life) { scene.remove(r.m); if (r.disc) scene.remove(r.disc); rings.splice(i, 1); }
-      }
+      // đạn: lõi sáng + vệt theo chủ đề tướng
+      const now = new Set();
+      for (const p of world.projectiles) { now.add(p.id); const o = world.byId(p.owner); if (o) lib.projectile(p, o, dt); }
+      for (const id of seenProj) if (!now.has(id)) lib.projectileGone(id);
+      seenProj.clear(); for (const id of now) seenProj.add(id);
+      lib.update(dt, world);
+      if (opts.camera && opts.renderer) { opts.renderer.getDrawingBufferSize(sz); const s = sz.y / (2 * Math.tan((opts.camera.fov * Math.PI) / 360)); A.setScale(s); N.setScale(s); }
+      A.update(dt); N.update(dt); sh.update(dt);
     },
   };
 }

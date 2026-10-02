@@ -11,7 +11,7 @@ const bot = !q.has('nobot') && !q.has('dummies');
 if (q.has('hero')) {
   const heroId = ALPHA.includes(q.get('hero')) ? q.get('hero') : 'hoa_ren';
   const enemyId = ALPHA.includes(q.get('enemy')) ? q.get('enemy') : ALPHA[(ALPHA.indexOf(heroId) + 3) % ALPHA.length];
-  startMatch({ heroId, enemyId, bot, difficulty: q.get('diff') || 'normal' });
+  startMatch({ heroId, enemyId, bot, difficulty: q.get('diff') || 'normal', mode: q.get('mode') || '1v1' });
 } else {
   openSelect({ onStart: (cfg) => startMatch({ ...cfg, onExit: () => location.reload() }) });
 }

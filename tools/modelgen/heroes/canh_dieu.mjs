@@ -1,4 +1,4 @@
-// Cánh Diều — Cung Thủ Theo Gió (09 §4.12)
+// Kitewing — Windchasing Archer (09 §4.12)
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { jacket, sleeves, belt, boots, scarf } from '../costume.mjs';
 import { swayChain, ribbon, dangle, leaf, handPos, along, place, orient, band, curve, spike } from '../parts.mjs';
@@ -6,7 +6,7 @@ import { swayChain, ribbon, dangle, leaf, handPos, along, place, orient, band, c
 const C = { skin: '#e8bf9a', blue: '#2b6cb0', blue2: '#1f4f86', amber: '#f6ad55', cream: '#fff5e1', dark: '#1a202c', wood: '#a5773d', wood2: '#6e4a22', hair: '#4a2c1a', wind: '#a8e6ff' };
 
 export default {
-  name: 'Cánh Diều', glow: '#a8e6ff',
+  name: 'Kitewing', glow: '#a8e6ff',
   palette: ['#2b6cb0', '#f6ad55', '#fff5e1', '#1a202c'], rim: '#a8e6ff',
   hitTime: { Attack1: 0.36, Attack2: 0.36 },
   anim: { style: { atk1: 'shoot', atk2: 'shoot', cast1: 'pushR', cast2: 'push2', ult: 'raise2' }, run: { hold: 'L', amp: 36, arm: 0.7, bob: 0.02, lean: 10 }, idle: 'calm', moveSpeed: 325, swayAmp: 10 },

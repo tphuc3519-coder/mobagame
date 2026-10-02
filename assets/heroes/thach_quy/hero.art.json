@@ -4,19 +4,22 @@
   "height": 250,
   "runRefSpeed": 310,
   "hitTime": {
-    "Attack1": 0.34,
-    "Attack2": 0.3
+    "Attack1": 0.28,
+    "Attack2": 0.22,
+    "Cast1": 0.22,
+    "Cast2": 0.34,
+    "Ult": 0.34
   },
   "attach": {
     "weapon_tip": "Bone_HandR_Tip",
     "head": "Bone_Head"
   },
-  "rim": "#7fd1a8",
+  "rim": "#ffab47",
   "palette": [
-    "#4b5a4a",
-    "#7fd1a8",
-    "#c9a24a",
-    "#2b2f3a"
+    "#405c57",
+    "#ff8a1e",
+    "#a66119",
+    "#1c302e"
   ],
   "clips": [
     "Idle",
@@ -31,5 +34,10 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen"
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "diver_pbr_20000.glb",
+  "portrait": {
+    "dist": 2.7,
+    "dy": -0.3
+  }
 }

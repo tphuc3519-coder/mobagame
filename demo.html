@@ -59,7 +59,7 @@
   </header>
   <div class="grid">
     <div class="stage" id="stage">
-      <div class="badge"><b id="hname">Lồng Đăng</b><span id="hrole"></span></div>
+      <div class="badge"><b id="hname">Lanternward</b><span id="hrole"></span></div>
       <div class="hint">Kéo để xoay 360°</div>
       <div class="stats" id="stats"></div>
       <div id="loading">Đang nạp model…</div>
@@ -97,14 +97,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { prepareUnitMaterials, setOutlineResolution } from './src/render/materials.js';
 
 const HEROES = [
-  ['thach_quy', 'Thạch Quy', 'Đỡ đòn · Trợ thủ', '#7fd1a8'], ['trau_dong', 'Trâu Đồng', 'Đỡ đòn · Đấu sĩ', '#d9a441'],
-  ['co_thu', 'Cổ Thụ', 'Đỡ đòn · Trợ thủ', '#8fdc70'], ['hoa_ren', 'Hoả Rèn', 'Đấu sĩ', '#ff7a1a'],
+  ['thach_quy', 'Mossback', 'Đỡ đòn · Trợ thủ', '#7fd1a8'], ['trau_dong', 'Trâu Đồng', 'Đỡ đòn · Đấu sĩ', '#d9a441'],
+  ['co_thu', 'Cổ Thụ', 'Đỡ đòn · Trợ thủ', '#8fdc70'], ['hoa_ren', 'Emberforge', 'Đấu sĩ', '#ff7a1a'],
   ['kiem_may', 'Kiếm Mây', 'Đấu sĩ · Sát thủ', '#9fd0ff'], ['soi_nui', 'Sói Núi', 'Đấu sĩ', '#ffcc33'],
-  ['bong_tre', 'Bóng Tre', 'Sát thủ', '#6fbf73'], ['doi_dem', 'Dơi Đêm', 'Sát thủ · Pháp sư', '#9a6bff'],
-  ['nguyet_ha', 'Nguyệt Hà', 'Pháp sư', '#8fd3ff'], ['sam_trong', 'Sấm Trống', 'Pháp sư', '#5fd0ff'],
-  ['hoa_doc', 'Hoa Độc', 'Pháp sư · Trợ thủ', '#6bd36b'], ['canh_dieu', 'Cánh Diều', 'Xạ thủ', '#a8e6ff'],
+  ['bong_tre', 'Bamboo Shade', 'Sát thủ', '#6fbf73'], ['doi_dem', 'Dơi Đêm', 'Sát thủ · Pháp sư', '#9a6bff'],
+  ['nguyet_ha', 'Moonstream', 'Pháp sư', '#8fd3ff'], ['sam_trong', 'Sấm Trống', 'Pháp sư', '#5fd0ff'],
+  ['hoa_doc', 'Hoa Độc', 'Pháp sư · Trợ thủ', '#6bd36b'], ['canh_dieu', 'Kitewing', 'Xạ thủ', '#a8e6ff'],
   ['phao_hoa', 'Pháo Hoa', 'Xạ thủ', '#f6e05e'], ['trang_no', 'Trạng Nỏ', 'Xạ thủ', '#7fe0d0'],
-  ['long_dang', 'Lồng Đăng', 'Trợ thủ', '#ffc15e'], ['moc_cam', 'Mộc Cầm', 'Trợ thủ · Pháp sư', '#7ad3c6'],
+  ['long_dang', 'Lanternward', 'Trợ thủ', '#ffc15e'], ['moc_cam', 'Mộc Cầm', 'Trợ thủ · Pháp sư', '#7ad3c6'],
   ['hanh_hoa', 'Hạnh Hoa', 'Trợ thủ · Đấu sĩ', '#f2c14e'],
   ['tieu_anh', 'Tiểu Ảnh', 'Xạ thủ', '#ff8a7a'],
   ['ba_nam', 'Bà Năm Chảo', 'Đấu sĩ', '#ff7a8a'],

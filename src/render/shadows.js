@@ -6,7 +6,7 @@ export function createBlobShadow(radius) {
   if (!tex) {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 4, 32, 32, 32);
-    g.addColorStop(0, 'rgba(0,0,0,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    g.addColorStop(0, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)');
     x.fillStyle = g; x.fillRect(0, 0, 64, 64);
     tex = new THREE.CanvasTexture(c);
   }

@@ -4,22 +4,24 @@ import { T, dist, norm, clampToMap } from './util.js';
 import { TICK } from '../core/loop.js';
 import { dealDamage } from './damage.js';
 import { isTargetable } from './targeting.js';
+import { canSee } from './vision.js';
 import { isRooted, isHardCC } from './status.js';
 import { spawnProjectile } from './projectiles.js';
+import { lanePath, pointAt, project } from './lanes.js';
 
-const dirOf = (team) => (team === 0 ? 1 : -1);
-
-export function spawnMinion(world, type, team, y) {
-  const d = MINIONS[type], sc = scaleFor(Math.floor(world.tick / 1800));
+/** Sinh lính ở đầu đường `laneIdx` của đội `team`; lệch ngang `off` để không dồn một điểm. */
+export function spawnMinion(world, type, team, laneIdx = 0, off = 0) {
+  const d = MINIONS[type], sc = scaleFor(Math.floor(world.tick / 1800)), map = world.map;
   const base = { maxHp: d.maxHp * sc.hp, maxMana: 0, atk: d.atk * sc.atk, ap: 0, armor: d.armor, mr: d.mr, atkSpeed: d.atkSpeed, moveSpeed: d.moveSpeed, range: d.range };
-  const w = world.map.waves, x = team === 0 ? w.spawnX : world.map.w - w.spawnX;
+  const path = lanePath(map, laneIdx, team), s0 = map.waves.spawnDist ?? 0;
+  const o = pointAt(path, s0), pos = { x: o.x - o.dy * off, y: o.y + o.dx * off };
   const e = world.spawnEntity({ kind: 'minion', minionType: type, team, data: { name: d.name, base, perLevel: {}, basicAttack: { melee: d.melee, delay: d.delay }, skills: {}, towerPct: d.towerPct },
-    radius: d.radius, pos: { x, y }, height: 150, laneY: y, target: null });
-  e.hp = e.stats.maxHp; e.facing = team === 0 ? 0 : Math.PI;
+    radius: d.radius, pos, height: 150, lane: laneIdx, laneOff: off, target: null, wp: 1, wpSync: 0 });
+  e.hp = e.stats.maxHp; e.facing = Math.atan2(o.dy, o.dx);
   return e;
 }
 
-/** Lịch sinh lính: đợt đầu lúc first giây, mỗi every giây một đợt; mỗi siegeEvery đợt thêm Xe Đá. */
+/** Lịch sinh lính: đợt đầu lúc first giây, mỗi every giây một đợt, ở mọi đường; mỗi siegeEvery đợt thêm Xe Đá. */
 export function updateWaves(world) {
   const w = world.map.waves;
   const sec = world.tick / 30;
@@ -35,16 +37,25 @@ export function updateWaves(world) {
   const due = world.spawnQueue.filter((s) => s.tick <= world.tick);
   if (due.length) {
     world.spawnQueue = world.spawnQueue.filter((s) => s.tick > world.tick);
-    for (const s of due) for (const team of [0, 1]) spawnMinion(world, s.type, team, world.map.road.y + (world.rng.next() - 0.5) * 120);
+    const jit = world.map.lanes.length > 1 ? 160 : 120;
+    for (const s of due) for (const team of [0, 1]) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, s.type, team, l, (world.rng.next() - 0.5) * jit);
+    // Lính Đèn Lớn (03 §A5): phá được trụ nhà của địch ở đường nào thì đường đó thêm 1 siêu lính mỗi đợt; phá cả 3 trụ nhà: 2 mỗi đường
+    if (world.map.lanes.length > 1 && due.some((s) => s.type === 'sword')) {
+      for (const team of [0, 1]) {
+        const homes = world.map.lanes.map((ln) => { const t = world.entities.find((e) => e.structure && e.team === 1 - team && e.sid === `${ln.id}_home`); return !!t && !t.alive; });
+        const all = homes.every(Boolean);
+        homes.forEach((down, l) => { if (down || all) for (let k = 0; k < (all ? 2 : 1); k++) spawnMinion(world, 'giant', team, l, (world.rng.next() - 0.5) * jit); });
+      }
+    }
   }
 }
 
 function pickTarget(world, e) {
   const range = e.stats.range, cur = e.target != null ? world.byId(e.target) : null;
-  if (cur && cur.alive && isTargetable(e, cur) && dist(cur.pos, e.pos) <= range + 700) return cur;
+  if (cur && cur.alive && isTargetable(e, cur) && canSee(e.team, cur) && dist(cur.pos, e.pos) <= range + 700) return cur;
   let best = null, bs = Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || t.noTarget || !isTargetable(e, t)) continue;
+    if (t.team === e.team || t.team === 2 || t.noTarget || !isTargetable(e, t) || !canSee(e.team, t)) continue;
     const d = dist(t.pos, e.pos) - t.radius;
     // lính ưu tiên lính địch, rồi công trình/tướng trong tầm đánh
     const lim = t.kind === 'minion' ? 450 : range + 40;
@@ -68,6 +79,23 @@ function attack(world, e, t) {
   } });
 }
 
+/** Đi theo đường: tới điểm đường kế tiếp; tới cuối đường thì tiếp tục theo hướng đoạn cuối (về phía nhà chính địch). */
+function followLane(world, e) {
+  if (e.wp === undefined) { e.wp = 1; e.wpSync = 0; e.lane ??= 0; e.laneOff ??= 0; } // lính dựng tay (kiểm thử) không có thông tin đường
+  const path = lanePath(world.map, e.lane, e.team), last = path.pts.length - 1;
+  if (world.tick >= e.wpSync) { // định kỳ chọn lại điểm đích: sau khi đuổi mục tiêu có thể đã lệch đường
+    e.wpSync = world.tick + 30;
+    const pr = project(path, e.pos);
+    let i = 1; while (i < last && path.cum[i] < pr.s + 40) i++;
+    e.wp = i;
+  }
+  while (e.wp < last && dist(e.pos, path.pts[e.wp]) < 110) e.wp++;
+  const tgt = path.pts[e.wp], a = path.pts[Math.max(0, e.wp - 1)], dxs = tgt.x - a.x, dys = tgt.y - a.y, L = Math.hypot(dxs, dys) || 1;
+  const goal = { x: tgt.x - (dys / L) * e.laneOff, y: tgt.y + (dxs / L) * e.laneOff };
+  if (e.wp >= last && dist(e.pos, goal) < 110) return norm(dxs, dys);
+  return norm(goal.x - e.pos.x, goal.y - e.pos.y);
+}
+
 export function updateMinions(world) {
   const minions = world.entities.filter((e) => e.kind === 'minion' && e.alive);
   for (const e of minions) {
@@ -78,7 +106,7 @@ export function updateMinions(world) {
       const d = dist(t.pos, e.pos) - t.radius;
       if (d <= e.stats.range) { if (world.tick >= e.attackReady) attack(world, e, t); e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x); }
       else move = norm(t.pos.x - e.pos.x, t.pos.y - e.pos.y);
-    } else move = norm(dirOf(e.team) * 1000, e.laneY - e.pos.y);
+    } else move = followLane(world, e);
     if (move && !isRooted(e)) {
       const step = e.stats.moveSpeed * TICK;
       e.pos.x += move.x * step; e.pos.y += move.y * step; e.facing = Math.atan2(move.y, move.x); e.speed = e.stats.moveSpeed;

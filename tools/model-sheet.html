@@ -21,11 +21,12 @@
 // ?ids=long_dang,hoa_ren&poses=front:Idle:0,side:Run:0.15,game:Idle:0&cw=300&ch=380&tone=1
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const q = new URLSearchParams(location.search);
 const ids = (q.get('ids') || '').split(',').filter(Boolean);
 const poses = (q.get('poses') || 'front:Idle:0,side:Run:0.15,side:Attack1:0.3,front:Ult:0.55,game:Idle:0').split(',').map((s) => { const [v, c, t] = s.split(':'); return { v, c: c || 'Idle', t: parseFloat(t || '0') }; });
-const CW = +(q.get('cw') || 300), CH = +(q.get('ch') || 380);
+const ZOOM = +(q.get('zoom') || 1), CW = +(q.get('cw') || 300), CH = +(q.get('ch') || 380);
 const wrap = document.getElementById('wrap');
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1);
@@ -50,22 +51,31 @@ const floor = new THREE.Mesh(new THREE.CircleGeometry(1.4, 40), new THREE.MeshSt
 floor.rotation.x = -Math.PI / 2; scene.add(floor);
 const cam = new THREE.PerspectiveCamera(38, CW / CH, 0.05, 100);
 
-const loader = new GLTFLoader();
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const models = {};
 await Promise.all(ids.map(async (id) => { models[id] = await loader.loadAsync(`../assets/heroes/${id}/${id}.glb`); }));
 
 function frame(H, v) {
   const top = H; H = Math.max(H, 1.6) * 1.06; void top;
   if (v === 'game') { const a = 55 * Math.PI / 180, d = 23; cam.position.set(0, 0.6 + Math.sin(a) * d, Math.cos(a) * d); cam.lookAt(0, 0.6, 0); return; }
-  const d = H * 2.05 * Math.max(1, 0.8 / cam.aspect);
+  const d = H * 2.05 * Math.max(1, 0.8 / cam.aspect) * ZOOM;
   const p = { front: [0, 0.55, 1], side: [1, 0.55, 0.001], back: [0, 0.55, -1], q: [0.7, 0.6, 0.85], face: [0, 0.9, 1] }[v] || [0, 0.55, 1];
   if (v === 'face') { cam.position.set(0, H * 0.9, H * 0.7); cam.lookAt(0, H * 0.88, 0); return; }
-  cam.position.set(p[0] * d, p[1] * H, p[2] * d); cam.lookAt(0, H * 0.5, 0);
+  if (v === 'head' || v === 'chest') { // bám theo xương đầu/ngực (xem cận khi đang ra đòn)
+    const hb = frame.root?.getObjectByName(v === 'head' ? 'Bone_Head' : 'Bone_Chest'), c = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(0, top * 0.88, 0), k = v === 'head' ? 1 : 1.9;
+    cam.position.set(c.x + 0.25 * top * k, c.y + 0.05 * top * k, c.z + 0.5 * top * k); cam.lookAt(c); return; }
+  cam.position.set(p[0] * d, p[1] * H, p[2] * d); cam.lookAt(0, H * 0.5 * (ZOOM > 1 ? 1.1 : 1), 0);
 }
 
 ids.forEach((id, r) => {
   const g = models[id];
   const root = g.scene; scene.add(root);
+  if (q.get('dbg')) root.traverse((o) => { // gỡ lỗi trọng số: đỏ = gắn vào xương tay cầm vũ khí, vàng = trộn
+    if (!o.isSkinnedMesh || o.userData.dbg) return; o.userData.dbg = 1;
+    const G = o.geometry, si = G.attributes.skinIndex, sw = G.attributes.skinWeight, hb = o.skeleton.bones.map((b) => /Hand[LR]$/.test(b.name)), col = new Float32Array(si.count * 3);
+    for (let i = 0; i < si.count; i++) { let h = 0; for (let k = 0; k < 4; k++) if (hb[si.getComponent(i, k)]) h += sw.getComponent(i, k); col.set(h > 0.99 ? [1, 0.1, 0.1] : h > 0.02 ? [1, 0.9, 0.1] : [1, 1, 1], 3 * i); }
+    G.setAttribute('color', new THREE.BufferAttribute(col, 3)); o.material = o.material.clone(); o.material.vertexColors = true;
+  });
   const mixer = new THREE.AnimationMixer(root);
   const H = new THREE.Box3().setFromObject(root).max.y;
   poses.forEach((P, c) => {
@@ -75,7 +85,7 @@ ids.forEach((id, r) => {
     const clip = g.animations.find((a) => a.name === P.c);
     if (clip) { const a = mixer.clipAction(clip); a.reset().play(); a.time = P.t; a.paused = true; mixer.update(0); }
     root.updateMatrixWorld(true);
-    frame(H, P.v);
+    frame.root = root; frame(H, P.v);
     renderer.setViewport(c * CW, (ids.length - 1 - r) * CH, CW, CH);
     renderer.setScissor(c * CW, (ids.length - 1 - r) * CH, CW, CH);
     renderer.render(scene, cam);

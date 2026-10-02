@@ -63,6 +63,7 @@ export function survival(bot, foe) {
   const sp = e.spell && SPELLS[e.spell.id], spReady = sp && world.tick >= e.spell.ready;
   const slot = e.items.findIndex((i) => i && ITEMS[i].active);
   if (slot >= 0 && h < bot.cfg.itemHp && near && world.tick >= (e.itemCd?.[e.items[slot]] || 0)) { world.command(e.id, { type: 'useItem', slot }); return true; }
+  if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall) { world.command(e.id, { type: 'restore' }); return true; }
   if (!spReady || !near) return false;
   if (sp.id === 'chop_buoc' && h < bot.cfg.escapeHp) { world.command(e.id, { type: 'spell', aim: bot.homeDir() }); return true; }
   if (sp.id === 'hoi_phuc' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }

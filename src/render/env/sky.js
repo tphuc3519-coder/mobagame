@@ -15,7 +15,7 @@ export function buildSky() {
       vec3 c = mix(hor, mid, smoothstep(0.0, 0.22, h)); c = mix(c, top, smoothstep(0.2, 0.85, h));
       gl_FragColor = vec4(c, 1.0); }`,
   });
-  const m = new THREE.Mesh(new THREE.SphereGeometry(7000, 24, 12), mat); m.renderOrder = -10; m.frustumCulled = false;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(10000, 24, 12), mat); m.renderOrder = -10; m.frustumCulled = false;
   return m;
 }
 
@@ -24,8 +24,8 @@ export function buildLampGlow(posts) {
   const g = new THREE.Group();
   const pos = new Float32Array(posts.length * 3); posts.forEach((p, i) => { pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z; });
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.add(new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTexture(), color: 0xffb45c, size: 300, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })));
-  const pool = new THREE.InstancedMesh(new THREE.CircleGeometry(190, 20), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xff9a44, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }), posts.length);
+  g.add(new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTexture(), color: 0xffb45c, size: 240, sizeAttenuation: true, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })));
+  const pool = new THREE.InstancedMesh(new THREE.CircleGeometry(190, 20), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xff9a44, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending }), posts.length);
   const d = new THREE.Object3D(); d.rotation.x = -Math.PI / 2;
   posts.forEach((p, i) => { d.position.set(p.x, 6, p.z); d.updateMatrix(); pool.setMatrixAt(i, d.matrix); });
   g.add(pool);
@@ -34,8 +34,8 @@ export function buildLampGlow(posts) {
 
 /** Đom đóm bay lơ lửng (đổi chỗ và nhấp nháy trong shader, không tốn CPU). */
 export function buildFireflies(map, count = 160) {
-  const r = rngFor(303), base = new Float32Array(count * 3), ph = new Float32Array(count);
-  for (let i = 0; i < count; i++) { base[i * 3] = r.range(-300, map.w + 300); base[i * 3 + 1] = r.range(40, 260); base[i * 3 + 2] = r.range(map.road.y - 1300, map.road.y + 1300); ph[i] = r.range(0, 100); }
+  const r = rngFor(303), zr = map.road ? [map.road.y - 1300, map.road.y + 1300] : [300, map.h - 300], xr = map.road ? [-300, map.w + 300] : [300, map.w - 300], base = new Float32Array(count * 3), ph = new Float32Array(count);
+  for (let i = 0; i < count; i++) { base[i * 3] = r.range(xr[0], xr[1]); base[i * 3 + 1] = r.range(40, 260); base[i * 3 + 2] = r.range(zr[0], zr[1]); ph[i] = r.range(0, 100); }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(base, 3)); geo.setAttribute('ph', new THREE.BufferAttribute(ph, 1));
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,

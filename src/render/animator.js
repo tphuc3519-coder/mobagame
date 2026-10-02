@@ -19,11 +19,12 @@ export function createAnimator({ object, animations, art }) {
   };
   base('Idle');
   return {
-    /** Phát clip hành động một lần. seconds: thời gian muốn clip chiếm (đòn đánh vừa khít nhịp đánh). */
-    trigger(name, seconds = null, hold = false) {
+    /** Phát clip hành động một lần. hitAt: thời điểm (giây, tính từ lúc bắt đầu) mô phỏng gây sát thương; có art.hitTime[tên clip] thì
+     *  chỉnh tốc độ clip để cú chạm trong animation rơi đúng lúc đó. Không có thì dùng seconds (thời gian muốn clip chiếm). */
+    trigger(name, seconds = null, hold = false, hitAt = null) {
       const a = clipOf(name); if (!a) return;
-      const dur = a.getClip().duration;
-      const scale = seconds ? Math.min(3, Math.max(0.5, dur / seconds)) : 1;
+      const dur = a.getClip().duration, ht = art.hitTime?.[name];
+      const scale = hitAt != null && ht ? Math.min(2.5, Math.max(0.6, ht / Math.max(0.08, hitAt))) : seconds ? Math.min(3, Math.max(0.5, dur / seconds)) : 1;
       a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = hold; a.timeScale = scale; a.fadeIn(0.06).play();
       if (cur && cur !== a) cur.fadeOut(0.06);
       if (oneShot && oneShot.a !== a) oneShot.a.fadeOut(0.06);

@@ -10,10 +10,11 @@ export function computeStats(world, e) {
     mrPen: g('mrPen'), mrPenPct: g('mrPenPct'), crit: Math.min(1, g('crit')), lifesteal: g('lifesteal'), spellvamp: g('spellvamp'), cdr: Math.min(COMBAT_EXTRA.cdrCap, g('cdr')),
     tenacity: Math.min(COMBAT_EXTRA.tenacityCap, g('tenacity')), basicReduce: g('basicReduce') };
   s.atk = s.baseAtk + g('atk');
-  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, slow = 0, dmgReduce = 0;
+  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, slow = 0, dmgReduce = 0, extraMana = 0;
   for (const st of e.statuses) {
     if (st.kind === 'statMod') {
       s.armor += st.armor || 0; s.mr += st.mr || 0; s.atk += st.atk || 0; s.ap += st.ap || 0; asPct += st.atkSpeedPct || 0; dmgReduce += st.dmgReducePct || 0;
+      if (st.cdr) s.cdr = Math.min(COMBAT_EXTRA.cdrCap, s.cdr + st.cdr); if (st.regenMana) extraMana += st.regenMana;
     } else if (st.kind === 'haste') msPct = Math.max(msPct, st.pct);
     else if (st.kind === 'slow') slow = Math.max(slow, st.pct);
   }
@@ -24,7 +25,7 @@ export function computeStats(world, e) {
   s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, (b.moveSpeed + g('moveSpeed')) * (1 + msPct + g('moveSpeedPct')) * (1 - slow)) : 0;
   s.dmgReduce = dmgReduce;
   s.regenHp = 40 + 4 * L; // hồi thêm từ bùa/đồ cộng riêng trong items.js
-  s.regenMana = 25 + 2.5 * L;
+  s.regenMana = 25 + 2.5 * L + extraMana;
   return s;
 }
 

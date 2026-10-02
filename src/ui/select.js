@@ -4,7 +4,7 @@ import { SPELLS, SPELL_LIST_1V1 } from '../data/spells.js';
 import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
 import { DIFFICULTY } from '../data/ai.js';
 import { createShowcase } from '../showcase/showcase.js';
-import { spellIcon } from '../hud/icons.js';
+import { spellArt } from '../hud/art.js';
 import { pickLevel } from '../render/quality.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
@@ -17,7 +17,7 @@ export function openSelect({ onStart }) {
   const root = document.getElementById('select');
   const saved = load();
   const st = { side: 'me', me: ALPHA.includes(saved.me) ? saved.me : 'hoa_ren', foe: ALPHA.includes(saved.foe) ? saved.foe : null,
-    spell: SPELL_LIST_1V1.includes(saved.spell) ? saved.spell : 'chop_buoc', page: saved.page || null, diff: DIFFICULTY[saved.diff] ? saved.diff : 'normal' };
+    mode: saved.mode === '5v5' ? '5v5' : '1v1', spell: SPELL_LIST_1V1.includes(saved.spell) ? saved.spell : 'chop_buoc', page: saved.page || null, diff: DIFFICULTY[saved.diff] ? saved.diff : 'normal' };
   const portraits = {};
   root.innerHTML = `
     <canvas id="show"></canvas>
@@ -26,7 +26,7 @@ export function openSelect({ onStart }) {
     <div class="sl-skills"></div><div class="sl-tip" hidden></div>
     <div class="sl-vs"><button class="sl-me"></button><b>VS</b><button class="sl-foe"></button></div>
     <button class="sl-cancel">Huỷ</button>
-    <div class="sl-bl"><button class="sl-pill sl-charm"></button><button class="sl-spell"></button><button class="sl-pill sl-diff"></button></div>
+    <div class="sl-bl"><button class="sl-pill sl-mode"></button><button class="sl-pill sl-charm"></button><button class="sl-spell"></button><button class="sl-pill sl-diff"></button></div>
     <button class="sl-go"></button>
     <p class="sl-hint">Vuốt ngang để xoay · chạm đúp để xem động tác</p>`;
   root.classList.add('on');
@@ -56,13 +56,14 @@ export function openSelect({ onStart }) {
   }
   function renderVs() {
     $('.sl-me').innerHTML = `${avatar(st.me)}<span><small>Bạn</small><b>${HEROES[st.me].name}</b></span>`;
-    $('.sl-foe').innerHTML = st.foe ? `${avatar(st.foe)}<span><small>Máy · ${DIFFICULTY[st.diff].name}</small><b>${HEROES[st.foe].name}</b></span>` : '<i class="sl-ini">?</i><span><small>Máy</small><b>Chạm để chọn</b></span>';
+    $('.sl-foe').innerHTML = st.mode === '5v5' ? `<i class="sl-ini">5</i><span><small>Máy · ${DIFFICULTY[st.diff].name}</small><b>4 đồng đội + 5 đối thủ</b></span>` : st.foe ? `${avatar(st.foe)}<span><small>Máy · ${DIFFICULTY[st.diff].name}</small><b>${HEROES[st.foe].name}</b></span>` : '<i class="sl-ini">?</i><span><small>Máy</small><b>Chạm để chọn</b></span>';
+    $('.sl-mode').innerHTML = `<b>Chế độ</b> ${st.mode}`;
     $('.sl-me').classList.toggle('on', st.side === 'me'); $('.sl-foe').classList.toggle('on', st.side === 'foe');
-    $('.sl-go').textContent = st.foe ? 'Bắt đầu' : 'Chọn mục tiêu';
-    $('.sl-spell').innerHTML = `${spellIcon(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
+    $('.sl-go').textContent = st.mode === '5v5' || st.foe ? 'Bắt đầu' : 'Chọn mục tiêu';
+    $('.sl-spell').innerHTML = `${spellArt(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
     $('.sl-charm').innerHTML = `<b>Bùa</b> ${CHARM_PAGES[pageOf()].name}`;
     $('.sl-diff').innerHTML = `<b>Máy</b> ${DIFFICULTY[st.diff].name}`;
-    save({ me: st.me, foe: st.foe, spell: st.spell, page: st.page, diff: st.diff });
+    save({ mode: st.mode, me: st.me, foe: st.foe, spell: st.spell, page: st.page, diff: st.diff });
   }
   const refresh = () => { renderGrid(); renderInfo(); renderVs(); };
   const focus = () => show.show(st.side === 'me' ? st.me : st.foe || st.me);
@@ -74,14 +75,15 @@ export function openSelect({ onStart }) {
   };
   $('.sl-me').onclick = () => { st.side = 'me'; refresh(); focus(); };
   $('.sl-foe').onclick = () => { st.side = 'foe'; if (!st.foe) st.foe = ALPHA.find((h) => h !== st.me); refresh(); focus(); };
+  $('.sl-mode').onclick = () => { st.mode = st.mode === '5v5' ? '1v1' : '5v5'; if (st.mode === '5v5') { st.side = 'me'; } renderVs(); };
   $('.sl-spell').onclick = () => { st.spell = SPELL_LIST_1V1[(SPELL_LIST_1V1.indexOf(st.spell) + 1) % SPELL_LIST_1V1.length]; renderVs(); const tip = $('.sl-tip'); tip.innerHTML = `<b>${SPELLS[st.spell].name}</b><p>${SPELLS[st.spell].desc}</p>`; tip.hidden = false; };
   $('.sl-charm').onclick = () => { const k = Object.keys(CHARM_PAGES); st.page = k[(k.indexOf(pageOf()) + 1) % k.length]; renderVs(); };
   $('.sl-diff').onclick = () => { const k = Object.keys(DIFFICULTY); st.diff = k[(k.indexOf(st.diff) + 1) % k.length]; renderVs(); };
   $('.sl-cancel').onclick = () => { st.side = 'me'; st.foe = null; refresh(); focus(); };
   $('.sl-go').onclick = () => {
-    if (!st.foe) { $('.sl-foe').onclick(); return; }
+    if (st.mode !== '5v5' && !st.foe) { $('.sl-foe').onclick(); return; }
     root.classList.remove('on'); show.dispose(); removeEventListener('resize', place); root.innerHTML = '';
-    onStart({ heroId: st.me, enemyId: st.foe, spellId: st.spell, charmId: pageOf(), difficulty: st.diff });
+    onStart({ mode: st.mode, heroId: st.me, enemyId: st.foe, spellId: st.spell, charmId: pageOf(), difficulty: st.diff });
   };
   refresh(); focus();
   // chân dung: chụp lần lượt sau khi cảnh đã chạy để không chặn khung hình đầu

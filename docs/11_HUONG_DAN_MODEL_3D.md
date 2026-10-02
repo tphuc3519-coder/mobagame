@@ -58,7 +58,7 @@ Mục đích: có 1 file GLB có animation để AI coding làm Mốc 1, và đ�
 | **B. AI tạo 3D từ ảnh + tự chỉnh** | Trung bình, không đều | Thấp (phí công cụ) | 1–3 ngày | Tuỳ điều khoản công cụ | Ngân sách thấp, chịu học Blender cơ bản |
 | **C. Thuê hoạ sĩ 3D** | Cao nhất, đúng ý | Cao nhất | 2–6 tuần | Có (nếu hợp đồng chuyển quyền) | Muốn đẹp như game thương mại, có ngân sách |
 
-Có thể **kết hợp**: dùng B hoặc A cho bản thử, thuê C cho 3–6 tướng chủ lực. Dù chọn cách nào, **làm 1 tướng thử trọn vẹn trước** (đề xuất Lồng Đăng) rồi mới làm hàng loạt.
+Có thể **kết hợp**: dùng B hoặc A cho bản thử, thuê C cho 3–6 tướng chủ lực. Dù chọn cách nào, **làm 1 tướng thử trọn vẹn trước** (đề xuất Lanternward) rồi mới làm hàng loạt.
 
 ---
 
@@ -145,7 +145,7 @@ Thay thế Mixamo: **AccuRIG** (ứng dụng máy tính, miễn phí, xuất FBX
 - **Vũ khí:** gộp vào mesh nhân vật và skin theo xương tay (đơn giản nhất), hoặc để riêng làm con của xương tay.
 
 ### 6.4 Nhân vật không phải dạng người
-Thuồng Luồng, Hộ Vệ Đèn, Rùa Ngọc, Sói bốn chân (nếu làm), quái rừng: cần **hoạ sĩ gắn xương** hoặc mua model đã có sẵn animation, hoặc công cụ AI hỗ trợ sinh vật (một số công cụ ghi là hỗ trợ bốn chân). Với Sói Núi (người sói) và Thạch Quy, thiết kế ở 09 là **đứng hai chân** nên vẫn dùng Mixamo được.
+Thuồng Luồng, Hộ Vệ Đèn, Rùa Ngọc, Sói bốn chân (nếu làm), quái rừng: cần **hoạ sĩ gắn xương** hoặc mua model đã có sẵn animation, hoặc công cụ AI hỗ trợ sinh vật (một số công cụ ghi là hỗ trợ bốn chân). Với Sói Núi (người sói) và Mossback, thiết kế ở 09 là **đứng hai chân** nên vẫn dùng Mixamo được.
 
 ### 6.5 Xuất GLB
 File → Export → **glTF 2.0 (.glb/.gltf)**:
@@ -245,7 +245,7 @@ Giá dao động rất rộng theo trình độ và khu vực. Hỏi 3–5 ngư�
 ---
 
 ## 10. Những thứ khác cần hình ảnh (thứ tự ưu tiên)
-1. 6 tướng Alpha: Thạch Quy, Hoả Rèn, Bóng Tre, Nguyệt Hà, Cánh Diều, Lồng Đăng
+1. 6 tướng Alpha: Mossback, Emberforge, Bamboo Shade, Moonstream, Kitewing, Lanternward
 2. Lính (4 loại), trụ, nhà chính
 3. 10 tướng còn lại
 4. Quái rừng, Thuồng Luồng, Hộ Vệ Đèn, Cá Chép Vàng
