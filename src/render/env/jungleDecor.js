@@ -69,7 +69,7 @@ function slabStackGeo(w, H, seed, r) {
   { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const X = q.getX(i), Y = q.getY(i), Z = q.getZ(i), d = (fbm(X * 0.012 + seed, Z * 0.012 + Y * 0.02, 2) - 0.5) * 22; q.setXYZ(i, X + d, Y + d * 0.25, Z - d * 0.8); } }
   g.computeVertexNormals(); // non-indexed → pháp tuyến theo mặt (mặt vát rõ)
   const p = g.attributes.position, nrm = g.attributes.normal, col = new Float32Array(p.count * 3), c = new THREE.Color();
-  const TOP = new THREE.Color(0x7c879c), SIDE = new THREE.Color(0x404a60), DEEP = new THREE.Color(0x141720), MOSSC = new THREE.Color(0x436e38), rf = rngFor(seed * 1000 | 0);
+  const TOP = new THREE.Color(0x96a2b8), SIDE = new THREE.Color(0x3c4560), DEEP = new THREE.Color(0x141720), MOSSC = new THREE.Color(0x436e38), rf = rngFor(seed * 1000 | 0);
   for (let f = 0; f < p.count; f += 3) { // màu theo từng mặt tam giác
     const X = (p.getX(f) + p.getX(f + 1) + p.getX(f + 2)) / 3, Y = (p.getY(f) + p.getY(f + 1) + p.getY(f + 2)) / 3, Z = (p.getZ(f) + p.getZ(f + 1) + p.getZ(f + 2)) / 3;
     const ny = nrm.getY(f), h01 = Math.max(0, Y / H), v = fbm(X * 0.005 + seed, Z * 0.005, 3), jit = rf.range(0.9, 1.1);
@@ -83,7 +83,27 @@ function slabStackGeo(w, H, seed, r) {
 }
 
 let _rf = null;
-const ROCK_FACET = () => (_rf ||= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.04, flatShading: true }));
+const ROCK_FACET = () => (_rf ||= (() => { // đá sắc: mặt vát phẳng + vân hạt/khe nứt chiếu ba mặt theo toạ độ thế giới + tối ở chân
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.04, flatShading: true }), U = { uDet: { value: strataSurface() } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'varying vec3 vWp;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 wq = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        wq = instanceMatrix * wq;
+      #endif
+      vWp = (modelMatrix * wq).xyz;`);
+    sh.fragmentShader = 'uniform sampler2D uDet; varying vec3 vWp;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+      vec3 fn = normalize(cross(dFdx(vWp), dFdy(vWp))), an = pow(abs(fn), vec3(3.0)); an /= (an.x + an.y + an.z);
+      float d = dot(vec3(texture2D(uDet, vWp.zy / vec2(260.0, 140.0)).r, texture2D(uDet, vWp.xz / 300.0).r, texture2D(uDet, vWp.xy / vec2(260.0, 140.0)).r), an);
+      float fine = dot(vec3(texture2D(uDet, vWp.zy / 70.0).g, texture2D(uDet, vWp.xz / 80.0).g, texture2D(uDet, vWp.xy / 70.0).g), an);
+      diffuseColor.rgb *= (0.62 + 0.62 * d) * (0.88 + 0.24 * fine);                 // vân lớp + hạt mịn
+      diffuseColor.rgb *= mix(0.55, 1.0, smoothstep(0.0, 70.0, vWp.y));               // chân đá tối (che khuất)
+      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.12, 1.12, 1.2), smoothstep(0.75, 0.95, fn.y)); // mặt trên sáng lạnh`);
+  };
+  m.customProgramCacheKey = () => 'rock-facet-detail';
+  return m;
+})());
 
 /** Quầng tối ánh tím dưới chân bệ đá (che khuất kiểu tranh vẽ): vành từ viền capsule ra ngoài, đậm sát chân → trong suốt. */
 function footGlow(w, list) {
