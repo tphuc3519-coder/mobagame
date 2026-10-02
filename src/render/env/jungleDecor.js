@@ -64,13 +64,25 @@ function roundRockGeo(w, H, seed) {
     q.setXYZ(i, X + n.getX(i) * d, Y + n.getY(i) * d * 0.7, Z + n.getZ(i) * d);
   }
   g.computeVertexNormals();
+  // tảng phụ dính liền thân (phá dáng ống đều): 1–4 tảng tròn ghé hai bên/hai đầu, lún một phần xuống đất
+  const rr = rngFor(Math.floor(seed * 1000) + 7), parts = [g], nb = Math.min(4, 1 + Math.floor(L / 420)), ux = Math.cos(ang), uz = Math.sin(ang);
+  for (let k = 0; k < nb; k++) {
+    const t = rr.range(-0.5, 0.5) * L, sd = rr.next() < 0.5 ? -1 : 1, sc = Math.min(hw, H) * rr.range(0.45, 0.75);
+    const b = boulderGeo(seed * 13 + k * 3.7).clone(); b.scale(sc * rr.range(1.1, 1.6), sc * rr.range(0.8, 1.15), sc * rr.range(1.0, 1.3)); b.rotateY(rr.range(0, 7));
+    b.translate(cx + ux * t - uz * sd * hw * rr.range(0.55, 0.85), -sc * 0.15, cz + uz * t + ux * sd * hw * rr.range(0.55, 0.85));
+    parts.push(b);
+  }
+  const tops = []; // mẫu đỉnh để cắm cỏ trên đá
+  for (let i = 1; i < NS; i += 2) { const k = i * (NP + 1) + Math.floor(NP / 2); if (k < q.count) tops.push([q.getX(k), q.getY(k), q.getZ(k)]); }
   const col = new Float32Array(q.count * 3);
   for (let i = 0; i < q.count; i++) { // chỉ che khuất: tối ở chân + mặt úp xuống
     const Y = q.getY(i), ny = n.getY(i), ao = (0.42 + 0.58 * Math.min(1, Math.max(0, Y + 5) / (H * 0.55))) * (ny < 0 ? 1 + ny * 0.35 : 1);
     col.set([ao, ao, ao], 3 * i);
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  return g;
+  const out = mergeGeometries(parts.map((x) => { const y = x.index ? x : x; for (const a of Object.keys(y.attributes)) if (!['position', 'normal', 'color'].includes(a)) y.deleteAttribute(a); return y; }));
+  out.userData.tops = tops;
+  return out;
 }
 
 /** Vật liệu đá thật (dùng chung mọi khối đá): đá phiến xám lam mài nhẵn — vân lớp lượn sóng (vằn) theo độ cao bị nhiễu bẻ cong,
@@ -109,10 +121,19 @@ const ROCK_FACET = () => (_rf ||= (() => {
       rc *= 1.0 - veinD * 0.3;
       float up = normalize(vWn).y;
       rc *= 1.0 + smoothstep(0.55, 0.95, up) * 0.12;                                       // mặt trên đón sáng, bụi nhạt
+      float crk = abs(rfbm(wp / 150.0 + 5.5) - 0.5), crack = smoothstep(0.016, 0.003, crk) * smoothstep(0.42, 0.62, rfbm(wp / 420.0 + 2.0)); // khe nứt sâu từng vùng
+      rc *= 1.0 - crack * 0.7;
+      float mossN = rfbm(wp / 170.0 + 9.0) * 0.75 + rvn(wp / 16.0) * 0.25;
+      float moss = smoothstep(0.5, 0.9, up) * smoothstep(0.48, 0.6, mossN)                     // rêu trên đỉnh
+                 + smoothstep(45.0, 4.0, wp.y) * smoothstep(0.56, 0.68, mossN) * 0.7;          // rêu ẩm ở chân
+      moss = clamp(moss, 0.0, 1.0);
+      vec3 mossC = mix(vec3(0.035, 0.07, 0.02), vec3(0.10, 0.16, 0.035), rvn(wp / 3.5) * 0.6 + rvn(wp / 11.0) * 0.4);
+      rc = mix(rc, mossC, moss * 0.88);
+      rc *= 1.0 - smoothstep(0.0, 0.35, -normalize(vWn).y) * 0.25;                          // mặt úp tối
       diffuseColor.rgb = rc;
-      float rockH = wA * 7.0 + wB * 3.0 + rvn(wp / 6.0) * 0.7 - vein * 1.4 - veinD * 0.8 + sin(yy * 0.17) * 0.6;`)
+      float rockH = wA * 7.0 + wB * 3.0 + rvn(wp / 6.0) * 0.7 - vein * 1.4 - veinD * 0.8 + sin(yy * 0.17) * 0.6 - crack * 5.0 + moss * rvn(wp / 2.5) * 1.6;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-      roughnessFactor = clamp(0.38 + (grain - 0.5) * 0.25 + (1.0 - bands) * 0.18 + vein * -0.12, 0.25, 0.85);`)
+      roughnessFactor = clamp(0.38 + (grain - 0.5) * 0.25 + (1.0 - bands) * 0.18 + vein * -0.12 + moss * 0.5 + crack * 0.3, 0.25, 0.95);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       { vec3 sX = dFdx(-vViewPosition), sY = dFdy(-vViewPosition), R1 = cross(sY, normal), R2 = cross(normal, sX); float det = dot(sX, R1);
         vec2 dB = vec2(dFdx(rockH), dFdy(rockH)); vec3 grad = sign(det) * (dB.x * R1 + dB.y * R2);
@@ -134,12 +155,20 @@ function footGlow(w, list) {
 
 /** Tường → bệ đá chồng phiến kiểu Liên Quân + quầng tối chân bệ + cụm cỏ cao ở chân đá (không mọc trên đỉnh), đá tảng ghé chân. */
 export function buildRockWalls(map, dens = 1) {
-  const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassFoot = [], flowers = [], glow = { P: [], C: [], I: [] };
+  const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassFoot = [], flowers = [], glow = { P: [], C: [], I: [] }, pebbles = [], topGrass = [];
   map.walls.segs.forEach((w, si) => {
     if (w.border || w.baseWall != null) return; // tường biên / bệ nhà dựng riêng
     const W = w.w ?? map.walls.thickness, H = w.bushRock ? 95 : w.ledge ? 110 : Math.min(230, 110 + W * 0.33);
-    geos.push(roundRockGeo(w, H, si * 1.37)); footGlow(w, glow);
+    const rg = roundRockGeo(w, H, si * 1.37); geos.push(rg); footGlow(w, glow);
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L, nx = -uz, nz = ux;
+    for (const [tx, ty, tz] of rg.userData.tops) { // cỏ dại mọc trên lưng đá
+      if (r.next() > 0.3 * dens) continue;
+      const n = 3 + r.int(4); for (let i = 0; i < n; i++) topGrass.push({ x: tx + r.range(-30, 30), y: ty - 14, z: tz + r.range(-30, 30), ry: r.range(0, 7), sx: r.range(70, 110), sy: r.range(55, 105) });
+    }
+    for (let i = 0, n = Math.round(L / 45 * dens); i < n; i++) { // sỏi vụn quanh chân đá
+      const t = r.range(-0.1, 1.1), sd = r.next() < 0.5 ? -1 : 1, off = W * 0.5 * r.range(0.9, 1.35), sc = r.range(5, 18);
+      pebbles.push({ x: w.x1 + ux * L * t + nx * sd * off, y: -sc * 0.25, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.6), sy: sc * r.range(0.5, 0.9), sz: sc });
+    }
     const nb = Math.max(1, Math.round(L / 320)); // đá tảng ghé chân
     for (let i = 0; i < nb; i++) {
       const t = (i + r.range(0.1, 0.9)) / nb, sd = r.next() < 0.5 ? -1 : 1, off = W * r.range(0.5, 0.62), sc = W * r.range(0.16, 0.26);
@@ -162,8 +191,11 @@ export function buildRockWalls(map, dens = 1) {
   g.add(buildBorderWall(map, r), buildBaseWalls(map));
   boulders.forEach((l, i) => l.length && g.add(scatter(new THREE.InstancedMesh(boulderGeo(i * 7 + 3), mat, l.length), l, true)));
   g.add(buildGrass(grassFoot, 'bush', 16), buildGrass(flowers, 'blue', 8));
+  if (topGrass.length) g.add(buildGrass(topGrass, 'wild', 12));
+  if (pebbles.length) g.add(scatter(new THREE.InstancedMesh(boulderGeo(33), mat, pebbles.length), pebbles, true));
   return g;
 }
+export { ROCK_FACET as rockMaterial, boulderGeo };
 
 /** Bệ nhà (lãnh địa): mỗi cung tường giữa hai trụ nhà dựng thành MỘT khối đá điêu khắc liền mạch kiểu Liên Quân — thân cong thon
  *  hai đầu, mặt cắt vát (đỉnh hẹp, chân loe), đầu bệ cuộn vểnh lên như sóng; gờ đá sáng chạy dọc sống lưng; dải khảm phát sáng màu đội

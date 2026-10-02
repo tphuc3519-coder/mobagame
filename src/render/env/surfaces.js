@@ -266,3 +266,22 @@ export const roofTileHD = () => once('roofHD', () => {
   x.putImageData(img, 0, 0);
   return { map: finish(c), normal: normalTex(H, N, 5) };
 });
+
+/** Lòng sông: đá cuội tròn nhiều cỡ (xám, nâu, ô liu) nằm trên cát bùn — mỗi viên tối dần về mép (khối tròn), sáng đỉnh, cát hạt mịn giữa khe. */
+export const pebbleSurface = () => once('pebble', () => {
+  const N = 1024, big = tileVoronoi(71, 9, 0.9), small = tileVoronoi(73, 26, 0.95), sand = tileFbm(75, 64, 3), blot = tileFbm(77, 5, 4);
+  const pal = [[118, 116, 108], [98, 92, 82], [132, 126, 114], [84, 88, 80], [110, 100, 86], [126, 128, 124], [92, 96, 90]];
+  const { c } = make(N, (u, v, o) => {
+    const s = sand(u, v), bl = blot(u, v);
+    let col = mixc([92, 84, 68], [120, 110, 90], s); col = col.map((q) => q * (0.85 + bl * 0.3));
+    for (const [vor, gap, cut] of [[small, 0.006, 0.35], [big, 0.012, 0.5]]) {
+      const w = vor(u, v), e = w.f2 - w.f1;
+      if (w.h < cut || e < gap) continue;                                     // khe cát / ô không có cuội
+      const dome = Math.min(1, (e - gap) / (gap * 5)), base = pal[Math.floor(w.h * 977) % pal.length];
+      const k = 0.6 + dome * 0.5 + (s - 0.5) * 0.12;
+      col = base.map((q) => q * k);
+    }
+    o[0] = cl(col[0]); o[1] = cl(col[1]); o[2] = cl(col[2]);
+  });
+  return finish(c);
+});

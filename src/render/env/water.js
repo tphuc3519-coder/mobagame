@@ -20,11 +20,11 @@ export function buildRiver(map) {
           float ph = k == 0 ? ph0 : ph1, w = k == 0 ? w0 : 1.0 - w0;
           vec2 o = vec2(ph * spd * 5.5, 0.0) + float(k) * vec2(0.37, 0.61);
           vec2 a = (st - o * 900.0) / vec2(1100.0, 520.0), b = (st - o * 1500.0) / vec2(380.0, 230.0), c = (st - o * 2100.0) / vec2(150.0, 110.0);
-          float e = 0.004, ha = hgt(a), hb = hgt(b), hc = hgt(c); // sai phân tiến: 3 lần lấy mẫu mỗi tầng
+          float e = 0.018, ha = hgt(a), hb = hgt(b), hc = hgt(c); // bước sai phân ~4.6 texel: tránh sọc bậc thang do noise 8-bit // sai phân tiến: 3 lần lấy mẫu mỗi tầng
           vec2 g = (vec2(hgt(a + vec2(e, 0.0)), hgt(a + vec2(0.0, e))) - ha) * 2.0
                  + (vec2(hgt(b + vec2(e, 0.0)), hgt(b + vec2(0.0, e))) - hb) * 1.4
                  + (vec2(hgt(c + vec2(e, 0.0)), hgt(c + vec2(0.0, e))) - hc) * 0.9;
-          n += vec3(g.x, 0.0, g.y) * w;
+          n += vec3(g.x, 0.0, g.y) * w * 0.24;
         }
         return n;
       }
@@ -71,7 +71,7 @@ export function buildRiver(map) {
         float nz2 = texture2D(uNoise, st / vec2(520.0, 90.0) - vec2(uTime * 0.07 * spd, 0.0)).r;
         float foam = smoothstep(0.86, 0.985, edge + (nz - 0.5) * 0.25) * smoothstep(0.35, 0.7, nz2) * 0.75     // bọt vỗ bờ: đứt quãng, mỏng
                    + smoothstep(0.3, 0.7, ford) * smoothstep(0.7, 0.85, nz + 0.12 * sin(uTime * 3.0 + st.x * 0.02)) * 0.12 // gợn nước chảy qua mặt đường
-                   + streak * 0.18;
+                   + streak * 0.0;
         // lá/cánh hoa trôi theo dòng
         vec2 cell = vec2(st.x - uTime * 95.0 * spd, st.y) / vec2(320.0, 150.0), ci = floor(cell), cf = fract(cell) - 0.5;
         float hs = hash(ci), leaf = 0.0;

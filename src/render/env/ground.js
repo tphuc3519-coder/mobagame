@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { grassSurface, dirtSurface, flagstoneSurface, flagstoneHeight, noiseSurface } from './surfaces.js';
+import { grassSurface, dirtSurface, flagstoneSurface, flagstoneHeight, noiseSurface, pebbleSurface } from './surfaces.js';
 
 // Nền đất trộn lớp: một "bản đồ trộn" nướng sẵn lúc dựng map (DataTexture RGBA phủ cả sân):
 //   R = đá lát (đường, sân), G = đất mòn (mép đường, quanh trụ), B = sáng/tối (bóng nướng sẵn của cây, tường, trụ; 1 = sáng), A = lòng sông.
@@ -70,11 +70,11 @@ function blurChannel(a, N, r) {
 /** Vật liệu nền: Lambert (rẻ, hợp mobile) + đoạn shader trộn lớp. Màu đỉnh (vertexColors) vẫn nhân vào: trắng trong sân, xám đá ở vách ngoài. */
 export function groundMaterial(baked) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() } };
+  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() } };
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise; uniform vec4 uXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb; uniform vec4 uXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
@@ -91,7 +91,8 @@ export function groundMaterial(baked) {
       vec3 laneC = smoothG; // đường ngoài sân nhà: cỏ mượt (phiến đá lớn vẽ ở laneDecor)
       laneC = mix(laneC, dt * 1.02, smoothstep(0.62, 0.7, patchN) * 0.35); // vệt đất mòn thưa       // đất mòn viền quanh mảng đá
       c = mix(c, laneC, pm);
-      vec3 bed = mix(dt * vec3(0.48, 0.56, 0.55), st * vec3(0.5, 0.58, 0.6), smoothstep(0.4, 0.6, nz2.b));
+      vec3 peb = texture2D(uPeb, vGxz / 420.0).rgb, peb2 = texture2D(uPeb, vGxz / 1100.0 + 0.4).rgb;
+      vec3 bed = mix(dt * vec3(0.5, 0.55, 0.5), mix(peb, peb2, 0.3) * vec3(0.82, 0.9, 0.88), smoothstep(0.3, 0.55, nz2.b)); // lòng sông: cuội ướt + cát bùn
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
       c *= mix(0.42, 1.0, sp.b);                                                                         // bóng nướng sẵn
       diffuseColor.rgb *= c;`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>

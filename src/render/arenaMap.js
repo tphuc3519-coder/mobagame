@@ -5,7 +5,7 @@ import { bakeGroundMap, groundMaterial } from './env/ground.js';
 import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
-import { buildRockWalls, buildCampSites, campRadius, LAIR_T } from './env/jungleDecor.js';
+import { buildRockWalls, buildCampSites, campRadius, LAIR_T, rockMaterial, boulderGeo } from './env/jungleDecor.js';
 import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
@@ -72,10 +72,10 @@ export function buildArena(scene, map, level = 'mid') {
   }
   trees.forEach((t) => { t.sz = t.sx; });
   g.add(buildTrees(trees, dens));
-  const rockMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, color: 0xb4ad9e }), allRocks = [];
+  const rockMat = rockMaterial(), allRocks = []; // đá tròn nhẵn, cùng vật liệu đá thật với bệ đá
   for (const [seed, n] of [[1, 0.6], [7, 0.6]]) {
     const rocks = put(Math.round(150 * dens * n), (x, z) => outside(x, z) > 220 || (inPlay(x, z) && clear(x, z, halfW + 300) && r.next() < 0.3), (x, y, z) => ({ x, y: y + 6, z, ry: r.range(0, 7), sx: r.range(50, 170), sy: r.range(35, 120), sz: r.range(50, 170), color: r.next() < 0.3 ? 0xc8d0b0 : 0xffffff }));
-    g.add(scatterChunked(rockGeo(seed), rockMat, rocks, true)); allRocks.push(...rocks);
+    g.add(scatterChunked(boulderGeo(seed + 40), rockMat, rocks, true)); allRocks.push(...rocks);
   }
   const tuftMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.35);
   const inCamp = (x, z) => (map.camps || []).some((c) => Math.hypot(c.x - x, c.y - z) < campRadius(c.type) * (c.boss ? 1.25 : 1.05));
@@ -96,6 +96,24 @@ export function buildArena(scene, map, level = 'mid') {
     g.add(buildGrass(bank, 'wild', 16));
     const blue = put(Math.round(110 * dens), (x, z) => lane(x, z) && riverDist(x, z) > rw / 2 + 40 && riverDist(x, z) < rw / 2 + 260 && !blockedByWall(x, z, 40), (x, y, z) => ({ x, y: y - 4, z, ry: r.range(0, 7), sx: r.range(110, 160), sy: r.range(90, 130) }));
     g.add(buildGrass(blue, 'blue', 8));
+  }
+  // —— chi tiết nền rừng: thảm cỏ thấp theo khoảnh, sỏi đá vụn, lá rụng; đá cuội nhô lên ven sông ——
+  {
+    const jungle = (x, z, lm = 200) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + lm && riverDist(x, z) > rw / 2 + 60 && !blockedByWall(x, z, 30);
+    const lowGrass = [];
+    for (const c of put(Math.round(260 * dens), (x, z) => jungle(x, z, 260), (x, y, z) => ({ x, y, z }))) {
+      const n = 5 + r.int(8); for (let i = 0; i < n; i++) { const a = r.range(0, 7), d = Math.sqrt(r.next()) * 140, x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
+        if (!jungle(x, z, 200)) continue; lowGrass.push({ x, y: c.y - 3, z, ry: r.range(0, 7), sx: r.range(60, 95), sy: r.range(32, 62) * (1 - d / 260) }); }
+    }
+    g.add(buildGrass(lowGrass, 'wild', 10));
+    const pebbles = put(Math.round(1400 * dens), (x, z) => inPlay(x, z) && laneDist(x, z) > halfW + 40 && riverDist(x, z) > rw / 2 + 20 && !blockedByWall(x, z, 10), (x, y, z) => { const s = r.range(5, 16); return { x, y: y - s * 0.2, z, ry: r.range(0, 7), sx: s * r.range(1, 1.7), sy: s * r.range(0.45, 0.8), sz: s, color: r.next() < 0.3 ? 0xd8d0c0 : 0xffffff }; });
+    g.add(scatterChunked(boulderGeo(61), rockMat, pebbles, true));
+    const leafGeo = (() => { const sh = new THREE.Shape(); sh.moveTo(0, -1); sh.quadraticCurveTo(0.55, -0.2, 0, 1); sh.quadraticCurveTo(-0.55, -0.2, 0, -1); const lg = new THREE.ShapeGeometry(sh, 4); lg.rotateX(-Math.PI / 2); return lg; })();
+    const leafPal = [0x8a6a2a, 0xa07a30, 0x6b5a26, 0x5c6a2a, 0xb08a3a, 0x7a3a1a];
+    const leaves = put(Math.round(2600 * dens), (x, z) => inPlay(x, z) && riverDist(x, z) > rw / 2 + 10 && !blockedByWall(x, z, 0) && (laneDist(x, z) > halfW - 60 || r.next() < 0.25) && fbm(x / 700 + 4, z / 700) > 0.42, (x, y, z) => ({ x, y: (laneDist(x, z) < halfW + 30 ? 1.2 : y + 1.5), z, ry: r.range(0, 7), rx: r.range(-0.15, 0.15), sx: r.range(7, 13), sy: 1, sz: r.range(9, 16), color: leafPal[r.int(leafPal.length)] }));
+    g.add(scatterChunked(leafGeo, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), leaves, true));
+    const riverRocks = put(Math.round(90 * dens), (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 160 && riverDist(x, z) > rw / 2 - 190 && riverDist(x, z) < rw / 2 - 20, (x, y, z) => { const s = r.range(40, 85); return { x, y, z, ry: r.range(0, 7), sx: s * r.range(1, 1.5), sy: Math.max(30, (r.range(14, 34) - y) / 0.82), sz: s, color: 0xb8c0c4 }; });
+    g.add(scatterChunked(boulderGeo(71), rockMat, riverRocks, true)); allRocks.push(...riverRocks);
   }
   const pal = [0xe8a0b8, 0xf0d070, 0xf4f0e8, 0xe8a070, 0xc0b0e8];
   const flowers = put(0 * Math.round(500 * dens), /* bỏ hoa lẻ */ (x, z) => inPlay(x, z) && !inCamp(x, z) && laneDist(x, z) > halfW + 260 && riverDist(x, z) > rw / 2 + 40 && !blockedByWall(x, z, 60) && fbm(x / 300, z / 300) > 0.55, (x, y, z) => ({ x, y, z, ry: r.range(0, 7), sx: r.range(0.8, 1.4), color: pal[r.int(pal.length)] }));
@@ -138,7 +156,7 @@ export function buildArena(scene, map, level = 'mid') {
       for (let t = 0; t < L; t += 90) { if (r.next() < 0.55) continue; const sd = r.next() < 0.5 ? -1 : 1, off = ln.width / 2 + r.range(-10, 70), x = a[0] + (b[0] - a[0]) * t / L + nx * sd * off, z = a[1] + (b[1] - a[1]) * t / L + nz * sd * off;
         if (riverDist(x, z) < rw / 2 + 40) continue; edge.push({ x, y: 2, z, ry: r.range(0, 7), sx: r.range(18, 46), sy: r.range(10, 26), sz: r.range(18, 46), color: r.next() < 0.4 ? 0xb8b0a0 : 0xffffff }); }
     }
-    g.add(scatterChunked(rockGeo(11), rockMat, edge, true));
+    g.add(scatterChunked(boulderGeo(51), rockMat, edge, true));
     g.add(buildLaneDecor(map, baked, structs)); // đường đá mài khắc hoa văn + vòng khắc chân trụ/nhà chính
   }
 

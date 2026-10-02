@@ -41,29 +41,40 @@ export function laneTexture() {
   // hàng tấm: chiều cao ngẫu nhiên, tổng đúng bằng H (lặp khít)
   const rows = []; { let y = 0; while (y < H - 1) { let h = r.range(300, 470); if (H - y - h < 260) h = H - y; rows.push({ y0: y, y1: y + h, cuts: [] }); y += h; } }
   for (const row of rows) { const n = r.next() < 0.45 ? 1 : 2; let prev = IN0; for (let k = 0; k < n; k++) { const c = prev + (IN1 - prev) / (n - k + 0.6) * r.range(0.75, 1.15); row.cuts.push(Math.min(IN1 - 180, Math.max(prev + 200, c))); prev = row.cuts[row.cuts.length - 1]; } }
-  const tones = [[150, 150, 164], [141, 142, 158], [152, 149, 160], [146, 148, 162], [154, 152, 160], [138, 140, 154]];
+  const tones = [[150, 151, 160], [141, 143, 152], [150, 148, 152], [146, 148, 156], [153, 151, 152], [138, 141, 150]];
   const slabTone = new Map(); let sid = 0; for (const row of rows) for (let k = 0; k <= row.cuts.length; k++) slabTone.set(row.y0 * 10 + k, tones[(sid++ * 7 + 3) % tones.length].map((q) => q * r.range(0.95, 1.04)));
-  const curbLen = 300, JOINT = 2.6, BEV = 9, RC = 14;
+  const curbLen = 300, JOINT = 2.6, BEV = 9, RC = 14, mossT = tileFbm(461, 9, 4), stainT = tileFbm(467, 5, 4);
+  // vết nứt: mỗi hàng 0–2 đường nứt gấp khúc chạy ngang qua tấm (lưu theo hàng để tra nhanh)
+  for (const row of rows) { row.cracks = []; const n = r.next() < 0.5 ? 1 : r.next() < 0.5 ? 2 : 0;
+    for (let k = 0; k < n; k++) { let x = r.range(IN0 + 40, IN1 - 40), y = r.range(row.y0 + 40, row.y1 - 40); const dir = r.range(0, Math.PI * 2), pts = [[x, y]];
+      for (let i = 0; i < 9; i++) { const a = dir + r.range(-0.6, 0.6); x += Math.cos(a) * r.range(18, 34); y += Math.sin(a) * r.range(18, 34); pts.push([x, y]); }
+      row.cracks.push(pts); } }
+  const crackDist = (row, x, y) => { let m = 99; for (const c of row.cracks) for (let i = 1; i < c.length; i++) { const [ax, ay] = c[i - 1], [bx, by] = c[i], dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))); m = Math.min(m, Math.hypot(x - ax - dx * t, y - ay - dy * t)); } return m; };
+  const hash = (a, b) => { const q = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return q - Math.floor(q); };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const k = y * W + x, u = x / H, v = y / H;                              // u,v cùng tỉ lệ → nhiễu không bị kéo giãn
     const cl = cloud(u, v) - 0.5, md = mid(u, v) - 0.5, fn = fine(u, v) - 0.5, gn = grain(u, v) - 0.5;
     const X = x + (wx(u, v) - 0.5) * 22, Y = y + (wy(u, v) - 0.5) * 22;  // mạch nối hơi lượn
-    let dx, dy, tone, curb = false;
+    let dx, dy, tone, curb = false, row = null, cornerK = 0;
     if (X < IN0 || X >= IN1) { // bó vỉa
       curb = true; const lx = X < IN0 ? X : W - 1 - X, yy = ((Y + (X < IN0 ? 0 : 150)) % curbLen + curbLen) % curbLen;
       dx = Math.min(Math.abs(lx), Math.abs(B - lx)); dy = Math.min(yy, curbLen - yy); tone = [120, 120, 134];
     } else {
       const Yw = ((Y % H) + H) % H; let ri = rows.findIndex((q) => Yw >= q.y0 && Yw < q.y1); if (ri < 0) ri = rows.length - 1;
-      const row = rows[ri], edges = [IN0, ...row.cuts, IN1]; let si = 0; while (si < edges.length - 2 && X >= edges[si + 1]) si++;
+      row = rows[ri]; const edges = [IN0, ...row.cuts, IN1]; let si = 0; while (si < edges.length - 2 && X >= edges[si + 1]) si++;
       dx = Math.min(X - edges[si], edges[si + 1] - X); dy = Math.min(Yw - row.y0, row.y1 - Yw); tone = slabTone.get(row.y0 * 10 + si);
+      cornerK = hash(row.y0 + (Yw - row.y0 > (row.y1 - row.y0) / 2 ? 1 : 0), si * 2 + (X - edges[si] > (edges[si + 1] - edges[si]) / 2 ? 1 : 0));
     }
     // khoảng cách tới mạch nối, bo góc
     let d = Math.min(dx, dy); if (dx < RC && dy < RC) d = Math.max(0, RC - Math.hypot(RC - dx, RC - dy));
+    const mo = mossT(u, v), st = stainT(u, v);
+    const chip = !curb && cornerK < 0.3 && dx + dy < 30 + cornerK * 60 + fn * 18;   // góc tấm sứt mẻ
+    if (chip) d = Math.min(d, JOINT + 1.5 + (dx + dy) * 0.05);
     const joint = d < JOINT, bev = Math.min(1, Math.max(0, (d - JOINT) / BEV));
     let h = joint ? 0.12 + (fn + gn) * 0.08 : 0.35 + 0.65 * Math.sqrt(bev);
     h += cl * 0.05 + md * 0.03 + gn * 0.012;
     let c;
-    if (joint) c = [52 + gn * 30, 50 + gn * 28, 56 + gn * 26].map((q) => q * (1 + fn * 0.3));
+    if (joint) { c = [52 + gn * 30, 50 + gn * 28, 56 + gn * 26].map((q) => q * (1 + fn * 0.3)); if (mo > 0.5) c = [c[0] * 0.8, c[1] * 1.15 + 6, c[2] * 0.62]; } // rêu xanh trong mạch
     else {
       const vA = Math.abs(vein(u, v) - 0.5), vB = Math.abs(vein2(u, v) - 0.5);
       const vl = vA < 0.007 ? 1 - vA / 0.007 : 0, vd = vB < 0.005 ? 1 - vB / 0.005 : 0;
@@ -74,6 +85,13 @@ export function laneTexture() {
       const warm = Math.max(0, cl - 0.12) * 0.9; c = [c[0] * (1 + warm * 0.12), c[1] * (1 + warm * 0.05), c[2] * (1 - warm * 0.06)]; // ố ngả ấm
       c = c.map((q) => q + (190 - q) * vl * 0.16); c = c.map((q) => q * (1 - vd * 0.12)); // gân đá sáng / tối
       h -= vd * 0.04;
+      if (chip) { c = c.map((q) => q * 0.82); h -= 0.25; }                       // mặt vỡ thấp, sẫm
+      const cd = row ? crackDist(row, X, ((Y % H) + H) % H) : 99;
+      if (cd < 2.2) { c = c.map((q) => q * (0.45 + cd * 0.12)); h -= 0.18 * (1 - cd / 2.2); }
+      else if (cd < 5) c = c.map((q) => q * (0.94 + cd * 0.012));
+      const edgeMoss = Math.max(0, mo - 0.56) * 4 * Math.max(0, 1 - (d - JOINT) / 14);  // rêu loang ra từ mạch
+      if (edgeMoss > 0) c = c.map((q, i) => q + ([58, 74, 40][i] - q) * Math.min(0.7, edgeMoss));
+      if (st > 0.62) c = c.map((q) => q * (1 - (st - 0.62) * 0.55));             // vết ố ẩm sẫm
     }
     Hm[k] = h; C.set(c.map((q) => Math.max(0, Math.min(255, q))), 3 * k);
   }

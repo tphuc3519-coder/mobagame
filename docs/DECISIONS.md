@@ -125,3 +125,13 @@
   tối, mỗi tấm một tông xám lam/tím khác nhau, loang + gân mảnh + hạt + ố; bó vỉa đá dài hai mép. Vật liệu đường đổi sang MeshStandard.
 - Sông: bờ lượn theo nhiễu (không thẳng tắp), vũng sâu/bãi cạn loang, màu xanh rêu → lam sẫm, phản chiếu trời dịu hơn, bọt bờ mỏng
   đứt quãng, bớt vệt dòng/lá trôi, nước ở mép đục hơn (đáy ít lộ), đoạn đè lên đường tối hơn, bớt gợn trắng.
+
+## Thêm chi tiết chân thực: rêu/nứt/tảng phụ cho đá, sàn mòn vỡ, nền rừng, lòng sông cuội
+- Đá (`ROCK_FACET`): rêu xanh trên mặt ngửa + rêu ẩm ở chân theo nhiễu, khe nứt sâu theo vùng (tối + lõm bump), mặt úp tối; rêu/khe nhám hơn.
+- `roundRockGeo`: thêm 1–4 tảng tròn dính liền thân (lún một phần) phá dáng ống đều; trả mẫu đỉnh để cắm cỏ dại trên lưng đá;
+  sỏi vụn quanh chân mọi bệ đá.
+- Đá rải rác trong rừng/mép đường dùng chung đá tròn + vật liệu đá thật (bỏ đá low-poly mặt phẳng).
+- Nền rừng: thảm cỏ thấp theo khoảnh (tránh đường), ~1400 sỏi nhỏ, lá rụng nâu/vàng theo vùng (ít trên đường), đá cuội nhô khỏi mặt nước ven sông.
+- Sàn đường: vết nứt gấp khúc trên một số tấm, góc tấm sứt mẻ, rêu trong mạch và loang ra mép tấm, vết ố ẩm; tông tấm trung tính hơn.
+- Lòng sông: texture cuội tròn nhiều cỡ trên cát bùn (`pebbleSurface`) thay cho phiến đá.
+- Sóng nước: sai phân pháp tuyến bước ~4.6 texel (trước 1 texel trên noise 8-bit gây sọc bậc thang song song), bỏ vệt dòng chảy.
