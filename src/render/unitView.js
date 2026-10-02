@@ -19,10 +19,10 @@ export function createUnitViews(scene, localTeam, localId) {
   const views = new Map();
   const spawn = (e, world) => {
     const root = new THREE.Group();
-    if (!e.structure) root.add(createBlobShadow(e.radius));
     scene.add(root);
     const v = { root, animator: null, mats: null, angle: e.facing, lift: null, flash: 0, ghost: false, art: null, part: null, fall: 0 };
     views.set(e.id, v);
+    if (!e.structure) { v.blob = createBlobShadow(e.radius); scene.add(v.blob); } // bóng tiếp đất: không xoay theo nhân vật
     if (e.kind === 'tower' || e.kind === 'core' || e.kind === 'fountain') {
       v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team, Math.min(1, (world.map.fountain?.healRadius || 650) / 650));
       if (e.kind === 'fountain') { const m = world.map, a = Math.atan2(m.h / 2 - e.pos.y, m.w / 2 - e.pos.x); v.part.object.rotation.y = -a + Math.PI / 2; } // lối vào quay ra giữa bản đồ
@@ -66,6 +66,7 @@ export function createUnitViews(scene, localTeam, localId) {
         const y = v.lift ? Math.sin(Math.min(1, v.lift.t / v.lift.dur) * Math.PI) * v.lift.h : 0;
         if (v.lift) { v.lift.t += dt; if (v.lift.t >= v.lift.dur) v.lift = null; }
         v.root.position.set(lerp(e.prevPos.x, e.pos.x, alpha), y, lerp(e.prevPos.y, e.pos.y, alpha));
+        if (v.blob) { v.blob.position.set(v.root.position.x, 0, v.root.position.z); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); }
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
@@ -86,7 +87,7 @@ export function createUnitViews(scene, localTeam, localId) {
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
       }
-      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); views.delete(id); }
+      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); views.delete(id); }
     },
   };
 }

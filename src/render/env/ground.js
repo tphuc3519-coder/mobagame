@@ -78,9 +78,9 @@ export function groundMaterial(baked) {
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
-      gr *= mix(vec3(0.78, 0.88, 0.74), vec3(1.14, 1.08, 0.80), smoothstep(0.25, 0.75, nz.r));      // loang: cỏ đậm ẩm ↔ cỏ ngả vàng khô
+      gr *= 0.9 * mix(vec3(0.78, 0.88, 0.74), vec3(1.14, 1.08, 0.80), smoothstep(0.25, 0.75, nz.r));      // loang: cỏ đậm ẩm ↔ cỏ ngả vàng khô
       vec3 dt = mix(texture2D(uDirt, vGxz / 460.0).rgb, texture2D(uDirt, vGxz / 1500.0 + 0.21).rgb, 0.35);
-      vec3 st = texture2D(uStone, vGxz / 460.0).rgb * mix(0.86, 1.06, nz2.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.92), nz.g); // đá ngả ấm/lạnh theo vùng
+      vec3 st = texture2D(uStone, vGxz / 460.0).rgb * 0.8 * mix(0.86, 1.06, nz2.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.92), nz.g); // đá ngả ấm/lạnh theo vùng
       float dm = smoothstep(0.30, 0.72, sp.g + (nz2.g - 0.5) * 0.6);
       float pm = smoothstep(0.40, 0.60, sp.r + (nz2.b - 0.5) * 0.35);
       vec3 c = mix(gr, dt, dm);
@@ -99,7 +99,7 @@ export function groundMaterial(baked) {
         // bóng thật của nhân vật: tối thêm cả phần sáng môi trường cho đậm ngang bóng nướng sẵn
         DirectionalLightShadow dls0 = directionalLightShadows[ 0 ];
         float unitSh = getShadow( directionalShadowMap[ 0 ], dls0.shadowMapSize, dls0.shadowIntensity, dls0.shadowBias, dls0.shadowRadius, vDirectionalShadowCoord[ 0 ] );
-        outgoingLight *= mix( 0.6, 1.0, unitSh );
+        outgoingLight *= mix( 0.42, 1.0, unitSh );
       #endif
       #include <opaque_fragment>`);
   };

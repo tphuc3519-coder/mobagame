@@ -109,7 +109,7 @@ export function buildArena(scene, map, level = 'mid') {
     const bushList = bushRects(map);
     const casters = [
       ...map.walls.segs.flatMap((w) => { const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), n = Math.max(2, Math.round(L / 150)); return Array.from({ length: n }, (_, i) => ({ x: w.x1 + (w.x2 - w.x1) * (i + 0.5) / n, z: w.y1 + (w.y2 - w.y1) * (i + 0.5) / n, r: (w.w ?? map.walls.thickness) * 0.55, h: w.ledge ? 110 : 200, k: 0.55 })); }),
-      ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.6 })),
+      ...trees.map((t) => ({ x: t.x, z: t.z, r: 150 * t.sx, h: 420 * t.sx, k: 0.75 })),
       ...allRocks.map((q) => ({ x: q.x, z: q.z, r: q.sx * 0.9, h: q.sy * 1.2, k: 0.45 })),
       ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 520 : 140, h: q.kind === 'core' ? 900 : 700, k: 0.55 })),
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),

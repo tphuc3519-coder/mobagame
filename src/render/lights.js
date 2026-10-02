@@ -16,10 +16,10 @@ export function addLights(scene, renderer, level = 'mid') {
   const size = LEVELS[level]?.shadow || 0, dir = new THREE.Vector3(600, 1200, 800).normalize();
   if (size) {
     key.castShadow = true; key.shadow.mapSize.set(size, size);
-    const c = key.shadow.camera; c.left = -2300; c.right = 2300; c.top = 2300; c.bottom = -2300; c.near = 100; c.far = 6000; c.updateProjectionMatrix();
+    const c = key.shadow.camera; c.left = -3000; c.right = 3000; c.top = 3000; c.bottom = -3000; c.near = 100; c.far = 6000; c.updateProjectionMatrix();
     key.shadow.bias = -0.0006; key.shadow.normalBias = 2; key.shadow.radius = 3;
   }
-  const texel = size ? 4600 / size : 1;
+  const texel = size ? 6000 / size : 1;
   return {
     /** Hộp bóng theo điểm camera nhìn (bám theo lưới texel để bóng không rung khi camera trượt). */
     follow(x, z) {

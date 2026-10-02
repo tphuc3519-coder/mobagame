@@ -177,7 +177,7 @@ export function buildTrees(list, density = 1, cell = 3200) {
     for (const [geo, mat] of [[pr.trunk, barkMat], [pr.core, coreMat], [pr.leaves, leafMat[type]]]) {
       const m = new THREE.InstancedMesh(geo, mat, items.length);
       items.forEach((it, j) => { d.position.set(it.x, it.y, it.z); d.rotation.set(0, it.ry, 0); d.scale.set(it.sx, it.sy ?? it.sx, it.sx); d.updateMatrix(); m.setMatrixAt(j, d.matrix); m.setColorAt(j, c.set(it.color ?? 0xffffff)); });
-      m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); grp.add(m);
+      m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); m.castShadow = geo !== pr.leaves; grp.add(m); // thân + lõi tán đổ bóng thật (thẻ lá thì không: tránh bóng ô vuông)
     }
   }
   return grp;
