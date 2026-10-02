@@ -80,11 +80,17 @@ export function groundMaterial(baked) {
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
       gr *= 0.9 * mix(vec3(0.78, 0.88, 0.74), vec3(1.14, 1.08, 0.80), smoothstep(0.25, 0.75, nz.r));      // loang: cỏ đậm ẩm ↔ cỏ ngả vàng khô
       vec3 dt = mix(texture2D(uDirt, vGxz / 460.0).rgb, texture2D(uDirt, vGxz / 1500.0 + 0.21).rgb, 0.35);
-      vec3 st = texture2D(uStone, vGxz / 460.0).rgb * 0.8 * mix(0.86, 1.06, nz2.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.92), nz.g); // đá ngả ấm/lạnh theo vùng
+      vec3 st = texture2D(uStone, vGxz / 380.0).rgb * 0.82 * mix(0.86, 1.06, nz2.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.92), nz.g); // đá ngả ấm/lạnh theo vùng
       float dm = smoothstep(0.30, 0.72, sp.g + (nz2.g - 0.5) * 0.6);
       float pm = smoothstep(0.40, 0.60, sp.r + (nz2.b - 0.5) * 0.35);
       vec3 c = mix(gr, dt, dm);
-      c = mix(c, mix(st, dt, 0.18 * (1.0 - smoothstep(0.6, 1.0, sp.r))), pm);                        // mép đường lẫn đất
+      // đường ngoài sân nhà: NỀN CỎ MƯỢT (cỏ mịn sáng, lấy mẫu mip cao cho mượt) XEN CÁC MẢNG ĐÁ LÁT, viền đất mòn quanh mảng đá
+      float patchN = texture2D(uNoise, vGxz / 2600.0).g * 0.78 + texture2D(uNoise, vGxz / 700.0).b * 0.22;
+      float stPatch = smoothstep(0.515, 0.545, patchN);
+      vec3 smoothG = mix(texture2D(uGrass, vGxz / 700.0, 3.0).rgb, gr, 0.45) * vec3(0.98, 1.0, 0.96);
+      vec3 laneC = mix(smoothG, st, stPatch);
+      laneC = mix(laneC, dt * 1.05, (1.0 - stPatch) * smoothstep(0.46, 0.515, patchN) * 0.6);       // đất mòn viền quanh mảng đá
+      c = mix(c, laneC, pm);
       vec3 bed = mix(dt * vec3(0.48, 0.56, 0.55), st * vec3(0.5, 0.58, 0.6), smoothstep(0.4, 0.6, nz2.b));
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
       c *= mix(0.42, 1.0, sp.b);                                                                         // bóng nướng sẵn
@@ -92,7 +98,7 @@ export function groundMaterial(baked) {
       { // đá lát nổi khối: pháp tuyến từ trường độ cao của phiến đá (chỉ ở vùng lát), sáng mép trên-nắng, tối mép khuất
         vec2 su = vGxz / 460.0; float e = 1.5 / 1024.0;
         float h0 = texture2D(uStoneH, su).r, hx = texture2D(uStoneH, su + vec2(e, 0.0)).r, hz = texture2D(uStoneH, su + vec2(0.0, e)).r;
-        vec3 dW = vec3((h0 - hx) * 6.0, 0.0, (h0 - hz) * 6.0) * pm;
+        vec3 dW = vec3((h0 - hx) * 6.0, 0.0, (h0 - hz) * 6.0) * pm * stPatch;
         normal = normalize(normal + (viewMatrix * vec4(dW, 0.0)).xyz);
       }`).replace('#include <opaque_fragment>', `
       #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0

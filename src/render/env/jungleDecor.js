@@ -39,46 +39,51 @@ function boulderGeo(seed) {
 /** Bệ đá kiểu Liên Quân: CHỒNG PHIẾN ĐÁ PHẲNG nhiều lớp (mỗi lớp là một phiến dày bo cạnh, viền gồ ghề theo nhiễu, lệch nhau
  *  và chìa ra như mái hiên → có chiều sâu), mặt trên sáng xám lam, cạnh phiến tối dần xuống chân, rêu loang trên mặt phiến. */
 function slabStackGeo(w, H, seed, r) {
+  // Đá sắc cạnh: 4–5 lớp phiến mỏng; mỗi lớp chia thành vài khối (khe nứt dọc giữa các khối), viền khối là đa giác ít cạnh
+  // có nhiễu → mặt vát phẳng (flat shading) bắt sáng rõ từng mặt; lớp xen kẽ thụt/chìa → khe tối giữa lớp.
   const hw = (w.w ?? 110) / 2, ax = w.x1, az = w.y1, bx = w.x2, bz = w.y2, L = Math.hypot(bx - ax, bz - az) || 1;
   const ang = Math.atan2(bz - az, bx - ax), cx = (ax + bx) / 2, cz = (az + bz) / 2;
-  const n = H > 150 ? 4 : 3, parts = [];
+  const n = H > 150 ? 5 : 4, parts = [], half = L / 2 + hw * 0.55;
   let y = 0;
   for (let k = 0; k < n; k++) {
-    const t = k / (n - 1 || 1), th = (H / n) * r.range(0.85, 1.15);
-    // lớp giữa chìa ra (mái hiên), lớp đỉnh co lại; lệch tâm nhẹ
-    const grow = [1.02, 1.12, 0.96, 0.82][k] ?? 0.8, hl = (L / 2 + hw * 0.6) * grow * r.range(0.92, 1.04), hwk = hw * grow * r.range(0.9, 1.06);
-    const ox = r.range(-0.08, 0.08) * hw, oz = r.range(-0.12, 0.12) * hw, sh = new THREE.Shape(), N = 44;
-    for (let i = 0; i < N; i++) { // viền "con nhộng" + nhiễu → phiến đá tự nhiên
-      const a = (i / N) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
-      const px = Math.sign(ca) * Math.pow(Math.abs(ca), 0.55) * hl, pz = Math.sign(sa) * Math.pow(Math.abs(sa), 0.7) * hwk;
-      const nn = 1 + (fbm(ca * 1.7 + seed + k, sa * 1.7 + k * 3.1, 3) - 0.5) * 0.32;
-      i ? sh.lineTo(px * nn + ox, pz * nn + oz) : sh.moveTo(px * nn + ox, pz * nn + oz);
+    const th = (H / n) * r.range(0.85, 1.2), grow = k === 0 ? 1.05 : k === n - 1 ? 0.78 : (k % 2 ? 1.08 : 0.94) * (1 - k * 0.04);
+    const nb = Math.max(1, Math.round((half * 2) / r.range(260, 380))), seg = (half * 2) / nb;
+    for (let b = 0; b < nb; b++) {
+      const x0 = -half * grow + b * seg * grow + 7, x1 = x0 + seg * grow - 14, mx = (x0 + x1) / 2, hx = (x1 - x0) / 2;
+      const endL = b === 0, endR = b === nb - 1, hwk = hw * grow * r.range(0.86, 1.04), sh = new THREE.Shape(), N = 12;
+      for (let i = 0; i < N; i++) { // đa giác ít cạnh, góc ngoài cùng bo theo đầu bệ
+        const a = (i / N) * Math.PI * 2 + r.range(-0.12, 0.12), ca = Math.cos(a), sa = Math.sin(a);
+        const ex = (ca < 0 && endL) || (ca > 0 && endR) ? Math.pow(Math.abs(ca), 0.6) : Math.pow(Math.abs(ca), 0.25);
+        const px = mx + Math.sign(ca) * ex * hx, pz = Math.sign(sa) * Math.pow(Math.abs(sa), 0.45) * hwk, j = r.range(0.88, 1.08);
+        i ? sh.lineTo(mx + (px - mx) * j, pz * j) : sh.moveTo(mx + (px - mx) * j, pz * j);
+      }
+      sh.closePath();
+      const bev = Math.min(6, th * 0.2), geo = new THREE.ExtrudeGeometry(sh, { depth: Math.max(4, th - bev * 2), bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 1, curveSegments: 1 });
+      geo.rotateX(-Math.PI / 2); geo.translate(0, y + bev, 0);
+      geo.rotateZ(r.range(-0.04, 0.04)); geo.rotateX(r.range(-0.04, 0.04));
+      geo.deleteAttribute('uv'); parts.push(geo.toNonIndexed());
     }
-    sh.closePath();
-    const bev = Math.min(14, th * 0.3), geo = new THREE.ExtrudeGeometry(sh, { depth: Math.max(4, th - bev * 2), bevelEnabled: true, bevelThickness: bev, bevelSize: bev * 0.9, bevelSegments: 2, curveSegments: 4 });
-    geo.rotateX(-Math.PI / 2); geo.translate(0, y + bev, 0); // phiến nằm ngang, đáy tại y
-    // nghiêng nhẹ từng phiến
-    geo.rotateZ(r.range(-0.03, 0.03)); geo.rotateX(r.range(-0.03, 0.03));
-    parts.push(geo.toNonIndexed()); y += th * r.range(0.82, 0.92);
-    void t;
+    y += th * r.range(0.8, 0.9);
   }
-  const g0 = mergeGeometries(parts); g0.rotateY(-ang); g0.translate(cx, -6, cz); g0.deleteAttribute('uv'); g0.deleteAttribute('normal');
-  const g = mergeVertices(g0, 0.5);
-  { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const X = q.getX(i), Y = q.getY(i), Z = q.getZ(i), d = (fbm(X * 0.02 + seed, Z * 0.02 + Y * 0.03, 3) - 0.5) * 16; q.setXYZ(i, X + d, Y + d * 0.35, Z - d); } } // gồ ghề bề mặt
-  g.computeVertexNormals();
+  const g = mergeGeometries(parts); g.rotateY(-ang); g.translate(cx, -6, cz);
+  { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const X = q.getX(i), Y = q.getY(i), Z = q.getZ(i), d = (fbm(X * 0.012 + seed, Z * 0.012 + Y * 0.02, 2) - 0.5) * 22; q.setXYZ(i, X + d, Y + d * 0.25, Z - d * 0.8); } }
+  g.computeVertexNormals(); // non-indexed → pháp tuyến theo mặt (mặt vát rõ)
   const p = g.attributes.position, nrm = g.attributes.normal, col = new Float32Array(p.count * 3), c = new THREE.Color();
-  const TOP = new THREE.Color(0x6c788e), SIDE = new THREE.Color(0x3a4256), DEEP = new THREE.Color(0x161922), MOSSC = new THREE.Color(0x3e6634);
-  for (let i = 0; i < p.count; i++) {
-    const X = p.getX(i), Y = p.getY(i), Z = p.getZ(i), ny = nrm.getY(i), h01 = Math.max(0, Y / H), v = fbm(X * 0.006 + seed, Z * 0.006, 3);
-    if (ny > 0.6) c.copy(TOP).multiplyScalar(0.78 + v * 0.42 + h01 * 0.12 + (fbm(X * 0.03, Z * 0.03, 2) - 0.5) * 0.25);                     // mặt phiến sáng
-    else if (ny < -0.3) c.copy(DEEP);                                                            // đáy phiến (dưới mái hiên) tối hẳn
-    else c.copy(SIDE).lerp(DEEP, Math.max(0, 0.5 - h01) * 0.8).multiplyScalar(0.85 + v * 0.3); // cạnh phiến tối dần xuống chân
-    if (ny > 0.6 && v > 0.5) c.lerp(MOSSC, Math.min(0.8, (v - 0.5) * 3.2));                      // rêu loang trên mặt phiến
-    col.set([c.r, c.g, c.b], 3 * i);
+  const TOP = new THREE.Color(0x7c879c), SIDE = new THREE.Color(0x404a60), DEEP = new THREE.Color(0x141720), MOSSC = new THREE.Color(0x436e38), rf = rngFor(seed * 1000 | 0);
+  for (let f = 0; f < p.count; f += 3) { // màu theo từng mặt tam giác
+    const X = (p.getX(f) + p.getX(f + 1) + p.getX(f + 2)) / 3, Y = (p.getY(f) + p.getY(f + 1) + p.getY(f + 2)) / 3, Z = (p.getZ(f) + p.getZ(f + 1) + p.getZ(f + 2)) / 3;
+    const ny = nrm.getY(f), h01 = Math.max(0, Y / H), v = fbm(X * 0.005 + seed, Z * 0.005, 3), jit = rf.range(0.9, 1.1);
+    if (ny > 0.55) { c.copy(TOP).multiplyScalar((0.8 + v * 0.35 + h01 * 0.15) * jit); if (v > 0.56) c.lerp(MOSSC, Math.min(0.7, (v - 0.56) * 4)); }
+    else if (ny < -0.25) c.copy(DEEP);
+    else c.copy(SIDE).lerp(DEEP, Math.max(0, 0.45 - h01) * 0.9).multiplyScalar((0.8 + v * 0.35) * jit);
+    for (let k = 0; k < 3; k++) col.set([c.r, c.g, c.b], 3 * (f + k));
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return g;
 }
+
+let _rf = null;
+const ROCK_FACET = () => (_rf ||= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.04, flatShading: true }));
 
 /** Quầng tối ánh tím dưới chân bệ đá (che khuất kiểu tranh vẽ): vành từ viền capsule ra ngoài, đậm sát chân → trong suốt. */
 function footGlow(w, list) {
@@ -114,7 +119,7 @@ export function buildRockWalls(map, dens = 1) {
     }
   });
   const mat = strataMat();
-  g.add(new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  g.add(new THREE.Mesh(mergeGeometries(geos), ROCK_FACET()));
   const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(glow.P, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(glow.C, 4)); gg.setIndex(glow.I);
   const gm = new THREE.Mesh(gg, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false })); gm.renderOrder = 1; g.add(gm);
   g.add(buildBorderWall(map, r), buildBaseWalls(map));
@@ -153,13 +158,14 @@ function buildBaseWalls(map) {
     for (let i = 0; i < N; i++) for (let j = 0; j < RAD; j++) { const a = i * (RAD + 1) + j, b = a + RAD + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); geo.setIndex(I); geo.computeVertexNormals();
     if (geo.attributes.normal.getY(Math.floor(RAD / 2)) < 0) { geo.setIndex(I.map((_, k) => I[k - (k % 3) + [0, 2, 1][k % 3]])); geo.computeVertexNormals(); }
-    const m = new THREE.Mesh(geo, stone); m.castShadow = true; m.receiveShadow = true; g.add(m);
+    void geo; const br = rngFor(segs.length * 31 + side * 7), sg = segs.map((w, i) => slabStackGeo({ ...w, w: W * 0.9 }, 210, 50 + i * 2.1 + side, br));
+    const m = new THREE.Mesh(mergeGeometries(sg), ROCK_FACET()); m.castShadow = true; m.receiveShadow = true; g.add(m);
     // dải khảm phát sáng màu đội chạy dọc hai bên thân
     const glowC = new THREE.Color(side ? 0xff5a3a : 0x4ab8ff).multiplyScalar(1.6);
     for (const sd of [-1, 1]) {
       const gp = [];
-      for (let i = 4; i <= N - 4; i++) { const t = i / N, p = frames[i], q = frames[Math.min(N, i + 1)], o = frames[i - 1], dx = q.x - o.x, dz = q.z - o.z, l = Math.hypot(dx, dz) || 1, k = prof(t), hw = W * 0.55 * (0.35 + 0.65 * k), Ht = 240 * k + 30;
-        gp.push(new THREE.Vector3(p.x - dz / l * hw * 0.78 * sd, Ht * 0.55, p.z + dx / l * hw * 0.78 * sd)); }
+      for (let i = 4; i <= N - 4; i++) { const t = i / N, p = frames[i], q = frames[Math.min(N, i + 1)], o = frames[i - 1], dx = q.x - o.x, dz = q.z - o.z, l = Math.hypot(dx, dz) || 1, k = prof(t), hw = W * 0.5;
+        gp.push(new THREE.Vector3(p.x - dz / l * hw * sd, 70, p.z + dx / l * hw * sd)); }
       g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 60, 4, 5, false), new THREE.MeshBasicMaterial({ color: glowC })));
     }
     // quầng sáng màu đội mờ dưới chân
@@ -249,28 +255,24 @@ function buildLair(g, c, R, r, glowHex) {
   const plat = mergeVertices(pg), pp = plat.attributes.position;
   for (let i = 0; i < pp.count; i++) { const x = pp.getX(i), y = pp.getY(i), z = pp.getZ(i), a = Math.atan2(z, x), k = 1 + (fbm(Math.cos(a) * 2 + seed, Math.sin(a) * 2, 3) - 0.5) * 0.22; pp.setXYZ(i, x * k, y + (y > 0 ? (fbm(x * 0.006, z * 0.006 + seed, 3) - 0.5) * 18 : 0), z * k); }
   plat.computeVertexNormals();
-  { const n = plat.attributes.normal, col = new Float32Array(pp.count * 3), cc = new THREE.Color(), hi = new THREE.Color(0x5a566a), lo = new THREE.Color(0x24222c);
+  { const n = plat.attributes.normal, col = new Float32Array(pp.count * 3), cc = new THREE.Color(), hi = new THREE.Color(0x6e7488), lo = new THREE.Color(0x2c303c);
     for (let i = 0; i < pp.count; i++) { const v = fbm(pp.getX(i) * 0.01 + seed, pp.getZ(i) * 0.01, 3); cc.copy(lo).lerp(hi, 0.25 + v * 0.5 + Math.max(0, n.getY(i)) * 0.25); col.set([cc.r, cc.g, cc.b], 3 * i); }
     plat.setAttribute('color', new THREE.BufferAttribute(col, 3)); }
   const platM = new THREE.Mesh(plat, new THREE.MeshLambertMaterial({ vertexColors: true })); platM.position.set(c.x, 14, c.y); platM.receiveShadow = true; g.add(platM);
-  // móng đá cong ôm phía sau (−z, xa camera) và hai bên
-  const claws = [], rockM = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const nC = 7;
-  for (let i = 0; i < nC; i++) {
-    const a = back + (i / (nC - 1) - 0.5) * Math.PI * 0.8, len = R * r.range(0.75, 1.05) * (1 - Math.abs(i / (nC - 1) - 0.5) * 0.5), x0 = Math.cos(a) * R * 1.02, z0 = Math.sin(a) * R * 1.02;
-    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x0 * 1.1, -20, z0 * 1.1), new THREE.Vector3(x0 * 1.05, len * 0.45, z0 * 1.05), new THREE.Vector3(x0 * 0.82, len * 0.85, z0 * 0.82), new THREE.Vector3(x0 * 0.55, len * 1.0, z0 * 0.55)]);
-    const tg = new THREE.TubeGeometry(curve, 12, 1, 7, false), tp = tg.attributes.position, uv = tg.attributes.uv, pts = curve.getSpacedPoints(12);
-    for (let k = 0; k < tp.count; k++) { const t = uv.getX(k), q = pts[Math.min(12, Math.round(t * 12))], rad = R * 0.11 * Math.pow(1 - t, 1.1) + 4; tp.setXYZ(k, q.x + (tp.getX(k) - q.x) * rad * 1.5, q.y + (tp.getY(k) - q.y) * rad, q.z + (tp.getZ(k) - q.z) * rad * 0.8); }
-    tg.computeVertexNormals();
-    const tn = tg.attributes.normal, col = new Float32Array(tp.count * 3), cc = new THREE.Color();
-    for (let k = 0; k < tp.count; k++) { const t = uv.getX(k); cc.set(0x2e2c38).lerp(new THREE.Color(0x7a768c), Math.max(0, tn.getY(k)) * 0.6 + t * 0.25); if (t > 0.1 && t < 0.7 && Math.abs(Math.sin(uv.getY(k) * Math.PI * 2)) < 0.12) cc.lerp(glow, 0.8); col.set([cc.r, cc.g, cc.b], 3 * k); } // gân sáng dọc móng
-    tg.setAttribute('color', new THREE.BufferAttribute(col, 3)); tg.deleteAttribute('uv'); claws.push(tg);
+  // tường đá sắc cạnh ôm phía sau hang (hình móng ngựa), cao dần về giữa lưng, chừa mặt mở ra sông
+  const wr = rngFor((seed * 997) | 0), wallGeos = [], RW = R * 1.12;
+  for (let i = 0; i < 6; i++) {
+    const a0 = back + (i / 6 - 0.5) * Math.PI * 1.25, a1 = back + ((i + 1) / 6 - 0.5) * Math.PI * 1.25;
+    const seg = { x1: c.x + Math.cos(a0) * RW, y1: c.y + Math.sin(a0) * RW, x2: c.x + Math.cos(a1) * RW, y2: c.y + Math.sin(a1) * RW, w: R * 0.34 };
+    const mid = 1 - Math.abs((i + 0.5) / 6 - 0.5) * 2; wallGeos.push(slabStackGeo(seg, 170 + 170 * mid, seed + i * 3.3, wr));
   }
-  const clawM = new THREE.Mesh(mergeGeometries(claws), rockM); clawM.position.set(c.x, 0, c.y); g.add(clawM);
-  // tảng đá lớn chặn mép sau
-  const big = [];
-  for (let i = 0; i < 6; i++) { const a = back + r.range(-1.2, 1.2), d = R * r.range(1.05, 1.3); big.push({ x: c.x + Math.cos(a) * d, y: -10, z: c.y + Math.sin(a) * d, ry: r.range(0, 7), sx: R * r.range(0.22, 0.32), sy: R * r.range(0.18, 0.3), sz: R * r.range(0.18, 0.26), color: 0x8a86a0 }); }
-  g.add(scatter(new THREE.InstancedMesh(boulderGeo(91), rockM, big.length), big, true));
+  const wallM = new THREE.Mesh(mergeGeometries(wallGeos), ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
+  // vài khối đá lởm chởm nhô lên quanh mép bệ
+  const spikes = [];
+  for (let i = 0; i < 7; i++) { const a = back + wr.range(-1.2, 1.2), d = R * wr.range(0.85, 1.0); spikes.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: wr.range(0, 7), sx: R * wr.range(0.07, 0.12), sy: R * wr.range(0.25, 0.45), sz: R * wr.range(0.07, 0.12) }); }
+  const spG = new THREE.ConeGeometry(1, 1, 5, 1); spG.translate(0, 0.5, 0);
+  { const sp = spG.toNonIndexed(); sp.computeVertexNormals(); const cc = new Float32Array(sp.attributes.position.count * 3); for (let i = 0; i < cc.length; i += 3) cc.set([0.32, 0.3, 0.4], i); sp.setAttribute('color', new THREE.BufferAttribute(cc, 3));
+    g.add(scatter(new THREE.InstancedMesh(sp, ROCK_FACET(), spikes.length), spikes, true)); }
   // vết nứt phát sáng: mặt trên bệ + lan ra nước quanh hang
   const U = { uT: LAIR_T, uC: { value: glow.clone().multiplyScalar(1.8) }, uR: { value: R }, uS: { value: seed * 37.0 } };
   const crack = (rad, y, outer) => { const m = new THREE.Mesh(new THREE.CircleGeometry(rad, 64), new THREE.ShaderMaterial({ uniforms: { ...U, uO: { value: outer ? 1 : 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -291,7 +293,7 @@ function buildLair(g, c, R, r, glowHex) {
     m.rotation.x = -Math.PI / 2; m.position.set(c.x, y, c.y); m.renderOrder = 2; g.add(m); };
   crack(R * 0.98, 33, false); crack(R * 1.6, 6, true);
   // quả cầu năng lượng trên móng giữa
-  const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x + Math.cos(back) * R * 0.55, R * 0.95, c.y + Math.sin(back) * R * 0.55); g.add(orb);
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x + Math.cos(back) * R * 0.2, R * 0.5, c.y + Math.sin(back) * R * 0.2); g.add(orb);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: glow, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 })); halo.scale.setScalar(R * 0.6); halo.position.copy(orb.position); g.add(halo);
 }
 export const LAIR_T = { value: 0 };

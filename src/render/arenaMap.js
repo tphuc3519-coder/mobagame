@@ -142,20 +142,7 @@ export function buildArena(scene, map, level = 'mid') {
     g.add(buildLaneDecor(map, baked, structs)); // đường đá mài khắc hoa văn + vòng khắc chân trụ/nhà chính
   }
 
-  // —— đèn lồng dọc hai mép đường ——
-  const posts = [];
-  paths.forEach((p) => { let k = 0; for (let s = 900; s < p.length - 600; s += 1500) { const o = pointAt(p, s), sd = k++ % 2 ? -1 : 1; const x = o.x - o.dy * sd * (halfW + 90), z = o.y + o.dx * sd * (halfW + 90); if (riverDist(x, z) > rw / 2 + 220) posts.push({ x, z, y: 215, base: 8 }); } }); // đèn thưa, so le hai bên; không cắm đèn dưới lòng sông
-  const d = new THREE.Object3D();
-  const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(6, 9, 1, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f2c }), posts.length);
-  const lamp = new THREE.InstancedMesh(new THREE.SphereGeometry(32, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc46a).multiplyScalar(2.2) }), posts.length);
-  const cap = new THREE.InstancedMesh(new THREE.ConeGeometry(30, 16, 8), new THREE.MeshLambertMaterial({ color: 0x8a3a2c }), posts.length);
-  posts.forEach((p, i) => {
-    const len = p.y - p.base;
-    d.scale.set(1, len, 1); d.position.set(p.x, p.base + len / 2, p.z); d.updateMatrix(); pole.setMatrixAt(i, d.matrix);
-    d.scale.set(1, 1.3, 1); d.position.set(p.x, p.y + 20, p.z); d.updateMatrix(); lamp.setMatrixAt(i, d.matrix);
-    d.scale.set(1, 1, 1); d.position.set(p.x, p.y + 68, p.z); d.updateMatrix(); cap.setMatrixAt(i, d.matrix);
-  });
-  g.add(pole, lamp, cap, buildLampGlow(posts));
+  // (bỏ đèn lồng dọc đường theo góp ý người chơi)
 
   const flies = buildFireflies(map, Math.round(420 * dens)); g.add(flies.object);
   scene.add(g);

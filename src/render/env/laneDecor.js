@@ -124,15 +124,19 @@ export function plazaTexture(kind) {
 }
 
 /** Vật liệu: Lambert + normal map, nhận bóng nướng sẵn (bản trộn nền) + bóng nhân vật thời gian thực. */
-function stoneMat(t, baked, repeat) {
+function stoneMat(t, baked, repeat, cores = []) {
   const m = new THREE.MeshLambertMaterial({ map: t.map, normalMap: t.normal, normalScale: new THREE.Vector2(2.4, 2.4), transparent: true, depthWrite: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   if (repeat) { m.map = t.map; }
-  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf } };
+  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uCores: { value: new THREE.Vector4(cores[0]?.x ?? -1e6, cores[0]?.y ?? -1e6, cores[1]?.x ?? -1e6, cores[1]?.y ?? -1e6) }, uTerr: { value: new THREE.Vector2(3300, 1100) } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat; uniform vec4 uXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
-      diffuseColor.rgb *= mix(0.42, 1.0, texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw).b) * 0.88;`).replace('#include <opaque_fragment>', `
+    sh.fragmentShader = 'uniform sampler2D uSplat; uniform vec4 uXf, uCores; uniform vec2 uTerr; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      diffuseColor.rgb *= mix(0.42, 1.0, texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw).b) * 0.88;
+      { // chỉ lát trong lãnh thổ nhà chính: mờ dần ra ngoài (mép xé theo nhiễu từ hoa văn)
+        float dc = min(length(vGxz - uCores.xy), length(vGxz - uCores.zw)) + (diffuseColor.r - 0.5) * 300.0;
+        diffuseColor.a *= 1.0 - smoothstep(uTerr.x, uTerr.x + uTerr.y, dc);
+      }`).replace('#include <opaque_fragment>', `
       #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
         DirectionalLightShadow dls0 = directionalLightShadows[ 0 ];
         outgoingLight *= mix( 0.42, 1.0, getShadow( directionalShadowMap[ 0 ], dls0.shadowMapSize, dls0.shadowIntensity, dls0.shadowBias, dls0.shadowRadius, vDirectionalShadowCoord[ 0 ] ) );
@@ -145,7 +149,8 @@ function stoneMat(t, baked, repeat) {
 
 /** Dải đường theo đường gấp khúc (đã bo góc) + vòng khắc chân trụ/nhà chính. baked: bản trộn nền (bóng nướng sẵn). */
 export function buildLaneDecor(map, baked, structs) {
-  const g = new THREE.Group(), t = laneTexture(), mat = stoneMat(t, baked, true);
+  const cores = structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, y: q.y }));
+  const g = new THREE.Group(), t = laneTexture(), mat = stoneMat(t, baked, true, cores);
   for (const ln of map.lanes) {
     const W = ln.width * 1.12, rep = ln.width * 2.4; // một đoạn hoa văn dài 2.2 lần bề ngang
     // lấy mẫu đều theo quãng + làm mượt hướng
@@ -166,7 +171,7 @@ export function buildLaneDecor(map, baked, structs) {
   }
   // vòng khắc chân trụ / nhà chính
   for (const s of structs) {
-    if (s.kind !== 'tower' && s.kind !== 'core') continue;
+    if (s.kind !== 'core') continue; // chỉ sân nhà chính (trụ thường đứng trên nền cỏ xen đá)
     const R = s.kind === 'core' ? 1150 : 330, pt = plazaTexture(s.kind), m = stoneMat(pt, baked, false); m.polygonOffsetFactor = -4; m.polygonOffsetUnits = -4;
     const d = new THREE.Mesh(new THREE.CircleGeometry(R, 72), m); d.rotation.x = -Math.PI / 2; d.position.set(s.x, 0.9, s.y); d.receiveShadow = true; d.renderOrder = 0; g.add(d);
   }
