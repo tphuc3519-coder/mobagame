@@ -86,14 +86,14 @@ export function buildRockWalls(map, dens = 1) {
       boulders[r.int(3)].push({ x: w.x1 + ux * L * t + nx * sd * off, y: -8, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.4), sy: H * r.range(0.35, 0.6), sz: sc });
     }
     // cỏ trên đỉnh
-    const nTop = Math.round(L * W / 9000 * dens);
+    const nTop = w.rock || w.ledge ? Math.round(L * W / 9000 * dens) : 0; // tường dọc đường: đỉnh gọn, không chỏm cỏ
     for (let i = 0; i < nTop; i++) {
       const t = r.next(), o = r.range(-0.32, 0.32) * W;
       grassTop.push({ x: w.x1 + ux * L * t + nx * o, y: H * 0.92, z: w.y1 + uz * L * t + nz * o, ry: r.range(0, 7), sx: r.range(70, 120), sy: r.range(60, 110), color: 0xffffff });
       if (r.next() < 0.18) flowers.push({ x: w.x1 + ux * L * t + nx * o * 0.8, y: H * 0.9, z: w.y1 + uz * L * t + nz * o * 0.8, ry: r.range(0, 7), sx: r.range(90, 130), sy: r.range(80, 110) });
     }
     // cỏ dài quanh chân
-    const nFoot = Math.round(L / 110 * dens);
+    const nFoot = w.rock || w.ledge ? Math.round(L / 110 * dens) : 0; // tường dọc đường: không mọc cỏ chân (để mép đường gọn)
     for (let i = 0; i < nFoot; i++) {
       const t = r.next(), sd = r.next() < 0.5 ? -1 : 1, o = W * r.range(0.5, 0.62);
       grassFoot.push({ x: w.x1 + ux * L * t + nx * sd * o, y: 0, z: w.y1 + uz * L * t + nz * sd * o, ry: r.range(0, 7), sx: r.range(80, 130), sy: r.range(70, 130), color: 0xffffff });
@@ -144,13 +144,12 @@ function buildBorderWall(map, r) {
       plinth.push({ x, y: 14, z, ry: ang, sx: len + 14, sy: 28, sz: W * 1.02 });
     }
     const nx = -(w.y2 - w.y1) / L, nz = (w.x2 - w.x1) / L;
-    for (let k = 0; k < L / 90; k++) { const t = r.next(), sd = r.next() < 0.5 ? -1 : 1; foot.push({ x: w.x1 + (w.x2 - w.x1) * t + nx * sd * W * 0.56, y: 0, z: w.y1 + (w.y2 - w.y1) * t + nz * sd * W * 0.56, ry: r.range(0, 7), sx: r.range(70, 120), sy: r.range(60, 120) }); }
+    for (let k = 0; k < 0; k++) { const t = r.next(), sd = r.next() < 0.5 ? -1 : 1; foot.push({ x: w.x1 + (w.x2 - w.x1) * t + nx * sd * W * 0.56, y: 0, z: w.y1 + (w.y2 - w.y1) * t + nz * sd * W * 0.56, ry: r.range(0, 7), sx: r.range(70, 120), sy: r.range(60, 120) }); }
   }
   const tex = cutStoneSurface(), side = tex.clone(); side.repeat.set(1.4, 0.8); side.needsUpdate = true;
   const box = new THREE.BoxGeometry(1, 1, 1);
   const mk = (list, mat) => { const m = new THREE.InstancedMesh(box, mat, list.length); list.forEach((it, i) => { d.position.set(it.x, it.y, it.z); d.rotation.set(0, it.ry, 0); d.scale.set(it.sx, it.sy, it.sz); d.updateMatrix(); m.setMatrixAt(i, d.matrix); }); m.receiveShadow = true; return m; };
   g.add(mk(body, new THREE.MeshLambertMaterial({ map: side, color: 0xc8ccd4 })), mk(cap, new THREE.MeshLambertMaterial({ map: tex, color: 0xe2e2e2 })), mk(plinth, new THREE.MeshLambertMaterial({ map: tex, color: 0x8a8e96 })));
-  g.add(buildGrass(foot, 'wild', 14));
   return g;
 }
 
