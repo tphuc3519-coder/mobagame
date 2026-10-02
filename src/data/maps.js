@@ -179,6 +179,9 @@ const W_BLUE = [
   // bệ đá "lãnh thổ" ôm phía sau mỗi trại quái (cung đá, mở về phía lối đi trong rừng)
   ...CAMPS_BLUE.flatMap((c) => arcWalls(c.x, c.y, c.arc.r, c.arc.face, c.arc.span)),
   ...JUNGLE_ROCKS,
+  // bệ đá điêu khắc ngăn hai khoảng trống giữa ba trụ nhà (lãnh địa nhà) — cung quanh nhà chính
+  ...[[-84, -51, 0], [-39, -6, 1]].flatMap(([a0, a1, k]) => { const R = 1400, n = 6, pts = Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; return [800 + Math.cos(a) * R, 5600 + Math.sin(a) * R]; });
+    return pts.slice(1).map((p, i) => ({ x1: pts[i][0] * K, y1: pts[i][1] * K, x2: p[0] * K, y2: p[1] * K, w: 260, baseWall: k })); }),
   ...BUSHES_BLUE.flatMap(bushRocks),
 ];
 /** Cắt bỏ phần đoạn tường lấn vào lòng đường (đường rộng hơn thì cung đá trại/đá rừng sát đường tự ngắn lại); giữ đoạn liền dài nhất. */
@@ -204,7 +207,11 @@ const borderHalf = (() => {
   const river = temple.map((w) => { const a = flip([w.x1 / K, w.y1 / K]), b = flip([w.x2 / K, w.y2 / K]); return seg(a, b); });
   return [...temple, ...river];
 })();
-const W_BLUE_T = [...W_BLUE.map(trimToLanes).filter(Boolean), ...borderHalf];
+const W_BLUE_T = (() => { // bệ nhà ưu tiên: bỏ các đoạn tường/đá khác chồng lên nó
+  const all = [...W_BLUE.map(trimToLanes).filter(Boolean), ...borderHalf], base = all.filter((w) => w.baseWall != null);
+  const segD = (w, o) => { let m = Infinity; for (let t = 0; t <= 1; t += 0.1) { const x = w.x1 + (w.x2 - w.x1) * t, y = w.y1 + (w.y2 - w.y1) * t, dx = o.x2 - o.x1, dy = o.y2 - o.y1, L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - o.x1) * dx + (y - o.y1) * dy) / L2)); m = Math.min(m, Math.hypot(x - o.x1 - dx * u, y - o.y1 - dy * u)); } return m; };
+  return all.filter((w) => w.baseWall != null || w.border || !base.some((b) => segD(b, w) < ((b.w ?? 110) + (w.w ?? 110)) / 2 + 60));
+})();
 /** Điểm (toạ độ thế giới) nằm ngoài tường biên (vùng không thuộc sân chơi) — dùng để trồng rừng dày phía ngoài khung. */
 function outOfBounds(x, y, pad = 0) {
   const test = (u, v) => { u /= K; v /= K; const p = pad / K, e = BX - BORDER_W / K / 2 - p;
