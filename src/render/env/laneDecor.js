@@ -29,30 +29,48 @@ function toTex(W, H, Hm, C, wrapY, alphaFn) {
   return { map, normal };
 }
 
-/** Đường lát hiện đại (ngang 1024px = bề ngang dải, dọc 2048px = 2 lần bề ngang, lặp khít): hai dải viền đá sẫm vát cạnh ở mép,
- *  lòng đường là tấm đá chữ nhật lớn xếp so le 4 hàng, mạch vữa mảnh sắc, mép tấm vát nhẹ, mỗi tấm lệch tông rất nhẹ, hạt đá mịn. */
+/** Sàn đường kiểu tranh vẽ Liên Quân (1024×2048, lặp khít theo chiều dọc): đá xám tím chia thành TẤM LỚN bằng các rãnh cong
+ *  vắt ngang đường (lượn sóng, so le) + một rãnh dọc lượn ngắt quãng; mỗi tấm sáng giữa, tối dần về mép (vẽ tay, mềm), cạnh trên rãnh
+ *  có viền sáng mảnh, loang màu lớn, vệt mòn sáng giữa đường, vài vết nứt; hai bên là gờ viền đá bo tròn ngắt đoạn bởi khe cong. */
 export function laneTexture() {
   if (cache.lane) return cache.lane;
-  const W = 1024, H = 2048, r = rngFor(19), grain = tileFbm(301, 192, 2), cloud = tileFbm(307, 6, 3);
-  const Hm = new Float32Array(W * H), C = new Float32Array(W * H * 3);
-  const B = 92, cols = 4, inner = W - B * 2, cw = inner / cols, rows = 8, rh = H / rows, G = 2.2, BEV = 9;
-  const tone = Array.from({ length: cols * rows * 2 }, () => r.range(-0.05, 0.05));
-  const SL = [170, 170, 180], BD = [104, 108, 124], MORT = [58, 60, 72];
+  const W = 1024, H = 2048, r = rngFor(23), cloud = tileFbm(401, 5, 4), mid = tileFbm(409, 20, 3), grain = tileFbm(419, 160, 2);
+  const Hm = new Float32Array(W * H), C = new Float32Array(W * H * 3), TAU = Math.PI * 2;
+  const LIGHT = [170, 164, 190], MIDC = [126, 120, 150], DARK = [58, 54, 80], CURB = [104, 100, 130], CURBL = [150, 146, 176];
+  const B = 78, nS = 4, SP = H / nS;
+  const seams = Array.from({ length: nS }, (_, k) => ({ y0: k * SP + SP * 0.5, a1: r.range(70, 120), p1: r.range(0, TAU), a2: r.range(20, 40), p2: r.range(0, TAU), tilt: r.range(-140, 140) }));
+  const seamY = (sm, u) => sm.y0 + sm.a1 * Math.sin(Math.PI * u + sm.p1) + sm.a2 * Math.sin(TAU * 1.5 * u + sm.p2) + sm.tilt * (u - 0.5);
+  const lonX = (v) => 0.5 + 0.13 * Math.sin(TAU * v * 2 + 0.7) + 0.05 * Math.sin(TAU * v * 5);
+  const cracks = Array.from({ length: 10 }, () => { const pts = [[r.range(B + 40, W - B - 40), r.range(0, H)]]; for (let i = 0; i < 9; i++) { const [px, py] = pts[pts.length - 1]; pts.push([px + r.range(-16, 16), py + r.range(6, 18)]); } return pts; });
+  const crackD = (x, y) => { let m = 99; for (const c of cracks) for (let i = 1; i < c.length; i++) { const [ax, ay] = c[i - 1], [bx, by] = c[i]; let dy = y - ay; if (dy > H / 2) dy -= H; if (dy < -H / 2) dy += H; const dx = bx - ax, ey = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + dy * ey) / (dx * dx + ey * ey))); m = Math.min(m, Math.hypot(x - ax - dx * t, dy - ey * t)); } return m; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const k = y * W + x, u = x / W, v = y / H, gr = (grain(u, v) - 0.5) * 0.06 + (cloud(u, v) - 0.5) * 0.08;
+    const k = y * W + x, u = x / W, v = y / H, cl = (cloud(u, v) - 0.5), md = (mid(u, v) - 0.5), gn = (grain(u, v) - 0.5);
     let h, c;
-    if (x < B || x >= W - B) { // dải viền: khối dài 256px, vát hai cạnh dọc + mạch ngang
-      const lx = x < B ? x : W - 1 - x, ly = y % 256, e = Math.min(lx - 4, B - 8 - lx, ly, 256 - ly);
-      const mort = e < G || lx < 4; h = mort ? 0 : Math.min(1, e / BEV); const id = Math.floor(y / 256) + (x < B ? 0 : 50);
-      c = mort ? MORT : BD.map((q) => q * (1 + ((id * 0.37) % 1 - 0.5) * 0.08 + gr));
-      if (lx > B - 8) { h = 0.2; c = MORT; } // rãnh giữa viền và lòng đường
-    } else { // lòng đường: tấm so le
-      const ix = x - B, row = Math.floor(y / rh), off = (row % 2) * cw * 0.5, sx = ((ix + off) % inner + inner) % inner, col = Math.floor(sx / cw);
-      const lx = sx - col * cw, ly = y - row * rh, e = Math.min(lx, cw - lx, ly, rh - ly);
-      const mort = e < G; h = mort ? 0 : Math.min(1, (e - G) / BEV);
-      c = mort ? MORT : SL.map((q) => q * (1 + tone[row * cols + col] + gr) * (0.93 + 0.07 * h));
+    if (x < B || x >= W - B) { // gờ viền bo tròn, ngắt đoạn bởi khe cong mỗi ~340px
+      const lx = x < B ? x : W - 1 - x, t = lx / B, prof = Math.sin(Math.PI * Math.min(1, t * 1.05));
+      const gy = (y + (x < B ? 0 : 170) + 30 * Math.sin(t * 3)) % 340, gap = Math.min(gy, 340 - gy);
+      const cut = gap < 4 ? 0 : Math.min(1, (gap - 4) / 14);
+      h = 0.6 + 0.4 * prof * cut; const lit = Math.max(0, Math.min(1, prof * 0.8 + (x < B ? (1 - t) : t) * 0.2));
+      c = CURB.map((q, i) => (q + (CURBL[i] - q) * lit * cut) * (1 + cl * 0.18 + gn * 0.06) * (gap < 4 ? 0.55 : 1));
+      if (t > 0.94) { c = DARK; h = 0.2; } // rãnh tiếp giáp lòng đường
+    } else {
+      let d = 1e9, side = 1; // khoảng cách tới rãnh ngang gần nhất (có dấu: phía trên/dưới)
+      for (const sm of seams) for (const off of [-H, 0, H]) { const dy = y - (seamY(sm, u) + off); if (Math.abs(dy) < Math.abs(d)) { d = dy; side = Math.sign(dy); } }
+      d = Math.abs(d);
+      const segOn = Math.floor(((y + 0.25 * SP) % H) / SP) % 2 === 0; // rãnh dọc chỉ có ở tấm xen kẽ
+      const dl = segOn ? Math.abs(u - lonX(v)) * W : 1e9, dd = Math.min(d, dl);
+      const groove = dd < 4.5 ? 1 : 0, ao = 1 - Math.exp(-dd / 40);
+      h = groove ? 0.2 : 0.5 + 0.5 * Math.min(1, (dd - 4.5) / 12);
+      const center = 1 - Math.pow(Math.abs(u - 0.5) * 2, 2);                       // vệt mòn sáng giữa đường
+      let t = 0.3 + 0.42 * ao + 0.14 * center + cl * 0.6 + md * 0.22 - Math.pow(1 - Math.min(1, (Math.min(x, W - x) - B) / 120), 2) * 0.25;              // sáng giữa tấm, tối về mép rãnh
+      t = Math.max(0, Math.min(1.15, t));
+      c = t < 0.5 ? MIDC.map((q, i) => DARK[i] + (q - DARK[i]) * (t / 0.5)) : MIDC.map((q, i) => q + (LIGHT[i] - q) * ((t - 0.5) / 0.5));
+      if (!groove && side < 0 && d > 4.5 && d < 9 && dd === d) c = c.map((q) => q * 1.2);   // viền sáng mảnh cạnh trên rãnh
+      if (groove) c = DARK.map((q, i) => q + (MIDC[i] - q) * 0.25 * (dd / 4.5)); // rãnh mềm: lõi tối, mép nhạt dần
+      if (!groove && crackD(x, y) < 1.1) { c = c.map((q) => q * 0.62); h -= 0.08; }          // vết nứt
+      c = c.map((q) => q * (1 + gn * 0.12));
     }
-    Hm[k] = h * 0.9 + (grain(u, v) - 0.5) * 0.015; C.set(c, 3 * k);
+    Hm[k] = h; C.set(c, 3 * k);
   }
   return (cache.lane = toTex(W, H, Hm, C, true));
 }
@@ -106,7 +124,7 @@ export function buildLaneDecor(map, baked, structs) {
   const cores = structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, y: q.y }));
   const g = new THREE.Group(), t = laneTexture(), mat = stoneMat(t, baked, true, cores);
   for (const ln of map.lanes) {
-    const W = ln.width * 1.06, rep = W * 2; // texture 1024×2048 → điểm ảnh vuông // một đoạn hoa văn dài 2.2 lần bề ngang
+    const W = ln.width * 1.08, rep = W * 2; // texture 1024×2048 → điểm ảnh vuông // một đoạn hoa văn dài 2.2 lần bề ngang
     // lấy mẫu đều theo quãng + làm mượt hướng
     const pts = [];
     for (let i = 0; i + 1 < ln.pts.length; i++) { const [ax, ay] = ln.pts[i], [bx, by] = ln.pts[i + 1], L = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(L / 60)); for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, ay + (by - ay) * k / n]); }

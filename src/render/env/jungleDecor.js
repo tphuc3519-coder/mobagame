@@ -43,40 +43,41 @@ function slabStackGeo(w, H, seed, r) {
   // có nhiễu → mặt vát phẳng (flat shading) bắt sáng rõ từng mặt; lớp xen kẽ thụt/chìa → khe tối giữa lớp.
   const hw = (w.w ?? 110) / 2, ax = w.x1, az = w.y1, bx = w.x2, bz = w.y2, L = Math.hypot(bx - ax, bz - az) || 1;
   const ang = Math.atan2(bz - az, bx - ax), cx = (ax + bx) / 2, cz = (az + bz) / 2;
-  const n = H > 150 ? 5 : 4, parts = [], half = L / 2 + hw * 0.55;
+  const n = H > 150 ? 4 : 3, parts = [], half = L / 2 + hw * 0.55;
   let y = 0;
   for (let k = 0; k < n; k++) {
-    const th = (H / n) * r.range(0.85, 1.2), grow = k === 0 ? 1.05 : k === n - 1 ? 0.78 : (k % 2 ? 1.08 : 0.94) * (1 - k * 0.04);
-    const nb = Math.max(1, Math.round((half * 2) / r.range(260, 380))), seg = (half * 2) / nb;
+    const th = (H / n) * r.range(0.9, 1.15), grow = k === 0 ? 1.06 : k === n - 1 ? 0.8 : (k % 2 ? 1.0 : 0.92) * (1 - k * 0.04);
+    const nb = Math.max(1, Math.round((half * 2) / r.range(520, 720))), seg = (half * 2) / nb;
     for (let b = 0; b < nb; b++) {
-      const x0 = -half * grow + b * seg * grow + 7, x1 = x0 + seg * grow - 14, mx = (x0 + x1) / 2, hx = (x1 - x0) / 2;
-      const endL = b === 0, endR = b === nb - 1, hwk = hw * grow * r.range(0.86, 1.04), sh = new THREE.Shape(), N = 12;
+      const x0 = -half * grow + b * seg * grow + 5, x1 = x0 + seg * grow - 10, mx = (x0 + x1) / 2, hx = (x1 - x0) / 2;
+      const endL = b === 0, endR = b === nb - 1, hwk = hw * grow * r.range(0.86, 1.04), sh = new THREE.Shape(), N = 32;
       for (let i = 0; i < N; i++) { // đa giác ít cạnh, góc ngoài cùng bo theo đầu bệ
-        const a = (i / N) * Math.PI * 2 + r.range(-0.12, 0.12), ca = Math.cos(a), sa = Math.sin(a);
-        const ex = (ca < 0 && endL) || (ca > 0 && endR) ? Math.pow(Math.abs(ca), 0.6) : Math.pow(Math.abs(ca), 0.25);
-        const px = mx + Math.sign(ca) * ex * hx, pz = Math.sign(sa) * Math.pow(Math.abs(sa), 0.45) * hwk, j = r.range(0.88, 1.08);
+        const a = (i / N) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+        const ex = (ca < 0 && endL) || (ca > 0 && endR) ? Math.pow(Math.abs(ca), 0.7) : Math.pow(Math.abs(ca), 0.3);
+        const px = mx + Math.sign(ca) * ex * hx, pz = Math.sign(sa) * Math.pow(Math.abs(sa), 0.5) * hwk, j = 1 + (fbm(ca * 1.3 + seed + b, sa * 1.3 + k, 2) - 0.5) * 0.14; // viền bo tròn mượt
         i ? sh.lineTo(mx + (px - mx) * j, pz * j) : sh.moveTo(mx + (px - mx) * j, pz * j);
       }
       sh.closePath();
-      const bev = Math.min(6, th * 0.2), geo = new THREE.ExtrudeGeometry(sh, { depth: Math.max(4, th - bev * 2), bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 1, curveSegments: 1 });
+      const bev = Math.min(10, th * 0.2), geo = new THREE.ExtrudeGeometry(sh, { depth: Math.max(2, th - bev * 2), bevelEnabled: true, bevelThickness: bev, bevelSize: bev * 0.8, bevelSegments: 2, curveSegments: 1 });
       geo.rotateX(-Math.PI / 2); geo.translate(0, y + bev, 0);
-      geo.rotateZ(r.range(-0.04, 0.04)); geo.rotateX(r.range(-0.04, 0.04));
+      geo.rotateZ(r.range(-0.02, 0.02)); geo.rotateX(r.range(-0.02, 0.02));
       geo.deleteAttribute('uv'); parts.push(geo.toNonIndexed());
     }
     y += th * r.range(0.8, 0.9);
   }
-  const g = mergeGeometries(parts); g.rotateY(-ang); g.translate(cx, -6, cz);
-  { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const X = q.getX(i), Y = q.getY(i), Z = q.getZ(i), d = (fbm(X * 0.012 + seed, Z * 0.012 + Y * 0.02, 2) - 0.5) * 22; q.setXYZ(i, X + d, Y + d * 0.25, Z - d * 0.8); } }
-  g.computeVertexNormals(); // non-indexed → pháp tuyến theo mặt (mặt vát rõ)
+  const g0 = mergeGeometries(parts); g0.rotateY(-ang); g0.translate(cx, -6, cz); g0.deleteAttribute('normal');
+  const g = mergeVertices(g0, 0.6); // hàn đỉnh → pháp tuyến mượt (khối đá bo tròn như tranh vẽ)
+  { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const X = q.getX(i), Y = q.getY(i), Z = q.getZ(i), d = (fbm(X * 0.008 + seed, Z * 0.008 + Y * 0.01, 2) - 0.5) * 12; q.setXYZ(i, X + d, Y, Z - d * 0.8); } }
+  g.computeVertexNormals();
   const p = g.attributes.position, nrm = g.attributes.normal, col = new Float32Array(p.count * 3), c = new THREE.Color();
-  const TOP = new THREE.Color(0x96a2b8), SIDE = new THREE.Color(0x3c4560), DEEP = new THREE.Color(0x141720), MOSSC = new THREE.Color(0x436e38), rf = rngFor(seed * 1000 | 0);
-  for (let f = 0; f < p.count; f += 3) { // màu theo từng mặt tam giác
-    const X = (p.getX(f) + p.getX(f + 1) + p.getX(f + 2)) / 3, Y = (p.getY(f) + p.getY(f + 1) + p.getY(f + 2)) / 3, Z = (p.getZ(f) + p.getZ(f + 1) + p.getZ(f + 2)) / 3;
-    const ny = nrm.getY(f), h01 = Math.max(0, Y / H), v = fbm(X * 0.005 + seed, Z * 0.005, 3), jit = rf.range(0.9, 1.1);
-    if (ny > 0.55) { c.copy(TOP).multiplyScalar((0.8 + v * 0.35 + h01 * 0.15) * jit); if (v > 0.56) c.lerp(MOSSC, Math.min(0.7, (v - 0.56) * 4)); }
-    else if (ny < -0.25) c.copy(DEEP);
-    else c.copy(SIDE).lerp(DEEP, Math.max(0, 0.45 - h01) * 0.9).multiplyScalar((0.8 + v * 0.35) * jit);
-    for (let k = 0; k < 3; k++) col.set([c.r, c.g, c.b], 3 * (f + k));
+  const TOP = new THREE.Color(0x7c859e), SIDE = new THREE.Color(0x58607c), DEEP = new THREE.Color(0x141720), MOSSC = new THREE.Color(0x436e38), rf = null; void rf;
+  for (let i = 0; i < p.count; i++) { // màu theo đỉnh (mượt)
+    const X = p.getX(i), Y = p.getY(i), Z = p.getZ(i), ny = nrm.getY(i), h01 = Math.max(0, Y / H), v = fbm(X * 0.005 + seed, Z * 0.005, 3);
+    c.copy(SIDE).lerp(TOP, Math.max(0, Math.min(1, ny * 0.9 + 0.15 + h01 * 0.25))).multiplyScalar(0.86 + v * 0.28);
+    if (ny < -0.2) c.lerp(DEEP, Math.min(1, -ny * 1.4));
+    c.lerp(DEEP, Math.max(0, 0.35 - h01) * 0.9);
+    if (ny > 0.6 && v > 0.6) c.lerp(MOSSC, Math.min(0.6, (v - 0.6) * 3.5));
+    col.set([c.r, c.g, c.b], 3 * i);
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return g;
@@ -84,22 +85,28 @@ function slabStackGeo(w, H, seed, r) {
 
 let _rf = null;
 const ROCK_FACET = () => (_rf ||= (() => { // đá sắc: mặt vát phẳng + vân hạt/khe nứt chiếu ba mặt theo toạ độ thế giới + tối ở chân
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.04, flatShading: true }), U = { uDet: { value: strataSurface() } };
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.03 }), U = { uDet: { value: strataSurface() } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
-    sh.vertexShader = 'varying vec3 vWp;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    sh.vertexShader = 'varying vec3 vWp, vWn;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vWn = normalize(mat3(modelMatrix) * objectNormal);
       vec4 wq = vec4(transformed, 1.0);
       #ifdef USE_INSTANCING
         wq = instanceMatrix * wq;
       #endif
       vWp = (modelMatrix * wq).xyz;`);
-    sh.fragmentShader = 'uniform sampler2D uDet; varying vec3 vWp;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
-      vec3 fn = normalize(cross(dFdx(vWp), dFdy(vWp))), an = pow(abs(fn), vec3(3.0)); an /= (an.x + an.y + an.z);
-      float d = dot(vec3(texture2D(uDet, vWp.zy / vec2(260.0, 140.0)).r, texture2D(uDet, vWp.xz / 300.0).r, texture2D(uDet, vWp.xy / vec2(260.0, 140.0)).r), an);
-      float fine = dot(vec3(texture2D(uDet, vWp.zy / 70.0).g, texture2D(uDet, vWp.xz / 80.0).g, texture2D(uDet, vWp.xy / 70.0).g), an);
-      diffuseColor.rgb *= (0.62 + 0.62 * d) * (0.88 + 0.24 * fine);                 // vân lớp + hạt mịn
-      diffuseColor.rgb *= mix(0.55, 1.0, smoothstep(0.0, 70.0, vWp.y));               // chân đá tối (che khuất)
-      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.12, 1.12, 1.2), smoothstep(0.75, 0.95, fn.y)); // mặt trên sáng lạnh`);
+    sh.fragmentShader = 'uniform sampler2D uDet; varying vec3 vWp, vWn;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+      // VÂN SỌC LƯỢN kiểu tranh vẽ (Liên Quân): dải sáng/tối chạy ngang theo lớp đá, uốn theo nhiễu; vạch tối mảnh; hạt rất mịn
+      float warp = texture2D(uDet, vWp.xz / 1100.0).r * 70.0 + texture2D(uDet, vWp.xz / 300.0 + 0.3).g * 16.0;
+      float yy = vWp.y + warp, sideK = 1.0 - smoothstep(0.55, 0.9, abs(normalize(vWn).y));  // vân chỉ chạy trên vách
+      float band = sin(yy / 24.0) * 0.5 + 0.5, band2 = sin(yy / 9.0 + warp * 0.04) * 0.5 + 0.5;
+      float line = smoothstep(0.86, 1.0, sin(yy / 17.0 + 1.3) * 0.5 + 0.5);              // vạch tối mảnh
+      float hi = smoothstep(0.9, 1.0, sin(yy / 17.0 + 2.9) * 0.5 + 0.5);                 // gờ sáng ngay trên vạch
+      diffuseColor.rgb *= 1.0 + sideK * (band * 0.22 - 0.11 + band2 * 0.08 - 0.04 - line * 0.32 + hi * 0.14);
+      float spec = texture2D(uDet, vWp.xz / 140.0 + vWp.y / 300.0).b;                    // loang mảng trên mặt đỉnh
+      float spec2 = texture2D(uDet, vWp.xz / 520.0 + 0.6).r;
+      diffuseColor.rgb *= 1.0 + (1.0 - sideK) * ((spec - 0.5) * 0.3 + (spec2 - 0.5) * 0.35);
+      diffuseColor.rgb *= mix(0.55, 1.0, smoothstep(0.0, 70.0, vWp.y));                // chân đá tối`);
   };
   m.customProgramCacheKey = () => 'rock-facet-detail';
   return m;
