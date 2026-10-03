@@ -135,3 +135,13 @@
 - Sàn đường: vết nứt gấp khúc trên một số tấm, góc tấm sứt mẻ, rêu trong mạch và loang ra mép tấm, vết ố ẩm; tông tấm trung tính hơn.
 - Lòng sông: texture cuội tròn nhiều cỡ trên cát bùn (`pebbleSurface`) thay cho phiến đá.
 - Sóng nước: sai phân pháp tuyến bước ~4.6 texel (trước 1 texel trên noise 8-bit gây sọc bậc thang song song), bỏ vệt dòng chảy.
+
+## Đường cỏ toàn map, chỉ lát đá hoa văn đoạn nhà chính → trụ nhà; đá nét hơn
+- "Trụ 1" hiểu là trụ đầu tiên tính từ tế đàn ra (trụ `*_home`). `pavedRange`: mỗi đường chỉ lát từ nhà chính tới quá trụ nhà
+  `PAVE_EXT`=380, sau đó mép lát vỡ lởm chởm theo nhiễu 3 tầng (discard, viền sẫm) trong `PAVE_FADE`=320. Phần còn lại của đường là
+  nền cỏ y như rừng (bản trộn nền chỉ vẽ phần lát, đất mòn + đá vụn mép chỉ ở phần lát); mép vỡ có đất mòn và mảnh đá lát rơi vãi.
+- Texture đoạn lát (`laneTexture`): cẩm thạch xám lam mài nhẵn (MeshStandard nhám 0.48), không nứt/rêu; đĩa hoa văn lớn mỗi chu kỳ
+  (vòng khảm + chuỗi hạt, sao 8 cánh đá sẫm lồng sao xoay, hoa 8 cánh khảm ngà) trong khung thoi viền đôi; thoi nhỏ lồng vòng giữa
+  hai đĩa; viền hai mép: dải đá sẫm có thừng bện (hai sin đan chéo) + hạt thoi, chỉ khảm thẳng, gờ bó vỉa bo tròn.
+- Đá nét hơn: lưới dày hơn (22 × 34), mép rêu sắc lởm chởm, rỗ li ti, gờ cạnh sáng theo độ cong (fwidth pháp tuyến), hạt khoáng lấp
+  lánh, bump chi tiết nhỏ; tương phản màu cao hơn.

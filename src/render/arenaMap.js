@@ -9,7 +9,7 @@ import { buildRockWalls, buildCampSites, campRadius, LAIR_T, rockMaterial, bould
 import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
-import { buildLaneDecor } from './env/laneDecor.js';
+import { buildLaneDecor, pavedPolylines } from './env/laneDecor.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -134,8 +134,9 @@ export function buildArena(scene, map, level = 'mid') {
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
-    const dirt = [...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
-    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes, plazas, dirt, casters, walls,
+    const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
+    const dirt = [...paved.ends.flatMap((e) => [-250, 0, 250].map((o) => ({ x: e.x + e.dx * o, z: e.y + e.dy * o, r: 560, k: 0.6 }))), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
+    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);
     const geo = new THREE.PlaneGeometry(w, d, seg, seg); geo.rotateX(-Math.PI / 2);
@@ -151,12 +152,20 @@ export function buildArena(scene, map, level = 'mid') {
     groundMap = baked; river.setMask?.(baked);
     // đá vụn lác đác dọc mép đường (thay lề đá thẳng tắp)
     const edge = [];
-    for (const ln of lanes) for (let i = 1; i < ln.pts.length; i++) {
+    for (const ln of paved) for (let i = 1; i < ln.pts.length; i++) {
       const a = ln.pts[i - 1], b = ln.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
       for (let t = 0; t < L; t += 90) { if (r.next() < 0.55) continue; const sd = r.next() < 0.5 ? -1 : 1, off = ln.width / 2 + r.range(-10, 70), x = a[0] + (b[0] - a[0]) * t / L + nx * sd * off, z = a[1] + (b[1] - a[1]) * t / L + nz * sd * off;
         if (riverDist(x, z) < rw / 2 + 40) continue; edge.push({ x, y: 2, z, ry: r.range(0, 7), sx: r.range(18, 46), sy: r.range(10, 26), sz: r.range(18, 46), color: r.next() < 0.4 ? 0xb8b0a0 : 0xffffff }); }
     }
     g.add(scatterChunked(boulderGeo(51), rockMat, edge, true));
+    // mảnh đá lát vỡ rơi vãi ở mép cuối phần lát (lát → cỏ)
+    const shards = [];
+    for (const e of paved.ends) for (let i = 0; i < 11; i++) {
+      const along = r.range(-120, 420), side = r.range(-0.5, 0.5) * halfW * 2, x = e.x + e.dx * along - e.dy * side, z = e.y + e.dy * along + e.dx * side, sc = r.range(35, 85);
+      shards.push({ x, y: 1, z, ry: r.range(0, 7), rx: r.range(-0.06, 0.06), rz: r.range(-0.06, 0.06), sx: sc, sy: r.range(5, 9), sz: sc * r.range(0.5, 0.9), color: r.next() < 0.5 ? 0x8a8898 : 0x76768a });
+    }
+    const shardGeo = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1); shardGeo.translate(0, 0.5, 0);
+    g.add(scatterChunked(shardGeo, new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0 }), shards, true));
     g.add(buildLaneDecor(map, baked, structs)); // đường đá mài khắc hoa văn + vòng khắc chân trụ/nhà chính
   }
 

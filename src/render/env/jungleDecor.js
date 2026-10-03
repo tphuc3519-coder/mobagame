@@ -42,7 +42,7 @@ function boulderGeo(seed) {
 function roundRockGeo(w, H, seed) {
   const hw = (w.w ?? 110) / 2, ax = w.x1, az = w.y1, bx = w.x2, bz = w.y2, L = Math.hypot(bx - ax, bz - az) || 1;
   const ang = Math.atan2(bz - az, bx - ax), cx = (ax + bx) / 2, cz = (az + bz) / 2, half = L / 2 + hw * 0.85;
-  const NS = Math.max(18, Math.ceil((half * 2) / 30)), NP = 26, P = [], I = [], p = 3.2, f0 = -0.14;
+  const NS = Math.max(24, Math.ceil((half * 2) / 22)), NP = 34, P = [], I = [], p = 3.2, f0 = -0.14;
   for (let i = 0; i <= NS; i++) {
     const t = (i / NS) * 2 - 1, sv = Math.sin(t * Math.PI / 2), X = sv * half, e = Math.pow(Math.max(0, 1 - Math.pow(Math.abs(sv), p)), 1 / p);
     const lump = 0.66 + 0.62 * fbm(X / 300 + seed * 3.1, seed, 3), Hs = H * Math.pow(e, 0.55) * lump, Ws = hw * e * (0.84 + 0.3 * fbm(X / 260 + seed, seed + 4, 2));
@@ -113,7 +113,7 @@ const ROCK_FACET = () => (_rf ||= (() => {
       float vn1 = abs(rfbm(wp / 210.0 + 7.3) - 0.5), vn2 = abs(rfbm(wp / 60.0 + 1.7) - 0.5);
       float vein = smoothstep(0.012, 0.0, vn1), veinD = smoothstep(0.012, 0.0, vn2) * 0.6;   // gân thạch anh sáng + gân tối mảnh
       float grain = rvn(wp / 2.2) * 0.5 + rvn(wp / 5.5) * 0.5, blot = rfbm(wp / 520.0 + 11.0);
-      vec3 slate = vec3(0.095, 0.108, 0.145), light = vec3(0.22, 0.23, 0.26), warm = vec3(0.21, 0.18, 0.15);
+      vec3 slate = vec3(0.085, 0.097, 0.13), light = vec3(0.23, 0.24, 0.27), warm = vec3(0.21, 0.18, 0.15);
       vec3 rc = mix(slate, light, clamp(bands * 0.7 + bands2 * 0.22 - 0.12 + (blot - 0.5) * 0.5, 0.0, 1.0));
       rc = mix(rc, warm, smoothstep(0.55, 0.8, blot) * 0.45);
       rc *= 0.9 + grain * 0.2;
@@ -124,14 +124,21 @@ const ROCK_FACET = () => (_rf ||= (() => {
       float crk = abs(rfbm(wp / 150.0 + 5.5) - 0.5), crack = smoothstep(0.016, 0.003, crk) * smoothstep(0.42, 0.62, rfbm(wp / 420.0 + 2.0)); // khe nứt sâu từng vùng
       rc *= 1.0 - crack * 0.7;
       float mossN = rfbm(wp / 170.0 + 9.0) * 0.75 + rvn(wp / 16.0) * 0.25;
-      float moss = smoothstep(0.5, 0.9, up) * smoothstep(0.48, 0.6, mossN)                     // rêu trên đỉnh
-                 + smoothstep(45.0, 4.0, wp.y) * smoothstep(0.56, 0.68, mossN) * 0.7;          // rêu ẩm ở chân
+      float mEdge = rvn(wp / 2.0) * 0.06;                                                     // mép rêu lởm chởm, sắc
+      float moss = smoothstep(0.55, 0.85, up) * smoothstep(0.5, 0.53, mossN + mEdge)          // rêu trên đỉnh
+                 + smoothstep(45.0, 4.0, wp.y) * smoothstep(0.58, 0.61, mossN + mEdge) * 0.7; // rêu ẩm ở chân
       moss = clamp(moss, 0.0, 1.0);
       vec3 mossC = mix(vec3(0.035, 0.07, 0.02), vec3(0.10, 0.16, 0.035), rvn(wp / 3.5) * 0.6 + rvn(wp / 11.0) * 0.4);
       rc = mix(rc, mossC, moss * 0.88);
       rc *= 1.0 - smoothstep(0.0, 0.35, -normalize(vWn).y) * 0.25;                          // mặt úp tối
+      float pits = smoothstep(0.62, 0.7, rvn(wp / 3.0)) * (1.0 - moss);                       // rỗ li ti
+      rc *= 1.0 - pits * 0.22;
+      float curv = clamp(length(fwidth(normalize(vWn))) / max(length(fwidth(vWp)), 1e-3) * 60.0, 0.0, 1.0);
+      rc *= 1.0 + curv * 0.22 * (1.0 - moss);                                               // gờ cạnh mòn sáng: khối đá rõ nét
+      float speck = step(0.93, rh3(floor(wp * 0.9))) * (1.0 - moss);                          // hạt khoáng lấp lánh
+      rc += vec3(0.12, 0.12, 0.13) * speck * 0.6;
       diffuseColor.rgb = rc;
-      float rockH = wA * 7.0 + wB * 3.0 + rvn(wp / 6.0) * 0.7 - vein * 1.4 - veinD * 0.8 + sin(yy * 0.17) * 0.6 - crack * 5.0 + moss * rvn(wp / 2.5) * 1.6;`)
+      float rockH = wA * 7.0 + wB * 3.0 + rvn(wp / 6.0) * 0.7 - vein * 1.4 - veinD * 0.8 + sin(yy * 0.17) * 0.6 - crack * 6.0 + moss * rvn(wp / 2.5) * 1.6 - pits * 0.5 + rvn(wp / 1.4) * 0.25;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       roughnessFactor = clamp(0.38 + (grain - 0.5) * 0.25 + (1.0 - bands) * 0.18 + vein * -0.12 + moss * 0.5 + crack * 0.3, 0.25, 0.95);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
