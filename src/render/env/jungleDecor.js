@@ -212,48 +212,79 @@ const BW_PROF = [ // [độ lệch ngang theo nửa bề dày (dương: phía r�
   [1.3, -2], [1.3, 16], [1.08, 20], [1.0, 64], [1.1, 68], [1.1, 82], [0.94, 88], [0.9, 150], [1.0, 155], [1.0, 170], [0.86, 177],
   [-0.86, 177], [-1.0, 170], [-1.0, 155], [-0.9, 150], [-0.94, 88], [-1.1, 82], [-1.1, 68], [-1.0, 64], [-1.08, 20], [-1.3, 16], [-1.3, -2]];
 let _bw = null;
-function baseWallMat() {
-  if (_bw) return _bw;
-  const mk = (joints) => {
-    const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.72, metalness: 0.0 });
+// y chân của từng đoạn mặt cắt (theo BW_PROF) để lấy toạ độ cục bộ trên mặt gờ
+const BW_Y0 = BW_PROF.slice(0, -1).map(([, y]) => y);
+function baseWallMat(hw) {
+  if (_bw) return _bw; const U = { uTW: { value: BW_PROF[10][0] * 2 * hw } };
+  const mk = (carved) => {
+    const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.66, metalness: 0.0 });
     m.onBeforeCompile = (sh) => {
-      sh.vertexShader = 'attribute vec2 wuv; varying vec2 vSt; varying vec3 vWp, vWn;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-        vSt = wuv; vec4 wq = vec4(transformed, 1.0);
+      Object.assign(sh.uniforms, U);
+      sh.vertexShader = 'attribute vec2 wuv; attribute float bwseg; varying vec2 vSt; varying float vSeg; varying vec3 vWp, vWn;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        vSt = wuv; vSeg = bwseg; vec4 wq = vec4(transformed, 1.0);
         #ifdef USE_INSTANCING
           wq = instanceMatrix * wq;
         #endif
         vWp = (modelMatrix * wq).xyz; vWn = normalize(mat3(modelMatrix) * objectNormal);`);
-      sh.fragmentShader = 'varying vec2 vSt; varying vec3 vWp, vWn;\n' + ROCK_GLSL + sh.fragmentShader.replace('#include <map_fragment>', `
+      sh.fragmentShader = `uniform float uTW; varying vec2 vSt; varying float vSeg; varying vec3 vWp, vWn;
+        const float BWY0[${BW_Y0.length}] = float[](${BW_Y0.map((v) => v.toFixed(1)).join(',')});
+        float segL(vec2 p, vec2 a, vec2 b){ vec2 d = b - a; float t = clamp(dot(p - a, d) / dot(d, d), 0.0, 1.0); return length(p - a - d * t); }
+        float keyD(vec2 q){ q.x = mod(q.x, 8.0); float m = 1e9;
+          for (int o = -1; o <= 1; o++) { vec2 p = q - vec2(float(o) * 8.0, 0.0);
+            m = min(m, segL(p, vec2(0.,7.), vec2(0.,1.))); m = min(m, segL(p, vec2(0.,1.), vec2(6.,1.))); m = min(m, segL(p, vec2(6.,1.), vec2(6.,5.)));
+            m = min(m, segL(p, vec2(6.,5.), vec2(2.,5.))); m = min(m, segL(p, vec2(2.,5.), vec2(2.,3.))); m = min(m, segL(p, vec2(2.,3.), vec2(4.,3.))); m = min(m, segL(p, vec2(0.,7.), vec2(8.,7.))); }
+          return m; }
+        ` + ROCK_GLSL + sh.fragmentShader.replace('#include <map_fragment>', `
         vec3 wp = vWp; float up = normalize(vWn).y;
         float n1 = rfbm(wp / 140.0), n2 = rvn(wp / 4.0), n3 = rfbm(wp / 26.0 + 3.0);
-        vec3 c = mix(vec3(0.115, 0.108, 0.14), vec3(0.2, 0.19, 0.235), clamp(n1 * 0.9 + 0.1, 0.0, 1.0));   // đá xám tím (tuyến tính)
-        c *= 0.9 + n2 * 0.12 + (n3 - 0.5) * 0.18;
+        vec3 c = mix(vec3(0.125, 0.115, 0.15), vec3(0.205, 0.195, 0.24), clamp(n1 * 0.9 + 0.1, 0.0, 1.0));   // đá xám tím (tuyến tính)
+        c *= 0.92 + n2 * 0.1 + (n3 - 0.5) * 0.14;
+        float relief = 0.0, line = 0.0, gold = 0.0;                                             // nổi, chỉ khắc tối, khảm vàng
+        ${carved ? `{
+          int sg = int(vSeg + 0.5), j = sg > 10 ? 20 - sg : sg;                                // gờ đối xứng hai mặt
+          float u = vSt.x, t = abs(vSt.y - BWY0[sg]);
+          if (j == 0) { float f = abs(fract(u / 14.0) - 0.5) * 14.0; line = 1.0 - smoothstep(0.8, 2.0, f); relief = smoothstep(0.0, 4.0, f); }   // chân: rãnh dọc
+          else if (j == 2) { float bu = fract(u / 110.0 + floor(t / 22.0) * 0.5) * 110.0, bv = mod(t, 22.0), e = min(min(bu, 110.0 - bu), min(bv, 22.0 - bv));
+            relief = smoothstep(0.0, 5.0, e); line = 1.0 - smoothstep(0.5, 1.6, e); }                // khối xây vát cạnh
+          else if (j == 4) { float f = fract((u + t * 1.3) / 8.0); relief = sin(f * 3.14159); line = 1.0 - smoothstep(0.0, 0.12, min(f, 1.0 - f)); }   // dây thừng
+          else if (j == 6) { float pu = mod(u, 150.0), tv = t;                                    // ô phù điêu: trụ áp + khung + thoi khảm vàng
+            if (pu < 18.0) { relief = 1.0; line = 1.0 - smoothstep(0.6, 1.6, min(pu, 18.0 - pu)); }
+            else { float fx = min(pu - 18.0, 150.0 - pu), fy = min(tv, 62.0 - tv), fr = min(fx, fy);
+              relief = 0.35 + 0.25 * smoothstep(6.0, 9.0, fr); line = max(1.0 - smoothstep(0.5, 1.4, abs(fr - 6.0)), 1.0 - smoothstep(0.5, 1.4, abs(fr - 10.0)));
+              vec2 q = vec2(pu - 84.0, tv - 31.0); float rh = abs(q.x) / 40.0 + abs(q.y) / 20.0;
+              gold = 1.0 - smoothstep(0.03, 0.07, abs(rh - 1.0)); float cd = length(q); gold = max(gold, 1.0 - smoothstep(4.5, 5.5, cd)); line = max(line, 1.0 - smoothstep(0.5, 1.4, abs(cd - 9.0)));
+              if (rh < 1.0) relief += 0.25; } }
+          else if (j == 7) { float f = mod(u, 11.0); relief = step(3.0, f); line = 1.0 - smoothstep(0.0, 1.0, min(f, 3.0 - f)) * step(f, 3.0); }   // răng cưa đỡ mũ
+          else if (j == 8) { float k = keyD(vec2(u / 1.9, (t - 0.0) / 1.9)); gold = 1.0 - smoothstep(0.42, 0.62, k); relief = 0.5 + gold * 0.3; }     // hoa văn 回 vàng
+          else if (j == 10) { float e = min(t, uTW - t); gold = 1.0 - smoothstep(1.2, 2.0, abs(e - 12.0));                         // mặt đỉnh: chỉ vàng hai mép
+            vec2 q = vec2(mod(u, 90.0) - 45.0, t - uTW * 0.5); float rh = abs(q.x) / 34.0 + abs(q.y) / (uTW * 0.5 - 24.0);       // + chuỗi thoi khắc giữa
+            line = max(1.0 - smoothstep(0.03, 0.06, abs(rh - 1.0)), (1.0 - smoothstep(0.6, 1.5, abs(mod(u, 90.0)))) * step(e, 20.0));
+            relief = rh < 1.0 ? 0.7 : 0.5; gold = max(gold, 1.0 - smoothstep(3.0, 4.0, length(q))); }
+        }` : `{ float f = abs(fract(wp.y / 30.0) - 0.5) * 30.0; line = (1.0 - smoothstep(0.6, 1.6, f)) * (1.0 - smoothstep(0.5, 0.75, up)); relief = smoothstep(0.0, 4.0, f); }`}
         c *= 1.0 + smoothstep(0.6, 0.95, up) * 0.45;                                          // mặt ngửa sáng
-        c *= mix(0.8, 1.0, smoothstep(20.0, 170.0, wp.y));                                     // thấp tối dần
-        float jl = 0.0;
-        ${joints ? `{ float row = floor(vSt.y / 44.0), u = vSt.x / 150.0 + row * 0.5, fu = fract(u), fv = fract(vSt.y / 44.0);
-          float dU = min(fu, 1.0 - fu) * 150.0, dV = min(fv, 1.0 - fv) * 44.0;
-          jl = (1.0 - smoothstep(0.6, 1.8, dU)) * (1.0 - smoothstep(0.5, 0.75, up)) + (1.0 - smoothstep(0.5, 1.4, dV)) * (1.0 - smoothstep(0.5, 0.75, up));
-          c *= 1.0 + (smoothstep(1.8, 5.0, min(dU, dV)) - 1.0) * 0.12; }` : ''}
-        c *= 1.0 - clamp(jl, 0.0, 1.0) * 0.55;                                                 // mạch vữa
+        c *= mix(0.82, 1.0, smoothstep(20.0, 170.0, wp.y));
+        c *= 0.86 + relief * 0.18; c *= 1.0 - line * 0.55;
+        c = mix(c, vec3(0.6, 0.4, 0.13) * (0.85 + n2 * 0.3), gold);                             // vàng khảm
         c *= mix(0.55, 1.0, smoothstep(-2.0, 40.0, wp.y));                                      // chân tường tối
         diffuseColor.rgb = c;
-        float stH = n3 * 2.0 + n2 * 0.5 - jl * 1.5;`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        float stH = n3 * 1.2 + n2 * 0.3 + relief * 2.2 - line * 1.4 + gold * 0.4;`).replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+        metalnessFactor = mix(metalnessFactor, 0.85, gold); roughnessFactor = mix(roughnessFactor, 0.3, gold);`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         { vec3 sX = dFdx(-vViewPosition), sY = dFdy(-vViewPosition), R1 = cross(sY, normal), R2 = cross(normal, sX); float det = dot(sX, R1);
           vec2 dB = vec2(dFdx(stH), dFdy(stH)); normal = normalize(abs(det) * normal - sign(det) * (dB.x * R1 + dB.y * R2)); }`);
     };
-    m.customProgramCacheKey = () => 'basewall' + joints;
+    m.customProgramCacheKey = () => 'basewall2' + carved;
     return m;
   };
-  return (_bw = { wall: mk(true), plain: mk(false) });
+  return (_bw = { wall: mk(true), plain: mk(false), gold: new THREE.MeshStandardMaterial({ color: 0xb8823a, metalness: 0.75, roughness: 0.38 }) });
 }
-/** Cột vuông (đơn vị: nửa bề dày tường hw = 1): đế, thân, đai, mũ, chóp tháp bốn mặt. Có thuộc tính wuv (= 0) cho vật liệu. */
+/** Cột vuông: phần đá (đế, thân, mũ) + phần vàng (hai đai, viền mũ, chóp tháp, hai vòng nhỏ). Có thuộc tính wuv/bwseg (= 0). */
 function pillarGeo(hw) {
-  const parts = [[2.1, 30, 15], [1.6, 236, 148], [1.78, 16, 120], [1.78, 16, 214], [1.95, 22, 271]].map(([w, h, y]) => { const b = new THREE.BoxGeometry(w * hw, h, w * hw); b.translate(0, y, 0); return b; });
-  const tip = new THREE.CylinderGeometry(0.15 * hw, 1.05 * hw, 60, 4, 1); tip.rotateY(Math.PI / 4); tip.translate(0, 312, 0); parts.push(tip.toNonIndexed());
-  const g = mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; }));
-  g.setAttribute('wuv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
-  return g;
+  const box = (w, h, y) => { const b = new THREE.BoxGeometry(w * hw, h, w * hw); b.translate(0, y, 0); return b; };
+  const fin = (parts) => { const g = mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; })); const n = g.attributes.position.count;
+    g.setAttribute('wuv', new THREE.Float32BufferAttribute(new Float32Array(n * 2), 2)); g.setAttribute('bwseg', new THREE.Float32BufferAttribute(new Float32Array(n), 1)); return g; };
+  const tip = new THREE.CylinderGeometry(0.12 * hw, 1.0 * hw, 66, 4, 1); tip.rotateY(Math.PI / 4); tip.translate(0, 315, 0);
+  const knob = new THREE.SphereGeometry(0.2 * hw, 10, 8); knob.translate(0, 352, 0);
+  return { stone: fin([box(2.1, 30, 15), box(1.6, 236, 148), box(1.95, 22, 271), tip]), gold: fin([box(1.66, 8, 34), box(1.66, 8, 120), box(1.66, 8, 214), box(1.99, 4, 259), box(1.99, 4, 283), knob]) };
 }
 function buildBaseWalls(map) {
   const g = new THREE.Group(), groups = new Map();
@@ -263,21 +294,21 @@ function buildBaseWalls(map) {
     if (!groups.has(key)) groups.set(key, { side, segs: [] }); groups.get(key).segs.push(w);
   }
   if (!groups.size) return g;
-  const coreB = map.structures.find((s) => s.kind === 'core'), mats = baseWallMat(), geos = [], pillars = [[], []], spikes = [], gems = [[], []], inlay = [[], []];
   const hw = [...groups.values()][0].segs[0].w / 2, r = rngFor(77);
+  const coreB = map.structures.find((s) => s.kind === 'core'), mats = baseWallMat(hw), geos = [], pillars = [[], []], spikes = [], gems = [[], []], inlay = [[], []];
   for (const { side, segs } of groups.values()) {
     const core = side ? map.mirror(coreB.x, coreB.y) : coreB;
     const pts = [[segs[0].x1, segs[0].y1], ...segs.map((w) => [w.x2, w.y2])];
     const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z))), L = curve.getLength(), N = Math.max(8, Math.ceil(L / 36)), fr = curve.getSpacedPoints(N);
     const F = fr.map((p, i) => { const q = fr[Math.min(N, i + 1)], o = fr[Math.max(0, i - 1)]; let tx = q.x - o.x, tz = q.z - o.z; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l; let nx = -tz, nz = tx; if ((p.x - core.x) * nx + (p.z - core.y) * nz < 0) { nx = -nx; nz = -nz; } return { x: p.x, z: p.z, nx, nz, tx, tz, s: (i * L) / N }; });
     // thân tường: mỗi đoạn mặt cắt là một dải riêng (đỉnh không dùng chung → cạnh gờ sắc)
-    const P = [], UV = [], I = [];
+    const P = [], UV = [], I = [], SG = [];
     for (let j = 0; j + 1 < BW_PROF.length; j++) {
       const b0 = P.length / 3, [d0, y0] = BW_PROF[j], [d1, y1] = BW_PROF[j + 1], vlen = Math.hypot((d1 - d0) * hw, y1 - y0);
-      for (const f of F) { P.push(f.x + f.nx * d0 * hw, y0, f.z + f.nz * d0 * hw, f.x + f.nx * d1 * hw, y1, f.z + f.nz * d1 * hw); UV.push(f.s, y0, f.s, y0 + (Math.abs(y1 - y0) > 1 ? y1 - y0 : vlen)); }
+      for (const f of F) { P.push(f.x + f.nx * d0 * hw, y0, f.z + f.nz * d0 * hw, f.x + f.nx * d1 * hw, y1, f.z + f.nz * d1 * hw); UV.push(f.s, y0, f.s, y0 + (Math.abs(y1 - y0) > 1 ? y1 - y0 : vlen)); SG.push(j, j); }
       for (let i = 0; i < N; i++) { const a = b0 + i * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('wuv', new THREE.Float32BufferAttribute(UV, 2)); geo.setIndex(I); geo.computeVertexNormals();
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('wuv', new THREE.Float32BufferAttribute(UV, 2)); geo.setAttribute('bwseg', new THREE.Float32BufferAttribute(SG, 1)); geo.setIndex(I); geo.computeVertexNormals();
     const topV = (Math.floor(BW_PROF.length / 2) - 1) * (N + 1) * 2 + N; // một đỉnh trên mặt đỉnh
     if (geo.attributes.normal.getY(topV) < 0) { const ix = geo.index.array; for (let k = 0; k < ix.length; k += 3) { const t = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = t; } geo.computeVertexNormals(); }
     geos.push(geo);
@@ -289,7 +320,7 @@ function buildBaseWalls(map) {
       spikes.push({ x: f.x + f.nx * o + f.tx * r.range(-12, 12), z: f.z + f.nz * o + f.tz * r.range(-12, 12), h, w: r.range(22, 32), ax: [f.tx, 0, f.tz], ang: lean * sd, spin: r.range(0, 1.6) });
     }
     // dải khảm phát sáng trong rãnh gờ đai (hai mặt) + gờ mũ (mặt ngoài)
-    for (const [d, y0, y1] of [[1.105, 70, 79], [-1.105, 70, 79], [1.005, 158, 165]]) {
+    for (const [d, y0, y1] of [[1.106, 73.6, 76.4], [-1.106, 73.6, 76.4]]) {
       const q = [], qi = [];
       F.forEach((f) => q.push(f.x + f.nx * d * hw, y0, f.z + f.nz * d * hw, f.x + f.nx * d * hw, y1, f.z + f.nz * d * hw));
       for (let i = 0; i < N; i++) { const a = i * 2; qi.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
@@ -300,7 +331,7 @@ function buildBaseWalls(map) {
   const pg = pillarGeo(hw), d = new THREE.Object3D();
   for (const side of [0, 1]) {
     const tc = new THREE.Color(side ? 0xff4a36 : 0x3ab0ff);
-    if (pillars[side].length) { const pm = scatter(new THREE.InstancedMesh(pg, mats.plain, pillars[side].length), pillars[side], false); pm.castShadow = pm.receiveShadow = true; g.add(pm); }
+    if (pillars[side].length) for (const [geo, mat] of [[pg.stone, mats.plain], [pg.gold, mats.gold]]) { const pm = scatter(new THREE.InstancedMesh(geo, mat, pillars[side].length), pillars[side], false); pm.castShadow = pm.receiveShadow = true; g.add(pm); }
     if (inlay[side].length) g.add(new THREE.Mesh(mergeGeometries(inlay[side]), new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.5), side: THREE.DoubleSide })));
     // ngọc màu đội trên mặt cột hướng ra rừng (cả hai mặt) + quầng sáng
     const gemGeo = new THREE.OctahedronGeometry(1, 0), gm = new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.7) }), hm = new THREE.SpriteMaterial({ map: glowTex(), color: tc, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 });

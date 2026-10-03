@@ -163,3 +163,15 @@
   mặt ngửa sáng, chân tối. Dải khảm phát sáng màu đội (xanh/đỏ) trong rãnh gờ đai hai mặt + gờ mũ mặt ngoài.
 - Cột vuông lớn ở hai đầu và giữa mỗi cung (đế, thân, đai, mũ, chóp tháp), ngọc màu đội + vạch sáng dọc thân + quầng sáng.
 - Hàng gai đá chĩa ra phía rừng dọc chân tường. Va chạm (sim) giữ nguyên các đoạn `baseWall` dày 260.
+
+## Sàn lát chạm khắc kiểu Liên Quân + chuyển tiếp lát → cỏ + tường thành chạm hoa văn
+- Sàn đường (`laneTexture`) và sân nhà chính (`corePlazaTexture`) cùng ngôn ngữ chạm khắc: đá xám tím ấm; rãnh cung vắt ngang
+  (rãnh sâu + chỉ vàng + hai cặp chỉ khắc + chuỗi hạt vàng), dải sáng/tối xen kẽ, đĩa hoa văn (vạch chia độ, sao 8 cánh viền vàng),
+  hoa bốn cánh, khung thoi chỉ đôi lồng thoi + hoa nhỏ; viền mép là dải hoa văn chữ 回 giữa hai chỉ vàng + bó vỉa. Sân nhà chính:
+  viền 回 vòng tròn, vành cánh sen, vành chia độ, vành xoáy, sao 12 cánh, đĩa tâm vàng.
+- Độ phủ lát theo quãng đường (`ramp`): kín từ nhà chính tới ~700 trước trụ nhà → quanh trụ lẫn ít cỏ → sau đó cỏ là chính, còn lác
+  đác phiến lát vỡ (ô 150, chọn theo hash + nhiễu, mép mòn sẫm). Dải lát giờ chạy suốt đường (shader bỏ phần cỏ).
+- Lá phong đỏ/cam rụng thành đám trên sân lát (phối màu kiểu Liên Quân).
+- Tường thành: vật liệu chạm theo từng tầng mặt cắt (`bwseg`): chân rãnh dọc, khối xây vát cạnh, gờ đai dây thừng, ô phù điêu (trụ áp,
+  khung chỉ đôi, thoi khảm vàng + nhuỵ), răng cưa đỡ mũ, gờ mũ hoa văn 回 vàng, mặt đỉnh chỉ vàng hai mép + chuỗi thoi; vàng khảm có
+  metalness. Cột: thân đá + đai/viền mũ/núm vàng.
