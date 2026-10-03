@@ -45,6 +45,10 @@ function shadeLayer(o, N, sx, sz, br) {
     g.fillStyle = `rgba(0,0,0,${ca.k ?? 0.55})`; g.beginPath(); g.ellipse(ca.x + ox, ca.z + oz, ca.r * 1.05, ca.r * 0.85, Math.atan2(oz, ox), 0, Math.PI * 2); g.fill();
     g.fillStyle = `rgba(0,0,0,${(ca.k ?? 0.55) * 0.45})`; g.beginPath(); g.arc(ca.x, ca.z, ca.r * 0.6, 0, Math.PI * 2); g.fill();
   }
+  for (const poly of o.aoPolys || []) { // quầng tối mềm quanh chân phiến đá nền (phiến như lún trong đất)
+    g.beginPath(); poly.forEach(([x, z], i) => (i ? g.lineTo(x, z) : g.moveTo(x, z))); g.closePath();
+    g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 130; g.stroke(); g.fillStyle = 'rgba(0,0,0,0.45)'; g.fill();
+  }
   for (const w of o.walls || []) {
     const ox = SUN.x * w.h * 0.6, oz = SUN.z * w.h * 0.6; g.lineCap = 'round';
     g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = w.w + 40; g.beginPath(); g.moveTo(w.x1 + ox * 0.5, w.z1 + oz * 0.5); g.lineTo(w.x2 + ox * 0.5, w.z2 + oz * 0.5); g.stroke();

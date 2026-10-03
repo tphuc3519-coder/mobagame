@@ -135,9 +135,10 @@ export function buildArena(scene, map, level = 'mid') {
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
+    const floor = buildBaseFloor(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60 });
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
     const dirt = [...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
-    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,
+    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls, aoPolys: floor.userData.footprints,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);
     const geo = new THREE.PlaneGeometry(w, d, seg, seg); geo.rotateX(-Math.PI / 2);
@@ -160,7 +161,7 @@ export function buildArena(scene, map, level = 'mid') {
       const red = put(Math.round(2200 * dens), (x, z) => onPave(x, z) && fbm(x / 420 + 7, z / 420) > 0.47, (x, y, z) => ({ x, y: 1.3 + r.range(0, 0.4), z, ry: r.range(0, 7), rx: r.range(-0.12, 0.12), sx: r.range(9, 16), sy: 1, sz: r.range(9, 16), color: pal[r.int(pal.length)] }));
       g.add(scatterChunked(lg, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), red, true));
     }
-    g.add(buildBaseFloor(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60, dens })); // nền sân nhà: phiến đá nổi khối, xoáy lưỡi đá quanh trụ
+    g.add(floor); // nền sân nhà: phiến đá thấp chìm trong cỏ, xoáy nét cọ quanh trụ
   }
 
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)

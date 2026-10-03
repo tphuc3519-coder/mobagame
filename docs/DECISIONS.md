@@ -183,3 +183,12 @@
   còn mảnh phiến vỡ lởm chởm lác đác giữa cỏ; quanh chân MỌI trụ: đĩa đế + 7 lưỡi đá xoáy (có sống lưỡi nổi). Phe Xanh ánh lam, Đỏ ánh ấm.
 - Vật liệu: đá xám tím, hạt + loang, thành/cạnh vát tối (khối rõ từ trên nhìn xuống), rêu bám thành phiến, bump.
 - Bỏ dải lát texture, vòng sân nhà chính phẳng, đá vụn + mảnh lát mép đường, vệt đất dọc đường trong sân nhà (ground `laneDirt: false`).
+
+## Nền sân nhà mềm, có chiều sâu (theo ảnh Liên Quân): nét đá quét cọ chìm trong cỏ
+- `baseFloor.js` viết lại: phiến/nét đá THẤP (chân lún dưới đất), vát rộng; tương phản thấp, tông lam xám (Xanh) / xám ấm (Đỏ);
+  mép và sườn phiến trộn chính texture cỏ của nền (cùng tỉ lệ, cùng loang) theo độ cao + nhiễu → tan dần vào cỏ, rêu cỏ bò lên sườn;
+  ám nhẹ màu cỏ cho hài hoà. Mặt cao/gân sáng hơn sườn.
+- Quầng tối mềm (AO) quanh chân mọi phiến: footprints từ baseFloor → `aoPolys` của bản trộn nền (vẽ đặc + viền rộng rồi làm mờ).
+- Hoa văn: quanh chân mọi trụ là xoáy 9 NÉT CỌ dài (thon hai đầu, gân nổi giữa) như ảnh trụ phe Xanh; sân nhà chính: đài tròn + 10 nét
+  xoáy, ba bậc thềm cong lớn (chỉ sáng màu đội ở bậc giữa), 14 nét cọ bao ngoài; đường trong sân nhà: phiến cong lớn khe hẹp, thưa dần
+  quanh trụ nhà, sau đó mảnh vỡ lác đác.
