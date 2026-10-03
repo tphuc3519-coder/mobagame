@@ -9,7 +9,8 @@ import { buildRockWalls, buildCampSites, campRadius, LAIR_T, rockMaterial, bould
 import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/foliage.js';
 import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
-import { buildLaneDecor, pavedPolylines } from './env/laneDecor.js';
+import { pavedPolylines } from './env/laneDecor.js';
+import { buildBaseFloor } from './env/baseFloor.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -135,8 +136,8 @@ export function buildArena(scene, map, level = 'mid') {
     ];
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
-    const dirt = [...paved.ends.flatMap((e) => [-250, 0, 250].map((o) => ({ x: e.x + e.dx * o, z: e.y + e.dy * o, r: 560, k: 0.6 }))), ...structs.map((q) => ({ x: q.x, z: q.y, r: q.kind === 'core' ? 1100 : 430, k: 0.85 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
-    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, plazas, dirt, casters, walls,
+    const dirt = [...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
+    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);
     const geo = new THREE.PlaneGeometry(w, d, seg, seg); geo.rotateX(-Math.PI / 2);
@@ -150,22 +151,6 @@ export function buildArena(scene, map, level = 'mid') {
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
     const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
     groundMap = baked; river.setMask?.(baked);
-    // đá vụn lác đác dọc mép đường (thay lề đá thẳng tắp)
-    const edge = [];
-    for (const ln of paved) for (let i = 1; i < ln.pts.length; i++) {
-      const a = ln.pts[i - 1], b = ln.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
-      for (let t = 0; t < L; t += 90) { if (r.next() < 0.55) continue; const sd = r.next() < 0.5 ? -1 : 1, off = ln.width / 2 + r.range(-10, 70), x = a[0] + (b[0] - a[0]) * t / L + nx * sd * off, z = a[1] + (b[1] - a[1]) * t / L + nz * sd * off;
-        if (riverDist(x, z) < rw / 2 + 40) continue; edge.push({ x, y: 2, z, ry: r.range(0, 7), sx: r.range(18, 46), sy: r.range(10, 26), sz: r.range(18, 46), color: r.next() < 0.4 ? 0xb8b0a0 : 0xffffff }); }
-    }
-    g.add(scatterChunked(boulderGeo(51), rockMat, edge, true));
-    // mảnh đá lát vỡ rơi vãi ở mép cuối phần lát (lát → cỏ)
-    const shards = [];
-    for (const e of paved.ends) for (let i = 0; i < 11; i++) {
-      const along = r.range(-120, 420), side = r.range(-0.5, 0.5) * halfW * 2, x = e.x + e.dx * along - e.dy * side, z = e.y + e.dy * along + e.dx * side, sc = r.range(35, 85);
-      shards.push({ x, y: 1, z, ry: r.range(0, 7), rx: r.range(-0.06, 0.06), rz: r.range(-0.06, 0.06), sx: sc, sy: r.range(5, 9), sz: sc * r.range(0.5, 0.9), color: r.next() < 0.5 ? 0x8a8898 : 0x76768a });
-    }
-    const shardGeo = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1); shardGeo.translate(0, 0.5, 0);
-    g.add(scatterChunked(shardGeo, new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0 }), shards, true));
     // lá phong đỏ/cam rụng trên sân lát (phối màu kiểu Liên Quân), dồn thành đám theo nhiễu
     {
       const cores = structs.filter((q) => q.kind === 'core'), pd = (x, z) => Math.min(...paved.map((ln) => { let m = Infinity; for (let i = 1; i < ln.pts.length; i++) { const [ax, az] = ln.pts[i - 1], [bx, bz] = ln.pts[i], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); m = Math.min(m, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return m - ln.width / 2; }));
@@ -175,7 +160,7 @@ export function buildArena(scene, map, level = 'mid') {
       const red = put(Math.round(2200 * dens), (x, z) => onPave(x, z) && fbm(x / 420 + 7, z / 420) > 0.47, (x, y, z) => ({ x, y: 1.3 + r.range(0, 0.4), z, ry: r.range(0, 7), rx: r.range(-0.12, 0.12), sx: r.range(9, 16), sy: 1, sz: r.range(9, 16), color: pal[r.int(pal.length)] }));
       g.add(scatterChunked(lg, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), red, true));
     }
-    g.add(buildLaneDecor(map, baked, structs)); // đường đá mài khắc hoa văn + vòng khắc chân trụ/nhà chính
+    g.add(buildBaseFloor(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60, dens })); // nền sân nhà: phiến đá nổi khối, xoáy lưỡi đá quanh trụ
   }
 
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)

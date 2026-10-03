@@ -23,7 +23,7 @@ export function bakeGroundMap(o) {
   const disc = (g, x, z, r, color) => { g.fillStyle = color; g.beginPath(); g.arc(x, z, r, 0, Math.PI * 2); g.fill(); };
   const R = layer((g) => { for (const l of o.lanes) stroke(g, l.pts, l.width, '#fff'); for (const p of o.plazas) disc(g, p.x, p.z, p.r, '#fff'); }, 1.5);
   const G = layer((g) => {
-    for (const l of o.lanes) stroke(g, l.pts, l.width + 340, '#fff');
+    if (o.laneDirt !== false) for (const l of o.lanes) stroke(g, l.pts, l.width + 340, '#fff');
     for (const p of o.plazas) disc(g, p.x, p.z, p.r + 220, '#fff');
     for (const d of o.dirt || []) disc(g, d.x, d.z, d.r, `rgba(255,255,255,${d.k ?? 0.8})`);
   }, 10);

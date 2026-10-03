@@ -175,3 +175,11 @@
 - Tường thành: vật liệu chạm theo từng tầng mặt cắt (`bwseg`): chân rãnh dọc, khối xây vát cạnh, gờ đai dây thừng, ô phù điêu (trụ áp,
   khung chỉ đôi, thoi khảm vàng + nhuỵ), răng cưa đỡ mũ, gờ mũ hoa văn 回 vàng, mặt đỉnh chỉ vàng hai mép + chuỗi thoi; vàng khảm có
   metalness. Cột: thân đá + đai/viền mũ/núm vàng.
+
+## Nền sân nhà dựng lại bằng PHIẾN ĐÁ NỔI KHỐI 3D (thay texture lát kẻ chỉ)
+- Theo ảnh Liên Quân: nền trong sân nhà là các phiến đá nổi (vát cạnh rộng, hai tầng: phiến + mặt nổi thụt vào), khe giữa là cỏ/lá.
+- `env/baseFloor.js`: quanh nhà chính: đài tròn + 12 lưỡi xoáy + 5 hàng phiến cong đồng tâm chia khúc (chỉ sáng màu đội giữa 2 hàng);
+  đường trong sân nhà: hàng phiến cong vắt ngang (cong ngược chiều xen kẽ) + gờ viền lượn hai mép; quanh trụ nhà thưa dần, sau trụ chỉ
+  còn mảnh phiến vỡ lởm chởm lác đác giữa cỏ; quanh chân MỌI trụ: đĩa đế + 7 lưỡi đá xoáy (có sống lưỡi nổi). Phe Xanh ánh lam, Đỏ ánh ấm.
+- Vật liệu: đá xám tím, hạt + loang, thành/cạnh vát tối (khối rõ từ trên nhìn xuống), rêu bám thành phiến, bump.
+- Bỏ dải lát texture, vòng sân nhà chính phẳng, đá vụn + mảnh lát mép đường, vệt đất dọc đường trong sân nhà (ground `laneDirt: false`).

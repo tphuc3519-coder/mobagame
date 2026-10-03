@@ -202,7 +202,7 @@ export function buildRockWalls(map, dens = 1) {
   if (pebbles.length) g.add(scatter(new THREE.InstancedMesh(boulderGeo(33), mat, pebbles.length), pebbles, true));
   return g;
 }
-export { ROCK_FACET as rockMaterial, boulderGeo };
+export { ROCK_FACET as rockMaterial, boulderGeo, ROCK_GLSL };
 
 /** Tường thành lãnh địa nhà (kiểu Liên Quân): mỗi cung tường giữa hai trụ nhà là một bức tường ĐÁ XÂY CHẠM KHẮC chạy cong theo cung —
  *  mặt cắt nhiều tầng (đế chân loe, thân hơi vát, gờ đai, tầng trên thụt vào, gờ mũ, mặt đỉnh phẳng), xây từng khối so le (mạch đứng +
