@@ -204,9 +204,57 @@ export function buildRockWalls(map, dens = 1) {
 }
 export { ROCK_FACET as rockMaterial, boulderGeo };
 
-/** Bệ nhà (lãnh địa): mỗi cung tường giữa hai trụ nhà dựng thành MỘT khối đá điêu khắc liền mạch kiểu Liên Quân — thân cong thon
- *  hai đầu, mặt cắt vát (đỉnh hẹp, chân loe), đầu bệ cuộn vểnh lên như sóng; gờ đá sáng chạy dọc sống lưng; dải khảm phát sáng màu đội
- *  (xanh: phe Xanh, đỏ: phe Đỏ) chạy dọc thân; quầng tối dưới chân. */
+/** Tường thành lãnh địa nhà (kiểu Liên Quân): mỗi cung tường giữa hai trụ nhà là một bức tường ĐÁ XÂY CHẠM KHẮC chạy cong theo cung —
+ *  mặt cắt nhiều tầng (đế chân loe, thân hơi vát, gờ đai, tầng trên thụt vào, gờ mũ, mặt đỉnh phẳng), xây từng khối so le (mạch đứng +
+ *  mạch ngang), đá xám tím nhạt, mặt ngửa sáng; dải khảm phát sáng màu đội (xanh / đỏ) chạy trong rãnh gờ đai; hai đầu và giữa cung là
+ *  CỘT VUÔNG lớn (đế, thân, đai, mũ, chóp) gắn viên ngọc màu đội ở mặt hướng ra rừng; chân phía rừng cắm hàng GAI ĐÁ chĩa ra ngoài. */
+const BW_PROF = [ // [độ lệch ngang theo nửa bề dày (dương: phía rừng), độ cao]
+  [1.3, -2], [1.3, 16], [1.08, 20], [1.0, 64], [1.1, 68], [1.1, 82], [0.94, 88], [0.9, 150], [1.0, 155], [1.0, 170], [0.86, 177],
+  [-0.86, 177], [-1.0, 170], [-1.0, 155], [-0.9, 150], [-0.94, 88], [-1.1, 82], [-1.1, 68], [-1.0, 64], [-1.08, 20], [-1.3, 16], [-1.3, -2]];
+let _bw = null;
+function baseWallMat() {
+  if (_bw) return _bw;
+  const mk = (joints) => {
+    const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.72, metalness: 0.0 });
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = 'attribute vec2 wuv; varying vec2 vSt; varying vec3 vWp, vWn;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        vSt = wuv; vec4 wq = vec4(transformed, 1.0);
+        #ifdef USE_INSTANCING
+          wq = instanceMatrix * wq;
+        #endif
+        vWp = (modelMatrix * wq).xyz; vWn = normalize(mat3(modelMatrix) * objectNormal);`);
+      sh.fragmentShader = 'varying vec2 vSt; varying vec3 vWp, vWn;\n' + ROCK_GLSL + sh.fragmentShader.replace('#include <map_fragment>', `
+        vec3 wp = vWp; float up = normalize(vWn).y;
+        float n1 = rfbm(wp / 140.0), n2 = rvn(wp / 4.0), n3 = rfbm(wp / 26.0 + 3.0);
+        vec3 c = mix(vec3(0.115, 0.108, 0.14), vec3(0.2, 0.19, 0.235), clamp(n1 * 0.9 + 0.1, 0.0, 1.0));   // đá xám tím (tuyến tính)
+        c *= 0.9 + n2 * 0.12 + (n3 - 0.5) * 0.18;
+        c *= 1.0 + smoothstep(0.6, 0.95, up) * 0.45;                                          // mặt ngửa sáng
+        c *= mix(0.8, 1.0, smoothstep(20.0, 170.0, wp.y));                                     // thấp tối dần
+        float jl = 0.0;
+        ${joints ? `{ float row = floor(vSt.y / 44.0), u = vSt.x / 150.0 + row * 0.5, fu = fract(u), fv = fract(vSt.y / 44.0);
+          float dU = min(fu, 1.0 - fu) * 150.0, dV = min(fv, 1.0 - fv) * 44.0;
+          jl = (1.0 - smoothstep(0.6, 1.8, dU)) * (1.0 - smoothstep(0.5, 0.75, up)) + (1.0 - smoothstep(0.5, 1.4, dV)) * (1.0 - smoothstep(0.5, 0.75, up));
+          c *= 1.0 + (smoothstep(1.8, 5.0, min(dU, dV)) - 1.0) * 0.12; }` : ''}
+        c *= 1.0 - clamp(jl, 0.0, 1.0) * 0.55;                                                 // mạch vữa
+        c *= mix(0.55, 1.0, smoothstep(-2.0, 40.0, wp.y));                                      // chân tường tối
+        diffuseColor.rgb = c;
+        float stH = n3 * 2.0 + n2 * 0.5 - jl * 1.5;`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 sX = dFdx(-vViewPosition), sY = dFdy(-vViewPosition), R1 = cross(sY, normal), R2 = cross(normal, sX); float det = dot(sX, R1);
+          vec2 dB = vec2(dFdx(stH), dFdy(stH)); normal = normalize(abs(det) * normal - sign(det) * (dB.x * R1 + dB.y * R2)); }`);
+    };
+    m.customProgramCacheKey = () => 'basewall' + joints;
+    return m;
+  };
+  return (_bw = { wall: mk(true), plain: mk(false) });
+}
+/** Cột vuông (đơn vị: nửa bề dày tường hw = 1): đế, thân, đai, mũ, chóp tháp bốn mặt. Có thuộc tính wuv (= 0) cho vật liệu. */
+function pillarGeo(hw) {
+  const parts = [[2.1, 30, 15], [1.6, 236, 148], [1.78, 16, 120], [1.78, 16, 214], [1.95, 22, 271]].map(([w, h, y]) => { const b = new THREE.BoxGeometry(w * hw, h, w * hw); b.translate(0, y, 0); return b; });
+  const tip = new THREE.CylinderGeometry(0.15 * hw, 1.05 * hw, 60, 4, 1); tip.rotateY(Math.PI / 4); tip.translate(0, 312, 0); parts.push(tip.toNonIndexed());
+  const g = mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; }));
+  g.setAttribute('wuv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+  return g;
+}
 function buildBaseWalls(map) {
   const g = new THREE.Group(), groups = new Map();
   for (const w of map.walls.segs) {
@@ -214,41 +262,59 @@ function buildBaseWalls(map) {
     const side = (w.x1 + w.x2) / 2 < (w.y1 + w.y2) / 2 ? 0 : 1, key = side + ':' + w.baseWall; // phe Xanh ở nửa dưới-trái (y > x)
     if (!groups.has(key)) groups.set(key, { side, segs: [] }); groups.get(key).segs.push(w);
   }
-  const stone = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.05 });
+  if (!groups.size) return g;
+  const coreB = map.structures.find((s) => s.kind === 'core'), mats = baseWallMat(), geos = [], pillars = [[], []], spikes = [], gems = [[], []], inlay = [[], []];
+  const hw = [...groups.values()][0].segs[0].w / 2, r = rngFor(77);
   for (const { side, segs } of groups.values()) {
+    const core = side ? map.mirror(coreB.x, coreB.y) : coreB;
     const pts = [[segs[0].x1, segs[0].y1], ...segs.map((w) => [w.x2, w.y2])];
-    const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z))), N = 80, RAD = 10, W = segs[0].w;
-    const frames = curve.getSpacedPoints(N), P = [], C = [], I = [], col = new THREE.Color();
-    const prof = (t) => Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, t * 1.04 - 0.02))), 0.45);   // thon hai đầu
-    for (let i = 0; i <= N; i++) {
-      const t = i / N, p = frames[i], q = frames[Math.min(N, i + 1)], o = frames[Math.max(0, i - 1)], dx = q.x - o.x, dz = q.z - o.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l, nz = dx / l;
-      const k = prof(t), hw = W * 0.55 * (0.35 + 0.65 * k), Ht = 240 * k + 30 + (t < 0.12 || t > 0.88 ? 120 * Math.pow(1 - Math.min(t, 1 - t) / 0.12, 2) * k : 0); // đầu bệ vểnh
-      for (let j = 0; j <= RAD; j++) { // mặt cắt: chân loe → vai → đỉnh hẹp bo tròn (nửa trên elip vát)
-        const a = (j / RAD) * Math.PI, ca = Math.cos(a), sa = Math.sin(a), w2 = hw * (0.55 + 0.45 * (1 - sa)) * Math.sign(ca) * Math.pow(Math.abs(ca), 0.7);
-        P.push(p.x + nx * w2, Ht * Math.pow(sa, 0.8) - 4, p.z + nz * w2);
-        const top = sa > 0.86, base = 0.42 + 0.5 * sa;
-        col.setRGB(0.42 * base + (top ? 0.22 : 0), 0.46 * base + (top ? 0.24 : 0), 0.58 * base + (top ? 0.26 : 0), THREE.SRGBColorSpace).multiplyScalar(0.62); // xám lam, sống lưng sáng
-        C.push(col.r, col.g, col.b);
-      }
+    const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z))), L = curve.getLength(), N = Math.max(8, Math.ceil(L / 36)), fr = curve.getSpacedPoints(N);
+    const F = fr.map((p, i) => { const q = fr[Math.min(N, i + 1)], o = fr[Math.max(0, i - 1)]; let tx = q.x - o.x, tz = q.z - o.z; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l; let nx = -tz, nz = tx; if ((p.x - core.x) * nx + (p.z - core.y) * nz < 0) { nx = -nx; nz = -nz; } return { x: p.x, z: p.z, nx, nz, tx, tz, s: (i * L) / N }; });
+    // thân tường: mỗi đoạn mặt cắt là một dải riêng (đỉnh không dùng chung → cạnh gờ sắc)
+    const P = [], UV = [], I = [];
+    for (let j = 0; j + 1 < BW_PROF.length; j++) {
+      const b0 = P.length / 3, [d0, y0] = BW_PROF[j], [d1, y1] = BW_PROF[j + 1], vlen = Math.hypot((d1 - d0) * hw, y1 - y0);
+      for (const f of F) { P.push(f.x + f.nx * d0 * hw, y0, f.z + f.nz * d0 * hw, f.x + f.nx * d1 * hw, y1, f.z + f.nz * d1 * hw); UV.push(f.s, y0, f.s, y0 + (Math.abs(y1 - y0) > 1 ? y1 - y0 : vlen)); }
+      for (let i = 0; i < N; i++) { const a = b0 + i * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     }
-    for (let i = 0; i < N; i++) for (let j = 0; j < RAD; j++) { const a = i * (RAD + 1) + j, b = a + RAD + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); geo.setIndex(I); geo.computeVertexNormals();
-    if (geo.attributes.normal.getY(Math.floor(RAD / 2)) < 0) { geo.setIndex(I.map((_, k) => I[k - (k % 3) + [0, 2, 1][k % 3]])); geo.computeVertexNormals(); }
-    void geo; const br = rngFor(segs.length * 31 + side * 7), sg = segs.map((w, i) => roundRockGeo({ ...w, w: W * 0.95 }, 200, 50 + i * 2.1 + side)); void br;
-    const m = new THREE.Mesh(mergeGeometries(sg), ROCK_FACET()); m.castShadow = true; m.receiveShadow = true; g.add(m);
-    // dải khảm phát sáng màu đội chạy dọc hai bên thân
-    const glowC = new THREE.Color(side ? 0xff5a3a : 0x4ab8ff).multiplyScalar(1.6);
-    for (const sd of [-1, 1]) {
-      const gp = [];
-      for (let i = 4; i <= N - 4; i++) { const t = i / N, p = frames[i], q = frames[Math.min(N, i + 1)], o = frames[i - 1], dx = q.x - o.x, dz = q.z - o.z, l = Math.hypot(dx, dz) || 1, k = prof(t), hw = W * 0.5;
-        gp.push(new THREE.Vector3(p.x - dz / l * hw * sd, 70, p.z + dx / l * hw * sd)); }
-      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 60, 4, 5, false), new THREE.MeshBasicMaterial({ color: glowC })));
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('wuv', new THREE.Float32BufferAttribute(UV, 2)); geo.setIndex(I); geo.computeVertexNormals();
+    const topV = (Math.floor(BW_PROF.length / 2) - 1) * (N + 1) * 2 + N; // một đỉnh trên mặt đỉnh
+    if (geo.attributes.normal.getY(topV) < 0) { const ix = geo.index.array; for (let k = 0; k < ix.length; k += 3) { const t = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = t; } geo.computeVertexNormals(); }
+    geos.push(geo);
+    // cột: hai đầu + giữa cung
+    for (const f of [F[0], F[Math.round(N / 2)], F[N]]) { pillars[side].push({ x: f.x, y: 0, z: f.z, ry: -Math.atan2(f.tz, f.tx), sx: 1 }); gems[side].push(f); }
+    // gai đá chân phía rừng
+    for (let s = 90; s < L - 90; s += r.range(70, 110)) {
+      const f = F[Math.round((s / L) * N)], o = hw * 1.3 + r.range(14, 40), h = r.range(80, 130), lean = r.range(0.3, 0.55), sd = Math.sign(f.nx * -f.tz + f.nz * f.tx) || 1;
+      spikes.push({ x: f.x + f.nx * o + f.tx * r.range(-12, 12), z: f.z + f.nz * o + f.tz * r.range(-12, 12), h, w: r.range(22, 32), ax: [f.tx, 0, f.tz], ang: lean * sd, spin: r.range(0, 1.6) });
     }
-    // quầng sáng màu đội mờ dưới chân
-    const halo = []; for (let i = 0; i <= N; i += 2) { const p = frames[i]; halo.push(p); }
-    const hg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(halo.map((p) => new THREE.Vector3(p.x, 3, p.z))), 60, W * 0.7, 6, false); hg.scale(1, 0.02, 1);
-    g.add(new THREE.Mesh(hg, new THREE.MeshBasicMaterial({ color: glowC.clone().multiplyScalar(0.35), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })));
+    // dải khảm phát sáng trong rãnh gờ đai (hai mặt) + gờ mũ (mặt ngoài)
+    for (const [d, y0, y1] of [[1.105, 70, 79], [-1.105, 70, 79], [1.005, 158, 165]]) {
+      const q = [], qi = [];
+      F.forEach((f) => q.push(f.x + f.nx * d * hw, y0, f.z + f.nz * d * hw, f.x + f.nx * d * hw, y1, f.z + f.nz * d * hw));
+      for (let i = 0; i < N; i++) { const a = i * 2; qi.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+      const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(q, 3)); lg.setIndex(qi); inlay[side].push(lg);
+    }
   }
+  const wall = new THREE.Mesh(mergeGeometries(geos), mats.wall); wall.castShadow = wall.receiveShadow = true; g.add(wall);
+  const pg = pillarGeo(hw), d = new THREE.Object3D();
+  for (const side of [0, 1]) {
+    const tc = new THREE.Color(side ? 0xff4a36 : 0x3ab0ff);
+    if (pillars[side].length) { const pm = scatter(new THREE.InstancedMesh(pg, mats.plain, pillars[side].length), pillars[side], false); pm.castShadow = pm.receiveShadow = true; g.add(pm); }
+    if (inlay[side].length) g.add(new THREE.Mesh(mergeGeometries(inlay[side]), new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.5), side: THREE.DoubleSide })));
+    // ngọc màu đội trên mặt cột hướng ra rừng (cả hai mặt) + quầng sáng
+    const gemGeo = new THREE.OctahedronGeometry(1, 0), gm = new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.7) }), hm = new THREE.SpriteMaterial({ map: glowTex(), color: tc, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 });
+    for (const f of gems[side]) for (const sd of [1, -1]) {
+      const m = new THREE.Mesh(gemGeo, gm), o = hw * 0.8 + 6; m.position.set(f.x + f.nx * o * sd, 175, f.z + f.nz * o * sd); m.scale.set(24, 38, 14); m.rotation.y = -Math.atan2(f.tz, f.tx); g.add(m);
+      const h = new THREE.Sprite(hm); h.position.copy(m.position); h.position.x += f.nx * 8 * sd; h.position.z += f.nz * 8 * sd; h.scale.setScalar(150); g.add(h);
+      const line = new THREE.Mesh(new THREE.BoxGeometry(7, 120, 7), gm); line.position.set(f.x + f.nx * o * sd, 90, f.z + f.nz * o * sd); g.add(line); // vạch sáng dọc thân cột
+    }
+  }
+  // gai đá
+  const sg = new THREE.ConeGeometry(1, 1, 4, 1); sg.translate(0, 0.5, 0);
+  const sm = new THREE.InstancedMesh(sg, new THREE.MeshStandardMaterial({ color: 0x8e8a9c, roughness: 0.5, flatShading: true }), spikes.length), q = new THREE.Quaternion(), q2 = new THREE.Quaternion(), mtx = new THREE.Matrix4();
+  spikes.forEach((s, i) => { q.setFromAxisAngle(new THREE.Vector3(...s.ax), s.ang); q2.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.spin); q.multiply(q2); mtx.compose(new THREE.Vector3(s.x, -6, s.z), q, new THREE.Vector3(s.w, s.h, s.w)); sm.setMatrixAt(i, mtx); });
+  sm.castShadow = sm.receiveShadow = true; g.add(sm); void d;
   return g;
 }
 

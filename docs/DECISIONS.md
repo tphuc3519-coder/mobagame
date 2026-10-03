@@ -155,3 +155,11 @@
 - Icon (`src/hud/itemArt.js`): vẽ canvas 256², không dùng ảnh ngoài: vật thể có khối (kim loại chuyển sắc hai mặt vát, viền sáng,
   bóng đổ), hiệu ứng theo chất món (lửa, băng, sét, máu, gió, sao, sương), nền toả sáng theo màu chủ đề, bloom + hạt nhiễu; khung
   vuông bo góc theo bậc (đồng: thành phần, bạc: giày bậc 2, vàng chạm góc: đồ hoàn chỉnh). Xem toàn bộ ở tools/items.html.
+
+## Tường thành lãnh địa nhà kiểu Liên Quân (thay bệ đá tự nhiên quanh nhà chính)
+- `buildBaseWalls`: mỗi cung tường giữa hai trụ nhà là tường đá xây chạm khắc chạy cong theo cung, mặt cắt nhiều tầng (`BW_PROF`:
+  đế loe, thân hơi vát, gờ đai, tầng trên thụt vào, gờ mũ, mặt đỉnh phẳng); mỗi đoạn mặt cắt là dải riêng nên cạnh gờ sắc.
+- Vật liệu `baseWallMat`: đá xám tím, khối xây so le (mạch đứng 150, mạch ngang 44 theo toạ độ dọc cung `wuv`), mạch vữa lõm (bump),
+  mặt ngửa sáng, chân tối. Dải khảm phát sáng màu đội (xanh/đỏ) trong rãnh gờ đai hai mặt + gờ mũ mặt ngoài.
+- Cột vuông lớn ở hai đầu và giữa mỗi cung (đế, thân, đai, mũ, chóp tháp), ngọc màu đội + vạch sáng dọc thân + quầng sáng.
+- Hàng gai đá chĩa ra phía rừng dọc chân tường. Va chạm (sim) giữ nguyên các đoạn `baseWall` dày 260.
