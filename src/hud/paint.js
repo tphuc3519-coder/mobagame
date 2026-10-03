@@ -408,3 +408,5 @@ export const paintedFist = () => img(paint('fist', (x, r) => { // găng sắt đ
   for (let i = 0; i < 4; i++) { const y = -27 + i * 15.5; x.stroke(T(`M28 ${y}v8`)); } x.restore();
   sparks(x, r, 14, [70, 10, 124, 90], ['#ffe2a0', '#ffffff']);
 }, '#f0d8b0'));
+// dụng cụ vẽ dùng chung cho icon trang bị (itemArt.js)
+export { mk, layer, lin, rad, tp, ribbon, linePts, arcPts, rays, streaks, sparks, swirl, solid, shine, bloom, glow, grain, lantern, TAU, K, S, col };

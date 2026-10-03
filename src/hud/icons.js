@@ -1,5 +1,6 @@
 // Biểu tượng tự vẽ (SVG đơn giản) cho đồ và phép bổ trợ — không dùng hình của game khác (docs/01 §5).
 import { ITEMS } from '../data/items.js';
+import { itemArtURL } from './itemArt.js';
 
 const G = {
   sword: 'M17 2l5 5-10 10-3-1-1-3zM5 14l5 5-3 3-5-5z', star: 'M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z',
@@ -19,6 +20,8 @@ const svg = (path, fill = '#fff') => `<svg viewBox="0 0 24 24" aria-hidden="true
 export function itemIcon(id) {
   const it = ITEMS[id];
   if (!it) return '<i class="ic empty"></i>';
+  const url = itemArtURL(id, it.tier); // ảnh vẽ tay riêng từng món
+  if (url) return `<i class="ic pimg"><img src="${url}" alt="" draggable="false"></i>`;
   const key = Object.keys(it.stats || {})[0];
   const glyph = it.tags?.includes('boots') ? 'boot' : it.tags?.some((t) => t === 'jungle' || t === 'support') ? 'leaf' : STAT_GLYPH[key] || 'gem';
   const c = TAB_COLOR[it.tab] || '#777';
@@ -36,7 +39,8 @@ export const homeIcon = () => `<i class="ic round" style="background:linear-grad
 export const coinIcon = () => '<svg class="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#f2c25a" stroke="#8a5a12" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#8a5a12" stroke-width="2"/></svg>';
 
 const STAT_LABEL = { atk: ['Công', ''], ap: ['Phép', ''], maxHp: ['HP', ''], maxMana: ['Mana', ''], armor: ['Giáp', ''], mr: ['KP', ''], atkSpeedPct: ['Tốc đánh', '%'], crit: ['Chí mạng', '%'],
-  lifesteal: ['Hút máu', '%'], spellvamp: ['Hút máu phép', '%'], cdr: ['Giảm hồi chiêu', '%'], mrPen: ['Xuyên KP', ''], moveSpeed: ['Tốc chạy', ''], tenacity: ['Kháng hiệu ứng', '%'] };
+  lifesteal: ['Hút máu', '%'], spellvamp: ['Hút máu phép', '%'], cdr: ['Giảm hồi chiêu', '%'], mrPen: ['Xuyên KP', ''], moveSpeed: ['Tốc chạy', ''], tenacity: ['Kháng hiệu ứng', '%'],
+  regenHp: ['Hồi máu/giây', ''], moveSpeedPct: ['Tốc chạy', '%'], armorPenFlat: ['Xuyên giáp', ''] };
 /** Danh sách chỉ số dạng chữ. */
 export function statLines(it) {
   return Object.entries(it.stats || {}).map(([k, v]) => {

@@ -145,3 +145,13 @@
   hai đĩa; viền hai mép: dải đá sẫm có thừng bện (hai sin đan chéo) + hạt thoi, chỉ khảm thẳng, gờ bó vỉa bo tròn.
 - Đá nét hơn: lưới dày hơn (22 × 34), mép rêu sắc lởm chởm, rỗ li ti, gờ cạnh sáng theo độ cong (fwidth pháp tuyến), hạt khoáng lấp
   lánh, bump chi tiết nhỏ; tương phản màu cao hơn.
+
+## Thêm 15 trang bị + icon vẽ tay riêng từng món (53 món)
+- Mới: thành phần Chuông Đồng (giảm hồi chiêu + mana), Vòng Bạc (hồi máu/giây); Giày Lữ Hành (tốc chạy 80 + hồi máu);
+  Kiếm Bão Táp (đòn thứ 3 phóng sét +80 phép), Cung Băng Lam (đòn đánh làm chậm 15%), Vuốt Hổ (xuyên giáp phẳng + tốc chạy %),
+  Rìu Bạo Quân (dưới 50% HP +25% tốc đánh); Trượng Hoả Thần (kỹ năng thiêu 1% HP tối đa/giây × 2s), Quyền Trượng Tinh Tú,
+  Vương Miện Nguyệt Quang, Đèn Hồn Lam; Giáp Vảy Rồng, Khiên Mặt Trời (thiêu địch trong 300 mỗi giây), Áo Choàng Bóng Đêm,
+  Mũ Chiến Thần. Nội tại mới ở sim/items.js, có kiểm thử trong t_items.
+- Icon (`src/hud/itemArt.js`): vẽ canvas 256², không dùng ảnh ngoài: vật thể có khối (kim loại chuyển sắc hai mặt vát, viền sáng,
+  bóng đổ), hiệu ứng theo chất món (lửa, băng, sét, máu, gió, sao, sương), nền toả sáng theo màu chủ đề, bloom + hạt nhiễu; khung
+  vuông bo góc theo bậc (đồng: thành phần, bạc: giày bậc 2, vàng chạm góc: đồ hoàn chỉnh). Xem toàn bộ ở tools/items.html.
