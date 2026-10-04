@@ -373,13 +373,11 @@ function strataMat() {
   return (_strata = m);
 }
 
-/** Tường biên (đóng khung mép ngoài hai đường cánh): cùng kiến trúc với tường thành lãnh địa — tường đá xây chạm khắc nhiều tầng gờ
- *  (mặt cắt BW_PROF, vật liệu chạm theo tầng), dải khảm phát sáng trong rãnh gờ đai (màu đội theo nửa bản đồ: Xanh dưới-trái, Đỏ
- *  trên-phải), cột vuông có đai/núm vàng + ngọc màu đội đặt đều (mỗi ~1400) và ở mọi đầu/khớp gãy để che mối nối. Các đoạn biên được
- *  nối thành đường liền (khớp góc mềm theo cung), gãy góc > 50° thì tách thành đoạn riêng. */
+/** Tường biên (đóng khung mép ngoài hai đường cánh) kiểu Liên Quân: KHÔNG phải tường xây — hai lớp gờ đá bo tròn lượn mềm (lớp trên lùi
+ *  ra phía ngoài), nhấp nhô, thon hai đầu; đá xám lam loang dịu, rêu ở chân, vài viên ngọc màu đội. Các đoạn biên được nối thành đường liền. */
 function buildBorderWall(map) {
   const segs = map.walls.segs.filter((w) => w.border); if (!segs.length) return new THREE.Group();
-  const g = new THREE.Group(), hw = segs[0].w / 2, mats = baseWallMat(hw), TOL = 3;
+  const g = new THREE.Group(), hw = segs[0].w / 2, TOL = 3;
   // —— nối đoạn thành đường liền ——
   const items = segs.map((w) => ({ a: [w.x1, w.y1], b: [w.x2, w.y2], used: false }));
   const near = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < TOL;
@@ -404,57 +402,46 @@ function buildBorderWall(map) {
     }
     chains.push(pts);
   }
-  // —— dựng thân tường + dải khảm + cột ——
-  const geos = [], inlay = [[], []], pillars = [[], []], gems = [[], []], sideOf = (x, z) => (z > x ? 0 : 1);
-  for (const pts of chains) {
-    const n = pts.length, cum = [0]; for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    const F = pts.map((p, i) => { // khung tại đỉnh: pháp tuyến góc (miter) để bề dày không đổi ở khớp
-      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], t0 = i ? [p[0] - a[0], p[1] - a[1]] : [b[0] - p[0], b[1] - p[1]], t1 = i < n - 1 ? [b[0] - p[0], b[1] - p[1]] : t0;
-      const l0 = Math.hypot(...t0) || 1, l1 = Math.hypot(...t1) || 1, tx = t0[0] / l0 + t1[0] / l1, tz = t0[1] / l0 + t1[1] / l1, lt = Math.hypot(tx, tz) || 1;
-      const nx = -tz / lt, nz = tx / lt, k = 1 / Math.max(0.5, (nx * -t0[1] + nz * t0[0]) / l0);
-      return { x: p[0], z: p[1], nx: nx * k, nz: nz * k, tx: tx / lt, tz: tz / lt, s: cum[i] };
-    });
-    const P = [], UV = [], I = [], SG = [];
-    for (let j = 0; j + 1 < BW_PROF.length; j++) {
-      const b0 = P.length / 3, [d0, y0] = BW_PROF[j], [d1, y1] = BW_PROF[j + 1], vlen = Math.hypot((d1 - d0) * hw, y1 - y0);
-      for (const f of F) { P.push(f.x + f.nx * d0 * hw, y0, f.z + f.nz * d0 * hw, f.x + f.nx * d1 * hw, y1, f.z + f.nz * d1 * hw); UV.push(f.s, y0, f.s, y0 + (Math.abs(y1 - y0) > 1 ? y1 - y0 : vlen)); SG.push(j, j); }
-      for (let i = 0; i < n - 1; i++) { const a = b0 + i * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-    }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('wuv', new THREE.Float32BufferAttribute(UV, 2)); geo.setAttribute('bwseg', new THREE.Float32BufferAttribute(SG, 1)); geo.setIndex(I); geo.computeVertexNormals();
-    const topV = (Math.floor(BW_PROF.length / 2) - 1) * n * 2 + 1;
-    if (geo.attributes.normal.getY(topV) < 0) { const ix = geo.index.array; for (let k = 0; k < ix.length; k += 3) { const t = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = t; } geo.computeVertexNormals(); }
-    geos.push(geo);
-    // dải khảm: chia theo nửa bản đồ (màu đội), hai mặt tường
-    for (let i = 0; i < n - 1; i++) {
-      const f0 = F[i], f1 = F[i + 1], L = f1.s - f0.s, m = Math.max(1, Math.ceil(L / 400));
-      for (let k = 0; k < m; k++) {
-        const t0 = k / m, t1 = (k + 1) / m, x0 = f0.x + (f1.x - f0.x) * t0, z0 = f0.z + (f1.z - f0.z) * t0, x1 = f0.x + (f1.x - f0.x) * t1, z1 = f0.z + (f1.z - f0.z) * t1;
-        const nx0 = f0.nx + (f1.nx - f0.nx) * t0, nz0 = f0.nz + (f1.nz - f0.nz) * t0, nx1 = f0.nx + (f1.nx - f0.nx) * t1, nz1 = f0.nz + (f1.nz - f0.nz) * t1, sd = sideOf((x0 + x1) / 2, (z0 + z1) / 2);
-        for (const d of [1.106, -1.106]) inlay[sd].push([x0 + nx0 * d * hw, z0 + nz0 * d * hw, x1 + nx1 * d * hw, z1 + nz1 * d * hw]);
+  // —— dải đá lượn mềm (kiểu Liên Quân): hai lớp gờ đá bo tròn, lớp trên lùi ra phía ngoài sân; cao thấp nhấp nhô theo chiều dài,
+  //    hai đầu thon xuống đất; vài viên ngọc màu đội gắn trên sống lớp trên ——
+  const geos = [], gems = [[], []], sideOf = (x, z) => (z > x ? 0 : 1), rr = rngFor(313);
+  const bandGeo = (F, total, off, hw2, H, ph) => {
+    const RAD = 14, P = [], C = [], I = [];
+    F.forEach((f) => {
+      const t = f.s / total, endK = Math.min(1, f.s / 380, (total - f.s) / 380), ok = 0.3 + 0.7 * Math.pow(Math.max(0, endK), 0.6); // đầu dải thấp xuống nhưng không dẹt hẳn (tránh tam giác suy biến → pháp tuyến NaN)
+      const h = H * ok * (0.85 + 0.15 * Math.sin(f.s / 520 + ph) + 0.06 * Math.sin(f.s / 170 + ph * 2)), w = hw2 * (0.75 + 0.25 * ok) * (0.95 + 0.05 * Math.sin(f.s / 330 + ph)); void t;
+      for (let j = 0; j <= RAD; j++) {
+        const a = (j / RAD) * Math.PI, ca = Math.cos(a), sa = Math.sin(a), lump = 1 + (fbm(f.s / 140 + ph * 3, j * 0.35 + ph, 3) - 0.5) * 0.5 * sa;  // gồ ghề tự nhiên
+        const x = Math.sign(ca) * Math.pow(Math.abs(ca), 0.6) * w * (1 + (lump - 1) * 0.6), y = Math.pow(sa, 0.8) * h * lump - 6;
+        P.push(f.x + f.nx * (off + x), y, f.z + f.nz * (off + x));
+        const ao = 0.5 + 0.5 * Math.min(1, Math.max(0, y + 6) / (h * 0.6)); C.push(ao, ao, ao);
       }
-    }
-    // cột: hai đầu + đều mỗi ~1400
-    const total = cum[n - 1], cnt = Math.max(1, Math.round(total / 1400));
-    for (let k = 0; k <= cnt; k++) {
-      const s = (k / cnt) * total; let i = 1; while (i < n - 1 && cum[i] < s) i++;
-      const t = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1), x = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, z = pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t;
-      const tx = pts[i][0] - pts[i - 1][0], tz = pts[i][1] - pts[i - 1][1], l = Math.hypot(tx, tz) || 1, sd = sideOf(x, z);
-      pillars[sd].push({ x, y: 0, z, ry: -Math.atan2(tz, tx), sx: 1 }); gems[sd].push({ x, z, nx: -tz / l, nz: tx / l, tx: tx / l, tz: tz / l });
-    }
+    });
+    for (let i = 0; i + 1 < F.length; i++) for (let j = 0; j < RAD; j++) { const a = i * (RAD + 1) + j, b = a + RAD + 1; I.push(a, b, a + 1, a + 1, b, b + 1); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); geo.setIndex(I); geo.computeVertexNormals();
+    if (geo.attributes.normal.getY(Math.floor(RAD / 2)) < 0) { const ix = geo.index.array; for (let k = 0; k < ix.length; k += 3) { const q = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = q; } geo.computeVertexNormals(); }
+    return geo;
+  };
+  for (const pts of chains) {
+    // lấy mẫu đều mỗi 40 đơn vị
+    const n0 = pts.length, cum = [0]; for (let i = 1; i < n0; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const total = cum[n0 - 1], N = Math.max(4, Math.ceil(total / 40)), at = (s) => { let i = 1; while (i < n0 - 1 && cum[i] < s) i++; const t = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; };
+    const S = Array.from({ length: N + 1 }, (_, i) => at((i / N) * total));
+    const F = S.map((p, i) => { const a = S[Math.max(0, i - 2)], b = S[Math.min(N, i + 2)], tx = b[0] - a[0], tz = b[1] - a[1], l = Math.hypot(tx, tz) || 1; return { x: p[0], z: p[1], nx: -tz / l, nz: tx / l, s: (i / N) * total }; });
+    // hướng ra ngoài sân (phía không chơi được)
+    const mid = F[N >> 1], outSign = map.outOfBounds?.(mid.x + mid.nx * 260, mid.z + mid.nz * 260, 0) ? 1 : -1;
+    F.forEach((f) => { f.nx *= outSign; f.nz *= outSign; });
+    const ph = rr.range(0, 6.3);
+    geos.push(bandGeo(F, total, -20, hw * 1.2, 55, ph), bandGeo(F, total, hw * 0.4, hw * 0.85, 125, ph + 1.7));
+    for (let s = 700; s < total - 500; s += 1700) { const f = F[Math.round((s / total) * N)]; gems[sideOf(f.x, f.z)].push(f); }
   }
-  const wall = new THREE.Mesh(mergeGeometries(geos), mats.wall); wall.castShadow = wall.receiveShadow = true; g.add(wall);
-  const pg = pillarGeo(hw), gemGeo = new THREE.OctahedronGeometry(1, 0);
+  const mat = ROCK_FACET(); // cùng chất đá với bệ đá rừng (vân lớp, rêu, khe nứt)
+  const wall = new THREE.Mesh(mergeGeometries(geos), mat); wall.castShadow = wall.receiveShadow = true; g.add(wall);
+  const gemGeo = new THREE.OctahedronGeometry(1, 0);
   for (const sd of [0, 1]) {
-    const tc = new THREE.Color(sd ? 0xff4a36 : 0x3ab0ff);
-    if (pillars[sd].length) for (const [geo, mat] of [[pg.stone, mats.plain], [pg.gold, mats.gold]]) { const pm = scatter(new THREE.InstancedMesh(geo, mat, pillars[sd].length), pillars[sd], false); pm.castShadow = pm.receiveShadow = true; g.add(pm); }
-    if (inlay[sd].length) { const q = [], qi = []; inlay[sd].forEach(([x0, z0, x1, z1], k) => { q.push(x0, 73.6, z0, x0, 76.4, z0, x1, 73.6, z1, x1, 76.4, z1); const a = k * 4; qi.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); });
-      const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(q, 3)); lg.setIndex(qi); g.add(new THREE.Mesh(lg, new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.5), side: THREE.DoubleSide }))); }
-    const gm = new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.7) }), hm = new THREE.SpriteMaterial({ map: glowTex(), color: tc, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 });
-    for (const f of gems[sd]) for (const s2 of [1, -1]) {
-      const o = hw * 0.8 + 6, m = new THREE.Mesh(gemGeo, gm); m.position.set(f.x + f.nx * o * s2, 175, f.z + f.nz * o * s2); m.scale.set(24, 38, 14); m.rotation.y = -Math.atan2(f.tz, f.tx); g.add(m);
-      const h = new THREE.Sprite(hm); h.position.copy(m.position); h.position.x += f.nx * 8 * s2; h.position.z += f.nz * 8 * s2; h.scale.setScalar(140); g.add(h);
-      const line = new THREE.Mesh(new THREE.BoxGeometry(7, 120, 7), gm); line.position.set(f.x + f.nx * o * s2, 90, f.z + f.nz * o * s2); g.add(line);
-    }
+    const tc = new THREE.Color(sd ? 0xff5a3a : 0x4ab8ff), gm = new THREE.MeshBasicMaterial({ color: tc.clone().multiplyScalar(1.5) }), hm = new THREE.SpriteMaterial({ map: glowTex(), color: tc, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.6 });
+    for (const f of gems[sd]) { const x = f.x + f.nx * hw * 0.45, z = f.z + f.nz * hw * 0.45, m = new THREE.Mesh(gemGeo, gm); m.position.set(x, 150, z); m.scale.set(16, 26, 16); g.add(m);
+      const h = new THREE.Sprite(hm); h.position.set(x, 150, z); h.scale.setScalar(110); g.add(h); }
   }
   return g;
 }

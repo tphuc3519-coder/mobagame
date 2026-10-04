@@ -238,3 +238,9 @@
   màu nền.
 - Theo góp ý "ngay trụ 1 không cần đá, chỉ cần bệ tường ngang": sân đá dọc đường dừng ~760 trước trụ nhà (thon dần), bỏ phiến cong quanh
   trụ nhà và nét đá dọc mép đường phía sau. Thêm viền chỉ khắc đôi theo mép sân đá (quanh nhà chính + hai mép sân đá dọc đường).
+
+## Tường biên rìa map: bỏ tường xây, thay bằng gờ đá tự nhiên lượn mềm
+- Người chơi chê tường xây chạm khắc ở rìa. `buildBorderWall` giờ là hai lớp gờ đá bo tròn gồ ghề (lớp trên cao hơn, lùi ra phía ngoài sân,
+  phía ngoài xác định bằng `outOfBounds`), nhấp nhô theo chiều dài, đầu dải thấp xuống; dùng chung vật liệu đá rừng `ROCK_FACET`
+  (vân lớp, rêu, khe nứt), màu đỉnh làm che khuất; vài viên ngọc màu đội nhỏ trên sống gờ.
+- Lỗi đã gặp: đầu dải dẹt hẳn (h=0) → tam giác suy biến → pháp tuyến NaN → hậu kỳ lan NaN làm cả khung hình trống. Giữ đầu dải ≥ 30% cao.
