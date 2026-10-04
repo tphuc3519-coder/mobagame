@@ -229,3 +229,12 @@
   bóng đổ/AO lên cỏ nhẹ; rãnh khắc mờ.
 - Bỏ toàn bộ xoáy cánh phiến dưới chân trụ; bỏ vòng đất mòn dưới chân trụ (bản trộn nền). Sân đá dọc đường trong sân nhà thon dần
   ở đầu cuối (không cắt vuông).
+
+## Tường biên rìa map làm lại; cỏ trả về màu cũ; quanh trụ 1 không lát đá
+- `buildBorderWall`: bỏ dãy hộp đá ốp rêu. Các đoạn biên được nối thành đường liền (khớp miter, gãy > 50° tách đoạn), dựng cùng kiến trúc
+  tường thành lãnh địa: mặt cắt nhiều tầng `BW_PROF` + vật liệu chạm theo tầng (thoi, thừng, răng cưa, hoa văn 回, chỉ vàng), dải khảm
+  sáng trong gờ đai theo nửa bản đồ (Xanh dưới-trái, Đỏ trên-phải), cột vuông đai/núm vàng + ngọc màu đội mỗi ~1400 và ở mọi đầu/khớp.
+- Cỏ: bỏ phần chuyển cỏ sân nhà sang xanh lam (người chơi thích cỏ xanh trước đó); mép cỏ/đá gọn hơn (giảm ngọn cỏ lấn mép), đá bớt ám
+  màu nền.
+- Theo góp ý "ngay trụ 1 không cần đá, chỉ cần bệ tường ngang": sân đá dọc đường dừng ~760 trước trụ nhà (thon dần), bỏ phiến cong quanh
+  trụ nhà và nét đá dọc mép đường phía sau. Thêm viền chỉ khắc đôi theo mép sân đá (quanh nhà chính + hai mép sân đá dọc đường).

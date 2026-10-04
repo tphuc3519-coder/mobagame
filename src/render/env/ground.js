@@ -113,18 +113,16 @@ export function groundMaterial(baked, pattern = null) {
         float shade = smoothstep(0.012, 0.12, hL - h0), ao = clamp((hB - h0) * 5.0, 0.0, 1.0);
         float river = smoothstep(0.15, 0.55, sp.a);
         // nền cỏ trong sân nhà: chuyển dịu sang xanh lam ngả xám (cùng tông Liên Quân), bóng đổ + AO từ phiến đá
-        float dc = min(length(vGxz - uCores.xy), length(vGxz - uCores.zw)), wb = smoothstep(6200.0, 3800.0, dc) * (1.0 - river);
-        c = mix(c, vec3(c.r * 0.8, c.g * 0.86, c.g * 0.6 + c.b * 0.35), wb * 0.9);                       // cỏ xanh lam ngả xám
         c *= 1.0 - (shade * 0.18 + ao * 0.2) * (1.0 - river);
         // mặt đá
         float jit = (texture2D(uGrass, vGxz / 540.0).g - 0.3) * 0.9 + (texture2D(uNoise, vGxz / 240.0).b - 0.5) * 0.4;
         float w = fwidth(pt.r) * 0.9 + 0.012;
-        float m = smoothstep(0.5 - w, 0.5 + w, pt.r + jit * 0.16 * (1.0 - smoothstep(0.75, 1.0, pt.r))) * (1.0 - river);
+        float m = smoothstep(0.5 - w, 0.5 + w, pt.r + jit * 0.06 * (1.0 - smoothstep(0.75, 1.0, pt.r))) * (1.0 - river);
         bool blue = vGxz.y > vGxz.x;
         vec3 sMid = blue ? vec3(0.15, 0.165, 0.2) : vec3(0.18, 0.16, 0.17), sLit = blue ? vec3(0.21, 0.225, 0.26) : vec3(0.24, 0.22, 0.225), sDark = blue ? vec3(0.085, 0.095, 0.125) : vec3(0.105, 0.09, 0.1);
         vec3 st = mix(sDark, sMid, smoothstep(0.55, 0.99, lit)); st = mix(st, sLit, smoothstep(1.0, 1.22, lit));
         st *= (0.94 + 0.1 * smoothstep(0.2, 0.6, h0)) * (0.92 + 0.16 * nz2.r) * (0.96 + 0.08 * texture2D(uNoise, vGxz / 70.0).b);
-        st = mix(st, c * 1.25, 0.18);                                                                      // ám màu nền cho hoà
+        st = mix(st, c * 1.25, 0.08);                                                                      // ám màu nền cho hoà
         st *= 1.0 - shade * 0.12 - ao * 0.15;
         float wl = fwidth(pt.a) * 0.9 + 0.02, groove = smoothstep(0.42 - wl, 0.42 + wl, pt.a);
         st = mix(st, sDark * 0.85, groove * 0.6);
