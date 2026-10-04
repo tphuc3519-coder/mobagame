@@ -71,9 +71,36 @@ export function buildArena(scene, map, level = 'mid') {
       trees.push({ x, y: heightAt(x, z) - 8, z, ry: r.range(0, 7), sx: r.range(1.0, 1.45) * (near ? 1 : 1.2) * (camSide ? 0.8 : 1), sz: 0, type: bl ? 'blossom' : r.next() < 0.25 ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak', color: bl ? 0xffffff : tint }); n++;
     }
   }
+  // —— ngoài viền rìa map: vườn rừng dày thay cho bãi cỏ trống (cây xen cây hoa, bụi lá, khóm hoa, đá tảng, nền lá mục) ——
+  const oobDirt = [], oobBush = [], oobFlower = [], oobRocks = [];
+  {
+    const oob = (x, z, p) => !!map.outOfBounds?.(x, z, p) && x > -900 && z > -900 && x < map.w + 900 && z < map.h + 900;
+    const camSide = (z) => z > map.h - 1500;                                               // mép dưới (phía camera): chỉ đồ thấp
+    for (const w of map.walls.segs) { // hàng bụi lá sát sau viền rìa (không để dải cỏ trống)
+      if (!w.border) continue;
+      const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L; let nx = -uz, nz = ux;
+      const mx = (w.x1 + w.x2) / 2, mz = (w.y1 + w.y2) / 2; if (!map.outOfBounds?.(mx + nx * 300, mz + nz * 300, 0)) { nx = -nx; nz = -nz; }
+      for (let t = 0; t < L; t += r.range(90, 140)) { const o = r.range(210, 380), x = w.x1 + ux * t + nx * o, z = w.y1 + uz * t + nz * o; if (!oob(x, z, 60)) continue;
+        oobBush.push({ x, y: heightAt(x, z) - 6, z, ry: r.range(0, 7), sx: r.range(160, 240), sy: r.range(140, 230) * (camSide(z) ? 0.6 : 1) });
+        if (r.next() < 0.12) oobFlower.push({ x: x + nx * 60, y: heightAt(x, z) - 4, z: z + nz * 60, ry: r.range(0, 7), sx: r.range(130, 180), sy: r.range(100, 140) }); }
+    }
+    for (let i = 0, n = 0; n < Math.round(260 * dens) && i < 20000; i++) {
+      const x = r.range(-900, map.w + 900), z = r.range(-900, map.h + 900); if (!oob(x, z, 170)) continue; n++;
+      oobDirt.push({ x, z, r: r.range(220, 420), k: 0.55 });
+      const nb = 5 + r.int(9); for (let k = 0; k < nb; k++) { const a = r.range(0, 7), d = Math.sqrt(r.next()) * 260, bx = x + Math.cos(a) * d, bz = z + Math.sin(a) * d; if (oob(bx, bz, 120)) oobBush.push({ x: bx, y: heightAt(bx, bz) - 6, z: bz, ry: r.range(0, 7), sx: r.range(150, 230), sy: r.range(150, 260) * (1 - d / 520) }); }
+      if (r.next() < 0.45) { const nf = 2 + r.int(4); for (let k = 0; k < nf; k++) { const fx = x + r.range(-200, 200), fz = z + r.range(-200, 200); if (oob(fx, fz, 120)) oobFlower.push({ x: fx, y: heightAt(fx, fz) - 4, z: fz, ry: r.range(0, 7), sx: r.range(130, 190), sy: r.range(100, 150) }); } }
+      if (r.next() < 0.4) { const s0 = r.range(60, 150); oobRocks.push({ x: x + r.range(-120, 120), y: heightAt(x, z) - s0 * 0.2, z: z + r.range(-120, 120), ry: r.range(0, 7), sx: s0 * r.range(1, 1.6), sy: s0 * r.range(0.6, 0.9), sz: s0 }); }
+      if (!camSide(z) && oob(x, z, 330) && r.next() < 0.7 && !trees.some((q) => Math.hypot(q.x - x, q.z - z) < 200)) {
+        const bl = r.next() < 0.35; trees.push({ x, y: heightAt(x, z) - 8, z, ry: r.range(0, 7), sx: r.range(0.9, 1.35), sz: 0, type: bl ? 'blossom' : r.next() < 0.25 ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak', color: bl ? 0xffffff : tint.setRGB(r.range(0.86, 1), r.range(0.9, 1), r.range(0.8, 0.95), THREE.SRGBColorSpace).getHex() });
+      }
+    }
+  }
   trees.forEach((t) => { t.sz = t.sx; });
   g.add(buildTrees(trees, dens));
-  const rockMat = rockMaterial(), allRocks = []; // đá tròn nhẵn, cùng vật liệu đá thật với bệ đá
+  const rockMat = rockMaterial(), allRocks = [];
+  if (oobRocks.length) { g.add(scatterChunked(boulderGeo(81), rockMat, oobRocks, true)); allRocks.push(...oobRocks); }
+  if (oobBush.length) g.add(buildGrass(oobBush, 'bush', 14));
+  if (oobFlower.length) g.add(buildGrass(oobFlower, 'blue', 8)); // đá tròn nhẵn, cùng vật liệu đá thật với bệ đá
   for (const [seed, n] of [[1, 0.6], [7, 0.6]]) {
     const rocks = put(Math.round(150 * dens * n), (x, z) => outside(x, z) > 220 || (inPlay(x, z) && clear(x, z, halfW + 300) && r.next() < 0.3), (x, y, z) => ({ x, y: y + 6, z, ry: r.range(0, 7), sx: r.range(50, 170), sy: r.range(35, 120), sz: r.range(50, 170), color: r.next() < 0.3 ? 0xc8d0b0 : 0xffffff }));
     g.add(scatterChunked(boulderGeo(seed + 40), rockMat, rocks, true)); allRocks.push(...rocks);
@@ -137,7 +164,7 @@ export function buildArena(scene, map, level = 'mid') {
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
     const pattern = basePattern(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60, size: dens >= 1 ? 3072 : 2048 }); // họa tiết khắc chìm sân nhà
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
-    const dirt = [...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
+    const dirt = [...oobDirt, ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
     const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);

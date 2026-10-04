@@ -244,3 +244,8 @@
   phía ngoài xác định bằng `outOfBounds`), nhấp nhô theo chiều dài, đầu dải thấp xuống; dùng chung vật liệu đá rừng `ROCK_FACET`
   (vân lớp, rêu, khe nứt), màu đỉnh làm che khuất; vài viên ngọc màu đội nhỏ trên sống gờ.
 - Lỗi đã gặp: đầu dải dẹt hẳn (h=0) → tam giác suy biến → pháp tuyến NaN → hậu kỳ lan NaN làm cả khung hình trống. Giữ đầu dải ≥ 30% cao.
+
+## Ngoài viền rìa map: vườn rừng dày thay bãi cỏ trống
+- Hàng bụi lá liền sát sau gờ đá biên (phía ngoài xác định bằng `outOfBounds`), xen khóm hoa xanh.
+- ~260 cụm trang trí trong vùng ngoài biên: bụi lá, khóm hoa, đá tảng, mảng nền lá mục (bản trộn nền), thêm cây (lá rộng/cao/thông/hoa hồng)
+  — mép dưới phía camera chỉ đặt đồ thấp để không che sân.
