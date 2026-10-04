@@ -135,7 +135,7 @@ export function buildArena(scene, map, level = 'mid') {
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
-    const pattern = basePattern(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60 }); // họa tiết khắc chìm sân nhà
+    const pattern = basePattern(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60, size: dens >= 1 ? 3072 : 2048 }); // họa tiết khắc chìm sân nhà
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
     const dirt = [...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
     const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,

@@ -100,15 +100,16 @@ export function groundMaterial(baked, pattern = null) {
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
       float patGlow = 0.0; vec3 patGlowC = vec3(0.0);
       ${pattern ? `{ // họa tiết khắc CHÌM (baseFloor.js): mặt đá lõm nửa trong, cỏ rêu phủ loang, viền rãnh tối, sáng tối theo nắng
-        vec2 pu = vGxz * uPatXf.zw; vec4 pt = texture2D(uPat, pu); float e = 1.6 / 2048.0;
+        vec2 pu = vGxz * uPatXf.zw; vec4 pt = texture2D(uPat, pu); float e = ${(1.3 / (pattern?.size || 2048)).toFixed(7)};
         float hx = texture2D(uPat, pu + vec2(e, 0.0)).g - texture2D(uPat, pu - vec2(e, 0.0)).g, hz = texture2D(uPat, pu + vec2(0.0, e)).g - texture2D(uPat, pu - vec2(0.0, e)).g;
         float m = smoothstep(0.08, 0.9, pt.r), lit = clamp((hx * 0.5 + hz * 0.667) * 5.0, -1.0, 1.0);          // lõm: mép quay về nắng tối, mép kia sáng
         vec3 stC = mix(vec3(0.22, 0.245, 0.27), vec3(0.31, 0.335, 0.36), nz2.r) * (0.9 + 0.2 * texture2D(uStone, vGxz / 300.0).g);
         stC = mix(stC, gr * 0.8, 0.3);
-        float moss = smoothstep(0.42, 0.75, texture2D(uNoise, vGxz / 650.0).g * 0.7 + texture2D(uNoise, vGxz / 170.0).b * 0.3 + (1.0 - pt.r) * 0.3);
+        float moss = smoothstep(0.5, 0.8, texture2D(uNoise, vGxz / 650.0).g * 0.7 + texture2D(uNoise, vGxz / 170.0).b * 0.3 + (1.0 - pt.r) * 0.3);
         float a = m * (0.58 - moss * 0.42);
         c = mix(c, stC, a);
-        c *= 1.0 - pt.r * (1.0 - pt.r) * 0.9;                                                          // rãnh tối ở mép khắc
+        c *= 1.0 - pt.r * (1.0 - pt.r) * 0.9;
+        c *= 1.0 - pt.a * 0.42 * (1.0 - moss * 0.45);                                                 // chỉ khắc mảnh                                                          // rãnh tối ở mép khắc
         c *= 1.0 - lit * 0.3 * smoothstep(0.02, 0.4, pt.r * (1.0 - pt.r) * 4.0 + m * 0.3);              // khối lõm theo hướng nắng
         patGlow = pt.b * (1.0 - moss * 0.6); patGlowC = vGxz.y > vGxz.x ? vec3(0.25, 0.65, 1.0) : vec3(1.0, 0.42, 0.2);
       }` : ''}

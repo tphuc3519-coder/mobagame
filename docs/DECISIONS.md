@@ -199,3 +199,10 @@
   R mặt đá, G độ cao (mặt + gân, làm mờ), B chỉ sáng màu đội.
 - Shader nền (`groundMaterial(baked, pattern)`): mặt đá lam xám dịu pha màu cỏ, phủ ~45–58%, rêu cỏ loang che bớt; viền rãnh tối nhẹ ở mép
   khắc; sáng tối theo hướng nắng như rãnh lõm (gradient G); chỉ sáng màu đội cộng vào emissive. Không còn hình học nổi / quầng AO.
+
+## Họa tiết khắc chìm phức tạp hơn
+- Nét cọ có ĐUÔI CUỘN xoắn (`curl`), chỉ viền khắc bên trong + gân giữa; giữa các nét có CHỈ LÔNG CỌ mảnh; quanh chân trụ: 3 vòng chỉ +
+  chuỗi hạt; lá xoắn nhỏ ở đầu nét. Nhà chính: tâm nổi + 2 vòng chỉ, 10 gân xoáy có viền + chỉ lông, 3 vòng chỉ + chuỗi hạt quanh đài,
+  phiến bậc thềm có chỉ viền trong + thoi khắc giữa phiến, 2 vòng mũi tên giữa các bậc, nét cọ ngoài cuộn xen chiều + chỉ lông.
+  Phiến đường: chỉ viền trong + chuỗi 3 thoi khắc + nhuỵ; mảnh vỡ có chỉ viền.
+- Texture họa tiết 3072² (mức thấp/vừa 2048²), kênh A = chỉ khắc mảnh (shader nền làm tối theo chỉ), G gồm cả rãnh chỉ.
