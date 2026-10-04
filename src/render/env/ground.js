@@ -72,13 +72,13 @@ function blurChannel(a, N, r) {
 }
 
 /** Vật liệu nền: Lambert (rẻ, hợp mobile) + đoạn shader trộn lớp. Màu đỉnh (vertexColors) vẫn nhân vào: trắng trong sân, xám đá ở vách ngoài. */
-export function groundMaterial(baked) {
+export function groundMaterial(baked, pattern = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() } };
+  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() }, uPat: { value: pattern?.tex || null }, uPatXf: { value: pattern?.xf || new THREE.Vector4(0, 0, 0, 0) } };
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb; uniform vec4 uXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb, uPat; uniform vec4 uXf, uPatXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
@@ -98,8 +98,23 @@ export function groundMaterial(baked) {
       vec3 peb = texture2D(uPeb, vGxz / 420.0).rgb, peb2 = texture2D(uPeb, vGxz / 1100.0 + 0.4).rgb;
       vec3 bed = mix(dt * vec3(0.5, 0.55, 0.5), mix(peb, peb2, 0.3) * vec3(0.82, 0.9, 0.88), smoothstep(0.3, 0.55, nz2.b)); // lòng sông: cuội ướt + cát bùn
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
+      float patGlow = 0.0; vec3 patGlowC = vec3(0.0);
+      ${pattern ? `{ // họa tiết khắc CHÌM (baseFloor.js): mặt đá lõm nửa trong, cỏ rêu phủ loang, viền rãnh tối, sáng tối theo nắng
+        vec2 pu = vGxz * uPatXf.zw; vec4 pt = texture2D(uPat, pu); float e = 1.6 / 2048.0;
+        float hx = texture2D(uPat, pu + vec2(e, 0.0)).g - texture2D(uPat, pu - vec2(e, 0.0)).g, hz = texture2D(uPat, pu + vec2(0.0, e)).g - texture2D(uPat, pu - vec2(0.0, e)).g;
+        float m = smoothstep(0.08, 0.9, pt.r), lit = clamp((hx * 0.5 + hz * 0.667) * 5.0, -1.0, 1.0);          // lõm: mép quay về nắng tối, mép kia sáng
+        vec3 stC = mix(vec3(0.22, 0.245, 0.27), vec3(0.31, 0.335, 0.36), nz2.r) * (0.9 + 0.2 * texture2D(uStone, vGxz / 300.0).g);
+        stC = mix(stC, gr * 0.8, 0.3);
+        float moss = smoothstep(0.42, 0.75, texture2D(uNoise, vGxz / 650.0).g * 0.7 + texture2D(uNoise, vGxz / 170.0).b * 0.3 + (1.0 - pt.r) * 0.3);
+        float a = m * (0.58 - moss * 0.42);
+        c = mix(c, stC, a);
+        c *= 1.0 - pt.r * (1.0 - pt.r) * 0.9;                                                          // rãnh tối ở mép khắc
+        c *= 1.0 - lit * 0.3 * smoothstep(0.02, 0.4, pt.r * (1.0 - pt.r) * 4.0 + m * 0.3);              // khối lõm theo hướng nắng
+        patGlow = pt.b * (1.0 - moss * 0.6); patGlowC = vGxz.y > vGxz.x ? vec3(0.25, 0.65, 1.0) : vec3(1.0, 0.42, 0.2);
+      }` : ''}
       c *= mix(0.42, 1.0, sp.b);                                                                         // bóng nướng sẵn
-      diffuseColor.rgb *= c;`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      diffuseColor.rgb *= c;`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      totalEmissiveRadiance += patGlowC * patGlow * 0.9;`).replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       { // đá lát nổi khối: pháp tuyến từ trường độ cao của phiến đá (chỉ ở vùng lát), sáng mép trên-nắng, tối mép khuất
         vec2 su = vGxz / 460.0; float e = 1.5 / 1024.0;
         float h0 = texture2D(uStoneH, su).r, hx = texture2D(uStoneH, su + vec2(e, 0.0)).r, hz = texture2D(uStoneH, su + vec2(0.0, e)).r;
@@ -114,6 +129,6 @@ export function groundMaterial(baked) {
       #endif
       #include <opaque_fragment>`);
   };
-  mat.customProgramCacheKey = () => 'ground-splat';
+  mat.customProgramCacheKey = () => 'ground-splat' + (pattern ? 'p' : '');
   return mat;
 }

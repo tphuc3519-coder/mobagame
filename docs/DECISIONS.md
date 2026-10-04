@@ -192,3 +192,10 @@
 - Hoa văn: quanh chân mọi trụ là xoáy 9 NÉT CỌ dài (thon hai đầu, gân nổi giữa) như ảnh trụ phe Xanh; sân nhà chính: đài tròn + 10 nét
   xoáy, ba bậc thềm cong lớn (chỉ sáng màu đội ở bậc giữa), 14 nét cọ bao ngoài; đường trong sân nhà: phiến cong lớn khe hẹp, thưa dần
   quanh trụ nhà, sau đó mảnh vỡ lác đác.
+
+## Họa tiết sân nhà KHẮC CHÌM vào nền (bỏ phiến đá 3D nổi)
+- Người chơi: họa tiết Liên Quân khá chìm, không nổi khối. `baseFloor.js` giờ chỉ VẼ bố cục (nét cọ xoáy quanh mọi trụ, bậc thềm cong +
+  nét cọ quanh nhà chính, phiến cong trong đường sân nhà → mảnh vỡ) thành texture 2048² phủ cả bản đồ (`basePattern`):
+  R mặt đá, G độ cao (mặt + gân, làm mờ), B chỉ sáng màu đội.
+- Shader nền (`groundMaterial(baked, pattern)`): mặt đá lam xám dịu pha màu cỏ, phủ ~45–58%, rêu cỏ loang che bớt; viền rãnh tối nhẹ ở mép
+  khắc; sáng tối theo hướng nắng như rãnh lõm (gradient G); chỉ sáng màu đội cộng vào emissive. Không còn hình học nổi / quầng AO.

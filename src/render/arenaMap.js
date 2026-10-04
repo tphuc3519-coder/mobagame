@@ -10,7 +10,7 @@ import { WIND, sway, rockGeo, tuftGeo, flowerGeo, scatterChunked } from './env/f
 import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
 import { pavedPolylines } from './env/laneDecor.js';
-import { buildBaseFloor } from './env/baseFloor.js';
+import { basePattern } from './env/baseFloor.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -135,10 +135,10 @@ export function buildArena(scene, map, level = 'mid') {
       ...bushList.flatMap((b) => b.cap ? [0, 0.25, 0.5, 0.75, 1].map((f) => ({ x: b.cap[0] + (b.cap[2] - b.cap[0]) * f, z: b.cap[1] + (b.cap[3] - b.cap[1]) * f, r: b.r * 0.9, h: 170, k: 0.45 })) : [-0.25, 0, 0.25].map((f) => ({ x: b.x + f * b.w, z: b.y, r: Math.min(b.w, b.h) * 0.45, h: 160, k: 0.45 }))),
     ];
     const walls = []; // bóng tường tính theo từng tảng đá (casters)
-    const floor = buildBaseFloor(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60 });
+    const pattern = basePattern(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60 }); // họa tiết khắc chìm sân nhà
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
     const dirt = [...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
-    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls, aoPolys: floor.userData.footprints,
+    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);
     const geo = new THREE.PlaneGeometry(w, d, seg, seg); geo.rotateX(-Math.PI / 2);
@@ -150,7 +150,7 @@ export function buildArena(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked, pattern)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
     groundMap = baked; river.setMask?.(baked);
     // lá phong đỏ/cam rụng trên sân lát (phối màu kiểu Liên Quân), dồn thành đám theo nhiễu
     {
@@ -161,7 +161,6 @@ export function buildArena(scene, map, level = 'mid') {
       const red = put(Math.round(2200 * dens), (x, z) => onPave(x, z) && fbm(x / 420 + 7, z / 420) > 0.47, (x, y, z) => ({ x, y: 1.3 + r.range(0, 0.4), z, ry: r.range(0, 7), rx: r.range(-0.12, 0.12), sx: r.range(9, 16), sy: 1, sz: r.range(9, 16), color: pal[r.int(pal.length)] }));
       g.add(scatterChunked(lg, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), red, true));
     }
-    g.add(floor); // nền sân nhà: phiến đá thấp chìm trong cỏ, xoáy nét cọ quanh trụ
   }
 
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
