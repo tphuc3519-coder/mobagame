@@ -84,12 +84,12 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
       // trại quái: bùa xanh/đỏ, quái nhỏ, mục tiêu lớn; trại đã bị hạ thì mờ + đếm ngược (bùa/mục tiêu lớn)
       for (const cp of world.camps || []) {
         const x = wx(cp.x), y = wy(cp.y), up = cp.respawnAt == null, big = cp.boss, buff = cp.type === 'linh_thuy' || cp.type === 'hoa_nham';
-        const col = cp.type === 'linh_thuy' ? '#3fa8ff' : cp.type === 'hoa_nham' ? '#ff5a2a' : big ? (cp.type === 'long_ngu' ? '#ffc23a' : '#b98aff') : '#e8d48a';
+        const col = cp.type === 'linh_thuy' ? '#3fa8ff' : cp.type === 'hoa_nham' ? '#ff5a2a' : big ? ({ long_ngu: '#ffc23a', ho_loi: '#7ac8ff', than_dieu: '#7ae8ff', ta_than: '#b05aff' }[cp.type] || '#b98aff') : '#e8d48a';
         const R = big ? 7.5 : buff ? 5 : 3.2;
         ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = col; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.4;
         ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);
         ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
-        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cp.type === 'long_ngu' ? 'L' : 'H', x, y + 0.5); }
+        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
         if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
       }
       // lính

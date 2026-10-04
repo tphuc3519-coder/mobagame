@@ -92,3 +92,217 @@
 - 2026-10-01: **Tường biên đóng khung bản đồ**: dãy tấm đá xẻ lớn (dày 260, cao ~190: đế, thân, nắp vát; mạch nối lộ ra) chạy suốt mép ngoài đường Đền và đường Sông, bo cong theo góc đường, hai đầu có đoạn chặn ra tới viền ngay trên sân nhà → phía ngoài không đi được, không thuộc sân chơi (`border: true` trong `walls.segs`, `ARENA.outOfBounds(x, y)`); phía ngoài trồng rừng dày (phía camera lùi xa để không che đường). Va chạm/tầm nhìn/tìm đường dùng chung hệ tường.
 - 2026-10-01: **Vân đá phân lớp** (`strataSurface`): khối đá rừng có lớp ngang lượn sóng sáng/tối, rãnh giữa lớp có viền sáng (giả khối), nứt dọc, hạt đá; chiếu ba mặt theo toạ độ thế giới (`strataMat`, cả đá tảng). Tường biên dùng `cutStoneSurface` (đá mài vân sọc, rêu chân).
 - 2026-10-01: **Trụ & tế đàn làm lại** (`render/structures.js`, xem `tools/structures.html`): chất liệu **cẩm thạch trắng ngà có vân** (`marbleSurface`) + viền vàng. Trụ: bệ ba bậc có ấn sáng màu đội, thân bát giác thon có gờ góc + kênh sáng dọc + 3 vòng vàng, 4 trụ chống cong như cánh ôm thân, ban công lỗ châu mai, lồng đèn 4 gân vàng giữ **pha lê màu đội** (lõi sáng, vòng quỹ đạo vàng), mái ngói cong hai tầng có chuông góc, chóp vàng, phướn hai bên. Tế đàn: ba tầng cẩm thạch viền vàng + kênh sáng quanh mỗi tầng, 8 cột đầu vàng có ấn sáng **bắn tia năng lượng** vào pha lê, **cụm pha lê** (1 lớn + 6 vệ tinh lơ lửng), 2 vòng phù văn vàng có bản khắc sáng quay ngược chiều (bỏ khung lưới cũ), 4 cột phướn ở góc, cột sáng lên trời.
+- 2026-10-02: **Đường đi chi tiết hơn**: đá lát có **pháp tuyến thật** (trường độ cao của phiến đá → shader nền làm lệch pháp tuyến ở vùng lát: mép phiến sáng phía nắng, tối phía khuất, hạt đá nổi) — `flagstoneHeight()`; **viền đá bó vỉa** dọc hai mép cả ba đường (khối đá xẻ thấp nối nhau, lệch/nghiêng nhẹ, thỉnh thoảng thiếu viên; tránh chỗ qua sông, sân trụ, sân nhà).
+- 2026-10-02: **Trụ làm lại cho "người lớn"**: bỏ cẩm thạch trắng bóng + vàng sáng; dùng **đá khối xây có pháp tuyến** (`ashlarSurface`: viên đá lệch mạch, vết đục, mép sứt, mạch vữa sâu, 1024²; `MeshStandardMaterial` nhám) + **đồng thau cổ** + **ngói men có pháp tuyến** (`roofTileHD`). Hình: nền bát giác ba bậc, 4 trụ ốp góc đầu đồng + 4 trụ chống xiên, thân hai tầng có gờ phào, lỗ châu mai dọc có ánh đèn vàng bên trong, khiên huy hiệu màu đội viền đồng, ban công trên con-xơn với tường răng cưa, lồng đèn 4 gân đồng giữ pha lê, mái hai tầng, chóp đồng (bỏ chuông tròn góc mái, giảm độ chói kênh sáng). Tế đàn đổi sang cùng chất đá khối sáng + đồng thau cho đồng bộ.
+- 2026-10-02: **Nước trên mặt đường trong suốt**: chỗ đường lát băng qua sông, lớp nước gần như trong (độ đục giảm ~94%), không còn bọt/vệt che, chỉ còn chút bọt ở mép đường → thấy rõ đá lát bên dưới.
+- 2026-10-02: **Hạ tông màu toàn map**: chỉnh màu cuối bão hoà 118% → 98%, tương phản 1.1 → 1.06, thêm hạ sáng chung 6%; phơi sáng 0.9 → 0.84; đá lát đường tối 20%, cỏ nền tối 10%.
+- 2026-10-02: **Bóng đổ**: thân cây + lõi tán đổ bóng nắng thật (thẻ lá không đổ để tránh bóng ô vuông), vùng bóng nắng ±3000 quanh camera; bóng thật trên nền đậm hơn (0.6 → 0.42). **Bóng tiếp đất nhỏ** dưới mọi nhân vật/lính/quái: hình bầu dục đậm ở tâm, lệch nhẹ về hướng bóng nắng, không xoay theo nhân vật, thu nhỏ khi bị hất tung; bóng nướng sẵn của cây ngoài rừng đậm hơn.
+- 2026-10-02: **Đường đá mài khắc hoa văn** (`render/env/laneDecor.js`, theo ảnh Liên Quân người chơi gửi) thay đường lát đá cuội: mỗi đường là một **dải lát** (lưới chạy theo đường đã bo góc, UV dọc theo quãng đường) với texture vẽ canvas 512×2048 lặp mỗi 2.2 lần bề ngang: mặt đá phẳng xám lạnh hơi tím, loang ấm/lạnh, chia tấm lớn so le; viền trang trí hai mép (gờ nổi, rãnh đôi, khấc đều); rãnh khắc uốn lượn chữ S chạy chéo mặt đường có đuôi cuộn xoắn + rãnh phụ đan ngược; dải hoạ tiết sóng ở mạch tấm; huy hiệu khắc (thoi lồng, chữ V, vòng tròn, vảy) có đường khảm xanh nhạt; nứt mảnh, rêu trong rãnh. Khắc nổi bằng **bản đồ pháp tuyến** (sáng tối theo đèn thật nên đúng ở mọi hướng đường), màu chỉ mang độ che khuất rãnh. **Vòng khắc tròn** dưới chân trụ (r 330) và sân nhà chính (r 1150): vòng đồng tâm, nan toả, cánh sen, khấc, đường khảm. Dải lát nằm dưới mặt nước (chỗ qua sông vẫn thấy hoa văn), nhận bóng nướng sẵn + bóng nhân vật. Bỏ viền đá bó vỉa (dải lát đã có viền khắc).
+- 2026-10-02: **Sông chảy liền một mạch, đè lên mặt đường**: mặt nước nâng lên trên dải đường (y 5 > 0.2), chỗ đường băng qua nước vẫn đậm (độ đục tối thiểu 80%, giữ màu sâu, bớt phản chiếu trời) → đá lát chỉ mờ mờ dưới dòng nước (đảo lại thay đổi "nước trong suốt" trước đó theo yêu cầu).
+- 2026-10-02: **Bệ đá chồng phiến kiểu Liên Quân** (theo video người chơi gửi; `slabStackGeo` thay khối vách cũ): mỗi đoạn tường là 3–4 phiến đá phẳng dày bo cạnh xếp chồng, viền gồ ghề theo nhiễu, lệch nhau, lớp giữa chìa ra như mái hiên (đáy mái tối hẳn) → có chiều sâu; mặt phiến xám lam sáng có rêu loang, cạnh tối dần xuống chân, bề mặt gồ ghề nhẹ. **Quầng tối ánh tím** dưới chân mỗi bệ (vành trong suốt dần). **Cỏ cao mọc thành cụm ở chân đá** (1–2 cụm dày mỗi bệ, ưu tiên hai đầu) thay cho cỏ rải trên đỉnh; đá tảng ghé chân thưa hơn. **Bệ lãnh thổ trại quái** đổi sang đá mài khắc vòng tròn (cùng kiểu chân trụ), thấp hơn, cạnh tối — đồng bộ với đường.
+- 2026-10-02: **Đường đá mài liền mạch kiểu Liên Quân** (thay hoa văn hình học "gượng"): texture dải đường vẽ bằng nét thon mềm (`softStroke` — đóng dấu chấm toả sáng/tối): các mảng đá nổi uốn lượn như vệt nước chảy so le hai bên, rãnh mềm thon hai đầu ôm theo mảng, xoáy cuộn mềm, gờ mềm sát mép, vết mòn rất mờ; làm mịn độ cao 3 lượt; **mép đường lượn sóng hoà vào cỏ**; tông xám lạnh hơi tím; dải rộng hơn đường 12%. Sân chân trụ/nhà chính: cánh xoáy nổi mềm toả từ tâm + rãnh vòng mềm, mép ngoài lượn.
+- 2026-10-02: **Bệ nhà (lãnh địa)**: mỗi phía 2 cung tường quanh nhà chính (bán kính 1400 gốc) nằm ở hai khoảng trống giữa ba trụ nhà (giữa đường Đền–Giữa và Giữa–Sông), tự cắt chừa lòng đường; phe Đỏ là ảnh đối xứng. Dựng thành một khối đá điêu khắc liền mạch mỗi cung (thân cong thon hai đầu, đầu vểnh, mặt cắt chân loe đỉnh hẹp, sống lưng sáng) + **dải khảm phát sáng màu đội** dọc thân (xanh/đỏ) + quầng sáng mờ dưới chân. Tường/đá khác chồng lên bệ nhà bị bỏ (vài đoạn tường dọc đường Giữa sát nhà, một phần cung đá trại sói). 4 seed `t_arena` 35 phút: không lỗi, Xanh thắng cả 4 (lệch về Xanh đã thấy từ trước — bản đồ đối xứng hoàn toàn, cần kiểm tra AI bot).
+- 2026-10-02: Bỏ toàn bộ đèn lồng dọc đường. **Dải đá mài chỉ còn trong lãnh thổ nhà chính hai bên** (mờ dần từ bán kính 3300 quanh nhà chính, mép xé theo hoa văn; vòng khắc chỉ còn dưới nhà chính). **Đường ngoài sân nhà = nền cỏ mượt xen các mảng đá lát** (mảng đá theo nhiễu tầng lớn, viền đất mòn quanh mảng; đá lát chỉ nổi khối ở các mảng).
+- 2026-10-02: **Tường đá sắc cạnh**: mỗi bệ là 4–5 lớp phiến mỏng, mỗi lớp chia khối có khe nứt dọc, viền khối là đa giác ít cạnh có nhiễu, **flat shading** (từng mặt vát bắt sáng rõ), lớp so le thụt/chìa tạo khe tối, màu theo từng mặt (mặt trên xám lam + rêu, cạnh tối dần xuống chân, đáy mái tối hẳn). Bệ nhà (lãnh địa) dùng cùng kiểu đá + giữ dải sáng màu đội. **Hang boss**: bỏ móng ống tròn, thay bằng **tường đá sắc cạnh hình móng ngựa** ôm lưng hang (cao dần về giữa, chừa mặt mở ra sông) + khối đá nhọn lởm chởm quanh mép bệ; quả cầu năng lượng hạ thấp vào giữa hang.
+- 2026-10-02: **Bụi cỏ giữa sông mọc thẳng từ mặt nước**: bỏ cồn đất và lõi tối, gốc cỏ ngang mặt nước, thêm vành gợn nước mảnh quanh bụi (áp cả cho bụi mép sông).
+- 2026-10-02: **Bố cục 5v5 làm lại**: K 2.4 → 2.7 (17280 × 17280, rộng thêm 12.5%; tường/đường/bụi giữ bề dày thế giới nên các mảng rừng tách bạch hơn). **Trụ cách đều**: đường Đền y 1700/3150/4600 (cách nhau 1450), đường Sông x 4700/3250/1800, đường Giữa (2750,3650)/(2100,4300)/(1450,4950) (~920) — trụ ngoài vẫn sát sông, cả bản đồ đối xứng gương x↔y (đã kiểm: mọi trụ ngoài cách lòng sông đúng như nhau). **Hang mục tiêu lớn dời vào mé rừng** (cửa mở ra sông, lưng tựa rừng): Long Ngư (1340,2020) phía Xanh, Hổ Lôi (5060,4380) phía Đỏ (đối xứng tâm như Liên Quân), tường móng ngựa thấp hơn để không che camera; bùa xanh dời (1400,2800). Bụi bờ sông đặt đối xứng tâm (mỗi đường cánh một bụi ở bờ đối diện hang).
+- 2026-10-02: **Đường ngoài sân nhà = phiến đá lớn mài nhẵn có hoa văn** (dải đá mài khắc uốn lượn của `laneDecor` cắt thành ô Voronoi lớn ~640, giữ ~70% ô, khe cỏ giữa các phiến, cạnh phiến vát tối) trên nền cỏ mượt; bỏ mảng đá cuội. Bỏ chỏm cỏ lẻ và hoa lẻ rải rác trong sân chơi. 4 seed `t_arena`: 2 Xanh / 2 Đỏ, 16–26 phút, không lỗi.
+- 2026-10-02: **Mặt đường kiểu hiện đại, dễ nhìn** (thay phiến Voronoi lởm chởm): dải đường lát kín, texture 1024×2048 (điểm ảnh vuông, anisotropy 16) — hai dải viền đá sẫm vát cạnh ở mép (khối dài, có rãnh ngăn với lòng đường), lòng đường là tấm đá chữ nhật lớn xếp so le 4 hàng, mạch vữa mảnh sắc, mép tấm vát nhẹ, lệch tông rất nhẹ, hạt mịn; pháp tuyến từ trường độ cao. Sân nhà chính/bệ trại: lát tròn đồng tâm (vòng tấm cong, mạch hướng tâm so le, viền sẫm). Bỏ hoa văn uốn lượn và phần cắt ô.
+- 2026-10-02: **Bệ đá sắc nét hơn**: vật liệu đá (`ROCK_FACET`) thêm vân lớp + hạt mịn chiếu ba mặt theo toạ độ thế giới (pháp tuyến mặt từ đạo hàm), tối dần ở chân (che khuất), mặt trên sáng lạnh; tăng tương phản mặt trên/cạnh.
+
+## Bệ đá mượt có vân sọc + sàn đường vẽ tay kiểu Liên Quân
+- Bệ đá (`slabStackGeo`): 3–4 lớp phiến dày, mỗi lớp chỉ 1–2 khối dài (~600), vát nhỏ, hàn đỉnh → pháp tuyến mượt (không còn mặt vát góc cạnh, cũng không phồng như gối). Màu xám lam, đỉnh sáng hơn vách.
+- `ROCK_FACET`: shader vân sọc ngang lượn theo nhiễu chỉ chạy trên vách (theo pháp tuyến thế giới): dải sáng/tối, vạch tối mảnh + gờ sáng ngay trên; mặt đỉnh loang mảng 2 tầng nhiễu; chân đá tối dần.
+- Sàn đường (`laneTexture`): đá lam tím vẽ tay — tấm lớn chia bởi rãnh cong ngang lòng đường + rãnh dọc xen kẽ, rãnh mềm (lõi tối nhạt dần ra mép), viền sáng mảnh phía trên rãnh, bóng AO về mép tấm, vệt mòn sáng giữa đường, loang mây, tối dần sát gờ viền; gờ viền bo tròn ngắt đoạn. Tông hạ thấp cho đỡ chói.
+
+## Đá tròn nhẵn liền khối + sàn đá phiến thật + sông tự nhiên (bỏ kiểu hoạt hình)
+- Bỏ đá chồng phiến. Mọi bệ đá/tường rừng, bệ nhà, vách hang boss dùng `roundRockGeo`: mặt bằng capsule bo tròn hai đầu, mặt cắt phồng
+  vòm tròn, sống lưng nhấp nhô thành các tảng liền nhau, biến dạng nhiễu nhẹ theo pháp tuyến, pháp tuyến mượt. Màu đỉnh chỉ là che khuất.
+- Vật liệu đá chung `ROCK_FACET` (MeshStandard): nhiễu 3D theo toạ độ thế giới → vân lớp lượn sóng (vằn), gân thạch anh mảnh, hạt mịn,
+  loang ấm/lạnh, bump từ nhiễu (đạo hàm màn hình), độ nhám thay đổi (chỗ mài bóng phản chiếu môi trường). Đá tảng ghé chân, đá viền bệ
+  trại, trụ đá quanh hang cũng dùng vật liệu này. Quầng dưới chân đá đổi từ tím sang bóng tối trung tính.
+- Sàn đường: phiến đá lớn xếp so le theo hàng (1–2 mạch dọc mỗi hàng), mạch lượn nhẹ, góc bo, mép vát (normal map), mạch lõm đầy sạn
+  tối, mỗi tấm một tông xám lam/tím khác nhau, loang + gân mảnh + hạt + ố; bó vỉa đá dài hai mép. Vật liệu đường đổi sang MeshStandard.
+- Sông: bờ lượn theo nhiễu (không thẳng tắp), vũng sâu/bãi cạn loang, màu xanh rêu → lam sẫm, phản chiếu trời dịu hơn, bọt bờ mỏng
+  đứt quãng, bớt vệt dòng/lá trôi, nước ở mép đục hơn (đáy ít lộ), đoạn đè lên đường tối hơn, bớt gợn trắng.
+
+## Thêm chi tiết chân thực: rêu/nứt/tảng phụ cho đá, sàn mòn vỡ, nền rừng, lòng sông cuội
+- Đá (`ROCK_FACET`): rêu xanh trên mặt ngửa + rêu ẩm ở chân theo nhiễu, khe nứt sâu theo vùng (tối + lõm bump), mặt úp tối; rêu/khe nhám hơn.
+- `roundRockGeo`: thêm 1–4 tảng tròn dính liền thân (lún một phần) phá dáng ống đều; trả mẫu đỉnh để cắm cỏ dại trên lưng đá;
+  sỏi vụn quanh chân mọi bệ đá.
+- Đá rải rác trong rừng/mép đường dùng chung đá tròn + vật liệu đá thật (bỏ đá low-poly mặt phẳng).
+- Nền rừng: thảm cỏ thấp theo khoảnh (tránh đường), ~1400 sỏi nhỏ, lá rụng nâu/vàng theo vùng (ít trên đường), đá cuội nhô khỏi mặt nước ven sông.
+- Sàn đường: vết nứt gấp khúc trên một số tấm, góc tấm sứt mẻ, rêu trong mạch và loang ra mép tấm, vết ố ẩm; tông tấm trung tính hơn.
+- Lòng sông: texture cuội tròn nhiều cỡ trên cát bùn (`pebbleSurface`) thay cho phiến đá.
+- Sóng nước: sai phân pháp tuyến bước ~4.6 texel (trước 1 texel trên noise 8-bit gây sọc bậc thang song song), bỏ vệt dòng chảy.
+
+## Đường cỏ toàn map, chỉ lát đá hoa văn đoạn nhà chính → trụ nhà; đá nét hơn
+- "Trụ 1" hiểu là trụ đầu tiên tính từ tế đàn ra (trụ `*_home`). `pavedRange`: mỗi đường chỉ lát từ nhà chính tới quá trụ nhà
+  `PAVE_EXT`=380, sau đó mép lát vỡ lởm chởm theo nhiễu 3 tầng (discard, viền sẫm) trong `PAVE_FADE`=320. Phần còn lại của đường là
+  nền cỏ y như rừng (bản trộn nền chỉ vẽ phần lát, đất mòn + đá vụn mép chỉ ở phần lát); mép vỡ có đất mòn và mảnh đá lát rơi vãi.
+- Texture đoạn lát (`laneTexture`): cẩm thạch xám lam mài nhẵn (MeshStandard nhám 0.48), không nứt/rêu; đĩa hoa văn lớn mỗi chu kỳ
+  (vòng khảm + chuỗi hạt, sao 8 cánh đá sẫm lồng sao xoay, hoa 8 cánh khảm ngà) trong khung thoi viền đôi; thoi nhỏ lồng vòng giữa
+  hai đĩa; viền hai mép: dải đá sẫm có thừng bện (hai sin đan chéo) + hạt thoi, chỉ khảm thẳng, gờ bó vỉa bo tròn.
+- Đá nét hơn: lưới dày hơn (22 × 34), mép rêu sắc lởm chởm, rỗ li ti, gờ cạnh sáng theo độ cong (fwidth pháp tuyến), hạt khoáng lấp
+  lánh, bump chi tiết nhỏ; tương phản màu cao hơn.
+
+## Thêm 15 trang bị + icon vẽ tay riêng từng món (53 món)
+- Mới: thành phần Chuông Đồng (giảm hồi chiêu + mana), Vòng Bạc (hồi máu/giây); Giày Lữ Hành (tốc chạy 80 + hồi máu);
+  Kiếm Bão Táp (đòn thứ 3 phóng sét +80 phép), Cung Băng Lam (đòn đánh làm chậm 15%), Vuốt Hổ (xuyên giáp phẳng + tốc chạy %),
+  Rìu Bạo Quân (dưới 50% HP +25% tốc đánh); Trượng Hoả Thần (kỹ năng thiêu 1% HP tối đa/giây × 2s), Quyền Trượng Tinh Tú,
+  Vương Miện Nguyệt Quang, Đèn Hồn Lam; Giáp Vảy Rồng, Khiên Mặt Trời (thiêu địch trong 300 mỗi giây), Áo Choàng Bóng Đêm,
+  Mũ Chiến Thần. Nội tại mới ở sim/items.js, có kiểm thử trong t_items.
+- Icon (`src/hud/itemArt.js`): vẽ canvas 256², không dùng ảnh ngoài: vật thể có khối (kim loại chuyển sắc hai mặt vát, viền sáng,
+  bóng đổ), hiệu ứng theo chất món (lửa, băng, sét, máu, gió, sao, sương), nền toả sáng theo màu chủ đề, bloom + hạt nhiễu; khung
+  vuông bo góc theo bậc (đồng: thành phần, bạc: giày bậc 2, vàng chạm góc: đồ hoàn chỉnh). Xem toàn bộ ở tools/items.html.
+
+## Tường thành lãnh địa nhà kiểu Liên Quân (thay bệ đá tự nhiên quanh nhà chính)
+- `buildBaseWalls`: mỗi cung tường giữa hai trụ nhà là tường đá xây chạm khắc chạy cong theo cung, mặt cắt nhiều tầng (`BW_PROF`:
+  đế loe, thân hơi vát, gờ đai, tầng trên thụt vào, gờ mũ, mặt đỉnh phẳng); mỗi đoạn mặt cắt là dải riêng nên cạnh gờ sắc.
+- Vật liệu `baseWallMat`: đá xám tím, khối xây so le (mạch đứng 150, mạch ngang 44 theo toạ độ dọc cung `wuv`), mạch vữa lõm (bump),
+  mặt ngửa sáng, chân tối. Dải khảm phát sáng màu đội (xanh/đỏ) trong rãnh gờ đai hai mặt + gờ mũ mặt ngoài.
+- Cột vuông lớn ở hai đầu và giữa mỗi cung (đế, thân, đai, mũ, chóp tháp), ngọc màu đội + vạch sáng dọc thân + quầng sáng.
+- Hàng gai đá chĩa ra phía rừng dọc chân tường. Va chạm (sim) giữ nguyên các đoạn `baseWall` dày 260.
+
+## Sàn lát chạm khắc kiểu Liên Quân + chuyển tiếp lát → cỏ + tường thành chạm hoa văn
+- Sàn đường (`laneTexture`) và sân nhà chính (`corePlazaTexture`) cùng ngôn ngữ chạm khắc: đá xám tím ấm; rãnh cung vắt ngang
+  (rãnh sâu + chỉ vàng + hai cặp chỉ khắc + chuỗi hạt vàng), dải sáng/tối xen kẽ, đĩa hoa văn (vạch chia độ, sao 8 cánh viền vàng),
+  hoa bốn cánh, khung thoi chỉ đôi lồng thoi + hoa nhỏ; viền mép là dải hoa văn chữ 回 giữa hai chỉ vàng + bó vỉa. Sân nhà chính:
+  viền 回 vòng tròn, vành cánh sen, vành chia độ, vành xoáy, sao 12 cánh, đĩa tâm vàng.
+- Độ phủ lát theo quãng đường (`ramp`): kín từ nhà chính tới ~700 trước trụ nhà → quanh trụ lẫn ít cỏ → sau đó cỏ là chính, còn lác
+  đác phiến lát vỡ (ô 150, chọn theo hash + nhiễu, mép mòn sẫm). Dải lát giờ chạy suốt đường (shader bỏ phần cỏ).
+- Lá phong đỏ/cam rụng thành đám trên sân lát (phối màu kiểu Liên Quân).
+- Tường thành: vật liệu chạm theo từng tầng mặt cắt (`bwseg`): chân rãnh dọc, khối xây vát cạnh, gờ đai dây thừng, ô phù điêu (trụ áp,
+  khung chỉ đôi, thoi khảm vàng + nhuỵ), răng cưa đỡ mũ, gờ mũ hoa văn 回 vàng, mặt đỉnh chỉ vàng hai mép + chuỗi thoi; vàng khảm có
+  metalness. Cột: thân đá + đai/viền mũ/núm vàng.
+
+## Nền sân nhà dựng lại bằng PHIẾN ĐÁ NỔI KHỐI 3D (thay texture lát kẻ chỉ)
+- Theo ảnh Liên Quân: nền trong sân nhà là các phiến đá nổi (vát cạnh rộng, hai tầng: phiến + mặt nổi thụt vào), khe giữa là cỏ/lá.
+- `env/baseFloor.js`: quanh nhà chính: đài tròn + 12 lưỡi xoáy + 5 hàng phiến cong đồng tâm chia khúc (chỉ sáng màu đội giữa 2 hàng);
+  đường trong sân nhà: hàng phiến cong vắt ngang (cong ngược chiều xen kẽ) + gờ viền lượn hai mép; quanh trụ nhà thưa dần, sau trụ chỉ
+  còn mảnh phiến vỡ lởm chởm lác đác giữa cỏ; quanh chân MỌI trụ: đĩa đế + 7 lưỡi đá xoáy (có sống lưỡi nổi). Phe Xanh ánh lam, Đỏ ánh ấm.
+- Vật liệu: đá xám tím, hạt + loang, thành/cạnh vát tối (khối rõ từ trên nhìn xuống), rêu bám thành phiến, bump.
+- Bỏ dải lát texture, vòng sân nhà chính phẳng, đá vụn + mảnh lát mép đường, vệt đất dọc đường trong sân nhà (ground `laneDirt: false`).
+
+## Nền sân nhà mềm, có chiều sâu (theo ảnh Liên Quân): nét đá quét cọ chìm trong cỏ
+- `baseFloor.js` viết lại: phiến/nét đá THẤP (chân lún dưới đất), vát rộng; tương phản thấp, tông lam xám (Xanh) / xám ấm (Đỏ);
+  mép và sườn phiến trộn chính texture cỏ của nền (cùng tỉ lệ, cùng loang) theo độ cao + nhiễu → tan dần vào cỏ, rêu cỏ bò lên sườn;
+  ám nhẹ màu cỏ cho hài hoà. Mặt cao/gân sáng hơn sườn.
+- Quầng tối mềm (AO) quanh chân mọi phiến: footprints từ baseFloor → `aoPolys` của bản trộn nền (vẽ đặc + viền rộng rồi làm mờ).
+- Hoa văn: quanh chân mọi trụ là xoáy 9 NÉT CỌ dài (thon hai đầu, gân nổi giữa) như ảnh trụ phe Xanh; sân nhà chính: đài tròn + 10 nét
+  xoáy, ba bậc thềm cong lớn (chỉ sáng màu đội ở bậc giữa), 14 nét cọ bao ngoài; đường trong sân nhà: phiến cong lớn khe hẹp, thưa dần
+  quanh trụ nhà, sau đó mảnh vỡ lác đác.
+
+## Họa tiết sân nhà KHẮC CHÌM vào nền (bỏ phiến đá 3D nổi)
+- Người chơi: họa tiết Liên Quân khá chìm, không nổi khối. `baseFloor.js` giờ chỉ VẼ bố cục (nét cọ xoáy quanh mọi trụ, bậc thềm cong +
+  nét cọ quanh nhà chính, phiến cong trong đường sân nhà → mảnh vỡ) thành texture 2048² phủ cả bản đồ (`basePattern`):
+  R mặt đá, G độ cao (mặt + gân, làm mờ), B chỉ sáng màu đội.
+- Shader nền (`groundMaterial(baked, pattern)`): mặt đá lam xám dịu pha màu cỏ, phủ ~45–58%, rêu cỏ loang che bớt; viền rãnh tối nhẹ ở mép
+  khắc; sáng tối theo hướng nắng như rãnh lõm (gradient G); chỉ sáng màu đội cộng vào emissive. Không còn hình học nổi / quầng AO.
+
+## Họa tiết khắc chìm phức tạp hơn
+- Nét cọ có ĐUÔI CUỘN xoắn (`curl`), chỉ viền khắc bên trong + gân giữa; giữa các nét có CHỈ LÔNG CỌ mảnh; quanh chân trụ: 3 vòng chỉ +
+  chuỗi hạt; lá xoắn nhỏ ở đầu nét. Nhà chính: tâm nổi + 2 vòng chỉ, 10 gân xoáy có viền + chỉ lông, 3 vòng chỉ + chuỗi hạt quanh đài,
+  phiến bậc thềm có chỉ viền trong + thoi khắc giữa phiến, 2 vòng mũi tên giữa các bậc, nét cọ ngoài cuộn xen chiều + chỉ lông.
+  Phiến đường: chỉ viền trong + chuỗi 3 thoi khắc + nhuỵ; mảnh vỡ có chỉ viền.
+- Texture họa tiết 3072² (mức thấp/vừa 2048²), kênh A = chỉ khắc mảnh (shader nền làm tối theo chỉ), G gồm cả rãnh chỉ.
+
+## Phối cỏ/họa tiết sắc nét hơn; bỏ viền dưới trụ và lá đỏ
+- Mép họa tiết sắc (smoothstep theo fwidth quanh ngưỡng 0.5), ngọn cỏ lấn qua mép theo texture cỏ (mép lởm chởm tự nhiên, không nhoè);
+  lòng đá ~66% che, bóng mép trong lòng lõm (AO từ hiệu face/height), chỉ khắc, sáng tối theo nắng mạnh hơn; rêu chỉ còn vài mảng nhỏ;
+  đường tiếp giáp cỏ/đá tối nhẹ.
+- Bỏ các vòng chỉ + chuỗi hạt dưới chân trụ (chỉ còn đế). Bỏ lá phong đỏ/cam/vàng rải trên nền.
+
+## Nền sân nhà: phù điêu thấp kiểu Liên Quân (sắc nét, có khối, phối cỏ xanh lam)
+- `basePattern` vẽ: R = mặt đá (làm mờ 2px → shader lấy ngưỡng theo fwidth: mép sắc ở mọi độ phóng), G/B = độ cao 16 bit (mỗi phiến vát
+  mép, mặt phẳng; phiến xếp lớp cao thấp, làm mờ 4px), A = rãnh khắc. Bỏ kênh chỉ sáng màu đội.
+- Shader nền: pháp tuyến từ độ cao (HS 200) → đá tô theo độ dốc ↔ hướng đèn chính (tối/trung/sáng), bóng đổ mềm (so độ cao phía đèn) và
+  AO (so độ cao mip mờ) đè lên cả cỏ quanh phiến; rãnh khắc tối; vài mảng rêu. Đá lam xám nhạt (Xanh) / xám tím ấm (Đỏ). Không vẽ
+  dưới lòng sông.
+- Cỏ trong sân nhà (cách nhà chính < ~6000) chuyển dần sang xanh lam ngả xám như ảnh Liên Quân.
+- Bố cục: sân đá liền quanh nhà chính + 4 vòng bậc thềm cong chia khúc (có rãnh), đài 2 tầng + xoáy khắc, 16 nét cọ bao ngoài; quanh
+  mỗi trụ: đế 2 bậc + 6 cánh chính (có gân) + 6 cánh phụ lớp dưới; đường trong sân nhà: sân đá liền + phiến cong (gần trụ nhà thưa,
+  lộ cỏ), sau đó nét đá thon dọc mép thưa dần.
+
+## Nền sân nhà chìm, tông mờ; bỏ xoáy dưới trụ
+- Người chơi: phù điêu nổi rõ quá xấu → giảm hẳn: HS 90, đá xám lam/xám tím rất gần tông nền (ám 18% màu nền), sáng tối hẹp, phủ 82%;
+  bóng đổ/AO lên cỏ nhẹ; rãnh khắc mờ.
+- Bỏ toàn bộ xoáy cánh phiến dưới chân trụ; bỏ vòng đất mòn dưới chân trụ (bản trộn nền). Sân đá dọc đường trong sân nhà thon dần
+  ở đầu cuối (không cắt vuông).
+
+## Tường biên rìa map làm lại; cỏ trả về màu cũ; quanh trụ 1 không lát đá
+- `buildBorderWall`: bỏ dãy hộp đá ốp rêu. Các đoạn biên được nối thành đường liền (khớp miter, gãy > 50° tách đoạn), dựng cùng kiến trúc
+  tường thành lãnh địa: mặt cắt nhiều tầng `BW_PROF` + vật liệu chạm theo tầng (thoi, thừng, răng cưa, hoa văn 回, chỉ vàng), dải khảm
+  sáng trong gờ đai theo nửa bản đồ (Xanh dưới-trái, Đỏ trên-phải), cột vuông đai/núm vàng + ngọc màu đội mỗi ~1400 và ở mọi đầu/khớp.
+- Cỏ: bỏ phần chuyển cỏ sân nhà sang xanh lam (người chơi thích cỏ xanh trước đó); mép cỏ/đá gọn hơn (giảm ngọn cỏ lấn mép), đá bớt ám
+  màu nền.
+- Theo góp ý "ngay trụ 1 không cần đá, chỉ cần bệ tường ngang": sân đá dọc đường dừng ~760 trước trụ nhà (thon dần), bỏ phiến cong quanh
+  trụ nhà và nét đá dọc mép đường phía sau. Thêm viền chỉ khắc đôi theo mép sân đá (quanh nhà chính + hai mép sân đá dọc đường).
+
+## Tường biên rìa map: bỏ tường xây, thay bằng gờ đá tự nhiên lượn mềm
+- Người chơi chê tường xây chạm khắc ở rìa. `buildBorderWall` giờ là hai lớp gờ đá bo tròn gồ ghề (lớp trên cao hơn, lùi ra phía ngoài sân,
+  phía ngoài xác định bằng `outOfBounds`), nhấp nhô theo chiều dài, đầu dải thấp xuống; dùng chung vật liệu đá rừng `ROCK_FACET`
+  (vân lớp, rêu, khe nứt), màu đỉnh làm che khuất; vài viên ngọc màu đội nhỏ trên sống gờ.
+- Lỗi đã gặp: đầu dải dẹt hẳn (h=0) → tam giác suy biến → pháp tuyến NaN → hậu kỳ lan NaN làm cả khung hình trống. Giữ đầu dải ≥ 30% cao.
+
+## Ngoài viền rìa map: vườn rừng dày thay bãi cỏ trống
+- Hàng bụi lá liền sát sau gờ đá biên (phía ngoài xác định bằng `outOfBounds`), xen khóm hoa xanh.
+- ~260 cụm trang trí trong vùng ngoài biên: bụi lá, khóm hoa, đá tảng, mảng nền lá mục (bản trộn nền), thêm cây (lá rộng/cao/thông/hoa hồng)
+  — mép dưới phía camera chỉ đặt đồ thấp để không che sân.
+
+## Trụ cách đều + map giãn; ngoài tường biên là vực + thung lũng (kiểu Liên Quân)
+- `maps.js`: K 2.7 → 3.0 (map 19200²). Trụ đặt theo bảng `TOWER_POS`: mỗi đường 3 trụ CÁCH ĐỀU; hai đường cánh giống hệt nhau
+  (nhà cách nhà chính 950 gốc, khoảng 1575, trụ ngoài cách góc sông 700); đường giữa khoảng ~997; phía Đỏ ảnh x↔y. Khoảng tường dọc đường
+  (`guard`) nhân theo KS = K/2.7. Thêm `oobShape` (hình học vùng ngoài biên) cho shader. Mọi kiểm thử sim đạt.
+- `env/abyss.js`: vùng `outOfBounds(x, z, 420)` là VỰC — nền và sông bỏ (discard, GLSL `abyssAt` cùng công thức với sim); vách đá dựng
+  theo mép vực (22 hàng, gờ phân tầng, ngả vào trong, ám tím lam + tối theo chiều sâu), đá + bụi che mép; thung lũng ở −2600 (ảnh canvas
+  vẽ một lần: đồng cỏ, rừng, sông uốn, bóng mây; mờ theo khoảng cách); 2 lớp mây mỏng (ảnh nhiễu); THÁC nơi sông chính chảy ra vực.
+  Gờ đá biên chừa khe ở lòng sông. Sương chiến trường không phủ vực. Dải đất sau tường: cây nhỏ lác đác, đá, nền lá mục.
+- Hiệu năng: thung lũng/mây ban đầu tính nhiễu 3D theo điểm ảnh (rất nặng) → đổi sang ảnh vẽ sẵn / ảnh nhiễu.
+- Vòng import: ground → abyss → jungleDecor → grass → trees → ground(SUN) gây TDZ → tách ROCK_GLSL ra `env/rockGlsl.js`.
+
+## Hang mục tiêu lớn trên MŨI ĐÁ ở hai đầu sông, sát mép vực
+- `maps.js`: mũi đá tâm (600, 600) gốc, bán kính sân 330 (góc dưới-phải là ảnh qua đường chéo phụ). Cung tường biên góc dừng ở giao điểm
+  với vành mũi đá, nối tiếp bằng vành tường bao mũi đá (phía vực), để trống phía trong (nối đường cánh + sông). `outOfBounds` coi lòng mũi
+  đá là trong sân (sim, shader `abyssAt`, đường mép vực `abyssEdges` đều phình theo). Long Ngư → (560, 560), Hổ Lôi → (5840, 5840), trên
+  trục đối xứng (công bằng hai phe). Tìm đường tới hang thông; vùng vực không tới được. Mọi kiểm thử sim đạt.
+- Hang Hổ Lôi (kiểu hang Tà thần trong ảnh): rễ cổ thụ tím xoắn to thon dần (`taperTube`) vươn lên cuộn qua, cụm pha lê tím phát sáng, cột đá
+  nhỏ có đèn xanh, khóm hoa xanh tím; phần trang trí cao xoay về phía xa camera để không che hang.
+- Tổ Long Ngư ("hang chim" ngoài rìa): ~120 cành cong đan nhiều lớp thành vành tổ, cành chĩa ra, cỏ cài, 3 trứng rồng phát sáng.
+- Nứt sáng mặt bệ dịu hơn (×0.55), vòng nứt lan ra nước nhỏ lại.
+
+## So tổng quan với Liên Quân: chế độ chụp `?overview=` + chỉnh tông tổng thể
+- `game.js`: `?overview=<hệ số>` đặt camera nhìn toàn bản đồ (nghiêng 52°), ẩn sương chiến trường + HUD, nới sương cảnh — để chụp so sánh.
+- Khác biệt chính so với ảnh Liên Quân và cách sửa:
+  - cỏ xanh chói, lộ ô lặp → trộn hai tỉ lệ xoay lệch; rừng sẫm ngả lam, giảm bão hoà; đường là cỏ giẫm mòn sáng hơn, mép mềm
+    (bản trộn nền vẽ lại cả 3 đường, làm mờ 8); hậu kỳ giảm bão hoà 0.98 → 0.9, bóng ngả lam;
+  - đá rừng mảnh như que → bệ đá rừng dày hơn (đá rừng 340 → 520, cung trại 320 → 460, sim + hình), CÂY MỌC TRÊN BỆ ĐÁ (mỗi ~130–200)
+    và cây lùi sau bệ đá dọc đường → các mảng rừng đặc; bệ trại quái mờ/ám xanh;
+  - sông thẳng như kẻ thước → mặt nước rộng 1.4×, bờ lượn mạnh (vịnh, mũi đất), lòng bùn rộng 1.25×;
+  - bụi vuông → khối tròn lượn (siêu elip 2.4 + biên nhiễu).
+- Kiểm thử sim đạt (t_map, simtest, t_jungle, t_bot 50 trận không kẹt).
+
+## Bốn hang mục tiêu lớn (như Liên Quân)
+- Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm) trở về vị trí cũ: Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8
+  (phía Đỏ, gần đường Sông; trước là phút 6). Dựng lại vách đá móng ngựa (7 khối, cao dần về giữa lưng) + bụi quanh lưng hang.
+- Hai mục tiêu cuối trận phút 15 trên mũi đá chìa ra vực: Thần Điểu (tổ đan cành, góc đường Đền) — buff đội Lôi Vũ (+20% tốc đánh,
+  −10% hồi chiêu, +20 giáp/KP, 150s); Tà Thần (hang tím rễ xoắn + pha lê, góc đường Sông) — buff đội Tà Lực (+60 công, +90 phép,
+  −12% sát thương nhận, 150s). Hồi sinh 300s, thưởng vàng/KN cả đội. Model mới: chim thần cánh vỗ, đuôi phượng; ác thần tím sừng
+  cong, vuốt pha lê, vòng phù văn. Bản đồ nhỏ: L/H/Đ/T với màu riêng.
+
+## Nâng cấp icon trang bị + kỹ năng (bản tranh vẽ chi tiết)
+- Bộ vẽ chung (src/hud/paint.js): nền có chiều sâu (khói xoắn domain-warp sáng quanh nguồn sáng, khói tối dày ra mép, đốm bokeh,
+  bụi lấp lánh); mọi vật thể có kết cấu bề mặt (nhiễu mài/mòn), tối mép trong (AO), viền ngược sáng mép dưới-phải theo màu năng
+  lượng chủ đạo của icon, viền sáng trên-trái; hậu kỳ tăng tương phản/độ rực + làm nét (unsharp mask) trước khi vẽ khung.
+  Bóng/viền vẽ trực tiếp bằng clip + evenodd (không lớp nháp) nên tốc độ sinh icon giữ ~như cũ; làm mờ bằng thu nhỏ–phóng lại
+  (không dùng ctx.filter để chạy đúng cả Safari).
+- Khung: kỹ năng — vành kim loại vát (conic) + quầng màu chủ đề hắt vào trong; trang bị — viền kim loại vát theo bậc
+  (đồng/bạc/vàng), bậc 2–3 có đinh tán góc, bậc 3 thêm hoa văn cuộn góc + đá đỏ đỉnh khung.
+- Trang bị (src/hud/itemArt.js): vẽ lại toàn bộ vật thể — lưỡi vát hai mặt + rãnh máu + mũi loá, chuôi chạm khắc, đá quý cắt mài
+  gắn ổ (jewel), dây kim loại cuộn (wire), nét khắc chìm (etch), lửa nhiều lớp (lưỡi lửa mờ + sắc + lõi trắng + tàn lửa), giày giáp
+  nhìn nghiêng (giáp gối, giáp ống quyển, lá thép mu bàn chân chồng nhau, đĩa mắt cá), giáp ngực có giáp vai, áo choàng viền thêu
+  vàng, đèn lồng giấy căng tròn có tua rua... Vật thể vẽ trên lớp riêng rồi thêm quầng sáng màu chủ đề ôm viền.
+- Kỹ năng: dùng lại bộ vẽ vật thể của trang bị (búa, ủng, kiếm, lưỡi liềm); vẽ lại Nắm đấm (găng thép nhìn thẳng), Hồi Máu/Hồi
+  Phục/Thắp Sáng (đài sen nâng vật thay đôi tay), Mũi Tên Gió, Mưa Tên, Lộn Diều, Rừng Nuốt Bóng, Thu Hoạch, Giải Trói.
+- Icon trang bị được vẽ sẵn lúc rảnh (requestIdleCallback) ngay khi vào trận để mở shop lần đầu không khựng.
+- Trang xem trước: tools/items.html?s=200&ids=a,b (lọc món), tools/icons.html?s=180.

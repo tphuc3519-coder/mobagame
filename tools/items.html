@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>Icon trang bị</title>
+<style>body{background:#151826;color:#eee;font:12px system-ui;margin:12px} h3{margin:14px 0 6px;font-size:14px;color:#f3e2b8} .g{display:flex;flex-wrap:wrap;gap:12px} .c{width:var(--s,104px);text-align:center} .c img{width:var(--s,104px);height:var(--s,104px);display:block} .c small{display:block;margin-top:3px;line-height:1.2}</style>
+<div id="o"></div>
+<script type="importmap">{"imports":{"three":"../lib/three/build/three.module.js","three/addons/":"../lib/three/examples/jsm/"}}</script>
+<script type="module">
+import { ITEMS, SHOP_TABS } from '../src/data/items.js';
+import { itemArtURL } from '../src/hud/itemArt.js';
+const o = document.getElementById('o'), s = new URLSearchParams(location.search).get('s'); if (s) document.body.style.setProperty('--s', s + 'px');
+const ids = new URLSearchParams(location.search).get('ids');
+if (ids) o.innerHTML = `<div class="g">${ids.split(',').map((id) => `<div class="c"><img src="${itemArtURL(id, ITEMS[id].tier) || ''}"><small>${ITEMS[id].name}</small></div>`).join('')}</div>`;
+else o.innerHTML = SHOP_TABS.filter((t) => t.id !== 'rec').map((t) => `<h3>${t.name}</h3><div class="g">${Object.values(ITEMS).filter((i) => i.tab === t.id).sort((a, b) => a.tier - b.tier || a.cost - b.cost).map((i) => `<div class="c"><img src="${itemArtURL(i.id, i.tier) || ''}"><small>${i.name}</small></div>`).join('')}</div>`).join('');
+window.__done = true;
+</script>

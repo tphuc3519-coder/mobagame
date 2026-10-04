@@ -20,7 +20,7 @@ function setup(hero = 'hoa_ren', foe = 'hoa_ren') {
 
 { // danh mục
   const ids = Object.keys(ITEMS);
-  ok('đủ 38 món', ids.length === 38, String(ids.length));
+  ok('đủ 53 món', ids.length === 53, String(ids.length));
   ok('công thức hợp lệ và giá ghép ≥ 0', ids.every((i) => (ITEMS[i].from || []).every((c) => ITEMS[c]) && ITEMS[i].cost >= (ITEMS[i].from || []).reduce((a, c) => a + ITEMS[c].cost, 0)));
   const bad = ALPHA.filter((h) => cleanBuild(HEROES[h].recommendedBuild).length < 5);
   ok('mọi tướng có build gợi ý hợp lệ (≥5 món)', bad.length === 0, bad.join());
@@ -59,6 +59,21 @@ function setup(hero = 'hoa_ren', foe = 'hoa_ren') {
   ok('Mũ Sấm +30% Phép; xuyên KP 40%', Math.abs(p.stats.ap - (160 + 80) * 1.3) < 0.01 && p.stats.mrPenPct === 0.4, `${p.stats.ap}`);
   buy(p, 'thuong_pha_giap'); buy(p, 'thuong_pha_giap'); step(1);
   ok('nội tại Duy nhất không cộng dồn (xuyên giáp 30%)', Math.abs(p.stats.armorPenPct - 0.3) < 1e-9, String(p.stats.armorPenPct));
+}
+{ // nội tại đồ mới
+  const { w, p, f, step, buy } = setup(); p.gold = 99999;
+  buy(p, 'cung_bang_lam'); buy(p, 'kiem_bao_tap'); step(1);
+  f.pos.x = p.pos.x + 150; f.hp = f.stats.maxHp;
+  let slowSeen = false, magic = 0; const hp0 = f.hp;
+  w.on?.('damage', (d) => { if (d.type === 'magic' && d.target === f.id) magic++; });
+  for (let i = 0; i < 300 && f.alive; i++) { w.command(p.id, { type: 'attack', target: f.id }); step(1); if (f.statuses.some((s) => s.id === 'frostbow')) slowSeen = true; f.hp = Math.max(f.hp, 1000); }
+  ok('Cung Băng Lam: đòn đánh làm chậm', slowSeen);
+  ok('Kiếm Bão Táp: đánh liên tục có đòn thứ 3 (bộ đếm)', (p.flags.chain || 0) >= 3, String(p.flags.chain)); void magic; void hp0;
+  buy(p, 'khien_mat_troi'); step(1); f.pos.x = p.pos.x + 200; const h1 = f.hp; step(31);
+  ok('Khiên Mặt Trời: thiêu kẻ địch gần', f.hp < h1, `${h1} → ${f.hp}`);
+  const { p: q, step: st2, buy: b2 } = setup(); q.gold = 99999; b2(q, 'riu_bao_quan'); st2(1);
+  const as0 = q.stats.atkSpeed; q.hp = q.stats.maxHp * 0.3; st2(2);
+  ok('Rìu Bạo Quân: dưới 50% HP tăng tốc đánh', q.stats.atkSpeed > as0, `${as0} → ${q.stats.atkSpeed}`);
 }
 { // KN, vàng từ lính
   const { w, p, step } = setup();

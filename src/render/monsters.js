@@ -203,7 +203,77 @@ function tiger() {
   });
 }
 
+/** Thần Điểu: chim thần khổng lồ lông xanh ngọc ánh vàng, mào lửa trắng, đuôi dài như phượng, sải cánh vỗ chậm (đậu trên tổ). */
+function thunderBird() {
+  return rig((b) => {
+    const plume = new THREE.MeshStandardMaterial({ color: 0x2aa8c8, emissive: 0x062a3a, roughness: 0.45, metalness: 0.3 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xf2c25a, emissive: 0x3a2400, roughness: 0.3, metalness: 0.7 });
+    const feather = new THREE.MeshStandardMaterial({ color: 0x5ad8e8, emissive: 0x0a3a48, side: THREE.DoubleSide, roughness: 0.5, transparent: true, opacity: 0.95 });
+    put(b, SPH, plume, [0, 300, 0], [120, 140, 190], [0.35, 0, 0]);                      // thân
+    put(b, SPH, gold, [0, 330, 120], [80, 95, 70]);                                         // ức vàng
+    const neck = new THREE.Group(); neck.position.set(0, 410, 150); b.add(neck);
+    put(neck, CYL, plume, [0, 70, 20], [48, 160, 48], [0.4, 0, 0]);
+    const head = new THREE.Group(); head.position.set(0, 160, 80); neck.add(head);
+    put(head, SPH, plume, [0, 0, 0], [62, 58, 70]);
+    put(head, CONE, gold, [0, -8, 95], [22, 90, 18], [Math.PI / 2, 0, 0]);              // mỏ
+    for (const sd of [-1, 1]) put(head, SPH, glow(0xbff8ff, 2.4), [sd * 32, 14, 40], [10, 9, 8]);
+    for (let i = 0; i < 5; i++) put(head, CONE, glow(0xeafcff, 1.6), [0, 50 + i * 6, -10 - i * 22], [10, 90 - i * 10, 10], [-0.9 - i * 0.12, 0, 0]); // mào
+    const wings = [];
+    for (const sd of [-1, 1]) {
+      const w = new THREE.Group(); w.position.set(sd * 90, 360, 20); b.add(w); wings.push(w);
+      for (let i = 0; i < 9; i++) { const sh = new THREE.Shape(); const L = 260 + i * 34, W = 54; sh.moveTo(0, -W / 2); sh.quadraticCurveTo(L * 0.6, -W * 0.7, L, 0); sh.quadraticCurveTo(L * 0.6, W * 0.7, 0, W / 2); sh.closePath();
+        const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), i % 3 === 0 ? gold : feather); m.rotation.set(-Math.PI / 2, 0, sd > 0 ? -(-0.5 + i * 0.13) : Math.PI + (-0.5 + i * 0.13)); m.position.y = i * 2; w.add(m); }
+    }
+    const tail = new THREE.Group(); tail.position.set(0, 270, -150); b.add(tail);
+    for (let i = 0; i < 7; i++) { const sh = new THREE.Shape(), L = 420 + (3 - Math.abs(i - 3)) * 90; sh.moveTo(-20, 0); sh.quadraticCurveTo(-30, L * 0.5, 0, L); sh.quadraticCurveTo(30, L * 0.5, 20, 0); sh.closePath();
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), i % 2 ? feather : gold); m.rotation.set(-1.9, (i - 3) * 0.16, 0); tail.add(m); }
+    for (const sd of [-1, 1]) put(b, CYL, gold, [sd * 45, 150, 30], [16, 200, 16]);
+    const aura = put(b, SPH, glow(0x7ae8ff, 1.2), [0, 330, 0], [260, 260, 260]); aura.material.transparent = true; aura.material.opacity = 0.08; aura.material.depthWrite = false;
+    return { wings, neck, head, tail, aura };
+  }, (t, dt, moving, atk, b, p) => {
+    const flap = Math.sin(t * 2.2) * 0.35 + (atk > 0 ? Math.sin(atk * Math.PI) * 0.6 : 0);
+    p.wings[0].rotation.z = -flap; p.wings[1].rotation.z = flap; p.tail.rotation.x = Math.sin(t * 1.3) * 0.08;
+    p.neck.rotation.x = atk > 0 ? Math.sin(atk * Math.PI) * 0.5 : Math.sin(t * 0.8) * 0.06;
+    b.position.y = Math.sin(t * 2.2) * 12; p.aura.scale.setScalar(250 + Math.sin(t * 3) * 20);
+  });
+}
+/** Tà Thần: ác thần tím khổng lồ — thân đá đen bọc pha lê tím, sừng cong, mắt và lõi ngực rực tím, đôi tay vuốt dài, vòng phù văn trôi. */
+function darkLord() {
+  return rig((b) => {
+    const skin = new THREE.MeshStandardMaterial({ color: 0x2a2440, roughness: 0.55, metalness: 0.25 });
+    const armor = new THREE.MeshStandardMaterial({ color: 0x4a3a78, roughness: 0.35, metalness: 0.6 });
+    const crys = new THREE.MeshStandardMaterial({ color: 0xb06aff, emissive: 0x6a1ad8, emissiveIntensity: 0.9, roughness: 0.2, flatShading: true });
+    put(b, SPH, skin, [0, 250, 0], [130, 150, 110]);                                       // bụng
+    put(b, SPH, armor, [0, 380, 20], [190, 130, 130]);                                     // ngực vai
+    const core = put(b, SPH, glow(0xd08aff, 2.2), [0, 380, 120], [38, 38, 20]);
+    const head = new THREE.Group(); head.position.set(0, 520, 60); b.add(head);
+    put(head, SPH, skin, [0, 0, 0], [70, 80, 70]);
+    for (const sd of [-1, 1]) {
+      put(head, SPH, glow(0xe0a0ff, 2.6), [sd * 26, 10, 58], [12, 7, 6]);
+      const horn = new THREE.CatmullRomCurve3([new THREE.Vector3(sd * 40, 40, 0), new THREE.Vector3(sd * 110, 110, -20), new THREE.Vector3(sd * 120, 200, -80), new THREE.Vector3(sd * 70, 240, -150)]);
+      head.add(new THREE.Mesh(new THREE.TubeGeometry(horn, 16, 14, 6), armor));
+    }
+    const arms = [];
+    for (const sd of [-1, 1]) {
+      const a = new THREE.Group(); a.position.set(sd * 190, 420, 20); b.add(a); arms.push(a);
+      put(a, SPH, armor, [0, 0, 0], [70, 70, 70]); put(a, CYL, skin, [sd * 30, -130, 30], [42, 240, 42], [0.3, 0, sd * 0.25]);
+      for (let k = 0; k < 4; k++) put(a, CONE, crys, [sd * 60 + (k - 1.5) * 18, -270, 90], [10, 70, 10], [1.4, 0, 0]); // vuốt
+      for (let k = 0; k < 3; k++) put(a, CONE, crys, [sd * 30, 40 + k * 10, -20 - k * 30], [18, 110 - k * 20, 18], [-0.6, 0, sd * -0.5]);           // gai vai pha lê
+    }
+    for (const sd of [-1, 1]) put(b, CYL, skin, [sd * 70, 90, 0], [55, 200, 55]);
+    const rings = new THREE.Group(); rings.position.y = 300; b.add(rings);
+    for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(260 + i * 40, 4, 6, 64), glow(0xb06aff, 1.6)); t.rotation.x = Math.PI / 2 + (i - 1) * 0.35; rings.add(t); }
+    return { head, arms, core, rings };
+  }, (t, dt, moving, atk, b, p) => {
+    b.scale.y = 1 + Math.sin(t * 1.5) * 0.02; p.rings.rotation.y += dt * 0.7; p.core.scale.setScalar(36 + Math.sin(t * 4) * 6);
+    const sl = atk > 0 ? Math.sin(atk * Math.PI) : 0; p.arms[0].rotation.x = -sl * 1.2 + Math.sin(t) * 0.05; p.arms[1].rotation.x = -sl * 1.0 - Math.sin(t) * 0.05;
+    p.head.rotation.x = -sl * 0.3; b.position.z = lunge(atk) * 70;
+  });
+}
+
 export function createMonster(type, member) {
+  if (type === 'than_dieu') return thunderBird();
+  if (type === 'ta_than') return darkLord();
   if (type === 'soi_da') return wolf(member === 'alpha' ? 1 : 0.65);
   if (type === 'coc_reu') return toad();
   if (type === 'linh_thuy') return waterSpirit();

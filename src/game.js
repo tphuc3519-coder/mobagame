@@ -23,8 +23,9 @@ import { createInput } from './hud/joystick.js';
 import { createHud } from './hud/hud.js';
 import { createSkillButtons } from './hud/skillButtons.js';
 import { createShop } from './hud/shop.js';
+import { warmItemArt } from './hud/itemArt.js';
 import { createSpellButtons } from './hud/spellButtons.js';
-import { STARTER } from './data/items.js';
+import { STARTER, ITEMS } from './data/items.js';
 
 import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
@@ -71,10 +72,12 @@ const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, leve
 const views = createUnitViews(scene, 0, player.id);
 const indicators = createIndicators(scene);
 const towerRanges = createTowerRanges(scene);
+const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
 const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
+if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }
 const portraits = createPortraits(renderer);
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
 createHudSettings();
@@ -86,6 +89,7 @@ const hud = createHud(document.getElementById('hud'), input);
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
+warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
 for (const id of STARTER[HEROES[heroId].roles[0]] || []) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vai (05 §5)
 if (q.has('shop')) shop.open(true);
 
@@ -132,6 +136,8 @@ const loopCfg = {
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt); sun.follow(px, py);
+    if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
+      c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
     if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
@@ -139,7 +145,7 @@ const loopCfg = {
     const i = renderer.info.render;
     fogOfWar?.update(world, dt);
     minimap.draw();
-    hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
+    if (!OVERVIEW) hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
 };
 const loop = createLoop(loopCfg);

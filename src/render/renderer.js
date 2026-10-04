@@ -7,7 +7,7 @@ export function createRenderer(canvas, level, { onLost, onRestored }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: level === 'high', powerPreference: 'high-performance' });
   renderer.setClearColor(0x0f1224);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = 0.84;
   if (LEVELS[level].shadow) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; } // chỉ nhân vật đổ bóng thật (cảnh tĩnh dùng bóng nướng sẵn)
   const resize = () => {
     renderer.setPixelRatio(Math.min(devicePixelRatio, LEVELS[level].pixelRatio));
