@@ -260,3 +260,13 @@
   Gờ đá biên chừa khe ở lòng sông. Sương chiến trường không phủ vực. Dải đất sau tường: cây nhỏ lác đác, đá, nền lá mục.
 - Hiệu năng: thung lũng/mây ban đầu tính nhiễu 3D theo điểm ảnh (rất nặng) → đổi sang ảnh vẽ sẵn / ảnh nhiễu.
 - Vòng import: ground → abyss → jungleDecor → grass → trees → ground(SUN) gây TDZ → tách ROCK_GLSL ra `env/rockGlsl.js`.
+
+## Hang mục tiêu lớn trên MŨI ĐÁ ở hai đầu sông, sát mép vực
+- `maps.js`: mũi đá tâm (600, 600) gốc, bán kính sân 330 (góc dưới-phải là ảnh qua đường chéo phụ). Cung tường biên góc dừng ở giao điểm
+  với vành mũi đá, nối tiếp bằng vành tường bao mũi đá (phía vực), để trống phía trong (nối đường cánh + sông). `outOfBounds` coi lòng mũi
+  đá là trong sân (sim, shader `abyssAt`, đường mép vực `abyssEdges` đều phình theo). Long Ngư → (560, 560), Hổ Lôi → (5840, 5840), trên
+  trục đối xứng (công bằng hai phe). Tìm đường tới hang thông; vùng vực không tới được. Mọi kiểm thử sim đạt.
+- Hang Hổ Lôi (kiểu hang Tà thần trong ảnh): rễ cổ thụ tím xoắn to thon dần (`taperTube`) vươn lên cuộn qua, cụm pha lê tím phát sáng, cột đá
+  nhỏ có đèn xanh, khóm hoa xanh tím; phần trang trí cao xoay về phía xa camera để không che hang.
+- Tổ Long Ngư ("hang chim" ngoài rìa): ~120 cành cong đan nhiều lớp thành vành tổ, cành chĩa ra, cỏ cài, 3 trứng rồng phát sáng.
+- Nứt sáng mặt bệ dịu hơn (×0.55), vòng nứt lan ra nước nhỏ lại.

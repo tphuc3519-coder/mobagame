@@ -131,8 +131,10 @@ const CAMPS_BLUE = [
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
 const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
-  { id: 'long_ngu', type: 'long_ngu', x: 1340, y: 2020, boss: true, back: 2.36 }, // hang trong mé rừng phía Xanh, cửa mở ra sông
-  { id: 'ho_loi', type: 'ho_loi', x: 5060, y: 4380, boss: true, back: -0.785 }, // đối xứng tâm của Long Ngư
+  // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
+  // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
+  { id: 'long_ngu', type: 'long_ngu', x: 560, y: 560, boss: true, back: -2.356 },
+  { id: 'ho_loi', type: 'ho_loi', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
@@ -206,9 +208,15 @@ function trimToLanes(w) {
 /** Tường biên: tấm đá xẻ lớn chạy suốt mép ngoài hai đường cánh (từ sân nhà này tới sân nhà kia), đóng khung bản đồ —
  *  phía ngoài không thuộc sân chơi. Chỉ khai nửa phía Xanh (phần còn lại là ảnh đối xứng x↔y); đầu tường có đoạn chặn ra tới viền. */
 const BORDER_W = 260, BX = 440, BR = 860, BC = 1300, BEND = 5100;
+// Mũi đá chìa ra vực ở góc trên-trái (góc dưới-phải là ảnh qua đường chéo phụ): tâm (PX, PY), bán kính sân trong PR (toạ độ gốc).
+const PX = 600, PY = 600, PR = 330;
 const borderHalf = (() => {
-  const pts = [[BX, BEND]]; // đường Đền: mép trái, lên tới góc, bo cung quanh góc trên-trái tới đường chéo
-  for (let i = 0; i <= 6; i++) { const a = Math.PI + (i / 12) * (Math.PI / 2); pts.push([BC + Math.cos(a) * BR, BC + Math.sin(a) * BR]); }
+  // giao của cung tường góc (tâm BC, bán kính BR) với vành mũi đá (tâm PX, PY, bán kính PR) — phía Xanh (y > x)
+  const d = Math.hypot(BC - PX, BC - PY), ux = (BC - PX) / d, uy = (BC - PY) / d, aa = (d * d + PR * PR - BR * BR) / (2 * d), hh = Math.sqrt(PR * PR - aa * aa);
+  const ix = PX + aa * ux - hh * uy, iy = PY + aa * uy + hh * ux, phi = Math.atan2(iy - BC, ix - BC + 0) + (Math.atan2(iy - BC, ix - BC) < 0 ? Math.PI * 2 : 0), th0 = Math.atan2(iy - PY, ix - PX);
+  const pts = [[BX, BEND]]; // đường Đền: mép trái, lên tới góc, bo cung quanh góc tới vành mũi đá
+  for (let i = 0; i <= 6; i++) { const a = Math.PI + (i / 6) * (phi - Math.PI); pts.push([BC + Math.cos(a) * BR, BC + Math.sin(a) * BR]); }
+  for (let i = 1; i <= 6; i++) { const a = th0 + (i / 6) * (Math.PI * 1.25 - th0); pts.push([PX + Math.cos(a) * PR, PY + Math.sin(a) * PR]); } // vành mũi đá (nửa phía Xanh) tới đường chéo
   const seg = (a, b) => ({ x1: a[0] * K, y1: a[1] * K, x2: b[0] * K, y2: b[1] * K, w: BORDER_W, border: true });
   const temple = [seg([60, BEND], [BX, BEND]), ...pts.slice(1).map((p, i) => seg(pts[i], p))];
   const flip = ([x, y]) => [6400 - y, 6400 - x]; // đường Sông = ảnh của đường Đền qua đường chéo phụ
@@ -223,6 +231,7 @@ const W_BLUE_T = (() => { // bệ nhà ưu tiên: bỏ các đoạn tường/đ�
 /** Điểm (toạ độ thế giới) nằm ngoài tường biên (vùng không thuộc sân chơi) — dùng để trồng rừng dày phía ngoài khung. */
 function outOfBounds(x, y, pad = 0) {
   const test = (u, v) => { u /= K; v /= K; const p = pad / K, e = BX - BORDER_W / K / 2 - p;
+    if (Math.hypot(u - PX, v - PY) < PR + BORDER_W / K / 2 + p) return false; // mũi đá chìa ra vực
     return (u < e && v < BEND - p) || (u < BC && v < BC && Math.hypot(u - BC, v - BC) > BR + BORDER_W / K / 2 + p) || (v < e && u < BEND - p); };
   return test(x, y) || test(A - y, A - x);
 }
@@ -232,7 +241,7 @@ export const ARENA = {
   id: 'arena5v5', w: A, h: A,
   margin: 260,                        // viền ngoài không đi được (vách núi)
   outOfBounds,                        // ngoài tường biên hai đường cánh
-  oobShape: { K, BX, BEND, BC, BR, BW: BORDER_W, A }, // hình học vùng ngoài biên (shader cắt nền / vực)
+  oobShape: { K, BX, BEND, BC, BR, BW: BORDER_W, A, PX, PY, PR }, // hình học vùng ngoài biên (shader cắt nền / vực)
   lanes: LANES,
   river: { width: 500 * K, diag: true },   // chạy theo đường chéo y = x
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],

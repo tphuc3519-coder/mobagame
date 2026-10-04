@@ -18,6 +18,7 @@ export function abyssGLSL(map, pad = ABYSS_PAD) {
   const f = (v) => v.toFixed(4);
   return `
   bool abyssT(vec2 w){ float u = w.x / ${f(s.K)}, v = w.y / ${f(s.K)}, p = ${f(pad / s.K)}, e = ${f(s.BX - s.BW / s.K / 2)} - p;
+    if (length(vec2(u - ${f(s.PX ?? -1e4)}, v - ${f(s.PY ?? -1e4)})) < ${f((s.PR ?? 0) + s.BW / s.K / 2)} + p) return false;
     return (u < e && v < ${f(s.BEND)} - p) || (u < ${f(s.BC)} && v < ${f(s.BC)} && length(vec2(u - ${f(s.BC)}, v - ${f(s.BC)})) > ${f(s.BR + s.BW / s.K / 2)} + p) || (v < e && u < ${f(s.BEND)} - p); }
   bool abyssAt(vec2 w){ return abyssT(w) || abyssT(vec2(${f(s.A)} - w.y, ${f(s.A)} - w.x)); }`;
 }
@@ -31,7 +32,12 @@ export function abyssEdges(map, pad = ABYSS_PAD, step = 60) {
   for (let i = 1; i <= 24; i++) { const a = Math.PI + (i / 24) * (Math.PI / 2); raw.push([C + Math.cos(a) * R, C + Math.sin(a) * R]); }
   raw.push([Bw, e], [Bw, FAR]);
   const resample = (pts) => { const out = [pts[0]]; for (let i = 1; i < pts.length; i++) { const [ax, az] = pts[i - 1], [bx, bz] = pts[i], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(L / step)); for (let k = 1; k <= n; k++) out.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]); } return out; };
-  const tl = resample(raw), br = tl.map(([x, z]) => [s.A - z, s.A - x]);
+  let tl = resample(raw);
+  if (s.PR) { // mũi đá: điểm mép vực lọt trong vành mũi đá được đẩy ra theo bán kính → mép vực phình ra quanh mũi đá
+    const px = s.PX * K, pz = s.PY * K, pr = s.PR * K + s.BW / 2 + pad;
+    tl = resample(tl.map(([x, z]) => { const dx = x - px, dz = z - pz, l = Math.hypot(dx, dz); return l < pr && l > 1 ? [px + dx / l * pr, pz + dz / l * pr] : [x, z]; }), step);
+  }
+  const br = tl.map(([x, z]) => [s.A - z, s.A - x]);
   return [tl, br];
 }
 

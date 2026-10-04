@@ -483,17 +483,9 @@ function buildLair(g, c, R, r, glowHex) {
     plat.setAttribute('color', new THREE.BufferAttribute(col, 3)); }
   const platM = new THREE.Mesh(plat, new THREE.MeshLambertMaterial({ vertexColors: true })); platM.position.set(c.x, 14, c.y); platM.receiveShadow = true; g.add(platM);
   // tường đá sắc cạnh ôm phía sau hang (hình móng ngựa), cao dần về giữa lưng, chừa mặt mở ra sông
-  const wr = rngFor((seed * 997) | 0), wallGeos = [], RW = R * 1.12;
-  for (let i = 0; i < 6; i++) {
-    const a0 = back + (i / 6 - 0.5) * Math.PI * 1.25, a1 = back + ((i + 1) / 6 - 0.5) * Math.PI * 1.25;
-    const seg = { x1: c.x + Math.cos(a0) * RW, y1: c.y + Math.sin(a0) * RW, x2: c.x + Math.cos(a1) * RW, y2: c.y + Math.sin(a1) * RW, w: R * 0.34 };
-    const mid = 1 - Math.abs((i + 0.5) / 6 - 0.5) * 2; wallGeos.push(roundRockGeo(seg, 120 + 110 * mid, seed + i * 3.3));
-  }
-  const wallM = new THREE.Mesh(mergeGeometries(wallGeos), ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
-  // vài khối đá lởm chởm nhô lên quanh mép bệ
-  const spikes = [];
-  for (let i = 0; i < 7; i++) { const a = back + wr.range(-1.2, 1.2), d = R * wr.range(0.85, 1.0); spikes.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: wr.range(0, 7), sx: R * wr.range(0.08, 0.13), sy: R * wr.range(0.2, 0.32), sz: R * wr.range(0.08, 0.13) }); }
-  g.add(scatter(new THREE.InstancedMesh(boulderGeo(91), ROCK_FACET(), spikes.length), spikes, true)); // trụ đá tròn nhẵn
+  const wr = rngFor((seed * 997) | 0);
+  const deco = Math.sin(back) > 0.2 ? back - Math.PI / 2 : back; // phần trang trí cao đặt ở phía xa camera (không che hang)
+  if (c.type === 'ho_loi') purpleLair(g, c, R, wr, deco); else dragonNest(g, c, R, wr, back);
   // vết nứt phát sáng: mặt trên bệ + lan ra nước quanh hang
   const U = { uT: LAIR_T, uC: { value: glow.clone().multiplyScalar(1.8) }, uR: { value: R }, uS: { value: seed * 37.0 } };
   const crack = (rad, y, outer) => { const m = new THREE.Mesh(new THREE.CircleGeometry(rad, 64), new THREE.ShaderMaterial({ uniforms: { ...U, uO: { value: outer ? 1 : 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -509,13 +501,84 @@ function buildLair(g, c, R, r, glowHex) {
         float line = smoothstep(0.13, 0.0, e) + smoothstep(0.03, 0.0, e) * 1.5;
         float fall = uO > 0.5 ? smoothstep(1.6, 0.95, r) * smoothstep(0.85, 1.0, r) : smoothstep(1.0, 0.2, r) * 0.9 + 0.1;
         float pulse = 0.65 + 0.35 * sin(uT * 2.2 - r * 6.0);
-        float v = line * fall * pulse;
+        float v = line * fall * pulse * 0.55;
         gl_FragColor = vec4(uC * v, v); }` }));
     m.rotation.x = -Math.PI / 2; m.position.set(c.x, y, c.y); m.renderOrder = 2; g.add(m); };
-  crack(R * 0.98, 33, false); crack(R * 1.6, 6, true);
+  crack(R * 0.98, 33, false); crack(R * 1.35, 6, true);
   // quả cầu năng lượng trên móng giữa
   const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x + Math.cos(back) * R * 0.2, R * 0.5, c.y + Math.sin(back) * R * 0.2); g.add(orb);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: glow, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 })); halo.scale.setScalar(R * 0.6); halo.position.copy(orb.position); g.add(halo);
+}
+
+/** Ống cong (rễ/cành) có bán kính thon dần từ gốc tới ngọn. */
+function taperTube(pts, r0, r1, seg = 40, rad = 7) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z))), g = new THREE.TubeGeometry(curve, seg, 1, rad, false);
+  const p = g.attributes.position, fr = curve.computeFrenetFrames(seg, false);
+  for (let i = 0; i <= seg; i++) { const t = i / seg, c = curve.getPointAt(t), k = r0 + (r1 - r0) * Math.pow(t, 0.8);
+    for (let j = 0; j <= rad; j++) { const idx = i * (rad + 1) + j, v = new THREE.Vector3(p.getX(idx), p.getY(idx), p.getZ(idx)).sub(c); p.setXYZ(idx, c.x + v.x * k, c.y + v.y * k, c.z + v.z * k); } }
+  void fr; g.computeVertexNormals(); g.deleteAttribute('uv'); return g;
+}
+/** Hang Hổ Lôi (kiểu hang Tà thần Liên Quân): rễ cổ thụ tím xoắn vươn lên rồi cuộn qua phía sau, cụm pha lê tím phát sáng, cột đá
+ *  nhỏ có đèn xanh quanh bệ, khóm hoa lá xanh tím. */
+function purpleLair(g, c, R, r, back) {
+  const bx = Math.cos(back), bz = Math.sin(back), px = -bz, pz = bx, roots = [];
+  for (let k = 0; k < 7; k++) {
+    const side = (k / 6 - 0.5) * 2, a = back + side * 1.25, d0 = R * r.range(0.95, 1.15), x0 = c.x + Math.cos(a) * d0, z0 = c.y + Math.sin(a) * d0;
+    const hgt = r.range(320, 560) * (1 - Math.abs(side) * 0.3), curlS = r.next() < 0.5 ? -1 : 1, pts = [[x0, -10, z0]];
+    for (let i = 1; i <= 7; i++) { const t = i / 7, sw = Math.sin(t * Math.PI * 1.4) * R * 0.35 * curlS;
+      pts.push([x0 - Math.cos(a) * R * 0.35 * t + px * sw, hgt * Math.sin(t * Math.PI * 0.62) + 40 * t, z0 - Math.sin(a) * R * 0.35 * t + pz * sw]); }
+    roots.push(taperTube(pts, r.range(60, 90), r.range(10, 18), 48, 10));
+    for (let q = 0; q < 2; q++) { const s0 = pts[2 + q * 2]; roots.push(taperTube([s0, [s0[0] + r.range(-140, 140), s0[1] + r.range(40, 140), s0[2] + r.range(-140, 140)], [s0[0] + r.range(-220, 220), s0[1] + r.range(60, 220), s0[2] + r.range(-220, 220)]], 24, 4, 18, 7)); }
+  }
+  const bark = new THREE.MeshStandardMaterial({ color: 0x5a4a9a, roughness: 0.7 });
+  bark.onBeforeCompile = (sh) => { sh.vertexShader = 'varying vec3 vWp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'varying vec3 vWp;\n' + ROCK_GLSL + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      float gr = rfbm(vec3(vWp.x * 0.02, vWp.y * 0.004, vWp.z * 0.02)); diffuseColor.rgb *= 0.7 + 0.5 * smoothstep(0.35, 0.7, gr);   // vân vỏ dọc
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.75, 0.62, 1.0), smoothstep(0.66, 0.72, gr) * 0.6);`); };
+  bark.customProgramCacheKey = () => 'lair-bark';
+  const rm = new THREE.Mesh(mergeGeometries(roots), bark); rm.castShadow = true; rm.receiveShadow = true; g.add(rm);
+  // cụm pha lê tím
+  const cg = []; for (let k = 0; k < 16; k++) {
+    const a = back + r.range(-1.3, 1.3), d = R * r.range(0.7, 1.15), x = c.x + Math.cos(a) * d, z = c.y + Math.sin(a) * d, h = r.range(70, 200), w = h * r.range(0.16, 0.24);
+    const body = new THREE.CylinderGeometry(w, w * 1.1, h, 6, 1); body.translate(0, h / 2, 0); const tip = new THREE.ConeGeometry(w, w * 1.6, 6); tip.translate(0, h + w * 0.8, 0);
+    const one = mergeGeometries([body.toNonIndexed(), tip.toNonIndexed()]); one.rotateZ(r.range(-0.45, 0.45)); one.rotateX(r.range(-0.45, 0.45)); one.translate(x, 0, z); one.deleteAttribute('uv'); cg.push(one);
+  }
+  const cm = new THREE.Mesh(mergeGeometries(cg), new THREE.MeshStandardMaterial({ color: 0x9a5aff, emissive: 0x6a2ad8, emissiveIntensity: 0.8, roughness: 0.25, metalness: 0.1, flatShading: true }));
+  g.add(cm);
+  // cột đá nhỏ có đèn xanh
+  for (let k = 0; k < 4; k++) { const a = back + Math.PI + (k - 1.5) * 0.55, d = R * 1.02, x = c.x + Math.cos(a) * d, z = c.y + Math.sin(a) * d;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(16, 22, 70, 8), ROCK_FACET()); post.position.set(x, 35, z); g.add(post);
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(13, 0), new THREE.MeshBasicMaterial({ color: 0x7ae8ff })); gem.position.set(x, 86, z); g.add(gem);
+    const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0x6ad8ff, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.7 })); h.position.set(x, 86, z); h.scale.setScalar(90); g.add(h); }
+  const fl = []; for (let k = 0; k < 26; k++) { const a = back + r.range(-1.6, 1.6), d = R * r.range(0.9, 1.35); fl.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: r.range(0, 7), sx: r.range(110, 170), sy: r.range(90, 140) }); }
+  g.add(buildGrass(fl, 'blue', 8));
+}
+/** Tổ Long Ngư (kiểu "hang chim" ngoài rìa vực): vành tổ đan bằng cành cong nhiều lớp, cành chĩa ra, lá cỏ cài, trứng rồng phát sáng. */
+function dragonNest(g, c, R, r, back) {
+  const br = [], RN = R * 1.0;
+  for (let k = 0; k < 120; k++) {
+    const a0 = r.range(0, Math.PI * 2), span = r.range(0.7, 1.4), lay = r.next(), y0 = 10 + lay * 140, rr = RN * (0.84 + lay * 0.2 + r.range(-0.06, 0.06)), pts = [];
+    if (Math.cos(a0 + span / 2 - back) < -0.75 && lay > 0.45) continue;                       // phía trước (ra sông) thấp hơn: lối vào
+    for (let i = 0; i <= 6; i++) { const t = i / 6, a = a0 + span * t; pts.push([c.x + Math.cos(a) * rr, y0 + Math.sin(t * Math.PI) * r.range(20, 60) * (lay > 0.5 ? 1 : 0.5), c.y + Math.sin(a) * rr]); }
+    br.push(taperTube(pts, r.range(18, 30), r.range(8, 14), 16, 7));
+  }
+  for (let k = 0; k < 28; k++) { // cành chĩa ra ngoài
+    const a = r.range(0, Math.PI * 2), x0 = c.x + Math.cos(a) * RN * 1.02, z0 = c.y + Math.sin(a) * RN * 1.02, L = r.range(120, 260), y0 = r.range(30, 110);
+    br.push(taperTube([[x0, y0, z0], [x0 + Math.cos(a) * L * 0.5, y0 + r.range(10, 50), z0 + Math.sin(a) * L * 0.5], [x0 + Math.cos(a + r.range(-0.4, 0.4)) * L, y0 + r.range(30, 110), z0 + Math.sin(a + r.range(-0.4, 0.4)) * L]], r.range(7, 11), 2, 14, 5));
+  }
+  const wood = new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.85 });
+  wood.onBeforeCompile = (sh) => { sh.vertexShader = 'varying vec3 vWp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'varying vec3 vWp;\n' + ROCK_GLSL + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      float n = rfbm(vWp / 30.0); diffuseColor.rgb *= 0.6 + 0.6 * n; diffuseColor.rgb *= mix(0.55, 1.0, smoothstep(0.0, 120.0, vWp.y));`); };
+  wood.customProgramCacheKey = () => 'nest-wood';
+  const nm = new THREE.Mesh(mergeGeometries(br), wood); nm.castShadow = true; nm.receiveShadow = true; g.add(nm);
+  // trứng rồng phát sáng ở lưng tổ
+  for (let k = 0; k < 3; k++) { const a = back + (k - 1) * 0.42, d = R * 0.62, x = c.x + Math.cos(a) * d, z = c.y + Math.sin(a) * d;
+    const egg = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshStandardMaterial({ color: 0xffc26a, emissive: 0xff8a20, emissiveIntensity: 0.55, roughness: 0.35 }));
+    egg.scale.set(34, 48, 34); egg.position.set(x, 70, z); egg.rotation.z = r.range(-0.3, 0.3); g.add(egg);
+    const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffa040, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.6 })); h.position.set(x, 75, z); h.scale.setScalar(150); g.add(h); }
+  const tufts = []; for (let k = 0; k < 30; k++) { const a = r.range(0, Math.PI * 2), d = RN * r.range(0.95, 1.2); tufts.push({ x: c.x + Math.cos(a) * d, y: r.range(0, 40), z: c.y + Math.sin(a) * d, ry: r.range(0, 7), sx: r.range(110, 170), sy: r.range(110, 180) }); }
+  g.add(buildGrass(tufts, 'wild', 12));
 }
 export const LAIR_T = { value: 0 };
 let _glow = null;
