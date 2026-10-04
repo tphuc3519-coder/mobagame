@@ -223,3 +223,9 @@
 - Bố cục: sân đá liền quanh nhà chính + 4 vòng bậc thềm cong chia khúc (có rãnh), đài 2 tầng + xoáy khắc, 16 nét cọ bao ngoài; quanh
   mỗi trụ: đế 2 bậc + 6 cánh chính (có gân) + 6 cánh phụ lớp dưới; đường trong sân nhà: sân đá liền + phiến cong (gần trụ nhà thưa,
   lộ cỏ), sau đó nét đá thon dọc mép thưa dần.
+
+## Nền sân nhà chìm, tông mờ; bỏ xoáy dưới trụ
+- Người chơi: phù điêu nổi rõ quá xấu → giảm hẳn: HS 90, đá xám lam/xám tím rất gần tông nền (ám 18% màu nền), sáng tối hẹp, phủ 82%;
+  bóng đổ/AO lên cỏ nhẹ; rãnh khắc mờ.
+- Bỏ toàn bộ xoáy cánh phiến dưới chân trụ; bỏ vòng đất mòn dưới chân trụ (bản trộn nền). Sân đá dọc đường trong sân nhà thon dần
+  ở đầu cuối (không cắt vuông).

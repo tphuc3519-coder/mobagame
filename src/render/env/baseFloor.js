@@ -41,25 +41,17 @@ function layout(map, structs, onRiver) {
     for (let k = 0; k < 16; k++) { const a0 = (k / 16) * Math.PI * 2 + 0.15, p = spiral(c.x, c.y, 1440, 1950, a0, 0.6, 22, 20);   // nét cọ bao ngoài
       if (inPlay(p[11][0], p[11][1])) add(p, petalW(230), 0.27, 0.12, 0.3); }
   }
-  for (const t of towers) { // xoáy cánh phiến quanh chân trụ
-    const a00 = r.range(0, 6.3), K = 6;
-    disc(t.x, t.y, 470, 0.3, 0.04); disc(t.x, t.y, 330, 0.4, 0.04);
-    for (let k = 0; k < K; k++) {
-      const a0 = a00 + (k / K) * Math.PI * 2, R1 = r.range(820, 960);
-      add(spiral(t.x, t.y, 470, R1 * 0.86, a0 + 0.42, 1.05, 24), petalW(130), 0.24, 0.1);            // cánh phụ (lớp dưới)
-      add(spiral(t.x, t.y, 360, R1, a0, 1.25, 28), petalW(215), 0.3, 0.13, 0.32);                     // cánh chính (lớp trên)
-    }
-  }
+  // (bỏ xoáy dưới chân trụ theo góp ý người chơi)
   for (const ln of map.lanes) { // đường: sân nhà lát phiến cong → quanh trụ nhà lẫn cỏ → sau đó cỏ, nét đá dọc mép
     const P = ln.pts, cum = [0]; for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
     const total = cum[cum.length - 1], at = (s) => { let i = 1; while (i < P.length - 1 && cum[i] < s) i++; const L = cum[i] - cum[i - 1] || 1, t = (s - cum[i - 1]) / L; return { x: P[i - 1][0] + (P[i][0] - P[i - 1][0]) * t, z: P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t, tx: (P[i][0] - P[i - 1][0]) / L, tz: (P[i][1] - P[i - 1][1]) / L }; };
     const sAt = (x, z) => { let best = 0, bd = Infinity; for (let s = 0; s <= total; s += 40) { const p = at(s), d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; best = s; } } return best; };
     const hB = towers.find((t) => t.id === ln.id + '_home' && t.team === 0), hR = towers.find((t) => t.id === ln.id + '_home' && t.team === 1);
     const sB = hB ? sAt(hB.x, hB.y) : total * 0.2, sR = hR ? sAt(hR.x, hR.y) : total * 0.8, hw = ln.width / 2;
-    for (const [s0, s1] of [[0, sB - 650], [sR + 650, total]]) { const pts = []; for (let s = s0; s <= s1; s += 60) { const p = at(s); pts.push([p.x, p.z]); } if (pts.length > 1) add(pts, () => ln.width * 1.06, 0.24, 0.0); } // sân đá liền dọc đường
+    for (const [s0, s1] of [[0, sB - 650], [sR + 650, total]]) { const pts = []; for (let s = s0; s <= s1; s += 60) { const p = at(s); pts.push([p.x, p.z]); } if (pts.length > 1) { const Ls = s1 - s0, tip = s0 === 0 ? 1 : 0; add(pts, (t) => ln.width * 1.06 * Math.pow(Math.min(1, ((tip ? 1 - t : t) * Ls) / 700), 0.6), 0.24, 0.0); } } // sân đá liền dọc đường
     for (let s = 0, k = 0; s < total; s += 420, k++) {
       const d = Math.min(s - sB, sR - s), p = at(s + 210), nx = -p.tz, nz = p.tx;
-      if (cores.some((c) => Math.hypot(p.x - c.x, p.z - c.y) < CORE_R + 150) || towers.some((t) => Math.hypot(p.x - t.x, p.z - t.y) < 1000) || onRiver(p.x, p.z)) continue;
+      if (cores.some((c) => Math.hypot(p.x - c.x, p.z - c.y) < CORE_R + 150) || towers.some((t) => Math.hypot(p.x - t.x, p.z - t.y) < 560) || onRiver(p.x, p.z)) continue;
       if (d < 450) { // phiến cong vắt ngang (gần trụ nhà thì thưa, khe rộng hơn để lộ cỏ)
         if (d > -700 && r.next() < 0.35) continue;
         const sag = (k % 2 ? 1 : -1) * 100, pt = (o) => { const q = o / hw; return [p.x + nx * o + p.tx * sag * (1 - q * q), p.z + nz * o + p.tz * sag * (1 - q * q)]; };

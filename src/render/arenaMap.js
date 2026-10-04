@@ -125,7 +125,7 @@ export function buildArena(scene, map, level = 'mid') {
     const pad = 2600, structs = structuresOf(map);
     const lanes = map.lanes.map((ln) => { const pts = []; for (let i = 0; i + 1 < ln.pts.length; i++) { const a = ln.pts[i], b = ln.pts[i + 1], n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 300)); for (let k = 0; k < n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } pts.push(ln.pts[ln.pts.length - 1]); return { pts, width: ln.width }; });
     const fountains = [map.fountain, map.mirror(map.fountain.x, map.fountain.y)];
-    const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 780 })), ...structs.filter((q) => q.kind !== 'core').map((q) => ({ x: q.x, z: q.y, r: 260 }))];
+    const plazas = [...fountains.map((f) => ({ x: f.x, z: f.y, r: 640 })), ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 780 }))]; // (bỏ vòng đất mòn dưới chân trụ)
     const bushList = bushRects(map);
     const casters = [
       ...map.walls.segs.flatMap((w) => { const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1), n = Math.max(2, Math.round(L / 150)); return Array.from({ length: n }, (_, i) => ({ x: w.x1 + (w.x2 - w.x1) * (i + 0.5) / n, z: w.y1 + (w.y2 - w.y1) * (i + 0.5) / n, r: (w.w ?? map.walls.thickness) * 0.55, h: w.ledge ? 110 : 200, k: 0.55 })); }),
