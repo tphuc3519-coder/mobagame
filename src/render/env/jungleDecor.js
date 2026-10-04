@@ -446,7 +446,7 @@ function buildBorderWall(map) {
 }
 
 /** Bán kính bệ lãnh thổ theo loại trại. */
-export const campRadius = (type) => ({ soi_da: 300, coc_reu: 250, linh_thuy: 300, hoa_nham: 300, long_ngu: 560, ho_loi: 600 }[type] || 260);
+export const campRadius = (type) => ({ soi_da: 300, coc_reu: 250, linh_thuy: 300, hoa_nham: 300, long_ngu: 600, ho_loi: 640, than_dieu: 560, ta_than: 600 }[type] || 260);
 
 /** Bệ đá lãnh thổ cho mọi trại + đầm sen Long Ngư + đài sấm Hổ Lôi. */
 export function buildCampSites(map) {
@@ -456,7 +456,7 @@ export function buildCampSites(map) {
   const rim = [];
   for (const c of map.camps || []) {
     const R = campRadius(c.type), def = MONSTERS[c.type];
-    if (def.boss) { buildLair(g, c, R, r, c.type === 'ho_loi' ? 0xa266ff : 0xffa63a); continue; }
+    if (def.boss) { buildLair(g, c, R, r, { ho_loi: 0x6ab8ff, long_ngu: 0xffa63a, than_dieu: 0x7ae8ff, ta_than: 0xb05aff }[c.type] || 0xffa63a); continue; }
     const dais = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.04, 12, 48, 1), [sideMat, topMat, topMat]); dais.position.set(c.x, 6, c.y); g.add(dais);
     if (def.buff && !def.boss) { // ấn khắc màu bùa giữa bệ
       const ring = new THREE.Mesh(new THREE.RingGeometry(R * 0.55, R * 0.62, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(c.type === 'linh_thuy' ? 0x4fb8ff : 0xff6a2a).multiplyScalar(1.3), transparent: true, opacity: 0.75 }));
@@ -485,7 +485,19 @@ function buildLair(g, c, R, r, glowHex) {
   // tường đá sắc cạnh ôm phía sau hang (hình móng ngựa), cao dần về giữa lưng, chừa mặt mở ra sông
   const wr = rngFor((seed * 997) | 0);
   const deco = Math.sin(back) > 0.2 ? back - Math.PI / 2 : back; // phần trang trí cao đặt ở phía xa camera (không che hang)
-  if (c.type === 'ho_loi') purpleLair(g, c, R, wr, deco); else dragonNest(g, c, R, wr, back);
+  if (c.type === 'ta_than') purpleLair(g, c, R, wr, deco);
+  else if (c.type === 'than_dieu') dragonNest(g, c, R, wr, back);
+  else { // hang lớn mép rừng: vách đá cong hình móng ngựa ôm phía sau, cao dần về giữa lưng, chừa mặt mở ra sông
+    const wallGeos = [], RW = R * 1.12;
+    for (let i = 0; i < 7; i++) {
+      const a0 = back + (i / 7 - 0.5) * Math.PI * 1.3, a1 = back + ((i + 1) / 7 - 0.5) * Math.PI * 1.3;
+      const seg = { x1: c.x + Math.cos(a0) * RW, y1: c.y + Math.sin(a0) * RW, x2: c.x + Math.cos(a1) * RW, y2: c.y + Math.sin(a1) * RW, w: R * 0.4 };
+      const mid = 1 - Math.abs((i + 0.5) / 7 - 0.5) * 2; wallGeos.push(roundRockGeo(seg, 150 + 170 * mid, seed + i * 3.3));
+    }
+    const wallM = new THREE.Mesh(mergeGeometries(wallGeos), ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
+    const tf = []; for (let k = 0; k < 40; k++) { const a = back + wr.range(-1.9, 1.9), d = RW * wr.range(1.05, 1.35); tf.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: wr.range(0, 7), sx: wr.range(120, 180), sy: wr.range(120, 200) }); }
+    g.add(buildGrass(tf, 'bush', 14));
+  }
   // vết nứt phát sáng: mặt trên bệ + lan ra nước quanh hang
   const U = { uT: LAIR_T, uC: { value: glow.clone().multiplyScalar(1.8) }, uR: { value: R }, uS: { value: seed * 37.0 } };
   const crack = (rad, y, outer) => { const m = new THREE.Mesh(new THREE.CircleGeometry(rad, 64), new THREE.ShaderMaterial({ uniforms: { ...U, uO: { value: outer ? 1 : 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,

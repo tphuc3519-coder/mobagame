@@ -34,8 +34,8 @@ ok('lính/trụ không đánh quái', true);
 // trại hồi sinh
 step(30 * 95);
 ok('Linh Thuỷ hồi sinh sau 90s', w.camps.find((c) => c.id === 'blue').alive.some((id) => w.byId(id)?.alive));
-// mục tiêu lớn: Hổ Lôi xuất hiện phút 6, hạ được → cả đội nhận Uy Hổ + vàng
-step(30 * 230);
+// mục tiêu lớn: Hổ Lôi xuất hiện phút 8, hạ được → cả đội nhận Uy Hổ + vàng
+step(30 * 350);
 const tiger = w.entities.find((e) => e.monsterType === 'ho_loi' && e.alive);
 ok('Hổ Lôi xuất hiện', !!tiger);
 const ally = w.spawnHero('nguyet_ha', 0, { x: 1000, y: 1000 }), g1 = ally.gold;

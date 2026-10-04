@@ -281,3 +281,11 @@
   - sông thẳng như kẻ thước → mặt nước rộng 1.4×, bờ lượn mạnh (vịnh, mũi đất), lòng bùn rộng 1.25×;
   - bụi vuông → khối tròn lượn (siêu elip 2.4 + biên nhiễu).
 - Kiểm thử sim đạt (t_map, simtest, t_jungle, t_bot 50 trận không kẹt).
+
+## Bốn hang mục tiêu lớn (như Liên Quân)
+- Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm) trở về vị trí cũ: Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8
+  (phía Đỏ, gần đường Sông; trước là phút 6). Dựng lại vách đá móng ngựa (7 khối, cao dần về giữa lưng) + bụi quanh lưng hang.
+- Hai mục tiêu cuối trận phút 15 trên mũi đá chìa ra vực: Thần Điểu (tổ đan cành, góc đường Đền) — buff đội Lôi Vũ (+20% tốc đánh,
+  −10% hồi chiêu, +20 giáp/KP, 150s); Tà Thần (hang tím rễ xoắn + pha lê, góc đường Sông) — buff đội Tà Lực (+60 công, +90 phép,
+  −12% sát thương nhận, 150s). Hồi sinh 300s, thưởng vàng/KN cả đội. Model mới: chim thần cánh vỗ, đuôi phượng; ác thần tím sừng
+  cong, vuốt pha lê, vòng phù văn. Bản đồ nhỏ: L/H/Đ/T với màu riêng.

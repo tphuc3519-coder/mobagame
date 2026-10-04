@@ -133,8 +133,12 @@ const CAMPS_BLUE = [
 const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
   // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
   // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
-  { id: 'long_ngu', type: 'long_ngu', x: 560, y: 560, boss: true, back: -2.356 },
-  { id: 'ho_loi', type: 'ho_loi', x: 5840, y: 5840, boss: true, back: 0.785 },
+  // Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm): Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8 (phía Đỏ, gần đường Sông).
+  { id: 'long_ngu', type: 'long_ngu', x: 1340, y: 2020, boss: true, back: 2.36 },
+  { id: 'ho_loi', type: 'ho_loi', x: 5060, y: 4380, boss: true, back: -0.785 },
+  // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
+  { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
+  { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
