@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { noiseSurface } from './surfaces.js';
+import { abyssGLSL } from './abyss.js';
 
 /** Dòng sông: nước trong (thấy lòng sông bùn sỏi bên dưới), đậm dần ra giữa dòng, sóng lăn tăn từ nhiễu cuộn theo dòng,
  *  phản chiếu trời theo góc nhìn (fresnel), lấp lánh nắng, bọt trắng vỡ dọc hai bờ và quanh chỗ đường lát băng qua (ghềnh cạn).
@@ -11,6 +12,7 @@ export function buildRiver(map) {
     transparent: true, fog: false, depthWrite: false, uniforms: U,
     vertexShader: 'varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: `varying vec2 vUv; varying vec3 vW; uniform float uTime, uHasMask; uniform sampler2D uNoise, uSplat; uniform vec4 uXf; uniform vec2 uFlow;
+      ${abyssGLSL(map, 400)}
       // Toạ độ dòng chảy: s dọc dòng, t ngang dòng. Dòng giữa chảy nhanh, sát bờ chậm (cắt trượt) → dùng hai pha luân phiên để vân nước không bị kéo giãn.
       float hgt(vec2 q){ return texture2D(uNoise, q).g; }
       vec3 waveN(vec2 st, float spd){
@@ -37,6 +39,7 @@ export function buildRiver(map) {
       }
       float hash(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
       void main(){
+        if (abyssAt(vW.xz)) discard;                                             // sông đổ xuống vực (thác ở abyss.js)
         vec2 p = vW.xz, fl = uFlow, pr = vec2(-fl.y, fl.x);
         float edge0 = abs(vUv.x - 0.5) * 2.0;
         vec2 stp = vec2(dot(p, uFlow), dot(p, vec2(-uFlow.y, uFlow.x)));

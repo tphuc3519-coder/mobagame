@@ -249,3 +249,14 @@
 - Hàng bụi lá liền sát sau gờ đá biên (phía ngoài xác định bằng `outOfBounds`), xen khóm hoa xanh.
 - ~260 cụm trang trí trong vùng ngoài biên: bụi lá, khóm hoa, đá tảng, mảng nền lá mục (bản trộn nền), thêm cây (lá rộng/cao/thông/hoa hồng)
   — mép dưới phía camera chỉ đặt đồ thấp để không che sân.
+
+## Trụ cách đều + map giãn; ngoài tường biên là vực + thung lũng (kiểu Liên Quân)
+- `maps.js`: K 2.7 → 3.0 (map 19200²). Trụ đặt theo bảng `TOWER_POS`: mỗi đường 3 trụ CÁCH ĐỀU; hai đường cánh giống hệt nhau
+  (nhà cách nhà chính 950 gốc, khoảng 1575, trụ ngoài cách góc sông 700); đường giữa khoảng ~997; phía Đỏ ảnh x↔y. Khoảng tường dọc đường
+  (`guard`) nhân theo KS = K/2.7. Thêm `oobShape` (hình học vùng ngoài biên) cho shader. Mọi kiểm thử sim đạt.
+- `env/abyss.js`: vùng `outOfBounds(x, z, 420)` là VỰC — nền và sông bỏ (discard, GLSL `abyssAt` cùng công thức với sim); vách đá dựng
+  theo mép vực (22 hàng, gờ phân tầng, ngả vào trong, ám tím lam + tối theo chiều sâu), đá + bụi che mép; thung lũng ở −2600 (ảnh canvas
+  vẽ một lần: đồng cỏ, rừng, sông uốn, bóng mây; mờ theo khoảng cách); 2 lớp mây mỏng (ảnh nhiễu); THÁC nơi sông chính chảy ra vực.
+  Gờ đá biên chừa khe ở lòng sông. Sương chiến trường không phủ vực. Dải đất sau tường: cây nhỏ lác đác, đá, nền lá mục.
+- Hiệu năng: thung lũng/mây ban đầu tính nhiễu 3D theo điểm ảnh (rất nặng) → đổi sang ảnh vẽ sẵn / ảnh nhiễu.
+- Vòng import: ground → abyss → jungleDecor → grass → trees → ground(SUN) gây TDZ → tách ROCK_GLSL ra `env/rockGlsl.js`.

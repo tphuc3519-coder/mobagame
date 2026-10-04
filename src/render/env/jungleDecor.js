@@ -6,6 +6,7 @@ import { scatter } from './foliage.js';
 import { flagstoneSurface, wallStoneSurface, strataSurface } from './surfaces.js';
 import { plazaTexture } from './laneDecor.js';
 import { MONSTERS } from '../../data/jungle.js';
+import { ROCK_GLSL } from './rockGlsl.js';
 
 // Bệ đá kiểu tảng đá tự nhiên (tham khảo các khối đá rêu trong rừng): mỗi đoạn tường là cụm tảng đá tròn gồ ghề xám lam,
 // mặt trên phủ rêu + cỏ/dương xỉ; và "lãnh thổ" của từng trại quái: bệ đá tròn lát phiến, viền đá, đầm sen (Long Ngư), đài sấm (Hổ Lôi).
@@ -89,13 +90,7 @@ function roundRockGeo(w, H, seed) {
  *  gân thạch anh mảnh sáng/tối (nhiễu gợn), hạt mịn, loang màu ấm/lạnh; bề mặt có gồ + gân lõm (bump từ nhiễu 3D toạ độ thế giới),
  *  độ nhám thay đổi (chỗ mài bóng phản chiếu trời nhẹ). Màu đỉnh = che khuất. */
 let _rf = null;
-const ROCK_GLSL = `
-  float rh3(vec3 p){ p = fract(p * 0.1031); p += dot(p, p.yzx + 33.33); return fract((p.x + p.y) * p.z); }
-  float rvn(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(mix(rh3(i), rh3(i + vec3(1,0,0)), f.x), mix(rh3(i + vec3(0,1,0)), rh3(i + vec3(1,1,0)), f.x), f.y),
-               mix(mix(rh3(i + vec3(0,0,1)), rh3(i + vec3(1,0,1)), f.x), mix(rh3(i + vec3(0,1,1)), rh3(i + vec3(1,1,1)), f.x), f.y), f.z); }
-  float rfbm(vec3 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * rvn(p); p = p * 2.03 + 17.7; a *= 0.5; } return s / 0.9375; }
-`;
+
 const ROCK_FACET = () => (_rf ||= (() => {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.0 });
   m.onBeforeCompile = (sh) => {
@@ -431,8 +426,12 @@ function buildBorderWall(map) {
     // hướng ra ngoài sân (phía không chơi được)
     const mid = F[N >> 1], outSign = map.outOfBounds?.(mid.x + mid.nx * 260, mid.z + mid.nz * 260, 0) ? 1 : -1;
     F.forEach((f) => { f.nx *= outSign; f.nz *= outSign; });
-    const ph = rr.range(0, 6.3);
-    geos.push(bandGeo(F, total, -20, hw * 1.2, 55, ph), bandGeo(F, total, hw * 0.4, hw * 0.85, 125, ph + 1.7));
+    const ph = rr.range(0, 6.3), rw2 = (map.river?.width || 0) / 2 + 60;
+    // chừa chỗ sông chảy qua (nước đổ xuống vực thành thác): tách thành các đoạn liền ngoài lòng sông
+    let run = [];
+    const flush = () => { if (run.length > 3) { const s0 = run[0].s, Fr = run.map((f) => ({ ...f, s: f.s - s0 })), T = Fr[Fr.length - 1].s; geos.push(bandGeo(Fr, T, -20, hw * 1.2, 55, ph), bandGeo(Fr, T, hw * 0.4, hw * 0.85, 125, ph + 1.7)); } run = []; };
+    for (const f of F) { if (rw2 > 60 && Math.abs(f.x - f.z) / Math.SQRT2 < rw2) flush(); else run.push(f); }
+    flush();
     for (let s = 700; s < total - 500; s += 1700) { const f = F[Math.round((s / total) * N)]; gems[sideOf(f.x, f.z)].push(f); }
   }
   const mat = ROCK_FACET(); // cùng chất đá với bệ đá rừng (vân lớp, rêu, khe nứt)

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { abyssGLSL } from './abyss.js';
 import { grassSurface, dirtSurface, flagstoneSurface, flagstoneHeight, noiseSurface, pebbleSurface } from './surfaces.js';
 
 // Nền đất trộn lớp: một "bản đồ trộn" nướng sẵn lúc dựng map (DataTexture RGBA phủ cả sân):
@@ -72,13 +73,14 @@ function blurChannel(a, N, r) {
 }
 
 /** Vật liệu nền: Lambert (rẻ, hợp mobile) + đoạn shader trộn lớp. Màu đỉnh (vertexColors) vẫn nhân vào: trắng trong sân, xám đá ở vách ngoài. */
-export function groundMaterial(baked, pattern = null) {
+export function groundMaterial(baked, pattern = null, map = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() }, uPat: { value: pattern?.tex || null }, uPatXf: { value: pattern?.xf || new THREE.Vector4(0, 0, 0, 0) }, uCores: { value: pattern?.cores || new THREE.Vector4(-1e6, -1e6, -1e6, -1e6) } };
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb, uPat; uniform vec4 uXf, uPatXf, uCores; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb, uPat; uniform vec4 uXf, uPatXf, uCores; varying vec2 vGxz;\n' + (map ? abyssGLSL(map) : '') + '\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+      ${map ? 'if (abyssAt(vGxz)) discard; // trên vực: bỏ nền (lộ thung lũng bên dưới)' : ''}
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
@@ -147,6 +149,6 @@ export function groundMaterial(baked, pattern = null) {
       #endif
       #include <opaque_fragment>`);
   };
-  mat.customProgramCacheKey = () => 'ground-splat' + (pattern ? 'p' : '');
+  mat.customProgramCacheKey = () => 'ground-splat' + (pattern ? 'p' : '') + (map ? 'a' : '');
   return mat;
 }

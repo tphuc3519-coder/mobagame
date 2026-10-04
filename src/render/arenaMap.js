@@ -11,6 +11,7 @@ import { buildTrees } from './env/trees.js';
 import { buildGrass } from './env/grass.js';
 import { pavedPolylines } from './env/laneDecor.js';
 import { basePattern } from './env/baseFloor.js';
+import { buildAbyss, isAbyss, ABYSS_PAD } from './env/abyss.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
@@ -50,7 +51,7 @@ export function buildArena(scene, map, level = 'mid') {
   const r = rngFor(101), blockedByWall = (x, z, m) => map.walls.segs.some((w) => {
     const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.y1) * dy) / L2)); return Math.hypot(x - (w.x1 + dx * t), z - (w.y1 + dy * t)) < m + ((w.w ?? map.walls.thickness) - map.walls.thickness) / 2;
   });
-  const put = (n, ok, make) => { const out = []; for (let t = 0; out.length < n && t < n * 40; t++) { const x = r.range(-1800, map.w + 1800), z = r.range(-1800, map.h + 1800); if (!ok(x, z)) continue; out.push(make(x, heightAt(x, z), z)); } return out; };
+  const put = (n, ok, make) => { const out = []; for (let t = 0; out.length < n && t < n * 40; t++) { const x = r.range(-1800, map.w + 1800), z = r.range(-1800, map.h + 1800); if (!ok(x, z) || isAbyss(map, x, z, ABYSS_PAD - 40)) continue; out.push(make(x, heightAt(x, z), z)); } return out; };
   const outside = (x, z) => M - Math.min(x, z, map.w - x, map.h - z);
   const inPlay = (x, z) => outside(x, z) < 0 && !map.outOfBounds?.(x, z, 0);
   const plazas = [0, 1].flatMap((tm) => [tm ? map.mirror(map.fountain.x, map.fountain.y) : map.fountain]);
@@ -84,17 +85,19 @@ export function buildArena(scene, map, level = 'mid') {
         oobBush.push({ x, y: heightAt(x, z) - 6, z, ry: r.range(0, 7), sx: r.range(160, 240), sy: r.range(140, 230) * (camSide(z) ? 0.6 : 1) });
         if (r.next() < 0.12) oobFlower.push({ x: x + nx * 60, y: heightAt(x, z) - 4, z: z + nz * 60, ry: r.range(0, 7), sx: r.range(130, 180), sy: r.range(100, 140) }); }
     }
-    for (let i = 0, n = 0; n < Math.round(260 * dens) && i < 20000; i++) {
-      const x = r.range(-900, map.w + 900), z = r.range(-900, map.h + 900); if (!oob(x, z, 170)) continue; n++;
-      oobDirt.push({ x, z, r: r.range(220, 420), k: 0.55 });
-      const nb = 5 + r.int(9); for (let k = 0; k < nb; k++) { const a = r.range(0, 7), d = Math.sqrt(r.next()) * 260, bx = x + Math.cos(a) * d, bz = z + Math.sin(a) * d; if (oob(bx, bz, 120)) oobBush.push({ x: bx, y: heightAt(bx, bz) - 6, z: bz, ry: r.range(0, 7), sx: r.range(150, 230), sy: r.range(150, 260) * (1 - d / 520) }); }
-      if (r.next() < 0.45) { const nf = 2 + r.int(4); for (let k = 0; k < nf; k++) { const fx = x + r.range(-200, 200), fz = z + r.range(-200, 200); if (oob(fx, fz, 120)) oobFlower.push({ x: fx, y: heightAt(fx, fz) - 4, z: fz, ry: r.range(0, 7), sx: r.range(130, 190), sy: r.range(100, 150) }); } }
-      if (r.next() < 0.4) { const s0 = r.range(60, 150); oobRocks.push({ x: x + r.range(-120, 120), y: heightAt(x, z) - s0 * 0.2, z: z + r.range(-120, 120), ry: r.range(0, 7), sx: s0 * r.range(1, 1.6), sy: s0 * r.range(0.6, 0.9), sz: s0 }); }
-      if (!camSide(z) && oob(x, z, 330) && r.next() < 0.7 && !trees.some((q) => Math.hypot(q.x - x, q.z - z) < 200)) {
-        const bl = r.next() < 0.35; trees.push({ x, y: heightAt(x, z) - 8, z, ry: r.range(0, 7), sx: r.range(0.9, 1.35), sz: 0, type: bl ? 'blossom' : r.next() < 0.25 ? 'pine' : r.next() < 0.4 ? 'tall' : 'oak', color: bl ? 0xffffff : tint.setRGB(r.range(0.86, 1), r.range(0.9, 1), r.range(0.8, 0.95), THREE.SRGBColorSpace).getHex() });
+    for (const w of map.walls.segs) { // dải đất hẹp sau tường biên (trước mép vực): cây lác đác, đá, nền lá mục
+      if (!w.border) continue;
+      const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L; let nx = -uz, nz = ux;
+      const mx = (w.x1 + w.x2) / 2, mz = (w.y1 + w.y2) / 2; if (!map.outOfBounds?.(mx + nx * 300, mz + nz * 300, 0)) { nx = -nx; nz = -nz; }
+      for (let t = r.range(100, 400); t < L; t += r.range(520, 900)) {
+        const o = r.range(300, 430), x = w.x1 + ux * t + nx * o, z = w.y1 + uz * t + nz * o; if (!oob(x, z, 80) || isAbyss(map, x, z, ABYSS_PAD - 90)) continue;
+        oobDirt.push({ x, z, r: r.range(160, 260), k: 0.45 });
+        if (!camSide(z) && r.next() < 0.28) { const bl = r.next() < 0.3; trees.push({ x, y: heightAt(x, z) - 8, z, ry: r.range(0, 7), sx: r.range(0.5, 0.72), sz: 0, type: bl ? 'blossom' : r.next() < 0.45 ? 'pine' : 'oak', color: bl ? 0xffffff : tint.setRGB(r.range(0.86, 1), r.range(0.9, 1), r.range(0.8, 0.95), THREE.SRGBColorSpace).getHex() }); }
+        else if (r.next() < 0.5) { const s0 = r.range(50, 110); oobRocks.push({ x, y: heightAt(x, z) - s0 * 0.25, z, ry: r.range(0, 7), sx: s0 * r.range(1, 1.5), sy: s0 * r.range(0.6, 0.9), sz: s0 }); }
       }
     }
   }
+  for (let i = trees.length - 1; i >= 0; i--) { const t = trees[i]; if (isAbyss(map, t.x, t.z, ABYSS_PAD - 60) || (map.outOfBounds?.(t.x, t.z, 0) && t.sx > 0.8)) trees.splice(i, 1); } // không trồng cây trên vực; dải sau tường chỉ cây nhỏ
   trees.forEach((t) => { t.sz = t.sx; });
   g.add(buildTrees(trees, dens));
   const rockMat = rockMaterial(), allRocks = [];
@@ -177,9 +180,12 @@ export function buildArena(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked, pattern)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked, pattern, map)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
     groundMap = baked; river.setMask?.(baked);
   }
+
+  // —— vực ngoài biên: vách đá, thung lũng mờ sương, mây, thác sông ——
+  const abyss = buildAbyss(map, heightAt, { riverWidth: rw, dens, grass: (l) => buildGrass(l, 'bush', 14), rockMat: rockMaterial(), boulder: boulderGeo(97) }); g.add(abyss.group);
 
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
 
@@ -187,6 +193,6 @@ export function buildArena(scene, map, level = 'mid') {
   scene.add(g);
   return {
     group: g,
-    update(t, dt, camera, viewH) { WIND.value = t; LAIR_T.value = t; river.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
+    update(t, dt, camera, viewH) { WIND.value = t; LAIR_T.value = t; river.update(t); abyss.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
   };
 }

@@ -57,7 +57,7 @@ export function structuresOf(map) {
 // Bản đồ 5v5 "Đấu Trường Đèn Cả" (03 §A). Toạ độ gợi ý trong tài liệu (6400 × 6400) được NHÂN K = 2.4 → 15360 × 15360
 // cho rộng hơn (băng qua đường Giữa ~45 giây thay vì ~20 ở bản gốc). Chỉ khai báo phía Xanh (dưới trái); phía Đỏ lấy (x, y) → (y, x).
 // ───────────────────────────────────────────────────────────────────────────
-const K = 2.7, A = 6400 * K;
+const K = 3.0, A = 6400 * K, KS = K / 2.7; // KS: hệ số so với bản K = 2.7 (các khoảng tính theo đơn vị thế giới)
 const P = (x, y) => [x * K, y * K];
 const swap = (x, y) => ({ x: y, y: x });
 
@@ -140,7 +140,15 @@ const BUSHES_BLUE = [
   ...[[1330, 3230], [1750, 3500], [2880, 5100]]
     .map(([x, y], i) => ({ x, y, w: (i % 3 ? 220 : 260), h: (i % 2 ? 170 : 200) })),
 ];
-const TOWERS_BLUE = [[800, 1700], [800, 3150], [800, 4600], [2750, 3650], [2100, 4300], [1450, 4950], [4700, 5600], [3250, 5600], [1800, 5600]];
+// Trụ phía Xanh (toạ độ gốc): mỗi đường ba trụ CÁCH ĐỀU (nhà → trong → ngoài), hai đường cánh giống hệt nhau qua đường chéo phụ,
+// phía Đỏ là ảnh x↔y. Đường cánh: nhà cách nhà chính 950, khoảng cách 1575, trụ ngoài cách góc sông 700. Đường giữa: khoảng 997.
+const md = (d) => [800 + d / Math.SQRT2, 5600 - d / Math.SQRT2];
+const TOWER_POS = {
+  temple_outer: [800, 1500], temple_inner: [800, 3075], temple_home: [800, 4650],
+  mid_outer: md(2894), mid_inner: md(1897), mid_home: md(900),
+  river_outer: [4900, 5600], river_inner: [3325, 5600], river_home: [1750, 5600],
+};
+const TOWERS_BLUE = Object.values(TOWER_POS);
 const allTowers = [...TOWERS_BLUE, ...TOWERS_BLUE.map(([x, y]) => [y, x])];
 /** Bụi gần trụ (cách vùng bắn < ~700 gốc): một dải tảng đá áp sát cạnh bụi phía xa trụ, làm chỗ núp có lưng tựa như Liên Quân. */
 function bushRocks(b) {
@@ -171,9 +179,9 @@ const JUNGLE_ROCKS = [
 // Phía Xanh: dọc Đường Đền (mép trong, về phía rừng), hai bên Đường Giữa (tới sát sông), mép trong Đường Sông.
 const W_BLUE = [
   // bệ đá ngăn rừng với đường, chạy gần hết nửa đường phía Xanh, có khe đi tắt (không có lướt thì phải đi vòng qua khe)
-  ...guard(LANES[0].pts, [1], { from: 1100, to: 9300, phase: 300, gap: 640 }),
-  ...guard(LANES[1].pts, [-1, 1], { from: 1500, to: 6300, phase: 120, gap: 600 }),
-  ...guard(LANES[2].pts, [-1], { from: 1600, to: 9300, phase: 500, gap: 640 }),
+  ...guard(LANES[0].pts, [1], { from: 1100 * KS, to: 9300 * KS, phase: 300, gap: 640 }),
+  ...guard(LANES[1].pts, [-1, 1], { from: 1500 * KS, to: 6300 * KS, phase: 120, gap: 600 }),
+  ...guard(LANES[2].pts, [-1], { from: 1600 * KS, to: 9300 * KS, phase: 500, gap: 640 }),
   // bệ đá trên hai bờ sông nối tiếp đầu hai bụi giữa sông (tạo túi núp); bờ phía Đỏ là ảnh đối xứng
   ...[[2303, 2803, 1953, 2453], [3597, 4097, 3880, 4380]].map(([a, b, c, d]) => ({ x1: a * K, y1: b * K, x2: c * K, y2: d * K, ledge: true, w: 220 })),
   // bệ đá "lãnh thổ" ôm phía sau mỗi trại quái (cung đá, mở về phía lối đi trong rừng)
@@ -224,14 +232,13 @@ export const ARENA = {
   id: 'arena5v5', w: A, h: A,
   margin: 260,                        // viền ngoài không đi được (vách núi)
   outOfBounds,                        // ngoài tường biên hai đường cánh
+  oobShape: { K, BX, BEND, BC, BR, BW: BORDER_W, A }, // hình học vùng ngoài biên (shader cắt nền / vực)
   lanes: LANES,
   river: { width: 500 * K, diag: true },   // chạy theo đường chéo y = x
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 1050, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
-    tower('temple_outer', 'outer', 800, 1700, null), tower('temple_inner', 'inner', 800, 3150, 'temple_outer'), tower('temple_home', 'home', 800, 4600, 'temple_inner'),
-    tower('mid_outer', 'outer', 2750, 3650, null), tower('mid_inner', 'inner', 2100, 4300, 'mid_outer'), tower('mid_home', 'home', 1450, 4950, 'mid_inner'),
-    tower('river_outer', 'outer', 4700, 5600, null), tower('river_inner', 'inner', 3250, 5600, 'river_outer'), tower('river_home', 'home', 1800, 5600, 'river_inner'),
+    ...['temple', 'mid', 'river'].flatMap((l) => [tower(l + '_outer', 'outer', ...TOWER_POS[l + '_outer'], null), tower(l + '_inner', 'inner', ...TOWER_POS[l + '_inner'], l + '_outer'), tower(l + '_home', 'home', ...TOWER_POS[l + '_home'], l + '_inner')]),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng

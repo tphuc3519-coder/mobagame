@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SIGHT } from '../sim/vision.js';
+import { abyssEdges } from './env/abyss.js';
 
 /** Lớp sương mù chiến trường: tấm phẳng tối phủ bản đồ, khoét các vòng tròn quanh đơn vị phe mình (tầm nhìn trong sim/vision.js).
  *  Texture canvas vẽ lại ~10 lần/giây; canvas và vùng bản đồ của nó cũng được bản đồ nhỏ dùng lại. */
@@ -11,6 +12,8 @@ export function createFog(scene, map, team) {
   mesh.rotation.x = -Math.PI / 2; mesh.position.set(map.w / 2, 190, map.h / 2); mesh.renderOrder = 5;
   scene.add(mesh);
   const px = (x) => ((x - ext.x0) / ext.w) * SIZE, py = (y) => ((y - ext.y0) / ext.h) * SIZE, pr = (r) => (r / ext.w) * SIZE;
+  const edges = map.oobShape ? abyssEdges(map, 420, 300) : [], A = map.oobShape?.A || 0;
+  const abyss = edges.map((c, k) => [...c, k ? [A + 3600, A + 3600] : [-3600, -3600]]);
   let acc = 1;
   return {
     canvas: cv,
@@ -21,6 +24,7 @@ export function createFog(scene, map, team) {
       ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, SIZE, SIZE);
       ctx.fillStyle = 'rgba(8,12,32,0.58)'; ctx.fillRect(0, 0, SIZE, SIZE);
       ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = '#000'; for (const poly of abyss) { ctx.beginPath(); poly.forEach(([x, y], i) => (i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)))); ctx.closePath(); ctx.fill(); } // vực: không phủ sương chiến trường
       for (const e of world.entities) {
         if (e.team !== team || !e.alive || e.noTarget) continue;
         const r = e.kind === 'hero' ? SIGHT.hero : e.kind === 'minion' ? SIGHT.minion : SIGHT[e.kind]; if (!r) continue;
