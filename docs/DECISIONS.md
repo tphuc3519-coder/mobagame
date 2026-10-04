@@ -206,3 +206,9 @@
   phiến bậc thềm có chỉ viền trong + thoi khắc giữa phiến, 2 vòng mũi tên giữa các bậc, nét cọ ngoài cuộn xen chiều + chỉ lông.
   Phiến đường: chỉ viền trong + chuỗi 3 thoi khắc + nhuỵ; mảnh vỡ có chỉ viền.
 - Texture họa tiết 3072² (mức thấp/vừa 2048²), kênh A = chỉ khắc mảnh (shader nền làm tối theo chỉ), G gồm cả rãnh chỉ.
+
+## Phối cỏ/họa tiết sắc nét hơn; bỏ viền dưới trụ và lá đỏ
+- Mép họa tiết sắc (smoothstep theo fwidth quanh ngưỡng 0.5), ngọn cỏ lấn qua mép theo texture cỏ (mép lởm chởm tự nhiên, không nhoè);
+  lòng đá ~66% che, bóng mép trong lòng lõm (AO từ hiệu face/height), chỉ khắc, sáng tối theo nắng mạnh hơn; rêu chỉ còn vài mảng nhỏ;
+  đường tiếp giáp cỏ/đá tối nhẹ.
+- Bỏ các vòng chỉ + chuỗi hạt dưới chân trụ (chỉ còn đế). Bỏ lá phong đỏ/cam/vàng rải trên nền.

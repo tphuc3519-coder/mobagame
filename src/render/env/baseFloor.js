@@ -71,7 +71,7 @@ function layout(map, structs, onRiver) {
   }
   for (const t of towers) {
     const a00 = r.range(0, 6.3), K = 9;
-    face.push(arc(t.x, t.y, 240, 0, Math.PI * 2, 40)); ring(t.x, t.y, 262, 12); ring(t.x, t.y, 300, 7); beads(t.x, t.y, 330, 24, 9); ring(t.x, t.y, 358, 6);
+    face.push(arc(t.x, t.y, 240, 0, Math.PI * 2, 40)); // đế dưới chân trụ (không viền vòng)
     for (let k = 0; k < K; k++) {
       const a0 = a00 + (k / K) * Math.PI * 2, R1 = r.range(760, 1000), sw = r.range(1.3, 1.7);
       stroke(spiral(t.x, t.y, 370, R1, a0, sw, 26, r.range(-25, 25)), r.range(130, 175), 1);
@@ -120,7 +120,7 @@ export function basePattern(map, structs, { onRiver = () => false, size = 3072 }
     if (blurPx) blur(ch, N, blurPx); return ch;
   };
   const face = draw(L.face, 1), ridge = draw(L.ridge, 0), line = draw(L.lines, 0, true), glow = draw(L.glow.map(([p]) => p), 1);
-  const hgt = new Float32Array(N * N); for (let i = 0; i < N * N; i++) hgt[i] = 0.25 + face[i] * 0.45 + ridge[i] * 0.3 - line[i] * 0.25; blur(hgt, N, 1);
+  const hgt = new Float32Array(N * N); for (let i = 0; i < N * N; i++) hgt[i] = 0.25 + face[i] * 0.45 + ridge[i] * 0.3 - line[i] * 0.25; blur(hgt, N, 3);
   const data = new Uint8Array(N * N * 4);
   for (let i = 0; i < N * N; i++) { data[4 * i] = face[i] * 255; data[4 * i + 1] = Math.max(0, Math.min(1, hgt[i])) * 255; data[4 * i + 2] = glow[i] * 255; data[4 * i + 3] = line[i] * 255; }
   const tex = new THREE.DataTexture(data, N, N, THREE.RGBAFormat); tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = true; tex.anisotropy = 8; tex.needsUpdate = true;

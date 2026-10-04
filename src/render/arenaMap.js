@@ -152,15 +152,6 @@ export function buildArena(scene, map, level = 'mid') {
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
     const mesh = new THREE.Mesh(geo, groundMaterial(baked, pattern)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
     groundMap = baked; river.setMask?.(baked);
-    // lá phong đỏ/cam rụng trên sân lát (phối màu kiểu Liên Quân), dồn thành đám theo nhiễu
-    {
-      const cores = structs.filter((q) => q.kind === 'core'), pd = (x, z) => Math.min(...paved.map((ln) => { let m = Infinity; for (let i = 1; i < ln.pts.length; i++) { const [ax, az] = ln.pts[i - 1], [bx, bz] = ln.pts[i], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); m = Math.min(m, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return m - ln.width / 2; }));
-      const onPave = (x, z) => cores.some((c) => Math.hypot(x - c.x, z - c.y) < 1120) || pd(x, z) < 0;
-      const lg = (() => { const sh = new THREE.Shape(); sh.moveTo(0, -1); for (let i = 1; i <= 10; i++) { const a = -Math.PI / 2 + (i / 10) * Math.PI * 2, rr = i % 2 ? 1 : 0.55; sh.lineTo(Math.cos(a) * rr * 0.9, Math.sin(a) * rr); } const q = new THREE.ShapeGeometry(sh, 1); q.rotateX(-Math.PI / 2); return q; })();
-      const pal = [0xc8381a, 0xe05a1c, 0xa82614, 0xe88a26, 0xb84a1a, 0xd8701e];
-      const red = put(Math.round(2200 * dens), (x, z) => onPave(x, z) && fbm(x / 420 + 7, z / 420) > 0.47, (x, y, z) => ({ x, y: 1.3 + r.range(0, 0.4), z, ry: r.range(0, 7), rx: r.range(-0.12, 0.12), sx: r.range(9, 16), sy: 1, sz: r.range(9, 16), color: pal[r.int(pal.length)] }));
-      g.add(scatterChunked(lg, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide }), red, true));
-    }
   }
 
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
