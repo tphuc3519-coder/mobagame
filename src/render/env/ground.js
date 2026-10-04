@@ -74,11 +74,11 @@ function blurChannel(a, N, r) {
 /** Vật liệu nền: Lambert (rẻ, hợp mobile) + đoạn shader trộn lớp. Màu đỉnh (vertexColors) vẫn nhân vào: trắng trong sân, xám đá ở vách ngoài. */
 export function groundMaterial(baked, pattern = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() }, uPat: { value: pattern?.tex || null }, uPatXf: { value: pattern?.xf || new THREE.Vector4(0, 0, 0, 0) } };
+  const U = { uSplat: { value: baked.tex }, uXf: { value: baked.xf }, uGrass: { value: grassSurface() }, uDirt: { value: dirtSurface() }, uStone: { value: flagstoneSurface() }, uStoneH: { value: flagstoneHeight() }, uNoise: { value: noiseSurface() }, uPeb: { value: pebbleSurface() }, uPat: { value: pattern?.tex || null }, uPatXf: { value: pattern?.xf || new THREE.Vector4(0, 0, 0, 0) }, uCores: { value: pattern?.cores || new THREE.Vector4(-1e6, -1e6, -1e6, -1e6) } };
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec2 vGxz;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb, uPat; uniform vec4 uXf, uPatXf; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
+    sh.fragmentShader = 'uniform sampler2D uSplat, uGrass, uDirt, uStone, uStoneH, uNoise, uPeb, uPat; uniform vec4 uXf, uPatXf, uCores; varying vec2 vGxz;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
       vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
@@ -99,21 +99,37 @@ export function groundMaterial(baked, pattern = null) {
       vec3 bed = mix(dt * vec3(0.5, 0.55, 0.5), mix(peb, peb2, 0.3) * vec3(0.82, 0.9, 0.88), smoothstep(0.3, 0.55, nz2.b)); // lòng sông: cuội ướt + cát bùn
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt
       float patGlow = 0.0; vec3 patGlowC = vec3(0.0);
-      ${pattern ? `{ // họa tiết khắc CHÌM (baseFloor.js): mép sắc, ngọn cỏ lấn qua mép lởm chởm; lòng đá lõm có bóng mép trong, chỉ khắc, sáng tối theo nắng
-        vec2 pu = vGxz * uPatXf.zw; vec4 pt = texture2D(uPat, pu); float e = ${(1.6 / (pattern?.size || 2048)).toFixed(7)};
-        float hx = texture2D(uPat, pu + vec2(e, 0.0)).g - texture2D(uPat, pu - vec2(e, 0.0)).g, hz = texture2D(uPat, pu + vec2(0.0, e)).g - texture2D(uPat, pu - vec2(0.0, e)).g;
-        float lit = clamp((hx * 0.5 + hz * 0.667) * 7.0, -1.0, 1.0);
-        float blades = texture2D(uGrass, vGxz / 540.0).g, jit = (blades - 0.3) * 1.1 + (texture2D(uNoise, vGxz / 240.0).b - 0.5) * 0.5;
-        float w = fwidth(pt.r) * 1.2 + 0.03;
-        float m = smoothstep(0.5 - w, 0.5 + w, pt.r + jit * 0.3 * (1.0 - smoothstep(0.8, 1.0, pt.r)));     // ngọn cỏ lấn qua mép đá, mép vẫn sắc
-        vec3 stC = mix(vec3(0.24, 0.26, 0.29), vec3(0.33, 0.35, 0.38), nz2.r) * (0.94 + 0.12 * texture2D(uStone, vGxz / 300.0).g);
-        stC = mix(stC, gr * 0.85, 0.1);
-        float ao = clamp((0.25 + 0.45 * pt.r - pt.g) * 5.0, 0.0, 1.0);                                     // bóng mép trong lòng lõm
-        stC *= (1.0 - ao * 0.5) * (1.0 - pt.a * 0.5) * (1.0 - lit * 0.32);
-        float moss = smoothstep(0.74, 0.92, texture2D(uNoise, vGxz / 520.0).g * 0.6 + texture2D(uNoise, vGxz / 140.0).b * 0.4); // vài mảng rêu nhỏ
-        c = mix(c, stC, m * (0.66 - moss * 0.4));
-        c *= 1.0 - (1.0 - smoothstep(0.0, 0.18, abs(pt.r - 0.5))) * 0.14;                                  // đường tiếp giáp cỏ/đá hơi tối
-        patGlow = pt.b * (1.0 - moss * 0.6); patGlowC = vGxz.y > vGxz.x ? vec3(0.25, 0.65, 1.0) : vec3(1.0, 0.42, 0.2);
+      ${pattern ? `{ // PHÙ ĐIÊU THẤP (baseFloor.js): mép sắc (ngưỡng trường mờ), đá tô theo độ dốc ↔ nắng, bóng đổ + AO lên cỏ, rãnh khắc
+        vec2 pu = vGxz * uPatXf.zw; vec4 pt = texture2D(uPat, pu);
+        float E = ${(1.5 / (pattern?.size || 2048)).toFixed(8)}, TW = ${((pattern?.texel || 5) * 1.5).toFixed(3)}, HS = 200.0;
+        #define PH(o) dot(texture2D(uPat, pu + (o)).gb, vec2(65280.0, 255.0) / 65535.0)
+        float h0 = dot(pt.gb, vec2(65280.0, 255.0) / 65535.0);
+        float gx = (PH(vec2(E, 0.0)) - PH(vec2(-E, 0.0))) / (2.0 * TW) * HS, gz = (PH(vec2(0.0, E)) - PH(vec2(0.0, -E))) / (2.0 * TW) * HS;
+        vec3 Ln = normalize(vec3(0.37, 0.74, 0.56)), Nn = normalize(vec3(-gx, 1.0, -gz));
+        float lit = dot(Nn, Ln) / Ln.y;                                                                   // 1 = mặt phẳng
+        vec2 Lt = normalize(Ln.xz) * uPatXf.zw;
+        float hL = dot(texture2D(uPat, pu + Lt * 26.0, 1.0).gb, vec2(65280.0, 255.0) / 65535.0);
+        float hB = dot(texture2D(uPat, pu, 3.5).gb, vec2(65280.0, 255.0) / 65535.0);
+        float shade = smoothstep(0.012, 0.12, hL - h0), ao = clamp((hB - h0) * 5.0, 0.0, 1.0);
+        float river = smoothstep(0.15, 0.55, sp.a);
+        // nền cỏ trong sân nhà: chuyển dịu sang xanh lam ngả xám (cùng tông Liên Quân), bóng đổ + AO từ phiến đá
+        float dc = min(length(vGxz - uCores.xy), length(vGxz - uCores.zw)), wb = smoothstep(6200.0, 3800.0, dc) * (1.0 - river);
+        c = mix(c, vec3(c.r * 0.8, c.g * 0.86, c.g * 0.6 + c.b * 0.35), wb * 0.9);                       // cỏ xanh lam ngả xám
+        c *= 1.0 - (shade * 0.42 + ao * 0.35) * (1.0 - river);
+        // mặt đá
+        float jit = (texture2D(uGrass, vGxz / 540.0).g - 0.3) * 0.9 + (texture2D(uNoise, vGxz / 240.0).b - 0.5) * 0.4;
+        float w = fwidth(pt.r) * 0.9 + 0.012;
+        float m = smoothstep(0.5 - w, 0.5 + w, pt.r + jit * 0.16 * (1.0 - smoothstep(0.75, 1.0, pt.r))) * (1.0 - river);
+        bool blue = vGxz.y > vGxz.x;
+        vec3 sMid = blue ? vec3(0.2, 0.215, 0.29) : vec3(0.26, 0.225, 0.25), sLit = blue ? vec3(0.4, 0.43, 0.53) : vec3(0.47, 0.42, 0.43), sDark = blue ? vec3(0.07, 0.078, 0.125) : vec3(0.095, 0.072, 0.1);
+        vec3 st = mix(sDark, sMid, smoothstep(0.25, 0.98, lit)); st = mix(st, sLit, smoothstep(1.0, 1.35, lit));
+        st *= (0.86 + 0.28 * smoothstep(0.2, 0.6, h0)) * (0.93 + 0.14 * nz2.r) * (0.95 + 0.1 * texture2D(uNoise, vGxz / 70.0).b);
+        st *= 1.0 - shade * 0.38 - ao * 0.4;
+        float wl = fwidth(pt.a) * 0.9 + 0.02, groove = smoothstep(0.42 - wl, 0.42 + wl, pt.a);
+        st = mix(st, sDark * 1.3, groove * 0.55);
+        float moss = smoothstep(0.62, 0.8, texture2D(uNoise, vGxz / 480.0).g * 0.65 + texture2D(uNoise, vGxz / 120.0).b * 0.35);
+        st = mix(st, c * 0.85, moss * (0.28 + groove * 0.5));                                             // rêu cỏ bám từng mảng / trong rãnh
+        c = mix(c, st, m);
       }` : ''}
       c *= mix(0.42, 1.0, sp.b);                                                                         // bóng nướng sẵn
       diffuseColor.rgb *= c;`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>

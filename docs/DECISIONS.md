@@ -212,3 +212,14 @@
   lòng đá ~66% che, bóng mép trong lòng lõm (AO từ hiệu face/height), chỉ khắc, sáng tối theo nắng mạnh hơn; rêu chỉ còn vài mảng nhỏ;
   đường tiếp giáp cỏ/đá tối nhẹ.
 - Bỏ các vòng chỉ + chuỗi hạt dưới chân trụ (chỉ còn đế). Bỏ lá phong đỏ/cam/vàng rải trên nền.
+
+## Nền sân nhà: phù điêu thấp kiểu Liên Quân (sắc nét, có khối, phối cỏ xanh lam)
+- `basePattern` vẽ: R = mặt đá (làm mờ 2px → shader lấy ngưỡng theo fwidth: mép sắc ở mọi độ phóng), G/B = độ cao 16 bit (mỗi phiến vát
+  mép, mặt phẳng; phiến xếp lớp cao thấp, làm mờ 4px), A = rãnh khắc. Bỏ kênh chỉ sáng màu đội.
+- Shader nền: pháp tuyến từ độ cao (HS 200) → đá tô theo độ dốc ↔ hướng đèn chính (tối/trung/sáng), bóng đổ mềm (so độ cao phía đèn) và
+  AO (so độ cao mip mờ) đè lên cả cỏ quanh phiến; rãnh khắc tối; vài mảng rêu. Đá lam xám nhạt (Xanh) / xám tím ấm (Đỏ). Không vẽ
+  dưới lòng sông.
+- Cỏ trong sân nhà (cách nhà chính < ~6000) chuyển dần sang xanh lam ngả xám như ảnh Liên Quân.
+- Bố cục: sân đá liền quanh nhà chính + 4 vòng bậc thềm cong chia khúc (có rãnh), đài 2 tầng + xoáy khắc, 16 nét cọ bao ngoài; quanh
+  mỗi trụ: đế 2 bậc + 6 cánh chính (có gân) + 6 cánh phụ lớp dưới; đường trong sân nhà: sân đá liền + phiến cong (gần trụ nhà thưa,
+  lộ cỏ), sau đó nét đá thon dọc mép thưa dần.
