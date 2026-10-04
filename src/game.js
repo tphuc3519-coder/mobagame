@@ -23,8 +23,9 @@ import { createInput } from './hud/joystick.js';
 import { createHud } from './hud/hud.js';
 import { createSkillButtons } from './hud/skillButtons.js';
 import { createShop } from './hud/shop.js';
+import { warmItemArt } from './hud/itemArt.js';
 import { createSpellButtons } from './hud/spellButtons.js';
-import { STARTER } from './data/items.js';
+import { STARTER, ITEMS } from './data/items.js';
 
 import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
@@ -88,6 +89,7 @@ const hud = createHud(document.getElementById('hud'), input);
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
+warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
 for (const id of STARTER[HEROES[heroId].roles[0]] || []) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vai (05 §5)
 if (q.has('shop')) shop.open(true);
 

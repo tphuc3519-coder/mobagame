@@ -289,3 +289,20 @@
   −10% hồi chiêu, +20 giáp/KP, 150s); Tà Thần (hang tím rễ xoắn + pha lê, góc đường Sông) — buff đội Tà Lực (+60 công, +90 phép,
   −12% sát thương nhận, 150s). Hồi sinh 300s, thưởng vàng/KN cả đội. Model mới: chim thần cánh vỗ, đuôi phượng; ác thần tím sừng
   cong, vuốt pha lê, vòng phù văn. Bản đồ nhỏ: L/H/Đ/T với màu riêng.
+
+## Nâng cấp icon trang bị + kỹ năng (bản tranh vẽ chi tiết)
+- Bộ vẽ chung (src/hud/paint.js): nền có chiều sâu (khói xoắn domain-warp sáng quanh nguồn sáng, khói tối dày ra mép, đốm bokeh,
+  bụi lấp lánh); mọi vật thể có kết cấu bề mặt (nhiễu mài/mòn), tối mép trong (AO), viền ngược sáng mép dưới-phải theo màu năng
+  lượng chủ đạo của icon, viền sáng trên-trái; hậu kỳ tăng tương phản/độ rực + làm nét (unsharp mask) trước khi vẽ khung.
+  Bóng/viền vẽ trực tiếp bằng clip + evenodd (không lớp nháp) nên tốc độ sinh icon giữ ~như cũ; làm mờ bằng thu nhỏ–phóng lại
+  (không dùng ctx.filter để chạy đúng cả Safari).
+- Khung: kỹ năng — vành kim loại vát (conic) + quầng màu chủ đề hắt vào trong; trang bị — viền kim loại vát theo bậc
+  (đồng/bạc/vàng), bậc 2–3 có đinh tán góc, bậc 3 thêm hoa văn cuộn góc + đá đỏ đỉnh khung.
+- Trang bị (src/hud/itemArt.js): vẽ lại toàn bộ vật thể — lưỡi vát hai mặt + rãnh máu + mũi loá, chuôi chạm khắc, đá quý cắt mài
+  gắn ổ (jewel), dây kim loại cuộn (wire), nét khắc chìm (etch), lửa nhiều lớp (lưỡi lửa mờ + sắc + lõi trắng + tàn lửa), giày giáp
+  nhìn nghiêng (giáp gối, giáp ống quyển, lá thép mu bàn chân chồng nhau, đĩa mắt cá), giáp ngực có giáp vai, áo choàng viền thêu
+  vàng, đèn lồng giấy căng tròn có tua rua... Vật thể vẽ trên lớp riêng rồi thêm quầng sáng màu chủ đề ôm viền.
+- Kỹ năng: dùng lại bộ vẽ vật thể của trang bị (búa, ủng, kiếm, lưỡi liềm); vẽ lại Nắm đấm (găng thép nhìn thẳng), Hồi Máu/Hồi
+  Phục/Thắp Sáng (đài sen nâng vật thay đôi tay), Mũi Tên Gió, Mưa Tên, Lộn Diều, Rừng Nuốt Bóng, Thu Hoạch, Giải Trói.
+- Icon trang bị được vẽ sẵn lúc rảnh (requestIdleCallback) ngay khi vào trận để mở shop lần đầu không khựng.
+- Trang xem trước: tools/items.html?s=200&ids=a,b (lọc món), tools/icons.html?s=180.
