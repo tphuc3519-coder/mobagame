@@ -16,10 +16,10 @@ const GRADE = {
       vec3 nb = texture2D(tDiffuse, vUv + vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv - vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv + vec2(0.0, uPx.y)).rgb + texture2D(tDiffuse, vUv - vec2(0.0, uPx.y)).rgb;
       x = clamp(x + clamp((x * 4.0 - nb) * uSharp, -0.08, 0.08), 0.0, 1.0);
       float l = dot(x, vec3(0.299, 0.587, 0.114));
-      x = mix(vec3(l), x, 0.98);                                        // bão hoà ~100%: dịu, không rực
+      x = mix(vec3(l), x, 0.9);                                        // bão hoà ~100%: dịu, không rực
       x = (x - 0.5) * 1.06 + 0.5;                                        // tương phản
       x *= 0.94;                                                         // hạ tông chung
-      x += mix(vec3(-0.02, 0.012, 0.035), vec3(0.03, 0.015, -0.02), smoothstep(0.15, 0.75, l)); // bóng ngả lam ngọc, sáng ngả ấm
+      x += mix(vec3(-0.025, 0.012, 0.045), vec3(0.025, 0.015, -0.015), smoothstep(0.15, 0.75, l)); // bóng ngả lam ngọc, sáng ngả ấm
       float v = smoothstep(1.1, 0.4, length(vUv - 0.5) * 1.35); x *= mix(0.82, 1.0, v); // vignette nhẹ
       gl_FragColor = vec4(clamp(x, 0.0, 1.0), c.a); }`,
 };

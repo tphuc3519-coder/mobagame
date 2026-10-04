@@ -16,6 +16,7 @@ export function createFog(scene, map, team) {
   const abyss = edges.map((c, k) => [...c, k ? [A + 3600, A + 3600] : [-3600, -3600]]);
   let acc = 1;
   return {
+    mesh,
     canvas: cv,
     /** Vùng của bản đồ (trong canvas, tính bằng pixel) để vẽ lên bản đồ nhỏ. */
     mapRect: { x: px(0), y: py(0), w: pr(map.w), h: pr(map.h) },

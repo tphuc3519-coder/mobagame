@@ -22,13 +22,13 @@ export function bakeGroundMap(o) {
   };
   const stroke = (g, pts, width, color) => { g.strokeStyle = color; g.lineWidth = width; g.lineJoin = g.lineCap = 'round'; g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(x, z) : g.moveTo(x, z))); g.stroke(); };
   const disc = (g, x, z, r, color) => { g.fillStyle = color; g.beginPath(); g.arc(x, z, r, 0, Math.PI * 2); g.fill(); };
-  const R = layer((g) => { for (const l of o.lanes) stroke(g, l.pts, l.width, '#fff'); for (const p of o.plazas) disc(g, p.x, p.z, p.r, '#fff'); }, 1.5);
+  const R = layer((g) => { for (const l of o.lanes) stroke(g, l.pts, l.width, '#fff'); for (const p of o.plazas) disc(g, p.x, p.z, p.r, '#fff'); }, 8);
   const G = layer((g) => {
     if (o.laneDirt !== false) for (const l of o.lanes) stroke(g, l.pts, l.width + 340, '#fff');
     for (const p of o.plazas) disc(g, p.x, p.z, p.r + 220, '#fff');
     for (const d of o.dirt || []) disc(g, d.x, d.z, d.r, `rgba(255,255,255,${d.k ?? 0.8})`);
   }, 10);
-  const A = layer((g) => { if (o.river) stroke(g, o.river.pts, o.river.width + 60, '#fff'); }, 14);
+  const A = layer((g) => { if (o.river) stroke(g, o.river.pts, o.river.width * 1.25, '#fff'); }, 14);
   const shade = shadeLayer(o, N, sx, sz, Math.max(1, Math.round(5 * bs)));
   const data = new Uint8Array(N * N * 4);
   for (let i = 0; i < N * N; i++) { data[4 * i] = R[i]; data[4 * i + 1] = G[i]; data[4 * i + 2] = shade[i]; data[4 * i + 3] = A[i]; }
@@ -83,20 +83,21 @@ export function groundMaterial(baked, pattern = null, map = null) {
       ${map ? 'if (abyssAt(vGxz)) discard; // trên vực: bỏ nền (lộ thung lũng bên dưới)' : ''}
       vec4 sp = texture2D(uSplat, (vGxz - uXf.xy) * uXf.zw);
       vec3 nz = texture2D(uNoise, vGxz / 2800.0).rgb, nz2 = texture2D(uNoise, vGxz / 640.0).rgb;
-      vec3 gr = texture2D(uGrass, vGxz / 540.0).rgb * mix(0.86, 1.12, smoothstep(0.18, 0.42, dot(texture2D(uGrass, vGxz / 1870.0 + 0.37).rgb, vec3(0.333)))); // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
+      vec3 gr = mix(texture2D(uGrass, vGxz / 540.0).rgb, texture2D(uGrass, vec2(-vGxz.y, vGxz.x) / 1390.0 + 0.5).rgb, 0.4) * mix(0.9, 1.08, nz2.g); // hai tỉ lệ xoay lệch: không lộ ô lặp // tầng lớn chỉ điều sáng tối → giữ nét ngọn cỏ
       gr *= 0.9 * mix(vec3(0.78, 0.88, 0.74), vec3(1.14, 1.08, 0.80), smoothstep(0.25, 0.75, nz.r));      // loang: cỏ đậm ẩm ↔ cỏ ngả vàng khô
       vec3 dt = mix(texture2D(uDirt, vGxz / 460.0).rgb, texture2D(uDirt, vGxz / 1500.0 + 0.21).rgb, 0.35);
       vec3 st = texture2D(uStone, vGxz / 380.0).rgb * 0.82 * mix(0.86, 1.06, nz2.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.92), nz.g); // đá ngả ấm/lạnh theo vùng
       float dm = smoothstep(0.30, 0.72, sp.g + (nz2.g - 0.5) * 0.6);
-      float pm = smoothstep(0.40, 0.60, sp.r + (nz2.b - 0.5) * 0.35);
+      float pm = smoothstep(0.25, 0.85, sp.r + (nz2.b - 0.5) * 0.5 + (nz.g - 0.5) * 0.3); // mép đường mềm, loang (không kẻ vạch)
       vec3 c = mix(gr, dt, dm);
       // đường ngoài sân nhà: NỀN CỎ MƯỢT (cỏ mịn sáng, lấy mẫu mip cao cho mượt) XEN CÁC MẢNG ĐÁ LÁT, viền đất mòn quanh mảng đá
       float patchN = texture2D(uNoise, vGxz / 2600.0).g * 0.78 + texture2D(uNoise, vGxz / 700.0).b * 0.22;
       float stPatch = smoothstep(0.515, 0.545, patchN);
       vec3 smoothG = mix(texture2D(uGrass, vGxz / 700.0, 1.2).rgb, gr, 0.7) * vec3(0.98, 1.0, 0.96);
-      vec3 laneC = smoothG; // đường ngoài sân nhà: cỏ mượt (phiến đá lớn vẽ ở laneDecor)
-      laneC = mix(laneC, dt * 1.02, smoothstep(0.62, 0.7, patchN) * 0.35); // vệt đất mòn thưa       // đất mòn viền quanh mảng đá
-      c = mix(c, laneC, pm);
+      vec3 laneC = smoothG * vec3(1.0, 1.0, 0.86) * 1.2; // đường: cỏ giẫm mòn sáng, ngả vàng
+      laneC = mix(laneC, dt * 0.95, smoothstep(0.5, 0.72, patchN) * 0.4); // vệt đất mòn thưa       // đất mòn viền quanh mảng đá
+      float lumc = dot(c, vec3(0.3, 0.59, 0.11)); c = mix(vec3(lumc), c, 0.78) * vec3(0.68, 0.8, 0.86); // rừng: sẫm, ngả lam (như Liên Quân)
+      c = mix(c, mix(vec3(dot(laneC, vec3(0.3, 0.59, 0.11))), laneC, 0.85) * vec3(0.84, 0.92, 0.94), pm * 0.85);
       vec3 peb = texture2D(uPeb, vGxz / 420.0).rgb, peb2 = texture2D(uPeb, vGxz / 1100.0 + 0.4).rgb;
       vec3 bed = mix(dt * vec3(0.5, 0.55, 0.5), mix(peb, peb2, 0.3) * vec3(0.82, 0.9, 0.88), smoothstep(0.3, 0.55, nz2.b)); // lòng sông: cuội ướt + cát bùn
       c = mix(c, bed, smoothstep(0.25, 0.75, sp.a) * (1.0 - pm));                                     // lòng sông: bùn + sỏi ướt

@@ -41,10 +41,10 @@ export function buildRiver(map) {
       void main(){
         if (abyssAt(vW.xz)) discard;                                             // sông đổ xuống vực (thác ở abyss.js)
         vec2 p = vW.xz, fl = uFlow, pr = vec2(-fl.y, fl.x);
-        float edge0 = abs(vUv.x - 0.5) * 2.0;
+        float edge0 = abs(vUv.x - 0.5) * 2.0 * 1.4;                               // 1 = bờ danh nghĩa (mặt nước rộng 1.4 lần để bờ phình ra được)
         vec2 stp = vec2(dot(p, uFlow), dot(p, vec2(-uFlow.y, uFlow.x)));
         float side = vUv.x > 0.5 ? 0.0 : 0.5;                                    // hai bờ lượn khác nhau
-        float shore = (texture2D(uNoise, vec2(stp.x / 3800.0, 0.21 + side)).r - 0.5) * 0.16 + (texture2D(uNoise, vec2(stp.x / 900.0, 0.63 + side)).g - 0.5) * 0.07;
+        float shore = (texture2D(uNoise, vec2(stp.x / 5200.0, 0.21 + side)).r - 0.5) * 0.55 + (texture2D(uNoise, vec2(stp.x / 1400.0, 0.63 + side)).g - 0.5) * 0.14; // bờ lượn mạnh: vịnh, mũi đất
         float edge = clamp(edge0 + shore + 0.11, 0.0, 1.2);                      // 0 giữa dòng → 1 ở bờ (bờ lượn tự nhiên, không thẳng tắp)
         float spd = mix(1.0, 0.35, edge * edge);                                // giữa dòng nhanh
         vec2 st = vec2(dot(p, fl), dot(p, pr));
@@ -82,13 +82,13 @@ export function buildRiver(map) {
         col = mix(col, vec3(0.72, 0.80, 0.78), clamp(foam, 0.0, 1.0) * 0.5);
         col = mix(col, hs > 0.95 ? vec3(0.95, 0.62, 0.70) : vec3(0.42, 0.55, 0.18), leaf * 0.9);
         float a = mix(0.7, 0.95, depth) + foam * 0.15 + leaf;
-        a = max(a, 0.86 * ford); a *= smoothstep(1.0, 0.9, edge) * smoothstep(1.0, 0.97, edge0);                  // mép nước tan dần vào bờ                // trên mặt đường nước vẫn đậm (~80%): đá lát chỉ thấp thoáng bên dưới
+        a = max(a, 0.86 * ford); a *= smoothstep(1.0, 0.9, edge) * smoothstep(1.4, 1.36, edge0);                  // mép nước tan dần vào bờ                // trên mặt đường nước vẫn đậm (~80%): đá lát chỉ thấp thoáng bên dưới
         gl_FragColor = vec4(clamp(col, 0.0, 3.0), clamp(a, 0.0, 0.96));
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
   });
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(map.river.width + 120, len, 1, 1), mat);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(map.river.width * 1.4, len, 1, 1), mat);
   m.rotation.x = -Math.PI / 2; m.renderOrder = 1;
   if (diag) { m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI / 4); m.position.set(map.w / 2, 5, map.h / 2); } // chảy theo đường chéo y = x
   else m.position.set(map.river.x, 3, map.h / 2);

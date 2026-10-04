@@ -452,7 +452,7 @@ export const campRadius = (type) => ({ soi_da: 300, coc_reu: 250, linh_thuy: 300
 export function buildCampSites(map) {
   const g = new THREE.Group(), r = rngFor(505);
   const pt = plazaTexture('tower'); // bệ lãnh thổ: cùng kiểu đá mài khắc vòng như chân trụ (đồng bộ với đường)
-  const topMat = new THREE.MeshLambertMaterial({ map: pt.map, normalMap: pt.normal, color: 0xb4b2c2, transparent: true }), sideMat = new THREE.MeshLambertMaterial({ color: 0x4a5266 });
+  const topMat = new THREE.MeshLambertMaterial({ map: pt.map, normalMap: pt.normal, color: 0x7a8a86, transparent: true, opacity: 0.6 }), sideMat = new THREE.MeshLambertMaterial({ color: 0x4a5266 });
   const rim = [];
   for (const c of map.camps || []) {
     const R = campRadius(c.type), def = MONSTERS[c.type];

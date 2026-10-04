@@ -270,3 +270,14 @@
   nhỏ có đèn xanh, khóm hoa xanh tím; phần trang trí cao xoay về phía xa camera để không che hang.
 - Tổ Long Ngư ("hang chim" ngoài rìa): ~120 cành cong đan nhiều lớp thành vành tổ, cành chĩa ra, cỏ cài, 3 trứng rồng phát sáng.
 - Nứt sáng mặt bệ dịu hơn (×0.55), vòng nứt lan ra nước nhỏ lại.
+
+## So tổng quan với Liên Quân: chế độ chụp `?overview=` + chỉnh tông tổng thể
+- `game.js`: `?overview=<hệ số>` đặt camera nhìn toàn bản đồ (nghiêng 52°), ẩn sương chiến trường + HUD, nới sương cảnh — để chụp so sánh.
+- Khác biệt chính so với ảnh Liên Quân và cách sửa:
+  - cỏ xanh chói, lộ ô lặp → trộn hai tỉ lệ xoay lệch; rừng sẫm ngả lam, giảm bão hoà; đường là cỏ giẫm mòn sáng hơn, mép mềm
+    (bản trộn nền vẽ lại cả 3 đường, làm mờ 8); hậu kỳ giảm bão hoà 0.98 → 0.9, bóng ngả lam;
+  - đá rừng mảnh như que → bệ đá rừng dày hơn (đá rừng 340 → 520, cung trại 320 → 460, sim + hình), CÂY MỌC TRÊN BỆ ĐÁ (mỗi ~130–200)
+    và cây lùi sau bệ đá dọc đường → các mảng rừng đặc; bệ trại quái mờ/ám xanh;
+  - sông thẳng như kẻ thước → mặt nước rộng 1.4×, bờ lượn mạnh (vịnh, mũi đất), lòng bùn rộng 1.25×;
+  - bụi vuông → khối tròn lượn (siêu elip 2.4 + biên nhiễu).
+- Kiểm thử sim đạt (t_map, simtest, t_jungle, t_bot 50 trận không kẹt).

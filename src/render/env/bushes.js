@@ -7,7 +7,7 @@ import { buildGrass } from './grass.js';
 // Bụi núp (vùng giấu tầm nhìn) kiểu Liên Quân: cỏ lá dài cao rậm (khóm thẻ cỏ, env/grass.js) phủ theo vòm siêu elip của vùng bụi.
 
 /** Điểm trên vòm bụi: u, v ∈ [-1, 1] (theo hình chữ nhật), trả về chiều cao vòm (0 ở mép). Siêu elip bậc 4 phủ gần kín góc chữ nhật. */
-const dome = (u, v) => { const e = Math.pow(Math.abs(u), 4) + Math.pow(Math.abs(v), 4); return e >= 1 ? 0 : Math.pow(1 - e, 0.35); };
+const dome = (u, v) => { const a = Math.atan2(v, u), k = 1 + 0.16 * Math.sin(a * 3 + 1.3) + 0.08 * Math.sin(a * 5 + 0.4), e = (Math.pow(Math.abs(u), 2.4) + Math.pow(Math.abs(v), 2.4)) * k * k; return e >= 1 ? 0 : Math.pow(1 - e, 0.35); }; // khối tròn lượn (không vuông)
 
 /** Dựng toàn bộ bụi của bản đồ: cỏ lá dài kiểu Liên Quân — hàng trăm khóm cỏ cao rậm phủ kín vùng bụi (giữa cao, mép thấp),
  *  lõi tối thấp bên dưới che chân khóm. density: 0.4..1 (mức đồ hoạ). */

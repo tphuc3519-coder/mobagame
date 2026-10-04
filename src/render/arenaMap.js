@@ -97,6 +97,20 @@ export function buildArena(scene, map, level = 'mid') {
       }
     }
   }
+  // cây mọc trên/sát bệ đá rừng: biến bệ đá mảnh thành khối rừng đặc (như các mảng rừng của Liên Quân nhìn từ trên)
+  for (const w of map.walls.segs) {
+    if (w.bushRock || w.border || w.baseWall != null) continue;
+    const edge = !(w.rock || w.ledge); // bệ đá dọc mép đường: cây mọc lùi về phía rừng
+    const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L;
+    const away = laneDist(w.x1 / 2 + w.x2 / 2 - uz * 200, w.y1 / 2 + w.y2 / 2 + ux * 200) > laneDist(w.x1 / 2 + w.x2 / 2 + uz * 200, w.y1 / 2 + w.y2 / 2 - ux * 200) ? 1 : -1;
+    for (let t = r.range(40, 160); t < L - 40; t += r.range(130, 200)) {
+      if (r.next() > 0.92) continue;
+      if (edge && r.next() < 0.35) continue;
+      const o = edge ? away * ((w.w ?? 300) * 0.5 + r.range(60, 160)) : r.range(-0.3, 0.3) * (w.w ?? 300), x = w.x1 + ux * t - uz * o, z = w.y1 + uz * t + ux * o;
+      if (laneDist(x, z) < halfW + 220 || riverDist(x, z) < rw / 2 + 60) continue;
+      const bl = r.next() < 0.08; trees.push({ x, y: heightAt(x, z) + 30, z, ry: r.range(0, 7), sx: r.range(0.9, 1.3), sz: 0, type: bl ? 'blossom' : r.next() < 0.35 ? 'pine' : r.next() < 0.3 ? 'tall' : 'oak', color: bl ? 0xffffff : tint.setRGB(r.range(0.78, 0.92), r.range(0.86, 0.98), r.range(0.84, 1.0), THREE.SRGBColorSpace).getHex() });
+    }
+  }
   for (let i = trees.length - 1; i >= 0; i--) { const t = trees[i]; if (isAbyss(map, t.x, t.z, ABYSS_PAD - 60) || (map.outOfBounds?.(t.x, t.z, 0) && t.sx > 0.8)) trees.splice(i, 1); } // không trồng cây trên vực; dải sau tường chỉ cây nhỏ
   trees.forEach((t) => { t.sz = t.sx; });
   g.add(buildTrees(trees, dens));
@@ -168,7 +182,7 @@ export function buildArena(scene, map, level = 'mid') {
     const pattern = basePattern(map, structs, { onRiver: (x, z) => riverDist(x, z) < rw / 2 + 60, size: dens >= 1 ? 3072 : 2048 }); // họa tiết khắc chìm sân nhà
     const paved = pavedPolylines(map); // chỉ đoạn nhà chính → trụ nhà là đá lát; phần còn lại của đường là nền cỏ như rừng
     const dirt = [...oobDirt, ...structs.filter((q) => q.kind === 'core').map((q) => ({ x: q.x, z: q.y, r: 900, k: 0.35 })), ...(map.camps || []).map((c) => ({ x: c.x, z: c.y, r: campRadius(c.type) * 1.6, k: 0.7 }))];
-    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: paved, laneDirt: false, plazas, dirt, casters, walls,
+    const baked = bakeGroundMap({ x0: -pad, z0: -pad, w: map.w + pad * 2, h: map.h + pad * 2, n: 1024, lanes: lanes.map((l) => ({ ...l, width: l.width * 1.12 })), laneDirt: false, plazas, dirt, casters, walls,
       river: { pts: [[-pad, -pad], [map.w + pad, map.h + pad]], width: rw } });
     const w = map.w + pad * 2, d = map.h + pad * 2, seg = Math.round(170 * dens + 20);
     const geo = new THREE.PlaneGeometry(w, d, seg, seg); geo.rotateX(-Math.PI / 2);

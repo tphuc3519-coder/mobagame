@@ -111,7 +111,7 @@ function edgeWalls(path, sides, { w = 300, off = LANE_W / 2 + w / 2 + 40, from =
 const guard = (path, sides, o) => edgeWalls(path, sides, o);
 
 /** Cung đá bao quanh điểm (cx, cy) bán kính r (toạ độ gốc), chừa cửa mở về hướng `face` (độ, 0 = +x, 90 = +y), góc bao `span`. */
-function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 320) {
+function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 460) {
   const out = [], back = face + 180, a0 = back - span / 2, step = span / n, r = r0 + w / 2 / K; // dày ra phía sau, lòng trại giữ nguyên
   for (let i = 0; i < n; i++) {
     const a = (a0 + i * step + 6) * Math.PI / 180, b = (a0 + (i + 1) * step - 6) * Math.PI / 180;
@@ -169,7 +169,7 @@ function bushRocks(b) {
 }
 function segDist(x, y, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2)); return Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t); }
 /** Bệ đá trong rừng (kiểu Liên Quân): chia rừng thành lối đi vòng giữa các trại, chắn bờ sông, túi núp cạnh mục tiêu lớn. */
-const rockLine = (pts, w = 340) => pts.slice(1).map((p, i) => ({ x1: pts[i][0] * K, y1: pts[i][1] * K, x2: p[0] * K, y2: p[1] * K, rock: true, w }));
+const rockLine = (pts, w = 520) => pts.slice(1).map((p, i) => ({ x1: pts[i][0] * K, y1: pts[i][1] * K, x2: p[0] * K, y2: p[1] * K, rock: true, w }));
 const JUNGLE_ROCKS = [
   ...rockLine([[1650, 3000], [1850, 2850]]),                 // giữa bùa xanh và trại cóc
   ...rockLine([[1500, 3470], [1420, 3730]]),                 // giữa trại sói và trại cóc
