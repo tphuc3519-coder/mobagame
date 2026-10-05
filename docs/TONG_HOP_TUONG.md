@@ -253,6 +253,25 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 
 ## 3. 🔜 Tướng sắp có (14)
 
+**Ghi chú — nguồn cơ chế.** 14 tướng này lấy cơ chế từ các đấu thủ bên repo autobattle. Chỉ lấy cơ chế; tên, ngoại hình và tên chiêu phải là nội dung gốc (docs/04 §8), khi sửa model hay mô tả đừng để lộ nét nhân vật gốc.
+
+| Tướng hiện tại | Nhân vật gốc bên autobattle |
+|---|---|
+| Hạnh Hoa — Thầy Lang Mai Vàng | Sakura (Naruto) |
+| Tiểu Ảnh — Cậu Bé Rối Giấy | Konohamaru (Naruto) |
+| Bà Năm Chảo — Bà Nội Trợ Xóm Chợ | ChiChi (Dragon Ball) |
+| Cầu Mây — Chàng Đá Cầu Xóm Đình | Tsubasa (Captain Tsubasa) |
+| Bóng Đèn — Nghệ Nhân Rối Bóng | Shikamaru (Naruto) |
+| Thầy Đồ — Ông Đồ Chữ Nghĩa | Suzune |
+| Kép Chèo — Ông Kép Múa Hài | Ginyu (Dragon Ball) |
+| Mèo Thần Tài — Mèo Vẫy Tay Bảo Bối | Doraemon |
+| Phù Đổng — Chàng Trai Ngựa Sắt | Superman |
+| Thư Linh — Nàng Sách Cổ | Beatrice (Re:Zero) |
+| Kiếm Thuỷ — Kiếm Sĩ Sông Xanh | Tanjiro (Thanh Gươm Diệt Quỷ) |
+| Lưỡng Cực — Đạo Sĩ Âm Dương | Gojo (Jujutsu Kaisen) |
+| Nhãn Sư — Thợ Săn Thấu Nhãn | Isagi (Blue Lock) |
+| Trạng Nhí — Thám Tử Nhí Phố Cổ | Conan (Thám Tử Lừng Danh Conan) |
+
 ### 7. Hạnh Hoa — "Thầy Lang Mai Vàng" `hanh_hoa`
 
 **Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Trợ thủ / Đấu sĩ · **Đường:** Hỗ trợ · **Độ khó:** ★★ · **Đánh thường:** cận chiến

@@ -189,6 +189,10 @@ n = 0;
 out.push('## 2. ✅ Tướng hiện có (6)', '');
 for (const id of live) out.push(heroMd(id, ++n, '✅ Hiện có', lookAlpha(id)));
 out.push('## 3. 🔜 Tướng sắp có (14)', '');
+// Nhân vật gốc bên autobattle mà mỗi tướng đợt 2 lấy cơ chế (chỉ cơ chế; tên, ngoại hình, tên chiêu là nội dung gốc — 04 §8).
+const ORIGIN = { hanh_hoa: 'Sakura (Naruto)', tieu_anh: 'Konohamaru (Naruto)', ba_nam: 'ChiChi (Dragon Ball)', cau_may: 'Tsubasa (Captain Tsubasa)', bong_den: 'Shikamaru (Naruto)', thay_do: 'Suzune', kep_cheo: 'Ginyu (Dragon Ball)', meo_than_tai: 'Doraemon', phu_dong: 'Superman', thu_linh: 'Beatrice (Re:Zero)', kiem_thuy: 'Tanjiro (Thanh Gươm Diệt Quỷ)', luong_cuc: 'Gojo (Jujutsu Kaisen)', nhan_su: 'Isagi (Blue Lock)', trang_nhi: 'Conan (Thám Tử Lừng Danh Conan)' };
+out.push('**Ghi chú — nguồn cơ chế.** 14 tướng này lấy cơ chế từ các đấu thủ bên repo autobattle. Chỉ lấy cơ chế; tên, ngoại hình và tên chiêu phải là nội dung gốc (docs/04 §8), khi sửa model hay mô tả đừng để lộ nét nhân vật gốc.', '',
+  '| Tướng hiện tại | Nhân vật gốc bên autobattle |', '|---|---|', ...soon.map((id) => `| ${HEROES[id].name} — ${HEROES[id].title} | ${ORIGIN[id]} |`), '');
 for (const id of soon) out.push(heroMd(id, ++n, '🔜 Sắp có (khoá trong màn chọn tướng)', LOOK2[id]));
 out.push('## 4. ⏳ Tướng trong hàng chờ (10)', '');
 for (const id of QUEUE) out.push(queueMd(id, ++n));
