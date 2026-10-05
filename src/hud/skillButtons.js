@@ -5,6 +5,7 @@ import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
 import { heroSkillArt, fistArt } from './heroArt.js';
 import { THEMES } from '../render/vfx/library.js';
+import { ICON } from './uiIcons.js';
 
 /** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
  *  đoạn vừa nâng (fresh) loé sáng một nhịp. */
@@ -20,9 +21,7 @@ function levelRing(max, level, fresh) {
 }
 
 const DRAG_MIN = 15, DRAG_MAX = 110;
-// biểu tượng nút ăn lính (mũ lính) / đẩy trụ (tháp)
-const MINION_IC = '<svg viewBox="0 0 40 40"><path d="M9 22c0-7 5-12 11-12s11 5 11 12v3H9z" fill="#e8dcc0"/><path d="M20 6l2.5 5h-5z" fill="#ffd27a"/><rect x="8" y="24" width="24" height="4" rx="2" fill="#c9a24a"/><path d="M13 28h14l-2 6H15z" fill="#e8dcc0"/><rect x="18.5" y="16" width="3" height="9" fill="#8a7a5a"/></svg>';
-const TOWER_IC = '<svg viewBox="0 0 40 40"><path d="M12 34h16l-2-16h3l-2-6H13l-2 6h3z" fill="#e8dcc0"/><path d="M14 12l6-6 6 6z" fill="#c9a24a"/><rect x="18" y="22" width="4" height="7" rx="2" fill="#5a4a3a"/><circle cx="20" cy="16" r="2.2" fill="#ffd27a"/></svg>';
+const MINION_IC = ICON.minion(), TOWER_IC = ICON.tower(); // nút ăn lính / đẩy trụ (uiIcons.js)
 const SLOTS = ['s1', 's2', 's3'];
 
 export function createSkillButtons(root, { world, player, indicators }) {

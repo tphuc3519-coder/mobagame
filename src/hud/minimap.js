@@ -89,8 +89,8 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = col; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.4;
         ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);
         ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
-        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
-        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
+        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
+        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
       }
       // lính
       for (const e of ents) if (e.kind === 'minion' && e.alive) { ctx.fillStyle = col(e); ctx.fillRect(wx(e.pos.x) - 1, wy(e.pos.y) - 1, 2, 2); }

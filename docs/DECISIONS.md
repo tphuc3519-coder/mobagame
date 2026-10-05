@@ -400,3 +400,12 @@
 - **Trụ ngoài hai đường cánh sát sông**: đặt đúng chỗ vòng bắn (1050) tiếp xúc mép sông (cách ~20 đơn vị) — sát nhất có thể mà
   không chạm nước (vị trí cũ y=1500 thật ra vòng bắn đã lấn xuống sông ~200). Trụ ngoài giữa cũng tiếp xúc mép sông. Trụ trong/nhà
   chia đều phía sau: khe giữa hai vòng trụ ~1350 ở đường cánh, ~730 ở đường giữa (đổi lại cho trụ ngoài sát sông).
+
+## Chữ và biểu tượng giao diện
+- **Font Be Vietnam Pro** (SIL OFL 1.1, tự lưu ở `assets/fonts/`, 12 tệp woff2 ~220 KB: đậm 500–800 × latin/latin-ext/vietnamese,
+  chỉ tải phần chữ cần dùng): thiết kế riêng cho tiếng Việt, dấu rõ ở cỡ nhỏ, số đều nhau (tabular) nên đồng hồ/vàng không nhảy.
+  Dùng cho toàn bộ HUD DOM lẫn chữ vẽ trên canvas (thanh máu, tên, số bay, bảng bị hạ, bản đồ nhỏ); không cần mạng ngoài.
+- **Biểu tượng** (`src/hud/uiIcons.js`): một bộ SVG nét vàng ánh kim chuyển sắc + viền tối, thay emoji ⚙/⛶ và các icon cũ:
+  bánh răng, toàn màn hình, đồng hồ, K/D/A (kiếm chéo, đầu lâu, nắm tay), menu, nút Ăn lính (mũ trụ chỏm đỏ + kiếm) và Đẩy trụ
+  (tháp mái đình + pha lê). Nút tròn nền xanh thẫm viền vàng như Liên Quân.
+- **Cụm nút giãn ra**: nút Ăn lính/Đẩy trụ lùi xa nút Đánh thêm 7px, K1 dạt trái 16px, K3 lên 14px, K2 lệch ra 6px.

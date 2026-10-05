@@ -41,7 +41,7 @@ export function createPortraits(renderer, size = 96) {
       const p = this.get(id);
       ctx.save(); ctx.clip();
       if (p) ctx.drawImage(p, x - r * 1.15, y - r * 1.05, r * 2.3, r * 2.3);
-      else { ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r * 1.1)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
+      else { ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r * 1.1)}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
       if (dead) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
       ctx.restore();
       ctx.lineWidth = Math.max(2, r * 0.22); ctx.strokeStyle = ring; ctx.stroke();
