@@ -306,3 +306,28 @@
   Phục/Thắp Sáng (đài sen nâng vật thay đôi tay), Mũi Tên Gió, Mưa Tên, Lộn Diều, Rừng Nuốt Bóng, Thu Hoạch, Giải Trói.
 - Icon trang bị được vẽ sẵn lúc rảnh (requestIdleCallback) ngay khi vào trận để mở shop lần đầu không khựng.
 - Trang xem trước: tools/items.html?s=200&ids=a,b (lọc món), tools/icons.html?s=180.
+
+## Sửa lỗi vận hành + quái rừng làm lại (theo phản hồi chơi thử trên iPhone)
+- **Màn hình đen khi dùng chiêu**: vài shader hiệu ứng có `pow()` cơ số âm (khiên, cột sáng) và `atan(0,0)` (xoáy nước, vòng phù văn)
+  → GPU di động trả NaN; chỉ một điểm ảnh NaN lọt vào bloom sẽ bị làm mờ lan cả khung → đen lòm. Sửa các shader + chặn NaN/vô cực
+  ngay ở bước lọc vùng sáng của bloom và ở bước chỉnh màu cuối (không tốn thêm lượt vẽ). Thêm: rò bộ nhớ GPU (bóng chân, cung lính,
+  phụ kiện quái tạo mới mỗi lần sinh) đã dùng chung — máy yếu hết bộ nhớ cũng gây mất đồ hoạ/đen màn.
+- **Hồi sinh vẫn nằm**: clip Chết giữ khung cuối với trọng số 1; hồi sinh giờ dừng hẳn mọi clip rồi mới về Idle.
+- **Thanh máu trên đầu**: neo cao hơn (372) và gọn hơn (86×8, huy hiệu cấp nhỏ) để tên không bị đầu tướng che.
+- **Đi xuyên tường/bệ đá**: vách đá móng ngựa của hang Long Ngư/Hổ Lôi, vòng rễ hang Tà Thần, vòng cành tổ Thần Điểu trước chỉ là hình
+  (không có va chạm) → thêm thành tường va chạm dùng chung dữ liệu với phần dựng hình (`lairWallSegs`). Đẩy ra khỏi tường lặp tối đa
+  3 lượt (góc hai tảng giao nhau). Lướt/kéo chia bước ≤30 để không xuyên bệ mỏng; bị kéo vào tường thì dừng kéo (trước kẹt mãi).
+  Tảng đá phụ quanh bệ thu gọn vào trong vùng va chạm (trước thò ra gấp đôi, nhìn như đi xuyên).
+- **Trong bụi**: độ mờ 0.62 (trước 0.35) + sáng nhẹ, vẫn ghi chiều sâu (không lộ mặt trong tối).
+- **Tướng to hơn**: hệ số 1.35 khi dựng trong trận (bán kính va chạm giữ nguyên); tốc độ phát clip chạy chia theo tỉ lệ để chân không trượt.
+- **Cần di chuyển**: luôn hiện ở góc trái dưới (mờ khi nghỉ), chạm đâu ở nửa trái thì dời tới đó. **Tốc độ chạy** không phụ thuộc độ kéo:
+  mô phỏng chuẩn hoá hướng, mọi tướng chạy đúng tốc độ của mình; chỉ kỹ năng/trang bị/bổ trợ thay đổi tốc độ.
+- **Quái rừng làm lại** (`tools/modelgen/monsters.mjs` → `assets/monsters/*.glb`): thân liền khối SDF có xương (sói, cóc, tinh linh
+  nước, người đá nham thạch, cá chép hoá rồng, hổ thần, chim sấm, tà thần), màu tô theo vùng (lưng sẫm/bụng nhạt, vằn hổ, vảy cá, khe
+  dung nham phát sáng, rêu, đốm cóc) + AO khe; shader vẽ thêm sợi lông/da/đá/vảy theo loại chất liệu đỉnh, viền sáng tách nền.
+  Hoạt cảnh xoay xương: chạy nước kiệu chéo cặp, đuôi vẫy, há mồm vồ; cóc nhảy, phồng túi cổ; người đá bước nặng, đập hai tay; chim vỗ
+  cánh; cá uốn thân chữ S. Model chưa nạp xong thì tạm dùng hình khối cũ. Xem: `tools/monsters.html?game=1`.
+- **Lỗi tự tìm thêm**: lúc chết không mua đồ/nâng chiêu được (Liên Quân cho phép) → cho phép; giữ nút Đánh qua lúc hồi sinh; chết
+  giữa lúc ngắm thì bỏ ngắm; rời ứng dụng giữa lúc giữ cần thì nhả cần; chuyển tab về không chạy tiếp khi đồ hoạ còn mất; tán cây quanh
+  tướng thưa dần (lưới điểm) để không che tướng; nút kỹ năng/bổ trợ chỉ ghi DOM khi giá trị đổi (đỡ giật trên điện thoại); thanh
+  máu/mana của mình mảnh, sát mép dưới để không đè cần di chuyển.

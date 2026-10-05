@@ -22,7 +22,7 @@ export function createInput(target) {
   return {
     js, R,
     /** Vị trí nghỉ của cần (khi không chạm): góc trái dưới, chừa vùng an toàn của màn tai thỏ. */
-    rest: () => ({ x: Math.max(150, R + 60), y: innerHeight - Math.max(120, R + 30) }),
+    rest: () => ({ x: Math.max(160, R + 70), y: innerHeight - Math.max(130, R + 40) }),
     /** Vector hướng đơn vị (hoặc 0), trục màn hình (y xuống = +). */
     dir() {
       let x = 0, y = 0;

@@ -82,13 +82,13 @@ export function createHud(canvas, input) {
         ctx.fillStyle = f.color; ctx.fillText(f.text, p.x, p.y); ctx.globalAlpha = 1;
       }
       // thanh máu / mana của mình
-      const bx = 16, by = h - 44, bw = Math.min(240, w * 0.26);
-      bar(bx, by, bw, 14, player.hp / player.stats.maxHp, '#3ecf74');
+      const bx = 16, by = h - 25, bw = Math.min(220, w * 0.24); // sát mép dưới, mảnh: không đè lên cần di chuyển
+      bar(bx, by, bw, 12, player.hp / player.stats.maxHp, '#3ecf74');
       const sh = player.shields.reduce((a, s) => a + s.amount, 0);
-      if (sh > 0) bar(bx, by, bw, 5, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
-      bar(bx, by + 19, bw, 8, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 11px ui-monospace, monospace'; ctx.fillStyle = '#fff';
-      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 7);
+      if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
+      bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 10px ui-monospace, monospace'; ctx.fillStyle = '#fff';
+      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 6);
       { // tỉ số + đồng hồ ở giữa trên (07 §9)
         const sec = Math.floor(world.tick / 30), cx = w / 2, ty = 10;
         ctx.fillStyle = 'rgba(12,15,32,0.72)'; ctx.beginPath(); ctx.roundRect(cx - 92, ty, 184, 30, 15); ctx.fill();
