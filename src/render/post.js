@@ -11,7 +11,7 @@ const GRADE = {
   uniforms: { tDiffuse: { value: null }, uPx: { value: new THREE.Vector2(1 / 1280, 1 / 720) }, uSharp: { value: 0.35 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 uPx; uniform float uSharp; varying vec2 vUv;
-    void main(){ vec4 c = texture2D(tDiffuse, vUv); if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, 1.0); vec3 x = c.rgb;
+    void main(){ vec4 c = texture2D(tDiffuse, vUv); if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, 1.0); vec3 x = min(max(c.rgb, vec3(0.0)), vec3(1.0));
       // làm nét (unsharp mask 4 lân cận, giới hạn để không tạo viền trắng)
       vec3 nb = texture2D(tDiffuse, vUv + vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv - vec2(uPx.x, 0.0)).rgb + texture2D(tDiffuse, vUv + vec2(0.0, uPx.y)).rgb + texture2D(tDiffuse, vUv - vec2(0.0, uPx.y)).rgb;
       x = clamp(x + clamp((x * 4.0 - nb) * uSharp, -0.08, 0.08), 0.0, 1.0);
@@ -34,7 +34,7 @@ export function createPost(renderer, scene, camera, level) {
   // chặn NaN/vô cực: chỉ một điểm ảnh NaN (shader hiệu ứng tính lỗi trên GPU di động) lọt vào bloom sẽ bị làm mờ lan ra
   // toàn khung → màn hình đen lòm. Lọc ngay ở bước lấy vùng sáng của bloom (không tốn thêm lượt vẽ).
   const hp = bloom.materialHighPassFilter;
-  hp.fragmentShader = hp.fragmentShader.replace('vec4 texel = texture2D( tDiffuse, vUv );', 'vec4 texel = texture2D( tDiffuse, vUv ); if ( any( isnan( texel ) ) || any( isinf( texel ) ) || !( abs( dot( texel, vec4( 1.0 ) ) ) < 1e5 ) ) texel = vec4( 0.0 ); texel = min( texel, vec4( 64.0 ) );');
+  hp.fragmentShader = hp.fragmentShader.replace('vec4 texel = texture2D( tDiffuse, vUv );', 'vec4 texel = texture2D( tDiffuse, vUv ); if ( any( isnan( texel ) ) || any( isinf( texel ) ) || !( abs( dot( texel, vec4( 1.0 ) ) ) < 1e5 ) ) texel = vec4( 0.0 ); texel = min( max( texel, vec4( 0.0 ) ), vec4( 64.0 ) ); /* max/min trả về số hợp lệ khi gặp NaN trên GPU D3D/Metal — chốt chặn kể cả khi trình dịch bỏ isnan */');
   hp.needsUpdate = true;
   const grade = new ShaderPass(GRADE); grade.uniforms.uSharp.value = level === 'high' ? 0.4 : 0.32;
   composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);

@@ -331,3 +331,10 @@
   giữa lúc ngắm thì bỏ ngắm; rời ứng dụng giữa lúc giữ cần thì nhả cần; chuyển tab về không chạy tiếp khi đồ hoạ còn mất; tán cây quanh
   tướng thưa dần (lưới điểm) để không che tướng; nút kỹ năng/bổ trợ chỉ ghi DOM khi giá trị đổi (đỡ giật trên điện thoại); thanh
   máu/mana của mình mảnh, sát mép dưới để không đè cần di chuyển.
+- **Màn đen (cả laptop)**: chốt chặn thêm `max/min` trước bloom và ở bước chỉnh màu cuối — trên GPU D3D (ANGLE Windows)/Metal
+  `max(NaN, 0)` trả 0 nên vẫn chặn được kể cả khi trình dịch shader bỏ qua `isnan`. Nguồn hay gặp nhất: cột sáng/khiên tính
+  `pow(1 − |N·V|, k)` — ở mép vật |N·V| có thể nhỉnh hơn 1 một chút → cơ số âm → NaN (đã kẹp về [0,1]).
+- **Lính làm lại** (cùng bộ sinh `monsters.mjs`): lính kiếm (nón lá, giáp vảy, kiếm + khiên tròn), lính cung (khăn đội đầu, cung,
+  ống tên), lính đèn lớn (hộ pháp áo tơi rơm vác cột đèn lồng phát sáng), xe đá (4 bánh lăn, cần ném gàu đá, cờ). Màu đội tô bằng
+  shader (vùng đỉnh _mat 4/6) nên một model dùng cho cả hai phe. Hoạt cảnh: bước đi tay vung ngược chân, chém kiếm từ trên xuống,
+  kéo dây cung, bánh xe lăn + cần ném bật. Cỡ phóng theo tướng.

@@ -358,10 +358,108 @@ function demon() {
   return finish(m, 'ta_than');
 }
 
+
+// ———————————————————— LÍNH (màu đội tô lúc chạy: _mat 4 = vải/giáp màu đội, 6 = phát sáng màu đội) ————————————————————
+const TEAM = 4, TEAMGLOW = 6;
+/** Bộ khung người lính (cao ~1.8 m). o: { bulk, skin } */
+function soldierBase(id, o = {}) {
+  const m = new Model(id); m.sdfCell = o.cell || 0.011; m.sdfTris = o.tris || 7000;
+  const k = o.bulk || 1, s = (v) => v.map((q) => q * (o.scale || 1));
+  m.joint('Bone_Root', null, 0, 0, 0); m.joint('Bone_Hips', 'Bone_Root', ...s([0, 0.95, 0])); m.joint('Bone_Chest', 'Bone_Hips', ...s([0, 1.3, 0])); m.joint('Bone_Head', 'Bone_Chest', ...s([0, 1.58, 0.02]));
+  m.jointLR('Bone_ArmUL', 'Bone_Chest', ...s([0.23 * k, 1.42, 0])); m.jointLR('Bone_ArmLL', 'Bone_ArmUL', ...s([0.29 * k, 1.14, 0.04])); m.jointLR('Bone_HandL', 'Bone_ArmLL', ...s([0.31 * k, 0.9, 0.1]));
+  m.jointLR('Bone_LegUL', 'Bone_Hips', ...s([0.11 * k, 0.92, 0])); m.jointLR('Bone_LegLL', 'Bone_LegUL', ...s([0.12 * k, 0.5, 0.03])); m.jointLR('Bone_FootL', 'Bone_LegLL', ...s([0.12 * k, 0.08, 0]));
+  const sc = o.scale || 1, S = (v) => v * sc;
+  const skin = o.skin || '#e8c4a0', cloth = o.cloth || '#5a4a3a';
+  const clothC = (x, y, z) => hex(mixC(cloth, '#2a2018', fbm(x * 20, y * 20, z * 20) * 0.5).multiplyScalar(0.9 + fbm(x * 60, y * 60, z * 60, 2) * 0.2));
+  const torsoW = (x, y, z) => (y / sc < 1.05 ? [['Bone_Hips', 1]] : y / sc < 1.2 ? [['Bone_Hips', 0.5], ['Bone_Chest', 0.5]] : [['Bone_Chest', 1]]);
+  m.blob({ loft: [{ y: S(0.86), rx: S(0.17 * k), rz: S(0.12 * k) }, { y: S(1.06), rx: S(0.15 * k), rz: S(0.11 * k) }, { y: S(1.32), rx: S(0.21 * k), rz: S(0.135 * k) }, { y: S(1.46), rx: S(0.2 * k), rz: S(0.12 * k) }], k: S(0.03), mat: FUR, color: clothC, weights: torsoW });
+  m.blob({ cone: [s([0, 1.45, 0]), s([0, 1.54, 0.01]), S(0.06), S(0.055)], k: S(0.03), mat: SKIN, color: skin, weights: W1('Bone_Head') });
+  m.blob({ ell: [s([0, 1.64, 0.02]), [S(0.105), S(0.125), S(0.115)]], k: S(0.03), mat: SKIN, color: skin, weights: W1('Bone_Head') });
+  m.blob({ ell: [s([0, 1.6, 0.125]), [S(0.018), S(0.022), S(0.02)]], k: S(0.015), mat: SKIN, color: skin, weights: W1('Bone_Head') }); // mũi
+  for (const sd of [1]) m.blob({ ell: [s([0.04 * sd, 1.655, 0.1]), [S(0.016), S(0.012), S(0.01)]], k: S(0.003), mat: SKIN, color: '#1a1210', weights: W1('Bone_Head'), mirror: true }); // mắt
+  m.blob({ ell: [s([0, 1.7, -0.01]), [S(0.11), S(0.08), S(0.115)]], k: S(0.02), mat: FUR, color: o.hair || '#1a1410', weights: W1('Bone_Head') }); // tóc búi
+  m.blob({ ell: [s([0.045, 1.69, 0.105]), [S(0.028), S(0.008), S(0.012)], [0, 0, -12]], k: S(0.004), mat: FUR, color: o.hair || '#1a1410', weights: W1('Bone_Head'), mirror: true }); // lông mày
+  m.blob({ ell: [s([0, 1.565, 0.108]), [S(0.03), S(0.006), S(0.01)]], k: S(0.004), mat: SKIN, color: '#7a3a2a', weights: W1('Bone_Head') }); // miệng
+  m.blob({ ell: [s([0.105, 1.63, 0.0]), [S(0.018), S(0.032), S(0.022)]], k: S(0.01), mat: SKIN, color: skin, weights: W1('Bone_Head'), mirror: true }); // tai
+  // tay
+  m.blob({ cone: [s([0.23 * k, 1.42, 0]), s([0.29 * k, 1.14, 0.04]), S(0.07 * k), S(0.056 * k)], k: S(0.025), mat: FUR, color: clothC, weights: segWeights('Bone_ArmUL', 'Bone_ArmLL', s([0.23 * k, 1.42, 0]), s([0.29 * k, 1.14, 0.04]), 0.7, 1, 0, 1), mirror: true });
+  m.blob({ cone: [s([0.29 * k, 1.14, 0.04]), s([0.31 * k, 0.94, 0.09]), S(0.056 * k), S(0.047 * k)], k: S(0.02), mat: FUR, color: clothC, weights: W1('Bone_ArmLL'), mirror: true });
+  m.blob({ cone: [s([0.3 * k, 1.04, 0.065]), s([0.31 * k, 0.95, 0.09]), S(0.06 * k), S(0.052 * k)], k: S(0.008), mat: HARD, color: '#6a4424', weights: W1('Bone_ArmLL'), mirror: true }); // bao cổ tay da
+  m.blob({ ell: [s([0.315 * k, 0.88, 0.1]), [S(0.048 * k), S(0.058 * k), S(0.042 * k)]], k: S(0.02), mat: SKIN, color: skin, weights: W1('Bone_HandL'), mirror: true });
+  // chân + giày
+  m.blob({ cone: [s([0.11 * k, 0.92, 0]), s([0.12 * k, 0.5, 0.03]), S(0.095 * k), S(0.068 * k)], k: S(0.03), mat: FUR, color: clothC, weights: segWeights('Bone_LegUL', 'Bone_LegLL', s([0.11 * k, 0.92, 0]), s([0.12 * k, 0.5, 0.03]), 0.7, 1, 0, 1), mirror: true });
+  m.blob({ cone: [s([0.12 * k, 0.5, 0.03]), s([0.12 * k, 0.1, 0]), S(0.068 * k), S(0.056 * k)], k: S(0.02), mat: HARD, color: '#3a2a1c', weights: W1('Bone_LegLL'), mirror: true });
+  m.blob({ ell: [s([0.12 * k, 0.05, 0.05]), [S(0.062 * k), S(0.05), S(0.12 * k)]], k: S(0.02), mat: HARD, color: '#2a1e14', weights: W1('Bone_FootL'), mirror: true });
+  return { m, s, S, k, sc };
+}
+/** Giáp vảy màu đội: áo giáp ngực, giáp vai, váy giáp nhiều lớp, đai. */
+function teamArmor(b) {
+  const { m, s, S, k } = b, lam = (x, y, z) => { const band = Math.abs(((y / b.sc) * 22) % 1 - 0.5) < 0.1; return hex(new THREE.Color(band ? '#9a9a9a' : '#e8e8e8').multiplyScalar(0.85 + fbm(x * 30, y * 30, z * 30, 2) * 0.25)); };
+  m.blob({ loft: [{ y: S(1.12), rx: S(0.165 * k), rz: S(0.125 * k) }, { y: S(1.3), rx: S(0.215 * k), rz: S(0.145 * k) }, { y: S(1.44), rx: S(0.205 * k), rz: S(0.13 * k) }], k: S(0.015), mat: TEAM, color: lam, weights: W1('Bone_Chest') });
+  m.blob({ ell: [s([0.21 * k, 1.44, 0]), [S(0.085), S(0.05), S(0.08)], [0, 0, -25]], k: S(0.02), mat: TEAM, color: lam, weights: W1('Bone_ArmUL'), mirror: true });
+  m.blob({ loft: [{ y: S(0.7), rx: S(0.22 * k), rz: S(0.17 * k) }, { y: S(0.9), rx: S(0.19 * k), rz: S(0.14 * k) }, { y: S(1.06), rx: S(0.165 * k), rz: S(0.12 * k) }], k: S(0.012), mat: TEAM, color: lam, weights: (x, y) => (y / b.sc > 0.9 ? [['Bone_Hips', 1]] : x > 0 ? [['Bone_Hips', 0.6], ['Bone_LegUL', 0.4]] : [['Bone_Hips', 0.6], ['Bone_LegUR', 0.4]]) });
+  m.blob({ ell: [s([0, 1.07, 0]), [S(0.175 * k), S(0.035), S(0.13 * k)]], k: S(0.01), mat: HARD, color: '#c89a3a', weights: W1('Bone_Hips') }); // đai đồng
+  m.blob({ ell: [s([0, 1.07, 0.13 * k]), [S(0.04), S(0.04), S(0.02)]], k: S(0.005), mat: HARD, color: '#ffd76a', weights: W1('Bone_Hips') });
+}
+/** Nón lá (chóp tre) gắn đầu. */
+function hatCone(b, r = 0.27, h = 0.17) { const { m, s, S } = b; m.cone(S(r), S(h), { bone: 'Bone_Head', at: s([0, 1.8, 0.0]), color: '#d8b870', seg: 16, mat: FUR }); m.cyl(S(r * 0.99), S(r), S(0.012), { bone: 'Bone_Head', at: s([0, 1.71, 0]), color: '#a8823a', seg: 16, mat: FUR }); }
+
+function swordsman() {
+  const b = soldierBase('linh_kiem', { cloth: '#4a3a2c' }); teamArmor(b); hatCone(b);
+  const { m, s, S } = b;
+  // kiếm tay phải (−X), khiên tròn tay trái (+X)
+  m.box(S(0.05), S(0.62), S(0.012), { bone: 'Bone_HandR', at: s([-0.315, 1.18, 0.12]), color: '#dfe6ee', mat: HARD });
+  m.box(S(0.16), S(0.03), S(0.04), { bone: 'Bone_HandR', at: s([-0.315, 0.88, 0.12]), color: '#c89a3a', mat: HARD });
+  m.cyl(S(0.018), S(0.018), S(0.12), { bone: 'Bone_HandR', at: s([-0.315, 0.8, 0.12]), color: '#3a2414', mat: HARD });
+  m.cyl(S(0.2), S(0.2), S(0.04), { bone: 'Bone_HandL', at: s([0.37, 0.95, 0.14]), rot: [0, 0, 90], color: '#e0e0e0', mat: TEAM, seg: 18 });
+  m.cyl(S(0.07), S(0.07), S(0.05), { bone: 'Bone_HandL', at: s([0.39, 0.95, 0.14]), rot: [0, 0, 90], color: '#d8a83a', mat: HARD, seg: 12 });
+  return finish(m, 'linh_kiem');
+}
+function archer() {
+  const b = soldierBase('linh_cung', { cloth: '#3e4a34' }); teamArmor(b);
+  const { m, s, S } = b;
+  m.blob({ ell: [s([0, 1.72, 0]), [S(0.13), S(0.07), S(0.13)]], k: S(0.02), mat: TEAM, color: '#e8e8e8', weights: W1('Bone_Head') }); // khăn đội đầu màu đội
+  m.blob({ cone: [s([0, 1.7, -0.1]), s([0.05, 1.45, -0.3]), S(0.04), S(0.015)], k: S(0.02), mat: TEAM, color: '#e8e8e8', weights: W1('Bone_Head') }); // đuôi khăn
+  m.torus(S(0.42), S(0.015), { bone: 'Bone_HandL', at: s([0.33, 0.95, 0.16]), rot: [0, 90, 0], arc: Math.PI * 0.9, color: '#6a4424', mat: HARD, seg: 16 }); // cung
+  m.cyl(S(0.004), S(0.004), S(0.78), { bone: 'Bone_HandL', at: s([0.33, 0.95, 0.12]), color: '#f0e8d0', mat: HARD });
+  m.cyl(S(0.06), S(0.05), S(0.4), { bone: 'Bone_Chest', at: s([-0.1, 1.38, -0.17]), rot: [-15, 0, 18], color: '#5a3a20', mat: HARD, seg: 10 }); // ống tên
+  for (const dx of [-0.03, 0, 0.03]) m.cone(S(0.025), S(0.07), { bone: 'Bone_Chest', at: s([-0.15 + dx, 1.62, -0.22]), color: '#f4f0e8', mat: FUR, seg: 4 });
+  return finish(m, 'linh_cung');
+}
+function giant() { // lính đèn lớn: hộ pháp cao to, áo rơm, vác cột đèn lồng màu đội
+  const b = soldierBase('linh_den', { cloth: '#6a5430', bulk: 1.35, scale: 1.35, cell: 0.016, tris: 9000, skin: '#c89a78' }); teamArmor(b);
+  const { m, s, S } = b;
+  const straw = (x, y, z) => hex(mixC('#c8a85a', '#8a6a2a', fbm(x * 9, y * 30, z * 9)).multiplyScalar(0.85 + fbm(x * 40, y * 80, z * 40, 2) * 0.3));
+  m.blob({ loft: [{ y: S(1.2), rx: S(0.38), rz: S(0.3) }, { y: S(1.4), rx: S(0.34), rz: S(0.24) }, { y: S(1.52), rx: S(0.16), rz: S(0.14) }], k: S(0.02), mat: FUR, color: straw, weights: W1('Bone_Chest') }); // áo tơi rơm
+  m.cyl(S(0.035), S(0.035), S(1.5), { bone: 'Bone_HandR', at: s([-0.42, 1.3, 0.12]), color: '#5a3a1c', mat: HARD });
+  m.sphere(S(0.2), { bone: 'Bone_HandR', at: s([-0.42, 2.25, 0.12]), radii: [S(0.2), S(0.26), S(0.2)], color: '#ffffff', mat: TEAMGLOW });
+  m.cyl(S(0.12), S(0.14), S(0.04), { bone: 'Bone_HandR', at: s([-0.42, 2.53, 0.12]), color: '#c89a3a', mat: HARD });
+  m.cyl(S(0.14), S(0.12), S(0.04), { bone: 'Bone_HandR', at: s([-0.42, 1.98, 0.12]), color: '#c89a3a', mat: HARD });
+  m.blob({ ell: [s([0, 1.08, 0.06]), [S(0.3), S(0.28), S(0.26)]], k: S(0.06), mat: FUR, color: '#6a5430', weights: (x, y) => (y / b.sc < 1.1 ? [['Bone_Hips', 1]] : [['Bone_Chest', 1]]) }); // bụng phệ
+  return finish(m, 'linh_den');
+}
+function siege() { // xe đá: thùng gỗ, 4 bánh, cần ném có gàu đá, cờ màu đội
+  const m = new Model('xe_da'); m.sdfCell = 0.02; m.sdfTris = 6000;
+  m.joint('Bone_Root', null, 0, 0, 0); m.joint('Bone_Body', 'Bone_Root', 0, 0.55, 0); m.joint('Bone_Arm', 'Bone_Body', 0, 0.95, -0.25);
+  m.joint('Bone_WheelF', 'Bone_Body', 0, 0.3, 0.5); m.joint('Bone_WheelB', 'Bone_Body', 0, 0.3, -0.5);
+  const wood = (x, y, z) => hex(mixC('#8a5a30', '#4a2c14', fbm(x * 4, y * 30, z * 4)).multiplyScalar(0.85 + fbm(x * 40, y * 90, z * 40, 2) * 0.3));
+  m.blob({ ell: [[0, 0.62, 0], [0.42, 0.2, 0.68]], k: 0.03, mat: HARD, color: wood, weights: W1('Bone_Body') });
+  m.blob({ ell: [[0, 0.78, 0], [0.38, 0.06, 0.62]], k: 0.02, mat: TEAM, color: '#e8e8e8', weights: W1('Bone_Body') }); // tấm phủ màu đội
+  for (const z of [0.5, -0.5]) for (const x of [0.46, -0.46]) { m.cyl(0.26, 0.26, 0.08, { bone: z > 0 ? 'Bone_WheelF' : 'Bone_WheelB', at: [x, 0.3, z], rot: [0, 0, 90], color: '#5a3a1c', mat: HARD, seg: 14 }); m.cyl(0.08, 0.08, 0.1, { bone: z > 0 ? 'Bone_WheelF' : 'Bone_WheelB', at: [x * 1.02, 0.3, z], rot: [0, 0, 90], color: '#c89a3a', mat: HARD, seg: 8 }); }
+  for (const z of [0.5, -0.5]) m.cyl(0.03, 0.03, 1.0, { bone: z > 0 ? 'Bone_WheelF' : 'Bone_WheelB', at: [0, 0.3, z], rot: [0, 0, 90], color: '#3a2414', mat: HARD });
+  m.box(0.08, 0.08, 1.3, { bone: 'Bone_Arm', at: [0, 1.05, 0.3], rot: [-30, 0, 0], color: '#6a4424', mat: HARD });
+  m.sphere(0.18, { bone: 'Bone_Arm', at: [0, 1.42, 0.85], radii: [0.2, 0.12, 0.2], color: '#5a3a1c', mat: HARD });
+  m.sphere(0.15, { bone: 'Bone_Arm', at: [0, 1.52, 0.85], color: '#8a8a84', mat: HARD });
+  m.box(0.04, 0.5, 0.04, { bone: 'Bone_Body', at: [0.3, 1.0, -0.55], color: '#3a2414', mat: HARD });
+  m.panel(0.3, 0.3, 0.32, { bone: 'Bone_Body', at: [0.3, 1.1, -0.72], rot: [0, 90, 0], color: '#e8e8e8', mat: TEAM });
+  return finish(m, 'xe_da');
+}
+
 const BUILD = {
   soi_da: () => quadruped('soi_da', 1, { ...wolf(), tris: 10000 }),
   ho_loi: () => quadruped('ho_loi', 1, { ...tiger(), tris: 12000, head: 1.3, muzzle: 0.62, leg: 1.35, body: 1.12, roundEar: true }),
   coc_reu: toad, hoa_nham: golem, linh_thuy: spirit, long_ngu: carp, than_dieu: bird, ta_than: demon,
+  linh_kiem: swordsman, linh_cung: archer, linh_den: giant, xe_da: siege,
 };
 const only = process.argv.slice(2);
 fs.mkdirSync(outRoot, { recursive: true });

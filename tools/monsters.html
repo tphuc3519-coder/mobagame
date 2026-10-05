@@ -6,10 +6,12 @@
 // ?t=giây (thời điểm hoạt cảnh), ?atk=0..1 (tiến trình đòn), ?run=1 (đang chạy), ?ids=soi_da,ho_loi (lọc), ?ry=độ (xoay)
 import * as THREE from 'three';
 import { createMonster } from '../src/render/monsters.js';
+import { createMinion } from '../src/render/structures.js';
 import { preloadMonsters } from '../src/render/monsterModels.js';
 await preloadMonsters();
 const q = new URLSearchParams(location.search), game = q.has('game'), atk = +(q.get('atk') || 0), T = +(q.get('t') || 0.4), moving = q.has('run'), ry = +(q.get('ry') || 35) * Math.PI / 180;
 let LIST = [['soi_da', 'alpha'], ['soi_da', 'pup'], ['coc_reu'], ['linh_thuy'], ['hoa_nham'], ['long_ngu'], ['ho_loi'], ['than_dieu'], ['ta_than']];
+if (q.has('minions')) LIST = [['m:sword', 0], ['m:archer', 0], ['m:giant', 0], ['m:siege', 0], ['m:sword', 1], ['m:archer', 1], ['m:giant', 1], ['m:siege', 1]];
 if (q.get('ids')) LIST = LIST.filter(([id]) => q.get('ids').split(',').includes(id));
 const cols = Math.min(5, LIST.length), rows = Math.ceil(LIST.length / cols), CW = LIST.length <= 3 ? 560 : 380, CH = LIST.length <= 3 ? 460 : 320, W = CW * cols, H = CH * rows;
 const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.84; r.shadowMap.enabled = true; r.setScissorTest(true); document.body.append(r.domElement);
@@ -17,7 +19,7 @@ for (let i = 0; i < LIST.length; i++) {
   const [type, m] = LIST[i], sc = new THREE.Scene(); sc.background = new THREE.Color(0x26342a);
   sc.add(new THREE.HemisphereLight(0xcfe0ff, 0x4a4030, 0.9)); const k = new THREE.DirectionalLight(0xfff0d8, 2.2); k.position.set(-600, 1600, 900); k.castShadow = true; Object.assign(k.shadow.camera, { left: -900, right: 900, top: 900, bottom: -900 }); k.shadow.mapSize.set(1024, 1024); sc.add(k);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ color: 0x4f6a3e })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; sc.add(ground);
-  const p = createMonster(type, m); p.object.rotation.y = ry; sc.add(p.object); p.object.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  const p = type.startsWith('m:') ? createMinion(type.slice(2), m) : createMonster(type, m); p.object.rotation.y = ry; sc.add(p.object); p.object.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   for (let f = 0; f < T * 30; f++) p.update(1 / 30, moving, atk);
   p.object.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(p.object), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3()), R = Math.max(sz.x, sz.y, sz.z) * 0.62;

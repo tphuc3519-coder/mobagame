@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildMinionModel, loadMonsterModel, MINION_MODEL } from './monsterModels.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowTexture } from './env/textures.js';
 import { wallStoneSurface, flagstoneSurface, roofTileSurface, marbleSurface, ashlarSurface, roofTileHD } from './env/surfaces.js';
@@ -385,7 +386,15 @@ const skin = new THREE.MeshLambertMaterial({ color: 0xf6e7d0 });
 const straw = new THREE.MeshLambertMaterial({ color: 0xd8b86a });
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1216 });
 
+/** Lính dùng model SDF có xương (monsterModels.js); chưa nạp xong thì tạm dùng hình giấy bồi cũ rồi tự thay. */
 export function createMinion(type, team) {
+  const ready = buildMinionModel(type, team); if (ready) return ready;
+  const root = new THREE.Group(), legacy = createLegacyMinion(type, team); root.add(legacy.object);
+  let impl = legacy;
+  loadMonsterModel(MINION_MODEL[type]).then(() => { const m = buildMinionModel(type, team); if (!m) return; root.remove(legacy.object); root.add(m.object); impl = m; });
+  return { object: root, update: (dt, mv, atk) => impl.update(dt, mv, atk) };
+}
+function createLegacyMinion(type, team) {
   const g = new THREE.Group();
   const add = (geometry, mat, x, y, z, s = [1, 1, 1]) => { const m = new THREE.Mesh(geometry, mat); m.position.set(x, y, z); m.scale.set(...s); g.add(m); return m; };
   let bob = 1;

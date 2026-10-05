@@ -6,7 +6,10 @@ import { loadGLB } from './assets.js';
 // Hoạt cảnh không dùng clip: xoay xương theo thời gian (đi/chạy, thở, vồ cắn, đập, vỗ cánh, uốn thân).
 // Vật liệu: PBR + vẽ thêm theo loại chất liệu của đỉnh (_mat): sợi lông, da ẩm đốm, đá sần, vảy ánh kim, phần phát sáng.
 
-const IDS = ['soi_da', 'coc_reu', 'linh_thuy', 'hoa_nham', 'long_ngu', 'ho_loi', 'than_dieu', 'ta_than'];
+const IDS = ['soi_da', 'coc_reu', 'linh_thuy', 'hoa_nham', 'long_ngu', 'ho_loi', 'than_dieu', 'ta_than', 'linh_kiem', 'linh_cung', 'linh_den', 'xe_da'];
+/** Loại lính (mô phỏng) → model. */
+export const MINION_MODEL = { sword: 'linh_kiem', archer: 'linh_cung', giant: 'linh_den', siege: 'xe_da' };
+const TEAM_TINT = [new THREE.Color('#3fb4cc'), new THREE.Color('#e2523c')]; // giáp/vải màu đội (Xanh ngọc / Đỏ)
 const cache = new Map();
 /** Bắt đầu nạp model một loại quái (gọi sớm để khi quái xuất hiện đã có sẵn). Trả Promise<gltf|null>. */
 export function loadMonsterModel(id) {
@@ -21,18 +24,18 @@ export const preloadMonsters = () => Promise.all(IDS.map(loadMonsterModel));
 export const readyMonster = (id) => cache.get(id)?.gltf;
 
 const FUR_V = 'attribute float _mat;\nvarying float vMat; varying vec3 vObj;';
-const FUR_F = `varying float vMat; varying vec3 vObj; uniform float uGlow; uniform float uRim;
+const FUR_F = `varying float vMat; varying vec3 vObj; uniform float uGlow; uniform float uRim; uniform vec3 uTeam;
 float mh3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float mn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mix(mh3(i), mh3(i + vec3(1,0,0)), f.x), mix(mh3(i + vec3(0,1,0)), mh3(i + vec3(1,1,0)), f.x), f.y),
              mix(mix(mh3(i + vec3(0,0,1)), mh3(i + vec3(1,0,1)), f.x), mix(mh3(i + vec3(0,1,1)), mh3(i + vec3(1,1,1)), f.x), f.y), f.z); }`;
 const mats = new Map(), SHARED = {}; // hình/vật liệu phụ dùng chung giữa các lần quái hồi sinh (không rò bộ nhớ GPU)
-function monsterMaterial(id) {
-  if (mats.has(id)) return mats.get(id);
+function monsterMaterial(id, team = 0) {
+  const key = id + ':' + team; if (mats.has(key)) return mats.get(key);
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
-  const u = { uGlow: { value: id === 'hoa_nham' ? 2.4 : 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 } };
+  const u = { uGlow: { value: id === 'hoa_nham' ? 2.4 : 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 }, uTeam: { value: TEAM_TINT[team] || TEAM_TINT[0] } };
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uGlow = u.uGlow; sh.uniforms.uRim = u.uRim;
+    sh.uniforms.uGlow = u.uGlow; sh.uniforms.uRim = u.uRim; sh.uniforms.uTeam = u.uTeam;
     sh.vertexShader = FUR_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vObj = position;');
     sh.fragmentShader = FUR_F + '\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
@@ -41,7 +44,8 @@ function monsterMaterial(id) {
           diffuseColor.rgb *= 0.74 + 0.5 * s;
         } else if (vMat < 1.5) { diffuseColor.rgb *= 0.88 + 0.24 * mn3(vObj * 14.0); }       // da: đốm loang
         else if (vMat < 2.5) { diffuseColor.rgb *= 0.8 + 0.35 * mn3(vObj * 11.0) * mn3(vObj * 3.0 + 7.0) * 1.6; } // đá/giáp: sần
-        else if (vMat < 3.5) { diffuseColor.rgb *= 0.92 + 0.16 * mn3(vObj * 6.0); }`)
+        else if (vMat < 3.5) { diffuseColor.rgb *= 0.92 + 0.16 * mn3(vObj * 6.0); }
+        if (vMat > 3.5 && vMat < 4.5 || vMat > 5.5) diffuseColor.rgb *= uTeam * 1.25; // vải/giáp/đèn màu đội`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = vMat < 0.5 ? 0.95 : vMat < 1.5 ? 0.45 : vMat < 2.5 ? 0.82 : vMat < 3.5 ? 0.32 : 0.6;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = vMat > 2.5 && vMat < 3.5 ? 0.55 : vMat > 1.5 && vMat < 2.5 ? 0.08 : 0.0;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
@@ -51,7 +55,7 @@ function monsterMaterial(id) {
   if (id === 'linh_thuy') { m.transparent = true; m.opacity = 0.86; m.emissive = new THREE.Color(0x0a3a6a); m.emissiveIntensity = 1; m.roughness = 0.2; }
   m.customProgramCacheKey = () => 'monster-fur';
   m.userData.u = u;
-  mats.set(id, m);
+  mats.set(key, m);
   return m;
 }
 
@@ -129,6 +133,43 @@ const ANIM = {
   },
 };
 ANIM.soi_da = ANIM.quad;
+
+const ANIM_MINION = {
+  human(B, t, dt, mv, atk, s) { // bước đi tay vung ngược chân; đòn: kiếm chém từ trên xuống / kéo dây cung / đấm
+    const ph = t * (s.gait || 8), sw = mv ? 0.6 : 0, k = (o) => Math.sin(ph + o);
+    rot(B.Bone_LegUL, -k(0) * sw, 0, 0); rot(B.Bone_LegUR, -k(Math.PI) * sw, 0, 0);
+    rot(B.Bone_LegLL, Math.max(0, k(1.2)) * sw * 0.9, 0, 0); rot(B.Bone_LegLR, Math.max(0, k(Math.PI + 1.2)) * sw * 0.9, 0, 0);
+    rot(B.Bone_Hips, 0, mv ? k(0) * 0.08 : 0, 0); rot(B.Bone_Chest, mv ? 0.06 : Math.sin(t * 2) * 0.02, mv ? -k(0) * 0.12 : 0, 0);
+    const a = atk > 0 ? atk : 0;
+    if (s.kind === 'archer') {
+      const draw = a > 0 ? Math.min(1, a / 0.5) : 0, rel = a > 0.6 ? 1 : 0;
+      rot(B.Bone_ArmUL, -1.45 * draw + (mv && !a ? k(Math.PI) * 0.5 : 0), 0, 0); rot(B.Bone_ArmLL, 0, 0, 0);
+      rot(B.Bone_ArmUR, -1.3 * draw + (mv && !a ? k(0) * 0.5 : 0), 0, -0.4 * draw * (1 - rel)); rot(B.Bone_ArmLR, -1.4 * draw * (1 - rel), 0, 0);
+    } else {
+      const up = a > 0 && a < 0.45 ? a / 0.45 : 0, down = a >= 0.45 ? Math.max(0, 1 - (a - 0.45) / 0.3) : 0, swing = up ? -2.3 * up : a >= 0.45 ? -2.3 * down + 0.5 * (1 - down) : 0;
+      rot(B.Bone_ArmUR, (a ? swing : (mv ? k(0) * 0.5 : 0.05)), 0, -0.1); rot(B.Bone_ArmLR, a ? -0.4 : -0.25, 0, 0);
+      rot(B.Bone_ArmUL, mv ? k(Math.PI) * 0.4 - 0.3 : -0.35, 0, 0.15); rot(B.Bone_ArmLL, -0.8, 0, 0); // tay khiên/đèn co trước ngực
+    }
+    s.body.position.y = mv ? Math.abs(k(0)) * 4 * s.k : 0;
+  },
+  siege(B, t, dt, mv, atk, s) { // bánh lăn khi chạy, cần ném bật lên khi bắn
+    s.wheel = (s.wheel || 0) + (mv ? dt * 6 : 0); rot(B.Bone_WheelF, s.wheel, 0, 0); rot(B.Bone_WheelB, s.wheel, 0, 0);
+    const th = atk > 0 ? (atk < 0.3 ? -atk / 0.3 * 0.3 : atk < 0.5 ? -0.3 + (atk - 0.3) / 0.2 * 1.9 : 1.6 * Math.max(0, 1 - (atk - 0.5) / 0.5)) : 0;
+    rot(B.Bone_Arm, -th, 0, 0); rot(B.Bone_Body, mv ? Math.sin(t * 9) * 0.02 : 0, 0, mv ? Math.sin(t * 7) * 0.015 : 0);
+  },
+};
+/** Dựng lính từ model đã nạp (màu đội tô bằng shader). Trả { object, update(dt, moving, atk) } hoặc null nếu chưa có model. */
+export function buildMinionModel(type, team) {
+  const id = MINION_MODEL[type], g = id && readyMonster(id); if (!g) return null;
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const obj = cloneSkinned(g.scene), mat = monsterMaterial(id, team), k = { giant: 1.6, siege: 1.45 }[type] || 1.35; // hợp cỡ tướng (đã phóng 1.35)
+  obj.scale.setScalar(100 * k); body.add(obj);
+  const B = {};
+  obj.traverse((o) => { if (o.isBone) { o.userData.q0 = o.quaternion.clone(); B[o.name] = o; } if (o.isMesh) { o.material = mat; o.frustumCulled = false; o.castShadow = true; } });
+  const s = { body, k, kind: type, gait: type === 'giant' ? 5.5 : 8 }, anim = type === 'siege' ? ANIM_MINION.siege : ANIM_MINION.human;
+  let t = Math.random() * 10;
+  return { object: root, update(dt, moving, atk) { t += dt; anim(B, t, dt, moving, atk || 0, s); } };
+}
 
 /** Dựng quái từ model đã nạp. member: 'pup' (sói con nhỏ hơn). Trả { object, update } hoặc null nếu chưa có model. */
 export function buildMonsterModel(type, member) {

@@ -31,7 +31,7 @@ export function createUnitViews(scene, localTeam, localId) {
       if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
       root.add(v.part.object); return v;
     }
-    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); return v; }
+    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
     const attach = (obj) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim); castShadows(obj); };
@@ -80,7 +80,7 @@ export function createUnitViews(scene, localTeam, localId) {
           if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 1.5); v.root.scale.setScalar(1 - v.fall * 0.95); v.root.position.y -= v.fall * 60; }
           continue;
         }
-        if (e.kind === 'minion') { v.root.visible = seen; v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
+        if (e.kind === 'minion') { v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); // trong bụi: sáng lên chút để không chìm vào màu bụi tối v.mats.update(dt);
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
