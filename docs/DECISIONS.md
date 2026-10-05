@@ -350,3 +350,6 @@
 - **Kéo camera bên phải**: nút mắt ngay trên cụm kỹ năng — kéo về hướng nào camera lệch về hướng đó, tối đa ~1700 ngang/1300 dọc
   (thấy "đoạn sau" ngoài mép màn hình); vuốt vùng trống nửa phải màn hình cũng kéo được (chạm trúng nút thì không). Thả tay về tướng.
   Bóng đổ của mặt trời đi theo chỗ camera nhìn để vùng đang xem vẫn có bóng.
+- **Tướng trắng toát (mất màu) trên bản chơi thử**: Emberforge/Mossback/Bamboo Shade dùng ảnh JPEG nhúng trong .glb; GLTFLoader
+  tạo URL `blob:` rồi fetch — trang có chính sách bảo mật chặn `blob:` thì texture hỏng. Giờ giải mã thẳng từ bộ đệm bằng
+  `createImageBitmap` (plugin trong `assets.js`), lỗi thì quay về cách cũ. Đã tái hiện bằng máy chủ thử có CSP chặn blob:.
