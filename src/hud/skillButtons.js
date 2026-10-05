@@ -76,9 +76,10 @@ export function createSkillButtons(root, { world, player, indicators }) {
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
     el.querySelector('.lvl').addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); world.command(player.id, { type: 'levelSkill', slot }); });
   }
-  const atk = btn('atk');
-  atk.addEventListener('pointerdown', (e) => { e.preventDefault(); atk.setPointerCapture(e.pointerId); atk.classList.add('down'); world.command(player.id, { type: 'attack', on: true }); });
-  const atkEnd = () => { atk.classList.remove('down'); world.command(player.id, { type: 'attack', on: false }); };
+  const atk = btn('atk'); let atkHeld = false;
+  const set = (o, k, v) => { if (o[k] !== v) o[k] = v; };
+  atk.addEventListener('pointerdown', (e) => { e.preventDefault(); atk.setPointerCapture(e.pointerId); atk.classList.add('down'); atkHeld = true; world.command(player.id, { type: 'attack', on: true }); });
+  const atkEnd = () => { atk.classList.remove('down'); atkHeld = false; world.command(player.id, { type: 'attack', on: false }); };
   atk.addEventListener('pointerup', atkEnd); atk.addEventListener('pointercancel', atkEnd);
 
   // bàn phím: J giữ để đánh, 1/2/3 (hoặc U/I/O) tung chiêu tự ngắm
@@ -93,15 +94,19 @@ export function createSkillButtons(root, { world, player, indicators }) {
         const el = btn(slot), sk = spec(slot), level = player.skillLevels[slot];
         const left = Math.max(0, (player.cooldowns[slot] - world.tick) / 30), total = level ? lv(sk.cooldown, level) : 1;
         const cost = level ? lv(sk.cost, level) : 0;
-        el.querySelector('.cd').style.height = level ? `${Math.min(100, (left / total) * 100)}%` : '100%';
-        el.querySelector('.cdt').textContent = left > 0.05 ? (left >= 10 ? Math.ceil(left) : left.toFixed(1)) : '';
+        // chỉ ghi DOM khi giá trị đổi (ghi mỗi khung làm trình duyệt tính lại bố cục liên tục → giật trên điện thoại)
+        const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt'), lvl: el.querySelector('.lvl') };
+        set(c.cd.style, 'height', level ? `${Math.min(100, Math.round((left / total) * 1000) / 10)}%` : '100%');
+        set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 ? Math.ceil(left) : left.toFixed(1)) : '');
         el.classList.toggle('nomana', level > 0 && player.mana < cost);
         el.classList.toggle('locked', !level); el.classList.toggle('cooling', left > 0.05);
-        el.querySelector('.lvl').style.display = canLevelSkill(player, slot) ? 'grid' : 'none';
+        set(c.lvl.style, 'display', canLevelSkill(player, slot) ? 'grid' : 'none');
         const max = Array.isArray(sk.cooldown) ? sk.cooldown.length : 3;
         if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }
-        el.title = `${sk.name}: ${sk.desc || ''}`;
+        set(el, 'title', `${sk.name}: ${sk.desc || ''}`);
       }
+      if (!player.alive && active) { btn(active.slot).classList.remove('down'); active = null; indicators.hide(); cancelEl.hidden = true; } // chết giữa lúc ngắm: bỏ ngắm
+      if (atkHeld && player.alive && !player.attacking) world.command(player.id, { type: 'attack', on: true }); // giữ nút đánh qua lúc hồi sinh / bị khống chế
       if (active?.aiming) {
         const sp = spec(active.slot), pt = { x: player.pos.x + active.dir.x * (sp.range || 0) * active.f, y: player.pos.y + active.dir.y * (sp.range || 0) * active.f };
         indicators.show(sp, player.pos, active.dir, pt, active.cancel);

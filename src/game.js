@@ -25,6 +25,7 @@ import { createSkillButtons } from './hud/skillButtons.js';
 import { createShop } from './hud/shop.js';
 import { warmItemArt } from './hud/itemArt.js';
 import { preloadMonsters } from './render/monsterModels.js';
+import { PLAYER_POS } from './render/env/foliage.js';
 import { createSpellButtons } from './hud/spellButtons.js';
 import { STARTER, ITEMS } from './data/items.js';
 
@@ -62,11 +63,12 @@ if (arena) {
 if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, ready: 0 };
 if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts.charmId]; player.bonus = computeBonus(player); }
 
+let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(FOG_COLOR, 4200, 9500); // xa hơn vì camera đã lùi (2400)
 const { renderer } = createRenderer(document.getElementById('world'), level, {
-  onLost: () => { loop.pause(); document.getElementById('lost').classList.add('on'); },
-  onRestored: () => { document.getElementById('lost').classList.remove('on'); loop.resume(); },
+  onLost: () => { ctxLost = true; loop.pause(); document.getElementById('lost').classList.add('on'); },
+  onRestored: () => { ctxLost = false; document.getElementById('lost').classList.remove('on'); if (!document.hidden) loop.resume(); },
 });
 const sun = addLights(scene, renderer, level);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
@@ -122,7 +124,7 @@ const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
   update() {
     const d = input.dir();
-    world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } });
+    if (!player.bot) world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } }); // (kiểm thử: bot điều khiển thay người chơi)
     world.update(loop.tick);
   },
   render(alpha, dt, force) {
@@ -137,7 +139,7 @@ const loopCfg = {
     buttons.update(); spells.update(); shop.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
-    cam.follow(px, py, d.x, d.y, dt); sun.follow(px, py);
+    cam.follow(px, py, d.x, d.y, dt); sun.follow(px, py); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
@@ -160,6 +162,6 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
 };
 window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views }; // phục vụ kiểm thử tự động
 
-document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : loop.resume()));
+document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất
 return window.__game;
 }

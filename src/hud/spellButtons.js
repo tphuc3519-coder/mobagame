@@ -60,7 +60,8 @@ export function createSpellButtons(root, { world, player, indicators }) {
     if (k === 'f') act.spell(null); else if (k === 'r' || k === 'b') act.recall(); else if (k === 'h') act.restore(); else if (k === 'e') act.itemAct();
   });
 
-  const overlay = (el, left, total) => { el.querySelector('.cd').style.height = `${Math.min(100, (left / total) * 100)}%`; el.querySelector('.cdt').textContent = left > 0.05 ? (left >= 10 ? Math.ceil(left) : left.toFixed(1)) : ''; };
+  const set = (o, k, v) => { if (o[k] !== v) o[k] = v; }; // chỉ ghi DOM khi đổi (đỡ tính lại bố cục mỗi khung)
+  const overlay = (el, left, total) => { const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt') }; set(c.cd.style, 'height', `${Math.min(100, Math.round((left / total) * 1000) / 10)}%`); set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 ? Math.ceil(left) : left.toFixed(1)) : ''); };
   let lastItem = '';
   return {
     update() {
@@ -71,9 +72,9 @@ export function createSpellButtons(root, { world, player, indicators }) {
       if (press?.dir && press.k === 'spell' && s.aim === 'direction') indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, false);
       const r = player.recall;
       recallEl.classList.toggle('on', !!r);
-      recallEl.querySelector('.prog').style.height = r ? `${Math.min(100, ((world.tick - r.start) / ((r.until - r.start) || 1)) * 100)}%` : '0%';
+      set(recallEl.querySelector('.prog').style, 'height', r ? `${Math.min(100, Math.round(((world.tick - r.start) / ((r.until - r.start) || 1)) * 1000) / 10)}%` : '0%');
       const slot = activeSlot(), id = slot >= 0 ? player.items[slot] : '';
-      itemEl.hidden = !id;
+      set(itemEl, 'hidden', !id);
       if (id !== lastItem) { lastItem = id; if (id) { itemEl.querySelector('.ico').innerHTML = itemIcon(id); itemEl.querySelector('label').textContent = ITEMS[id].active.name || ITEMS[id].name; } }
       if (id) overlay(itemEl, Math.max(0, ((player.itemCd?.[id] || 0) - world.tick) / 30), ITEMS[id].active.cooldown);
     },

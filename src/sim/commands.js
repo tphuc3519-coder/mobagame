@@ -7,7 +7,9 @@ import { useItem } from './items.js';
 import { startRecall, cancelRecall } from './economy.js';
 
 export function applyCommand(world, e, cmd) {
-  if (!e || !e.alive) return;
+  if (!e) return;
+  // lúc chết vẫn được mua/bán đồ và nâng kỹ năng (như Liên Quân); các lệnh khác bỏ qua
+  if (!e.alive && !['buy', 'sell', 'levelSkill'].includes(cmd.type)) return;
   switch (cmd.type) {
     case 'move': e.moveDir.x = cmd.dir.x; e.moveDir.y = cmd.dir.y; break;
     case 'attack': e.attacking = cmd.on !== false; e.preferTarget = cmd.preferTarget ?? null; break;

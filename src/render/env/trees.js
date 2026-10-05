@@ -166,8 +166,8 @@ export function treeParts(type, seed = 1, density = 1) {
 export function buildTrees(list, density = 1, cell = 3200) {
   const grp = new THREE.Group(), types = ['oak', 'tall', 'blossom', 'pine'], variants = 2;
   const barkMat = new THREE.MeshLambertMaterial({ map: barkTexture(), color: 0xc8b8a8 });
-  const coreMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.03);
-  const leafMat = {}; for (const t of types) leafMat[t] = crispAlpha(sway(new THREE.MeshLambertMaterial({ map: foliageTexture(t === 'pine' ? 'needle' : t === 'blossom' ? 'blossom' : 'leaf'), vertexColors: true, side: THREE.DoubleSide }), t === 'pine' ? 0.025 : 0.045));
+  const coreMat = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.03, true);
+  const leafMat = {}; for (const t of types) leafMat[t] = crispAlpha(sway(new THREE.MeshLambertMaterial({ map: foliageTexture(t === 'pine' ? 'needle' : t === 'blossom' ? 'blossom' : 'leaf'), vertexColors: true, side: THREE.DoubleSide }), t === 'pine' ? 0.025 : 0.045, true));
   const parts = {}; for (const t of types) for (let v = 0; v < variants; v++) parts[t + v] = treeParts(t, v * 13 + 3, density);
   const bins = new Map();
   list.forEach((it, i) => { const k = `${it.type}${i % variants}|${Math.floor(it.x / cell)},${Math.floor(it.z / cell)}`; if (!bins.has(k)) bins.set(k, []); bins.get(k).push(it); });

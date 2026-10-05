@@ -395,13 +395,13 @@ export function createMinion(type, team) {
     bob = 0.3;
   } else if (type === 'giant') {
     add(geo.body, straw, 0, 100, 0, [2.6, 2.6, 2.6]); add(geo.head, straw, 0, 230, 0, [2.6, 2.6, 2.6]);
-    add(new THREE.SphereGeometry(30, 10, 8), new THREE.MeshBasicMaterial({ color: TEAM_COL[team] }), 0, 300, 0);
+    add(geo.orb ||= new THREE.SphereGeometry(30, 10, 8), mats['o' + team] ||= new THREE.MeshBasicMaterial({ color: TEAM_COL[team] }), 0, 300, 0); // dùng chung: lính tạo liên tục, không được rò bộ nhớ GPU
   } else {
     add(geo.body, paper(team), 0, 40, 0); add(geo.head, skin, 0, 92, 0); add(geo.hat, trim(team), 0, 112, 0);
     for (const s of [1, -1]) add(geo.head, eyeMat, s * 7, 95, 16, [0.14, 0.2, 0.1]);
     add(geo.wheel, trim(team), 0, 58, 0, [0.95, 0.4, 0.95]);
     if (type === 'sword') { const s = add(geo.stick, M.gold, 28, 60, 12); s.rotation.x = 0.3; }
-    else { const b = add(new THREE.TorusGeometry(24, 2.5, 4, 12, Math.PI), M.wood, 30, 62, 10); b.rotation.set(0, 0, Math.PI / 2); }
+    else { const b = add(geo.bow ||= new THREE.TorusGeometry(24, 2.5, 4, 12, Math.PI), M.wood, 30, 62, 10); b.rotation.set(0, 0, Math.PI / 2); }
   }
   let t = (type.length * 1.7) % 6;
   return { object: g, update(dt, moving) { t += dt * (moving ? 10 : 2); g.position.y = Math.abs(Math.sin(t)) * (moving ? 5 : 1) * bob; } };

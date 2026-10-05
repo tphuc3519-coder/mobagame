@@ -17,7 +17,8 @@ export function createInput(target) {
   target.addEventListener('pointercancel', up);
   addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
   addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
-  addEventListener('blur', () => keys.clear());
+  addEventListener('blur', () => { keys.clear(); js.active = false; }); // rời ứng dụng giữa lúc giữ cần: không để tướng chạy mãi
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); js.active = false; } });
   return {
     js, R,
     /** Vị trí nghỉ của cần (khi không chạm): góc trái dưới, chừa vùng an toàn của màn tai thỏ. */

@@ -26,7 +26,7 @@ float mh3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x *
 float mn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mix(mh3(i), mh3(i + vec3(1,0,0)), f.x), mix(mh3(i + vec3(0,1,0)), mh3(i + vec3(1,1,0)), f.x), f.y),
              mix(mix(mh3(i + vec3(0,0,1)), mh3(i + vec3(1,0,1)), f.x), mix(mh3(i + vec3(0,1,1)), mh3(i + vec3(1,1,1)), f.x), f.y), f.z); }`;
-const mats = new Map();
+const mats = new Map(), SHARED = {}; // hình/vật liệu phụ dùng chung giữa các lần quái hồi sinh (không rò bộ nhớ GPU)
 function monsterMaterial(id) {
   if (mats.has(id)) return mats.get(id);
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
@@ -144,13 +144,13 @@ export function buildMonsterModel(type, member) {
   const s = { body, mat, k, gait: type === 'ho_loi' ? 6.5 : 9 };
   if (type === 'ta_than') { // vòng phù văn trôi quanh ác thần
     s.rings = new THREE.Group(); s.rings.position.y = 320; body.add(s.rings);
-    for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(300 + i * 45, 4, 6, 72), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xb06aff).multiplyScalar(1.6), transparent: true, opacity: 0.85 })); r.rotation.x = Math.PI / 2 + (i - 1) * 0.35; s.rings.add(r); }
+    for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(SHARED['rune' + i] ||= new THREE.TorusGeometry(300 + i * 45, 4, 6, 72), SHARED.runeMat ||= new THREE.MeshBasicMaterial({ color: new THREE.Color(0xb06aff).multiplyScalar(1.6), transparent: true, opacity: 0.85 })); r.rotation.x = Math.PI / 2 + (i - 1) * 0.35; s.rings.add(r); }
   }
   if (type === 'linh_thuy') { // giọt nước bay vòng quanh + vòng nước xoáy dưới chân
     s.drops = new THREE.Group(); body.add(s.drops);
-    const dm = new THREE.MeshStandardMaterial({ color: 0x9ae8ff, emissive: 0x2a8ac8, emissiveIntensity: 1.2, roughness: 0.1, transparent: true, opacity: 0.9 });
-    for (let i = 0; i < 9; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(10 + (i % 3) * 5, 12, 8), dm); d.userData.a = i / 9 * Math.PI * 2; d.userData.r = 120 + (i % 3) * 30; d.userData.h = 60 + (i % 4) * 50; s.drops.add(d); }
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(130, 6, 8, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x7ae0ff).multiplyScalar(1.5), transparent: true, opacity: 0.7 })); ring.rotation.x = Math.PI / 2; ring.position.y = 12; s.drops.add(ring); s.ring = ring;
+    const dm = SHARED.dropMat ||= new THREE.MeshStandardMaterial({ color: 0x9ae8ff, emissive: 0x2a8ac8, emissiveIntensity: 1.2, roughness: 0.1, transparent: true, opacity: 0.9 });
+    for (let i = 0; i < 9; i++) { const d = new THREE.Mesh(SHARED['drop' + (i % 3)] ||= new THREE.SphereGeometry(10 + (i % 3) * 5, 12, 8), dm); d.userData.a = i / 9 * Math.PI * 2; d.userData.r = 120 + (i % 3) * 30; d.userData.h = 60 + (i % 4) * 50; s.drops.add(d); }
+    const ring = new THREE.Mesh(SHARED.ringGeo ||= new THREE.TorusGeometry(130, 6, 8, 64), SHARED.ringMat ||= new THREE.MeshBasicMaterial({ color: new THREE.Color(0x7ae0ff).multiplyScalar(1.5), transparent: true, opacity: 0.7 })); ring.rotation.x = Math.PI / 2; ring.position.y = 12; s.drops.add(ring); s.ring = ring;
   }
   let t = Math.random() * 10;
   const anim = ANIM[type] || ANIM.quad;
