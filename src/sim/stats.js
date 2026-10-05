@@ -2,6 +2,8 @@ import { COMBAT_EXTRA } from '../data/economy.js';
 
 /** Chỉ số cuối = gốc + tăng/cấp × (cấp−1), cộng buff (02 §7). Tính lại mỗi tick. */
 const NONE = {};
+/** Bản đồ 5v5 rộng: mọi tướng chạy nhanh thêm 15% so với số gốc (vẫn giữ chênh lệch tốc độ riêng từng tướng) để nhịp trận cao hơn. */
+export const HERO_SPEED_MULT = 1.15;
 export function computeStats(world, e) {
   const d = e.data, b = d.base, p = d.perLevel || {}, L = e.level - 1;
   const bo = e.bonus || NONE, g = (k) => bo[k] || 0;
@@ -22,7 +24,7 @@ export function computeStats(world, e) {
   if (e.heat > 0) asPct += 0.05 * e.heat;
   s.ap *= 1 + g('apMult');
   s.atkSpeed = Math.min(2.5, b.atkSpeed * (1 + asPct));
-  s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, (b.moveSpeed + g('moveSpeed')) * (1 + msPct + g('moveSpeedPct')) * (1 - slow)) : 0;
+  s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, (b.moveSpeed * (e.kind === 'hero' ? HERO_SPEED_MULT : 1) + g('moveSpeed')) * (1 + msPct + g('moveSpeedPct')) * (1 - slow)) : 0;
   s.dmgReduce = dmgReduce;
   s.regenHp = 40 + 4 * L; // hồi thêm từ bùa/đồ cộng riêng trong items.js
   s.regenMana = 25 + 2.5 * L + extraMana;

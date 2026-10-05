@@ -16,7 +16,7 @@ export function spawnMinion(world, type, team, laneIdx = 0, off = 0) {
   const path = lanePath(map, laneIdx, team), s0 = map.waves.spawnDist ?? 0;
   const o = pointAt(path, s0), pos = { x: o.x - o.dy * off, y: o.y + o.dx * off };
   const e = world.spawnEntity({ kind: 'minion', minionType: type, team, data: { name: d.name, base, perLevel: {}, basicAttack: { melee: d.melee, delay: d.delay }, skills: {}, towerPct: d.towerPct },
-    radius: d.radius, pos, height: 150, lane: laneIdx, laneOff: off, target: null, wp: 1, wpSync: 0 });
+    radius: d.radius, pos, height: type === 'giant' ? 250 : type === 'siege' ? 210 : 195, lane: laneIdx, laneOff: off, target: null, wp: 1, wpSync: 0 });
   e.hp = e.stats.maxHp; e.facing = Math.atan2(o.dy, o.dx);
   return e;
 }

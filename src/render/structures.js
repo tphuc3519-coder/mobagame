@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildMinionModel, loadMonsterModel, MINION_MODEL } from './monsterModels.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowTexture } from './env/textures.js';
 import { wallStoneSurface, flagstoneSurface, roofTileSurface, marbleSurface, ashlarSurface, roofTileHD } from './env/surfaces.js';
@@ -16,16 +17,30 @@ const M = {
 const roofMat = TEAM_ROOF.map((c) => new THREE.MeshLambertMaterial({ color: c }));
 const clothMat = TEAM_CLOTH.map((c) => new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }));
 
-/** Mái cong 8 góc: lathe lõm, các góc hất lên (kiểu mái đình). */
-function curvedRoof(r, h, flare = 0.35) {
-  const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector2(r * (1 - t) + 4, h * Math.pow(t, 1.8))); }
-  const g = new THREE.LatheGeometry(pts, 8, Math.PI / 8); const p = g.attributes.position;
+/** Mái đình 8 góc: mặt lõm (lathe), viền bát giác thẳng giữa các góc, 8 góc hất cong lên (đầu đao). seg: số lát quanh trục. */
+const roofPhi = (x, z) => Math.atan2(x, z); // LatheGeometry: x = r·sin φ, z = r·cos φ; góc mái ở φ = π/8 + k·π/4
+const cornerK = (phi) => { const d = (((phi - Math.PI / 8) % (Math.PI / 4)) + Math.PI / 4) % (Math.PI / 4); return Math.pow(1 - Math.min(d, Math.PI / 4 - d) / (Math.PI / 8), 1.4); }; // 1 ở góc, 0 giữa cạnh: mép mái thẳng vút lên góc
+function curvedRoof(r, h, flare = 0.35, seg = 32) {
+  const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(r * (1 - t) + 4, h * Math.pow(t, 1.45))); }
+  const g = new THREE.LatheGeometry(pts, seg, Math.PI / 8); const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i), rr = Math.hypot(x, z), a = Math.atan2(z, x);
-    const corner = Math.pow(Math.abs(Math.cos(4 * a)), 6); // gần góc bát giác
-    p.setY(i, p.getY(i) + corner * flare * h * Math.pow(rr / r, 3));
+    const x = p.getX(i), z = p.getZ(i), rr = Math.hypot(x, z); if (rr < 1e-3) continue;
+    const phi = roofPhi(x, z), d = (((phi - Math.PI / 8) % (Math.PI / 4)) + Math.PI / 4) % (Math.PI / 4), f = Math.cos(Math.PI / 8) / Math.cos(Math.min(d, Math.PI / 4 - d) - Math.PI / 8); // viền bát giác
+    const c = cornerK(phi), k = f * (1 + 0.08 * c * Math.pow(rr / r, 2)); // góc vươn ra thêm
+    p.setX(i, x * k); p.setZ(i, z * k); p.setY(i, p.getY(i) + Math.pow(c, 4) * flare * h * Math.pow(rr / r, 6)); // mép thẳng, chỉ mũi góc vút lên
   }
   g.computeVertexNormals(); return g;
+}
+/** Sống mái 8 góc (ống đồng bám theo đường góc) + đầu đao cong vút + quả châu ở mũi. Trả mảng hình học (gộp vào đồng thau). */
+function roofRidges(r, h, flare, y0, tube = 5) {
+  const out = [];
+  for (let k = 0; k < 8; k++) {
+    const phi = Math.PI / 8 + k * Math.PI / 4, sx = Math.sin(phi), sz = Math.cos(phi), pts = [];
+    for (let i = 0; i <= 8; i++) { const t = 1 - i / 8, rr = r * (1 - t) + 4, y = h * Math.pow(t, 1.45) + flare * h * Math.pow(rr / r, 6); const kk = rr * (1 + 0.08 * (rr / r) ** 2); pts.push(new THREE.Vector3(sx * kk, y0 + y + tube * 0.8, sz * kk)); }
+    const tip = pts[pts.length - 1]; pts.push(new THREE.Vector3(tip.x * 1.06, tip.y + h * 0.12, tip.z * 1.06), new THREE.Vector3(tip.x * 1.09, tip.y + h * 0.42, tip.z * 1.09)); // đầu đao cong vút
+    out.push(rib(pts.map((v) => [v.x, v.y, v.z]), tube, tube * 0.55, 18));
+  }
+  return out;
 }
 const at = (g, x, y, z, rx = 0, ry = 0, rz = 0) => { g.rotateX(rx); g.rotateY(ry); g.rotateZ(rz); g.translate(x, y, z); return g; };
 function merged(list, mat) { const m = new THREE.Mesh(mergeGeometries(list.map((g) => (g.index ? g.toNonIndexed() : g))), mat); return m; }
@@ -48,7 +63,7 @@ function finish(root, lan, extra = () => {}) {
     update(dt, hp01, dead) {
       t += dt;
       const f = dead ? 0.05 : hp01 < 0.3 ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 22) * Math.sin(t * 7.3)) : 0.85 + 0.15 * Math.sin(t * 2.2);
-      if (lan.core.material.emissive) lan.core.material.emissiveIntensity = 0.15 + 0.45 * f; else lan.core.material.color.copy(lan.base).multiplyScalar(0.8 + 1.4 * f); lan.halo.material.opacity = (lan.haloA ?? 0.9) * f; lan.shell.rotation.y += dt * 0.6; lan.shell.rotation.x += dt * 0.25;
+      if (lan.core.material.emissive) lan.core.material.emissiveIntensity = 0.1 + 0.2 * f; else lan.core.material.color.copy(lan.base).multiplyScalar(0.8 + 1.4 * f); lan.halo.material.opacity = (lan.haloA ?? 0.9) * f; lan.shell.rotation.y += dt * 0.6; lan.shell.rotation.x += dt * 0.25;
       lan.object.position.y = lan.y0 + Math.sin(t * 1.6) * 8;
       extra(t, dt, dead);
       if (dead) { root.scale.y += (0.14 - root.scale.y) * Math.min(1, dt * 4); root.rotation.z += (0.22 - root.rotation.z) * Math.min(1, dt * 3); }
@@ -79,14 +94,16 @@ function rib(pts, r0, r1, seg = 16) {
   for (let i = 0; i < p.count; i++) { const t = uv.getX(i), c = cp[Math.min(seg, Math.round(t * seg))], rr = r0 + (r1 - r0) * t; p.setXYZ(i, c.x + (p.getX(i) - c.x) * rr, c.y + (p.getY(i) - c.y) * rr, c.z + (p.getZ(i) - c.z) * rr); }
   g.computeVertexNormals(); return g;
 }
-/** Pha lê nhiều mặt: bát diện kéo dài + lõi sáng bên trong. */
+/** Pha lê cắt giác: hai chóp 8 mặt có đai giữa (flat shading), cạnh viền sáng mảnh, lõi sáng nhỏ bên trong — sắc nét, không loá trắng. */
+const crystalGeo = (rx, ry) => { const g = new THREE.LatheGeometry([[0, -ry], [rx * 0.82, -ry * 0.28], [rx, -ry * 0.06], [rx * 0.96, ry * 0.18], [rx * 0.5, ry * 0.7], [0, ry]].map(([a, b]) => new THREE.Vector2(a, b)), 8); return g.toNonIndexed(); };
 function crystal(team, rx, ry) {
   const g = new THREE.Group(), base = new THREE.Color(TEAM_COL[team]);
-  const geo = new THREE.OctahedronGeometry(1, 0); geo.scale(rx, ry, rx);
-  const outer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.25), emissive: base.clone(), emissiveIntensity: 0.55, roughness: 0.12, metalness: 0.1, flatShading: true, transparent: true, opacity: 0.92 }));
-  const ig = new THREE.OctahedronGeometry(1, 0); ig.scale(rx * 0.45, ry * 0.6, rx * 0.45);
-  const inner = new THREE.Mesh(ig, new THREE.MeshBasicMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.6).multiplyScalar(1.8) }));
-  g.add(inner, outer);
+  const geo = crystalGeo(rx, ry); geo.computeVertexNormals();
+  const outer = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.12), emissive: base.clone().multiplyScalar(0.8), emissiveIntensity: 0.25, roughness: 0.08, metalness: 0.3, flatShading: true, transparent: true, opacity: 0.86, envMapIntensity: 1.3 }));
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(crystalGeo(rx * 1.004, ry * 1.004), 20), new THREE.LineBasicMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.7), transparent: true, opacity: 0.75 }));
+  const ig = crystalGeo(rx * 0.38, ry * 0.5);
+  const inner = new THREE.Mesh(ig, new THREE.MeshBasicMaterial({ color: base.clone().lerp(new THREE.Color(0xffffff), 0.45) }));
+  g.add(inner, outer, edges);
   return { object: g, core: outer, base };
 }
 
@@ -132,8 +149,10 @@ export function createTower(team) {
   }
   for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4, c = Math.cos(a), sn = Math.sin(a); brz.push(rib([[c * 100, 476, sn * 100], [c * 114, 560, sn * 114], [c * 74, 640, sn * 74], [c * 30, 668, sn * 30]], 6, 4, 14)); }
   dark.push(octo(92, 98, 12, 664, 8, S));
-  const r1 = uvs(curvedRoof(156, 76, 0.6), 7, 2); r1.translate(0, 667, 0);
-  const r2 = uvs(curvedRoof(86, 70, 0.65), 4, 2); r2.translate(0, 745, 0);
+  const r1 = uvs(curvedRoof(156, 76, 0.12), 9, 3); r1.translate(0, 667, 0);
+  const r2 = uvs(curvedRoof(86, 70, 0.12), 5, 3); r2.translate(0, 745, 0);
+  brz.push(...roofRidges(156, 76, 0.12, 667, 5), ...roofRidges(86, 70, 0.12, 745, 4));
+  for (let k = 0; k < 8; k++) { const phi = Math.PI / 8 + k * Math.PI / 4, R = 156 * 1.08 * 1.0; brz.push(at(new THREE.CylinderGeometry(1.2, 1.2, 26, 4), Math.sin(phi) * R * 0.97, 667 + 0.12 * 76 - 8, Math.cos(phi) * R * 0.97), at(new THREE.ConeGeometry(7, 14, 8), Math.sin(phi) * R * 0.97, 667 + 0.12 * 76 - 28, Math.cos(phi) * R * 0.97)); } // chuông gió ở góc mái
   brz.push(at(new THREE.TorusGeometry(156, 3, 4, 8), 0, 669, 0, Math.PI / 2, Math.PI / 8), at(new THREE.CylinderGeometry(4, 10, 40, 8), 0, 830, 0), at(new THREE.ConeGeometry(7, 80, 8), 0, 888, 0), at(new THREE.TorusGeometry(11, 3, 6, 16), 0, 852, 0, Math.PI / 2));
   for (let i = 0; i < 2; i++) { // khiên huy hiệu hai mặt trước/sau
     const a = i * Math.PI + Math.PI / 2 + Math.PI / 8, sg = new THREE.ExtrudeGeometry(SH, { depth: 4, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 2, bevelSegments: 1 }); sg.scale(26, 30, 1);
@@ -146,10 +165,10 @@ export function createTower(team) {
     const a = i * Math.PI, bn = new THREE.Mesh(new THREE.PlaneGeometry(52, 180, 1, 6), bannerMat(team)); bn.geometry.translate(0, -90, 0);
     bn.position.set(Math.cos(a) * 124, 444, Math.sin(a) * 124 + 24); bn.rotation.y = a === 0 ? 0.25 : -0.25; g.add(bn);
   }
-  const cr = crystal(team, 40, 78), halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: cr.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.6 }));
-  halo.scale.setScalar(240); cr.object.add(halo);
+  const cr = crystal(team, 40, 78), halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: cr.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.35 }));
+  halo.scale.setScalar(200); cr.object.add(halo);
   const orbit = new THREE.Mesh(new THREE.TorusGeometry(64, 1.8, 6, 48), bronze()); orbit.rotation.x = 1.2; cr.object.add(orbit);
-  const lan = { object: cr.object, core: cr.core, shell: orbit, halo, haloA: 0.6, base: cr.base, y0: 568 }; cr.object.position.y = 568; g.add(cr.object);
+  const lan = { object: cr.object, core: cr.core, shell: orbit, halo, haloA: 0.35, base: cr.base, y0: 568 }; cr.object.position.y = 568; g.add(cr.object);
   g.traverse((m) => { if (m.isMesh && !m.material.transparent) { m.castShadow = false; m.receiveShadow = true; } });
   const flags = g.children.filter((c) => c.geometry?.type === 'PlaneGeometry');
   return finish(g, lan, (t) => { cr.core.rotation.y += 0.01; flags.forEach((f, i) => { f.rotation.x = Math.sin(t * 2 + i) * 0.08; }); });
@@ -180,6 +199,19 @@ export function createCore(team) {
     tops.push([x, 460, z]);
   }
   for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, x = Math.cos(a) * 600, z = Math.sin(a) * 600; dark.push(at(new THREE.CylinderGeometry(8, 10, 520, 6), x, 290, z)); gold.push(at(new THREE.SphereGeometry(14, 10, 8), x, 556, z)); }
+  for (const [x, , z] of tops) { // cột: chân đế bậc, đai vàng, đầu cột chạm
+    const a = Math.atan2(z, x);
+    for (const y of [130, 250]) gold.push(at(new THREE.BoxGeometry(62, 9, 62), x, y, z, 0, -a));
+    dark.push(at(new THREE.BoxGeometry(84, 18, 84), x, 48, z, 0, -a), at(new THREE.BoxGeometry(66, 16, 66), x, 344, z, 0, -a));
+  }
+  for (const [R, y] of [[430, 130], [320, 200]]) { // lan can đá đầu tầng: trụ lùn + tay vịn vàng, chừa lối bậc thang bốn phía
+    const gap = Math.atan(118 / R);
+    for (let q = 0; q < 4; q++) {
+      const a0 = q * Math.PI / 2 + gap, a1 = (q + 1) * Math.PI / 2 - gap, n = Math.max(3, Math.round((a1 - a0) * R / 46));
+      for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n, px = Math.cos(a) * (R - 14), pz = Math.sin(a) * (R - 14); stone.push(at(new THREE.BoxGeometry(12, 30, 12), px, y + 15, pz, 0, -a)); gold.push(at(new THREE.ConeGeometry(7, 10, 4), px, y + 35, pz, 0, -a + Math.PI / 4)); }
+      gold.push(at(new THREE.TorusGeometry(R - 14, 3.2, 4, Math.max(6, n * 2), a1 - a0), 0, y + 30, 0, -Math.PI / 2, 0, a0));
+    }
+  }
   dark.push(octo(190, 230, 110, 255, 16, 120));
   gold.push(at(new THREE.TorusGeometry(232, 8, 6, 48), 0, 205, 0, Math.PI / 2), at(new THREE.TorusGeometry(192, 6, 6, 48), 0, 310, 0, Math.PI / 2));
   g.add(merged(stone, stoneStd(0xf2ebe0)), merged(dark, stoneStd(0x7a7268)), merged(gold, bronze()), merged(flag, flagMat()));
@@ -197,7 +229,7 @@ export function createCore(team) {
   const main = crystal(team, 170, 360); lanG.add(main.object);
   const sats = [];
   for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, c = crystal(team, 40, 95); c.object.position.set(Math.cos(a) * 250, -180 + (i % 2) * 50, Math.sin(a) * 250); c.object.rotation.z = Math.cos(a) * 0.35; c.object.rotation.x = -Math.sin(a) * 0.35; lanG.add(c.object); sats.push(c); }
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: main.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.55 })); halo.scale.setScalar(900); lanG.add(halo);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: main.base.clone(), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.3 })); halo.scale.setScalar(760); lanG.add(halo);
   // vòng phù văn vàng (torus + bản khắc sáng)
   const rings = [0, 1].map((k) => {
     const rg = new THREE.Group(), R = 330 + k * 70; rg.add(new THREE.Mesh(new THREE.TorusGeometry(R, 7, 6, 96), bronze()));
@@ -209,7 +241,7 @@ export function createCore(team) {
   const beams = tops.map(([x, y, z]) => { const L = Math.hypot(x, 640 - y, z), b = new THREE.Mesh(new THREE.CylinderGeometry(3, 6, L, 6, 1, true), beamMat); b.position.set(x / 2, (y + 640) / 2, z / 2); b.lookAt(0, 640, 0); b.rotateX(Math.PI / 2); g.add(b); return b; });
   const sky = new THREE.Mesh(new THREE.CylinderGeometry(40, 120, 3200, 16, 1, true), new THREE.MeshBasicMaterial({ color: TEAM_COL[team], transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   sky.position.y = 2000; g.add(sky);
-  const lan = { object: lanG, core: main.core, shell: new THREE.Object3D(), halo, haloA: 0.45, base: main.base, y0: 640 };
+  const lan = { object: lanG, core: main.core, shell: new THREE.Object3D(), halo, haloA: 0.28, base: main.base, y0: 640 };
   const flags = g.children.filter((c) => c.geometry?.type === 'PlaneGeometry');
   return finish(g, lan, (t, dt, dead) => {
     main.object.rotation.y += dt * 0.35; sats.forEach((c, i) => { c.object.rotation.y -= dt * (0.6 + i * 0.05); c.object.position.y = -180 + (i % 2) * 50 + Math.sin(t * 1.4 + i) * 14; });
@@ -277,7 +309,7 @@ export function createFountain(team, scale = 1) {
   const rune = new THREE.Mesh(new THREE.RingGeometry(RT - 110, RT - 30, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
-      void main(){ float r = length(vP), a = atan(vP.y, vP.x); float k = (r - ${RT - 110}.0) / 80.0;
+      void main(){ float r = length(vP), a = atan(vP.y, vP.x + 1e-5); float k = (r - ${RT - 110}.0) / 80.0;
         float edge = smoothstep(0.0, 0.08, k) * smoothstep(1.0, 0.92, k);
         float lines = smoothstep(0.06, 0.0, abs(k - 0.18)) + smoothstep(0.06, 0.0, abs(k - 0.82));
         float glyph = step(0.55, fract(a * 24.0 / 6.2832)) * step(0.3, k) * step(k, 0.7) * step(0.35, fract(a * 72.0 / 6.2832 + k));
@@ -288,7 +320,7 @@ export function createFountain(team, scale = 1) {
   const mandala = new THREE.Mesh(new THREE.RingGeometry(250, RT - 120, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
-      void main(){ float r = length(vP) / ${RT - 120}.0, a = atan(vP.y, vP.x);
+      void main(){ float r = length(vP) / ${RT - 120}.0, a = atan(vP.y, vP.x + 1e-5);
         float petal = abs(cos(a * 6.0)); float shape = smoothstep(0.02, 0.0, abs(r - (0.78 + 0.2 * pow(petal, 3.0))));
         float v = shape * (0.5 + 0.5 * sin(uT * 2.0 + r * 10.0));
         gl_FragColor = vec4(uC * 1.4, v * 0.55); }` }));
@@ -301,7 +333,7 @@ export function createFountain(team, scale = 1) {
       void main(){ float r = length(vP); float w = sin(r * 0.11 - uT * 3.0) * 0.5 + 0.5; w = pow(w, 6.0);
         float c2 = sin(vP.x * 0.05 + uT) * sin(vP.y * 0.06 - uT * 1.3) * 0.5 + 0.5;
         vec3 deep = mix(vec3(0.05, 0.22, 0.3), uC * 0.5, 0.35), lit = mix(vec3(0.6, 0.95, 1.0), uC, 0.35);
-        gl_FragColor = vec4(mix(deep, lit, w * 0.6 + c2 * 0.25) + vec3(0.9) * pow(w * c2, 3.0), 0.86); }` });
+        gl_FragColor = vec4(mix(deep, lit, w * 0.6 + c2 * 0.25) + vec3(0.9) * (w * c2) * (w * c2) * (w * c2), 0.86); }` });
   for (const [r, y] of [[214, 56], [112, 202], [52, 287]]) { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40), waterMat); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); }
   const fallMat = new THREE.ShaderMaterial({ uniforms: W, transparent: true, depthWrite: false, side: THREE.DoubleSide,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
@@ -385,7 +417,15 @@ const skin = new THREE.MeshLambertMaterial({ color: 0xf6e7d0 });
 const straw = new THREE.MeshLambertMaterial({ color: 0xd8b86a });
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1216 });
 
+/** Lính dùng model SDF có xương (monsterModels.js); chưa nạp xong thì tạm dùng hình giấy bồi cũ rồi tự thay. */
 export function createMinion(type, team) {
+  const ready = buildMinionModel(type, team); if (ready) return ready;
+  const root = new THREE.Group(), legacy = createLegacyMinion(type, team); root.add(legacy.object);
+  let impl = legacy;
+  loadMonsterModel(MINION_MODEL[type]).then(() => { const m = buildMinionModel(type, team); if (!m) return; root.remove(legacy.object); root.add(m.object); impl = m; });
+  return { object: root, update: (dt, mv, atk) => impl.update(dt, mv, atk) };
+}
+function createLegacyMinion(type, team) {
   const g = new THREE.Group();
   const add = (geometry, mat, x, y, z, s = [1, 1, 1]) => { const m = new THREE.Mesh(geometry, mat); m.position.set(x, y, z); m.scale.set(...s); g.add(m); return m; };
   let bob = 1;
@@ -395,13 +435,13 @@ export function createMinion(type, team) {
     bob = 0.3;
   } else if (type === 'giant') {
     add(geo.body, straw, 0, 100, 0, [2.6, 2.6, 2.6]); add(geo.head, straw, 0, 230, 0, [2.6, 2.6, 2.6]);
-    add(new THREE.SphereGeometry(30, 10, 8), new THREE.MeshBasicMaterial({ color: TEAM_COL[team] }), 0, 300, 0);
+    add(geo.orb ||= new THREE.SphereGeometry(30, 10, 8), mats['o' + team] ||= new THREE.MeshBasicMaterial({ color: TEAM_COL[team] }), 0, 300, 0); // dùng chung: lính tạo liên tục, không được rò bộ nhớ GPU
   } else {
     add(geo.body, paper(team), 0, 40, 0); add(geo.head, skin, 0, 92, 0); add(geo.hat, trim(team), 0, 112, 0);
     for (const s of [1, -1]) add(geo.head, eyeMat, s * 7, 95, 16, [0.14, 0.2, 0.1]);
     add(geo.wheel, trim(team), 0, 58, 0, [0.95, 0.4, 0.95]);
     if (type === 'sword') { const s = add(geo.stick, M.gold, 28, 60, 12); s.rotation.x = 0.3; }
-    else { const b = add(new THREE.TorusGeometry(24, 2.5, 4, 12, Math.PI), M.wood, 30, 62, 10); b.rotation.set(0, 0, Math.PI / 2); }
+    else { const b = add(geo.bow ||= new THREE.TorusGeometry(24, 2.5, 4, 12, Math.PI), M.wood, 30, 62, 10); b.rotation.set(0, 0, Math.PI / 2); }
   }
   let t = (type.length * 1.7) % 6;
   return { object: g, update(dt, moving) { t += dt * (moving ? 10 : 2); g.position.y = Math.abs(Math.sin(t)) * (moving ? 5 : 1) * bob; } };

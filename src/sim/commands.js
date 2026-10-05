@@ -7,10 +7,12 @@ import { useItem } from './items.js';
 import { startRecall, cancelRecall } from './economy.js';
 
 export function applyCommand(world, e, cmd) {
-  if (!e || !e.alive) return;
+  if (!e) return;
+  // lúc chết vẫn được mua/bán đồ và nâng kỹ năng (như Liên Quân); các lệnh khác bỏ qua
+  if (!e.alive && !['buy', 'sell', 'levelSkill'].includes(cmd.type)) return;
   switch (cmd.type) {
     case 'move': e.moveDir.x = cmd.dir.x; e.moveDir.y = cmd.dir.y; break;
-    case 'attack': e.attacking = cmd.on !== false; e.preferTarget = cmd.preferTarget ?? null; break;
+    case 'attack': e.attacking = cmd.on !== false; e.preferTarget = cmd.preferTarget ?? null; e.attackMode = cmd.mode || null; break; // mode: 'minion' (ăn lính) | 'tower' (đẩy trụ)
     case 'cast': { const r = castSkill(world, e, cmd.slot, cmd.aim ?? null); if (!r.ok) world.emit('castFail', { id: e.id, slot: cmd.slot, reason: r.reason }); break; }
     case 'spell': { const r = castSpell(world, e, cmd.aim ?? null); if (!r.ok) world.emit('castFail', { id: e.id, slot: 'spell', reason: r.reason }); break; }
     case 'restore': { const r = castRestore(world, e); if (!r.ok) world.emit('castFail', { id: e.id, slot: 'restore', reason: r.reason }); break; }

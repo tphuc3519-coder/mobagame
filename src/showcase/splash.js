@@ -13,7 +13,7 @@ function clouds(u) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.ShaderMaterial({ uniforms: u, depthWrite: false,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uA, uB; varying vec2 vUv; ${NOISE}
-      void main(){ vec2 p = (vUv - vec2(0.5, 0.42)) * vec2(2.6, 1.5); float r = length(p), a = atan(p.y, p.x);
+      void main(){ vec2 p = (vUv - vec2(0.5, 0.42)) * vec2(2.6, 1.5); float r = length(p), a = atan(p.y, p.x + 1e-5);
         float swirl = fbm(vec2(a * 1.6 + uT * 0.05, r * 2.5 - uT * 0.12) * 1.3 + fbm(p * 2.0 + uT * 0.03));
         vec3 dark = mix(vec3(0.05, 0.03, 0.09), uA * 0.18, 0.5);
         vec3 c = mix(dark, uA * 0.42, smoothstep(0.35, 0.85, swirl) * (1.0 - smoothstep(0.2, 1.3, r)));
@@ -28,7 +28,7 @@ function rays(u) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShaderMaterial({ uniforms: u, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uA, uB; varying vec2 vUv; ${NOISE}
-      void main(){ vec2 p = vUv - 0.5; float r = length(p), a = atan(p.y, p.x);
+      void main(){ vec2 p = vUv - 0.5; float r = length(p), a = atan(p.y, p.x + 1e-5);
         float ray = pow(vn(vec2(a * 9.0 + uT * 0.15, 0.0)), 3.0) * 0.8 + pow(vn(vec2(a * 23.0 - uT * 0.1, 3.0)), 5.0);
         float f = ray * smoothstep(0.5, 0.05, r) * smoothstep(0.0, 0.08, r);
         gl_FragColor = vec4(mix(uB, vec3(1.0), 0.3) * f * 0.14, 1.0); }` }));

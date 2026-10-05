@@ -74,7 +74,7 @@ function roundPath(pts, r) {
   return out;
 }
 
-const LANE_W = 1200; // rộng hơn (880 → 1060 → 1200)
+const LANE_W = 1900; // rộng gần bằng vòng bắn của trụ (đường kính 2100): vòng trụ nằm gọn trong đường, không lố vào rừng (880 → 1200 → 2000)
 // Ba đường, đi từ nhà chính Xanh sang nhà chính Đỏ (đối xứng nên đường phía Đỏ chỉ là đi ngược lại).
 const BASE = P(800, 5600), FOE = P(5600, 800);
 const LANES = [
@@ -85,7 +85,7 @@ const LANES = [
 
 const tower = (id, tier, x, y, invulnUntil) => {
   const T = { outer: [4000, 80, 220], inner: [4500, 90, 260], home: [5000, 100, 300] }[tier];
-  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 950, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
+  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
@@ -134,12 +134,26 @@ const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đư�
   // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
   // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
   // Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm): Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8 (phía Đỏ, gần đường Sông).
-  { id: 'long_ngu', type: 'long_ngu', x: 1340, y: 2020, boss: true, back: 2.36 },
-  { id: 'ho_loi', type: 'ho_loi', x: 5060, y: 4380, boss: true, back: -0.785 },
+  { id: 'long_ngu', type: 'long_ngu', x: 1430, y: 2020, boss: true, back: 2.36 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4990, y: 4380, boss: true, back: -0.785 },
   // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
+/** Bán kính hang mục tiêu lớn (toạ độ thế giới) — dùng chung cho dựng hình và va chạm. */
+export const LAIR_R = { long_ngu: 600, ho_loi: 640, than_dieu: 560, ta_than: 600 };
+/** Vách hang thành tường va chạm (khớp đúng phần dựng hình trong jungleDecor.js, để tướng không đi xuyên vách đá/rễ/tổ):
+ *  hang mép rừng = vách móng ngựa 7 tảng ôm phía sau; hang tím = vòng rễ phía sau; tổ chim = vòng cành quanh tổ chừa lối vào. */
+export function lairWallSegs(c) {
+  const R = LAIR_R[c.type], back = c.back ?? -Math.PI / 2, arc = (r, a0, a1, n, w) => Array.from({ length: n }, (_, i) => {
+    const u0 = a0 + (a1 - a0) * i / n, u1 = a0 + (a1 - a0) * (i + 1) / n;
+    return { x1: c.x + Math.cos(u0) * r, y1: c.y + Math.sin(u0) * r, x2: c.x + Math.cos(u1) * r, y2: c.y + Math.sin(u1) * r, w, lair: true };
+  });
+  if (c.type === 'long_ngu' || c.type === 'ho_loi') return arc(R * 1.12, back - Math.PI * 0.65, back + Math.PI * 0.65, 7, R * 0.4);
+  if (c.type === 'ta_than') return arc(R * 1.05, back - 1.25, back + 1.25, 5, R * 0.28);
+  if (c.type === 'than_dieu') return arc(R * 1.0, back - (Math.PI - 0.75), back + (Math.PI - 0.75), 8, R * 0.22);
+  return [];
+}
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
@@ -150,9 +164,11 @@ const BUSHES_BLUE = [
 // phía Đỏ là ảnh x↔y. Đường cánh: nhà cách nhà chính 950, khoảng cách 1575, trụ ngoài cách góc sông 700. Đường giữa: khoảng 997.
 const md = (d) => [800 + d / Math.SQRT2, 5600 - d / Math.SQRT2];
 const TOWER_POS = {
-  temple_outer: [800, 1500], temple_inner: [800, 3075], temple_home: [800, 4650],
-  mid_outer: md(2894), mid_inner: md(1897), mid_home: md(900),
-  river_outer: [4900, 5600], river_inner: [3325, 5600], river_home: [1750, 5600],
+  // trụ ngoài sát sông nhất có thể mà vòng bắn (1050) không chạm nước: mép vòng cách mép sông ~20 đơn vị (tools/mapplan.html).
+  // (vị trí cũ y=1500 thực ra vòng bắn lấn xuống sông ~200.) Trụ trong/nhà chia đều phía sau: khe giữa hai vòng trụ ~1350.
+  temple_outer: [800, 1658], temple_inner: [800, 2800], temple_home: [800, 3950],
+  mid_outer: md(2785), mid_inner: md(1840), mid_home: md(900),
+  river_outer: [4742, 5600], river_inner: [3600, 5600], river_home: [2450, 5600],
 };
 const TOWERS_BLUE = Object.values(TOWER_POS);
 const allTowers = [...TOWERS_BLUE, ...TOWERS_BLUE.map(([x, y]) => [y, x])];
@@ -255,7 +271,7 @@ export const ARENA = {
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
-  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg)] },
+  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [

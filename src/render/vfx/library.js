@@ -276,6 +276,14 @@ export function createLibrary({ A, N, sh, views, shake, team }) {
       case 'levelup': { const r = rootOf(ev.id); if (!r || !visible(e)) break; sh.pillar(r.x, r.z, 70, 360, { color: 0xffd36a, top: 0xffffff, life: 0.8 }); sh.ring(r.x, r.z, 10, 160, { color: 0xffd36a, width: 0.1, life: 0.5 }); burst(A, r.x, 40, r.z, { n: 20, r: 40, speed: [20, 80], up: [200, 420], life: [0.6, 1], size: [26, 6], color: [0xffffff, 0xffc84a], tile: TILE.star, drag: 1 }); break; }
       case 'death': { const r = rootOf(ev.id); if (!r || !e || !visible(e) || e.kind === 'minion') break; dust(r.x, r.z, 90, 12); burst(A, r.x, 80, r.z, { n: 14, r: 40, speed: [10, 40], up: [150, 300], life: [1, 1.6], size: [30, 10], color: [0xffffff, themeOf(e).col], drag: 0.5 }); break; }
       case 'respawn': { const r = ent(ev.id)?.pos; if (r) sh.pillar(r.x, r.y, 80, 420, { color: 0x8fd8ff, top: 0xffffff, life: 0.8 }); break; }
+      case 'smite': { // Trừng Trị: cột sét vàng giáng xuống mục tiêu + loé + vòng nổ + tia lửa
+        const t = ent(ev.target); if (t && !visible(t) && !visible(e)) break;
+        sh.pillar(ev.x, ev.y, 46, 1400, { color: 0xffc23a, top: 0xffffff, life: 0.35, alpha: 1.4 });
+        sh.pillar(ev.x, ev.y, 110, 900, { color: 0xff8a1a, top: 0xffe8a0, life: 0.45, alpha: 0.7 });
+        flash(ev.x, 120, ev.y, 420, 0xfff0b0, 0.22); sh.ring(ev.x, ev.y, 20, 260, { color: 0xffc23a, core: 0xffffff, life: 0.4 });
+        sparks(ev.x, 80, ev.y, 0xffc23a, 26, 1.3);
+        break;
+      }
       case 'blink': { if (!visible(e)) break; for (const p of [ev.from, ev.to]) if (p) { flash(p.x, 100, p.y, 220, 0xc8a0ff, 0.2); burst(A, p.x, 100, p.y, { n: 18, speed: [100, 300], up: [-100, 200], life: [0.3, 0.5], size: [24, 4], color: [0xffffff, 0xa070ff], drag: 3 }); } break; }
       case 'recallStart': {
         if (!e || !visible(e)) break; const until = world.tick + (ev.dur || 6) * 30;
