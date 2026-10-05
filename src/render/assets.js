@@ -27,6 +27,16 @@ export function loadHero(id) {
   return p;
 }
 
+/** Nạp một file .glb bất kỳ (máy chủ không phục vụ .glb thì dùng bản base64 .glb.json). */
+export async function loadGLB(url) {
+  try { return await loader.loadAsync(url); }
+  catch (_) {
+    const j = await (await fetch(url + '.json')).json(), bin = atob(j.b64), buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return loader.parseAsync(buf.buffer, url.slice(0, url.lastIndexOf('/') + 1));
+  }
+}
+
 /** Bản sao riêng xương cho mỗi entity, đổi mét → đơn vị thế giới (cm). */
 export function instantiate({ art, gltf }) {
   const obj = clone(gltf.scene);

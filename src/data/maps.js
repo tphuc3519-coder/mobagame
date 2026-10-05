@@ -140,6 +140,20 @@ const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đư�
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
+/** Bán kính hang mục tiêu lớn (toạ độ thế giới) — dùng chung cho dựng hình và va chạm. */
+export const LAIR_R = { long_ngu: 600, ho_loi: 640, than_dieu: 560, ta_than: 600 };
+/** Vách hang thành tường va chạm (khớp đúng phần dựng hình trong jungleDecor.js, để tướng không đi xuyên vách đá/rễ/tổ):
+ *  hang mép rừng = vách móng ngựa 7 tảng ôm phía sau; hang tím = vòng rễ phía sau; tổ chim = vòng cành quanh tổ chừa lối vào. */
+export function lairWallSegs(c) {
+  const R = LAIR_R[c.type], back = c.back ?? -Math.PI / 2, arc = (r, a0, a1, n, w) => Array.from({ length: n }, (_, i) => {
+    const u0 = a0 + (a1 - a0) * i / n, u1 = a0 + (a1 - a0) * (i + 1) / n;
+    return { x1: c.x + Math.cos(u0) * r, y1: c.y + Math.sin(u0) * r, x2: c.x + Math.cos(u1) * r, y2: c.y + Math.sin(u1) * r, w, lair: true };
+  });
+  if (c.type === 'long_ngu' || c.type === 'ho_loi') return arc(R * 1.12, back - Math.PI * 0.65, back + Math.PI * 0.65, 7, R * 0.4);
+  if (c.type === 'ta_than') return arc(R * 1.05, back - 1.25, back + 1.25, 5, R * 0.28);
+  if (c.type === 'than_dieu') return arc(R * 1.0, back - (Math.PI - 0.75), back + (Math.PI - 0.75), 8, R * 0.22);
+  return [];
+}
 // Bụi cỏ phía Xanh (toạ độ gốc; phía Đỏ đối xứng). Không bụi nào nằm trong tầm bắn trụ (750); bụi gần trụ có tảng đá ghép cạnh (BUSH_ROCKS).
 const BUSHES_BLUE = [
   { x: 2750, y: 4700, w: 440, h: 300, big: true }, { x: 3250, y: 4980, w: 440, h: 260, big: true },              // bụi lớn "macro" giữa rừng dưới
@@ -255,7 +269,7 @@ export const ARENA = {
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
   // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
-  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg)] },
+  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [

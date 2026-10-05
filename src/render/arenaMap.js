@@ -99,7 +99,7 @@ export function buildArena(scene, map, level = 'mid') {
   }
   // cây mọc trên/sát bệ đá rừng: biến bệ đá mảnh thành khối rừng đặc (như các mảng rừng của Liên Quân nhìn từ trên)
   for (const w of map.walls.segs) {
-    if (w.bushRock || w.border || w.baseWall != null) continue;
+    if (w.bushRock || w.border || w.baseWall != null || w.lair) continue;
     const edge = !(w.rock || w.ledge); // bệ đá dọc mép đường: cây mọc lùi về phía rừng
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L;
     const away = laneDist(w.x1 / 2 + w.x2 / 2 - uz * 200, w.y1 / 2 + w.y2 / 2 + ux * 200) > laneDist(w.x1 / 2 + w.x2 / 2 + uz * 200, w.y1 / 2 + w.y2 / 2 - ux * 200) ? 1 : -1;

@@ -277,7 +277,7 @@ export function createFountain(team, scale = 1) {
   const rune = new THREE.Mesh(new THREE.RingGeometry(RT - 110, RT - 30, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
-      void main(){ float r = length(vP), a = atan(vP.y, vP.x); float k = (r - ${RT - 110}.0) / 80.0;
+      void main(){ float r = length(vP), a = atan(vP.y, vP.x + 1e-5); float k = (r - ${RT - 110}.0) / 80.0;
         float edge = smoothstep(0.0, 0.08, k) * smoothstep(1.0, 0.92, k);
         float lines = smoothstep(0.06, 0.0, abs(k - 0.18)) + smoothstep(0.06, 0.0, abs(k - 0.82));
         float glyph = step(0.55, fract(a * 24.0 / 6.2832)) * step(0.3, k) * step(k, 0.7) * step(0.35, fract(a * 72.0 / 6.2832 + k));
@@ -288,7 +288,7 @@ export function createFountain(team, scale = 1) {
   const mandala = new THREE.Mesh(new THREE.RingGeometry(250, RT - 120, 96, 1), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vP;
-      void main(){ float r = length(vP) / ${RT - 120}.0, a = atan(vP.y, vP.x);
+      void main(){ float r = length(vP) / ${RT - 120}.0, a = atan(vP.y, vP.x + 1e-5);
         float petal = abs(cos(a * 6.0)); float shape = smoothstep(0.02, 0.0, abs(r - (0.78 + 0.2 * pow(petal, 3.0))));
         float v = shape * (0.5 + 0.5 * sin(uT * 2.0 + r * 10.0));
         gl_FragColor = vec4(uC * 1.4, v * 0.55); }` }));
@@ -301,7 +301,7 @@ export function createFountain(team, scale = 1) {
       void main(){ float r = length(vP); float w = sin(r * 0.11 - uT * 3.0) * 0.5 + 0.5; w = pow(w, 6.0);
         float c2 = sin(vP.x * 0.05 + uT) * sin(vP.y * 0.06 - uT * 1.3) * 0.5 + 0.5;
         vec3 deep = mix(vec3(0.05, 0.22, 0.3), uC * 0.5, 0.35), lit = mix(vec3(0.6, 0.95, 1.0), uC, 0.35);
-        gl_FragColor = vec4(mix(deep, lit, w * 0.6 + c2 * 0.25) + vec3(0.9) * pow(w * c2, 3.0), 0.86); }` });
+        gl_FragColor = vec4(mix(deep, lit, w * 0.6 + c2 * 0.25) + vec3(0.9) * (w * c2) * (w * c2) * (w * c2), 0.86); }` });
   for (const [r, y] of [[214, 56], [112, 202], [52, 287]]) { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40), waterMat); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); }
   const fallMat = new THREE.ShaderMaterial({ uniforms: W, transparent: true, depthWrite: false, side: THREE.DoubleSide,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',

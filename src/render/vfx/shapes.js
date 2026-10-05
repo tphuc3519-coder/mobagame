@@ -69,7 +69,7 @@ export function createShapes(scene) {
     const mat = new THREE.ShaderMaterial({ ...NRM, uniforms: { uC: { value: col(o.color ?? 0x7fe0ff) }, uD: { value: col(o.deep ?? 0x0a3a6a) }, uT: { value: 0 }, uA: { value: 0 }, uN: { value: o.arms ?? 4 } },
       vertexShader: VS_UV,
       fragmentShader: `uniform vec3 uC, uD; uniform float uT, uA, uN; varying vec2 vUv;
-        void main(){ vec2 p = (vUv - 0.5) * 2.0; float d = length(p); if (d > 1.0) discard; float a = atan(p.y, p.x);
+        void main(){ vec2 p = (vUv - 0.5) * 2.0; float d = length(p); if (d > 1.0) discard; float a = atan(p.y, p.x + 1e-5);
           float s = 0.5 + 0.5 * sin(uN * a + 9.0 * log(d + 0.05) + uT * 7.0); float arms = pow(s, 4.0);
           float rim = smoothstep(1.0, 0.75, d) * smoothstep(0.02, 0.25, d);
           float lip = 1.0 - smoothstep(0.0, 0.05, abs(d - 0.93));
@@ -87,8 +87,8 @@ export function createShapes(scene) {
       uniforms: { uC: { value: col(o.color ?? 0x8fe8ff) }, uA: { value: 0 }, uT: { value: 0 }, uH: { value: o.hex ? 1 : 0 } },
       vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; vP = position; gl_Position = projectionMatrix * mv; }',
       fragmentShader: `uniform vec3 uC; uniform float uA, uT, uH; varying vec3 vN; varying vec3 vV; varying vec3 vP;
-        void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
-          float band = 0.5 + 0.5 * sin(vP.y * 0.12 - uT * 4.0); float hex = uH > 0.5 ? step(0.88, fract(atan(vP.z, vP.x) * 2.5)) + step(0.9, fract(vP.y * 0.05)) : 0.0;
+        void main(){ float f = pow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.2);
+          float band = 0.5 + 0.5 * sin(vP.y * 0.12 - uT * 4.0); float hex = uH > 0.5 ? step(0.88, fract(atan(vP.z, vP.x + 1e-5) * 2.5)) + step(0.9, fract(vP.y * 0.05)) : 0.0;
           gl_FragColor = vec4(uC * (f * 1.3 + 0.06 + band * 0.08 + hex * 0.25) * uA, 1.0);
         ${TAIL}` });
     const m = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 18), mat); m.renderOrder = 8;
@@ -106,7 +106,7 @@ export function createShapes(scene) {
     const mat = new THREE.ShaderMaterial({ ...ADD, uniforms: { uC: { value: col(o.color ?? 0xffc060) }, uK: { value: col(o.top ?? 0xffffff) }, uA: { value: 0 }, uT: { value: 0 } },
       vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv = uv; vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }',
       fragmentShader: `uniform vec3 uC, uK; uniform float uA, uT; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
-        void main(){ float side = 1.0 - pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 1.5);
+        void main(){ float side = 1.0 - pow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 1.5);
           float v = vUv.y; float fade = pow(1.0 - v, 1.4) * smoothstep(0.0, 0.05, v);
           float streak = 0.6 + 0.4 * sin(vUv.x * 40.0 + v * 6.0 - uT * 14.0);
           gl_FragColor = vec4(mix(uC, uK, 1.0 - v) * side * fade * streak * uA * 1.4, 1.0);
@@ -142,7 +142,7 @@ export function createShapes(scene) {
     const mat = new THREE.ShaderMaterial({ ...NRM, uniforms: { uC: { value: col(o.color ?? 0xffffff) }, uK: { value: col(o.core ?? 0xffffff) } },
       vertexShader: 'attribute float aA; varying float vA; varying float vS; void main(){ vA = aA; vS = mod(float(gl_VertexID), 2.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform vec3 uC, uK; varying float vA; varying float vS;
-        void main(){ float a = vA * (0.15 + 0.85 * vS * vS); gl_FragColor = vec4(mix(uC, uK * 2.2, pow(vA * vS, 2.0)), a * 0.95);
+        void main(){ float a = vA * (0.15 + 0.85 * vS * vS); gl_FragColor = vec4(mix(uC, uK * 2.2, (vA * vS) * (vA * vS)), a * 0.95);
         ${TAIL}` });
     const m = new THREE.Mesh(g, mat); m.frustumCulled = false; m.renderOrder = 9; scene.add(m);
     const hist = []; let lastTip = null;
