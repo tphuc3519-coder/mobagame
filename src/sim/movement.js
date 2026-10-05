@@ -51,9 +51,14 @@ export function updateMovement(world) {
     if (e.dash) { updateDash(world, e); e.speed = 0; }
     else {
       let { x, y } = e.moveDir;
+      if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn
+        const t = e.swingTarget != null ? world.byId(e.swingTarget) : null;
+        if (t && t.alive) e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
+        x = 0; y = 0;
+      }
       const m = Math.hypot(x, y);
       if (m > 0.001) { x /= m; y /= m; } // chỉ hướng có nghĩa: mọi tướng chạy đúng tốc độ của mình, không chậm lại khi kéo cần ngắn
-      if (isRooted(e) || m < 0.001) { e.speed = 0; if (m > 0.05 && !isRooted(e)) e.facing = Math.atan2(y, x); }
+      if (isRooted(e) || m < 0.001) { e.speed = 0; }
       else {
         const step = e.stats.moveSpeed * TICK;
         e.pos.x += x * step; e.pos.y += y * step;

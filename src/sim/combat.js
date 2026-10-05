@@ -2,7 +2,8 @@
 import { T, dist } from './util.js';
 import { isHardCC, removeStatus, tauntSource, applyStatus } from './status.js';
 import { dealDamage } from './damage.js';
-import { nearestEnemy } from './targeting.js';
+import { nearestEnemy, isTargetable } from './targeting.js';
+import { canSee } from './vision.js';
 import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
 import { onBasicAttack, onBasicHit } from './items.js';
@@ -46,6 +47,21 @@ function fire(world, e, target, iv) {
   void iv;
 }
 
+/** Nút "ăn lính": lính (rồi quái) máu thấp nhất trong tầm để kết liễu lấy vàng; nút "đẩy trụ": công trình gần nhất trong tầm. */
+export function pickByMode(world, e, range, mode) {
+  let best = null, bs = Infinity;
+  for (const t of world.entities) {
+    if (t.team === e.team || !isTargetable(e, t) || !canSee(e.team, t)) continue;
+    const d = dist(t.pos, e.pos) - t.radius; if (d > range) continue;
+    let sc;
+    if (mode === 'minion') { if (t.kind !== 'minion' && t.kind !== 'monster') continue; sc = (t.kind === 'monster' ? 1e6 : 0) + t.hp; }
+    else if (mode === 'tower') { if (!t.structure || t.kind === 'fountain' || t.invulnerable) continue; sc = d; }
+    else continue;
+    if (sc < bs) { bs = sc; best = t; }
+  }
+  return best;
+}
+
 /** Đòn vung không mục tiêu: cận chiến trúng địch đầu tiên trong nửa quạt phía trước; đánh xa bắn đạn thẳng theo hướng nhìn, trúng địch đầu tiên. */
 function whiff(world, e, range) {
   if (!e.alive || isHardCC(e)) return;
@@ -71,11 +87,11 @@ export function updateCombat(world) {
     if (world.tick < e.attackReady) continue;
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
-    const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : nearestEnemy(world, e, range, e.preferTarget);
+    const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode) : nearestEnemy(world, e, range, e.preferTarget);
     if (!target) { // không có mục tiêu: tướng người chơi vẫn vung đòn vào khoảng không theo hướng đang nhìn (như Liên Quân)
-      if (e.kind !== 'hero' || e.bot || forced) continue;
+      if (e.kind !== 'hero' || e.bot || forced || e.attackMode) continue; // nút ăn lính/đẩy trụ: không có mục tiêu đúng loại thì không vung
       const iv = 1 / e.stats.atkSpeed, delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
-      e.attackReady = world.tick + T(iv); e.atkIndex = (e.atkIndex || 0) + 1;
+      e.attackReady = world.tick + T(iv); e.atkIndex = (e.atkIndex || 0) + 1; e.swingUntil = world.tick + T(delay) + 1; e.swingTarget = null;
       world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay, whiff: true });
       world.pending.push({ tick: world.tick + T(delay), run: () => whiff(world, e, range) });
       continue;
@@ -85,6 +101,7 @@ export function updateCombat(world) {
     e.atkIndex = (e.atkIndex || 0) + 1;
     e.facing = Math.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
     const delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
+    if (e.kind === 'hero') { e.swingUntil = world.tick + T(delay) + 1; e.swingTarget = target.id; } // vung đòn: đứng lại, quay mặt về địch tới lúc đòn chạm
     world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay }); // delay: thời điểm gây sát thương, để animation khớp cú chạm
     world.pending.push({ tick: world.tick + T(delay), run: () => fire(world, e, target, iv) });
   }

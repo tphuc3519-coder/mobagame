@@ -388,3 +388,15 @@
 - **Trụ + đường**: tầm trụ 950 → 1050; đường rộng 1200 → 1900 (vòng trụ gần vừa khít bề ngang đường, không lố vào rừng). Trụ mỗi
   đường dồn lại cách nhau ~2700 đơn vị: giữa hai trụ chỉ còn khe ~600 không bị bắn. Hai hang Long Ngư/Hổ Lôi lùi vào rừng một chút
   để vách hang không lấn đường. `tools/mapplan.html`: sơ đồ 2D để chỉnh bố cục (đường, tường, trại, vòng trụ).
+
+## Nhịp trận nhanh hơn, nút ăn lính/đẩy trụ, trụ cánh sát sông
+- **Tốc chạy**: tướng ×1.15 so với số gốc (giữ chênh lệch riêng từng tướng; vd. đấu sĩ 325 → 374), lính +18% (kiếm/cung 330, xe
+  305, lính lớn 340) — bản đồ rộng nên nhịp trận cao hơn.
+- **Đánh thường luôn hướng mặt về địch**: trong lúc vung đòn (từ lúc bắt đầu tới lúc đòn chạm) tướng đứng lại và mặt luôn quay về
+  mục tiêu, kể cả khi đang kéo cần chạy hướng khác — như Liên Quân; trước đây chạy mà đánh thì tướng vẫn quay theo hướng chạy.
+- **Nút Ăn lính / Đẩy trụ** cạnh nút Đánh (dưới-trái và trên-phải, như Liên Quân; phím K / L): ăn lính = đánh lính máu thấp nhất
+  trong tầm (rồi tới quái) để kết liễu lấy vàng; đẩy trụ = chỉ đánh trụ/nhà chính đang đánh được trong tầm. Không có mục tiêu đúng
+  loại thì không vung. Cụm kỹ năng giãn ra chút để chừa chỗ.
+- **Trụ ngoài hai đường cánh sát sông**: đặt đúng chỗ vòng bắn (1050) tiếp xúc mép sông (cách ~20 đơn vị) — sát nhất có thể mà
+  không chạm nước (vị trí cũ y=1500 thật ra vòng bắn đã lấn xuống sông ~200). Trụ ngoài giữa cũng tiếp xúc mép sông. Trụ trong/nhà
+  chia đều phía sau: khe giữa hai vòng trụ ~1350 ở đường cánh, ~730 ở đường giữa (đổi lại cho trụ ngoài sát sông).

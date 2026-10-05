@@ -164,10 +164,11 @@ const BUSHES_BLUE = [
 // phía Đỏ là ảnh x↔y. Đường cánh: nhà cách nhà chính 950, khoảng cách 1575, trụ ngoài cách góc sông 700. Đường giữa: khoảng 997.
 const md = (d) => [800 + d / Math.SQRT2, 5600 - d / Math.SQRT2];
 const TOWER_POS = {
-  // trụ cách nhau ~900 gốc (2700 đơn vị) với tầm bắn 1050: giữa hai trụ chỉ còn khe ~600 đi qua mà không bị bắn
-  temple_outer: [800, 2650], temple_inner: [800, 3550], temple_home: [800, 4450],
-  mid_outer: md(2740), mid_inner: md(1820), mid_home: md(900),
-  river_outer: [3750, 5600], river_inner: [2850, 5600], river_home: [1950, 5600],
+  // trụ ngoài sát sông nhất có thể mà vòng bắn (1050) không chạm nước: mép vòng cách mép sông ~20 đơn vị (tools/mapplan.html).
+  // (vị trí cũ y=1500 thực ra vòng bắn lấn xuống sông ~200.) Trụ trong/nhà chia đều phía sau: khe giữa hai vòng trụ ~1350.
+  temple_outer: [800, 1658], temple_inner: [800, 2800], temple_home: [800, 3950],
+  mid_outer: md(2785), mid_inner: md(1840), mid_home: md(900),
+  river_outer: [4742, 5600], river_inner: [3600, 5600], river_home: [2450, 5600],
 };
 const TOWERS_BLUE = Object.values(TOWER_POS);
 const allTowers = [...TOWERS_BLUE, ...TOWERS_BLUE.map(([x, y]) => [y, x])];

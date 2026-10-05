@@ -43,7 +43,7 @@
   body.dead #world { filter: grayscale(0.85) brightness(0.8); } /* đang chờ hồi sinh */
   body.dead .goldPill { animation: buyPulse 1s ease-in-out infinite; } @keyframes buyPulse { 50% { box-shadow: 0 0 0 3px #ffd27a, 0 0 18px #ffb84d; transform: scale(1.06); } }
   #camBtn { position: fixed; right: calc(max(12px, env(safe-area-inset-right)) + 6px); bottom: calc(max(10px, env(safe-area-inset-bottom)) + var(--skh) + 16px); z-index: 4; width: 50px; height: 50px; padding: 0; border: 0; background: none; touch-action: none;
-    --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skh: calc(var(--a) + var(--s) * 1.4); } /* cùng số đo cụm kỹ năng */
+    --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --m: calc(var(--s) * 0.66); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 12px); } /* cùng số đo cụm kỹ năng */
   #camBtn .ring { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #0f122440 40%, #0f1224a8); border: 2px solid #c9b47a99; transition: transform .15s, border-color .15s; }
   #camBtn .knob { position: absolute; inset: 9px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 35%, #3a3f66, #171b33); box-shadow: 0 2px 6px #000a; pointer-events: none; }
   #camBtn .knob svg { width: 22px; height: 22px; }
@@ -113,13 +113,18 @@
 
   /* —— HUD kiểu Liên Quân: bản đồ nhỏ trái trên; cửa hàng dưới bản đồ nhỏ (hoặc bên phải, tuỳ cài đặt); cụm nút phụ ở đáy; kỹ năng phải dưới —— */
   #skills { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: var(--skw); height: var(--skh); z-index: 4;
-    --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skw: calc(var(--a) + var(--s) * 2.6); --skh: calc(var(--a) + var(--s) * 1.4); }
+    --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --m: calc(var(--s) * 0.66); --skw: calc(var(--a) + var(--s) * 2.6 + var(--m) * 0.5); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 12px); }
   :root { --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skw: calc(var(--a) + var(--s) * 2.6); }
   .atk { right: 0; bottom: 0; width: var(--a); height: var(--a); background: radial-gradient(circle at 50% 35%, #8a3b32, #3a1416 70%); font-size: 17px; border: 3px solid #e9d9a8; box-shadow: 0 0 0 3px #0008, 0 4px 14px #000a; }
   .atk .ic, .atk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk { width: var(--s); height: var(--s); padding: 0; border: 0; background: none; box-shadow: 0 3px 10px #000a; }
   .sk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .sk[data-k="s1"] { right: calc(var(--a) + 8px); bottom: 2px; } .sk[data-k="s2"] { right: calc(var(--a) * 0.82); bottom: calc(var(--a) * 0.78); } .sk[data-k="s3"] { right: calc(var(--s) * 0.05); bottom: calc(var(--a) + 10px); width: calc(var(--s) * 1.1); height: calc(var(--s) * 1.1); }
+  .sk[data-k="s1"] { right: calc(var(--a) + var(--m) * 0.95); bottom: 2px; } .sk[data-k="s2"] { right: calc(var(--a) * 0.82); bottom: calc(var(--a) * 0.78); } .sk[data-k="s3"] { right: calc(var(--s) * 0.05); bottom: calc(var(--a) + var(--m) * 0.5 + 12px); width: calc(var(--s) * 1.1); height: calc(var(--s) * 1.1); }
+  /* nút Ăn lính (dưới-trái nút Đánh) và Đẩy trụ (trên-phải nút Đánh), như Liên Quân; d = khoảng cách tâm tới tâm nút Đánh */
+  .amode { --d: calc(var(--a) * 0.5 + var(--m) * 0.5 + 2px); width: var(--m); height: var(--m); padding: 0; border-radius: 50%; border: 2px solid #c9b47acc; background: radial-gradient(circle at 50% 35%, #3a3f66, #141830 75%); box-shadow: 0 2px 8px #000a; display: grid; place-items: center; }
+  .amode svg { width: 72%; height: 72%; } .amode.down { background: radial-gradient(circle at 50% 35%, #6a5a2a, #2a2010 75%); border-color: #ffd27a; box-shadow: 0 0 12px #ffd27a; }
+  .amode[data-k="minion"] { right: calc(var(--a) * 0.5 + var(--d) * 0.94 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 - var(--d) * 0.342 - var(--m) * 0.5); }
+  .amode[data-k="tower"] { right: calc(var(--a) * 0.5 - var(--d) * 0.469 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 + var(--d) * 0.883 - var(--m) * 0.5); }
   .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 0 4px #000, 0 0 2px #000; } .sk .nm { display: none; }
   .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
   .lvring path { fill: none; stroke-width: 8; stroke-linecap: round; } .lvring .off { stroke: #0b0e1e; opacity: 0.8; }

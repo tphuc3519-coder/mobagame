@@ -20,12 +20,17 @@ function levelRing(max, level, fresh) {
 }
 
 const DRAG_MIN = 15, DRAG_MAX = 110;
+// biểu tượng nút ăn lính (mũ lính) / đẩy trụ (tháp)
+const MINION_IC = '<svg viewBox="0 0 40 40"><path d="M9 22c0-7 5-12 11-12s11 5 11 12v3H9z" fill="#e8dcc0"/><path d="M20 6l2.5 5h-5z" fill="#ffd27a"/><rect x="8" y="24" width="24" height="4" rx="2" fill="#c9a24a"/><path d="M13 28h14l-2 6H15z" fill="#e8dcc0"/><rect x="18.5" y="16" width="3" height="9" fill="#8a7a5a"/></svg>';
+const TOWER_IC = '<svg viewBox="0 0 40 40"><path d="M12 34h16l-2-16h3l-2-6H13l-2 6h3z" fill="#e8dcc0"/><path d="M14 12l6-6 6 6z" fill="#c9a24a"/><rect x="18" y="22" width="4" height="7" rx="2" fill="#5a4a3a"/><circle cx="20" cy="16" r="2.2" fill="#ffd27a"/></svg>';
 const SLOTS = ['s1', 's2', 's3'];
 
 export function createSkillButtons(root, { world, player, indicators }) {
   const tc = THEMES[player.heroId]?.col, theme = tc != null ? '#' + tc.toString(16).padStart(6, '0') : '#ffb84d'; // màu chủ đề tướng cho icon kỹ năng
   root.innerHTML = `
     <button class="sb atk" data-k="atk" aria-label="Đánh">${fistArt()}</button>
+    <button class="sb amode" data-k="minion" aria-label="Ăn lính" title="Ăn lính: đánh lính máu thấp nhất trong tầm (kết liễu lấy vàng)">${MINION_IC}</button>
+    <button class="sb amode" data-k="tower" aria-label="Đẩy trụ" title="Đẩy trụ: chỉ đánh trụ/nhà chính trong tầm">${TOWER_IC}</button>
     ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? heroSkillArt(player.heroId, s, player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
@@ -89,16 +94,19 @@ export function createSkillButtons(root, { world, player, indicators }) {
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
     el.querySelector('.lvl').addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); world.command(player.id, { type: 'levelSkill', slot }); });
   }
-  const atk = btn('atk'); let atkHeld = false;
+  let atkHeld = false, atkMode = null; // nút Đánh / Ăn lính / Đẩy trụ: giữ để đánh liên tục theo chế độ của nút
   const set = (o, k, v) => { if (o[k] !== v) o[k] = v; };
-  atk.addEventListener('pointerdown', (e) => { e.preventDefault(); atk.setPointerCapture(e.pointerId); atk.classList.add('down'); atkHeld = true; world.command(player.id, { type: 'attack', on: true }); });
-  const atkEnd = () => { atk.classList.remove('down'); atkHeld = false; world.command(player.id, { type: 'attack', on: false }); };
-  atk.addEventListener('pointerup', atkEnd); atk.addEventListener('pointercancel', atkEnd);
+  for (const [k, mode] of [['atk', null], ['minion', 'minion'], ['tower', 'tower']]) {
+    const b = btn(k);
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('down'); atkHeld = true; atkMode = mode; world.command(player.id, { type: 'attack', on: true, mode }); });
+    const end = () => { b.classList.remove('down'); if (atkMode !== mode) return; atkHeld = false; atkMode = null; world.command(player.id, { type: 'attack', on: false }); };
+    b.addEventListener('pointerup', end); b.addEventListener('pointercancel', end);
+  }
 
-  // bàn phím: J giữ để đánh, 1/2/3 (hoặc U/I/O) tung chiêu tự ngắm
+  // bàn phím: J giữ để đánh, K ăn lính, L đẩy trụ, 1/2/3 (hoặc U/I/O) tung chiêu tự ngắm
   const KEYS = { 1: 's1', 2: 's2', 3: 's3', u: 's1', i: 's2', o: 's3' };
-  addEventListener('keydown', (e) => { if (e.repeat) return; const k = e.key.toLowerCase(); if (k === 'j' || k === ' ') world.command(player.id, { type: 'attack', on: true }); else if (KEYS[k]) cast(KEYS[k], autoAim(KEYS[k])); });
-  addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (k === 'j' || k === ' ') world.command(player.id, { type: 'attack', on: false }); });
+  addEventListener('keydown', (e) => { if (e.repeat) return; const k = e.key.toLowerCase(); if (k === 'j' || k === ' ') world.command(player.id, { type: 'attack', on: true }); else if (k === 'k' || k === 'l') world.command(player.id, { type: 'attack', on: true, mode: k === 'k' ? 'minion' : 'tower' }); else if (KEYS[k]) cast(KEYS[k], autoAim(KEYS[k])); });
+  addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (k === 'j' || k === ' ' || k === 'k' || k === 'l') world.command(player.id, { type: 'attack', on: false }); });
 
   return {
     /** Mỗi khung hình: hồi chiêu, mana, nút cộng cấp, chỉ báo ngắm. */
@@ -119,7 +127,7 @@ export function createSkillButtons(root, { world, player, indicators }) {
         set(el, 'title', `${sk.name}: ${sk.desc || ''}`);
       }
       if (!player.alive && active) { btn(active.slot).classList.remove('down'); active = null; indicators.hide(); cancelEl.hidden = true; aimUI(null); } // chết giữa lúc ngắm: bỏ ngắm
-      if (atkHeld && player.alive && !player.attacking) world.command(player.id, { type: 'attack', on: true }); // giữ nút đánh qua lúc hồi sinh / bị khống chế
+      if (atkHeld && player.alive && !player.attacking) world.command(player.id, { type: 'attack', on: true, mode: atkMode }); // giữ nút đánh qua lúc hồi sinh / bị khống chế
       if (active?.aiming) {
         const sp = spec(active.slot), pt = { x: player.pos.x + active.dir.x * (sp.range || 0) * active.f, y: player.pos.y + active.dir.y * (sp.range || 0) * active.f };
         indicators.show(sp, player.pos, active.dir, pt, active.cancel);
