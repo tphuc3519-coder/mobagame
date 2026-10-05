@@ -338,3 +338,15 @@
   ống tên), lính đèn lớn (hộ pháp áo tơi rơm vác cột đèn lồng phát sáng), xe đá (4 bánh lăn, cần ném gàu đá, cờ). Màu đội tô bằng
   shader (vùng đỉnh _mat 4/6) nên một model dùng cho cả hai phe. Hoạt cảnh: bước đi tay vung ngược chân, chém kiếm từ trên xuống,
   kéo dây cung, bánh xe lăn + cần ném bật. Cỡ phóng theo tướng.
+
+## Lúc chết + điều khiển góc nhìn (kiểu Liên Quân)
+- **Mua đồ lúc chết**: mô phỏng đã cho mua/bán/nâng chiêu khi chết; giao diện giữ nguyên cửa hàng + Mua nhanh, nút giỏ hàng nhấp
+  nháy trong lúc chờ hồi sinh để nhắc.
+- **Bảng bị hạ** (giữa trên, ngay dưới tỉ số) thay cho dòng chữ to "Hồi sinh sau Xs" giữa màn: vòng đếm ngược (số giây + vòng cạn
+  dần) + "Bị hạ bởi" chân dung/tên kẻ hạ (tướng, Trụ, lính, quái; tự hạ thì ghi "Tự hạ gục"). Màn 3D chuyển xám bằng CSS filter
+  (không thêm lượt vẽ), HUD vẫn đủ màu.
+- **Giữ bản đồ nhỏ**: chạm/rê ngón trên bản đồ nhỏ thì camera tới chỗ đó (khung nhìn trắng trên bản đồ nhỏ đi theo), thả tay trượt
+  về tướng. Vẫn chạy bằng ngón khác được.
+- **Kéo camera bên phải**: nút mắt ngay trên cụm kỹ năng — kéo về hướng nào camera lệch về hướng đó, tối đa ~1700 ngang/1300 dọc
+  (thấy "đoạn sau" ngoài mép màn hình); vuốt vùng trống nửa phải màn hình cũng kéo được (chạm trúng nút thì không). Thả tay về tướng.
+  Bóng đổ của mặt trời đi theo chỗ camera nhìn để vùng đang xem vẫn có bóng.

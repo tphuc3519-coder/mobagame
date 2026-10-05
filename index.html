@@ -30,6 +30,14 @@
   .ic.pimg { border: 0; background: none; border-radius: 12%; } .ic.pimg img { display: block; width: 100%; height: 100%; pointer-events: none; }
   .coin { width: 16px; height: 16px; vertical-align: -3px; }
   #shopRoot { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+  body.dead #world { filter: grayscale(0.85) brightness(0.8); } /* đang chờ hồi sinh */
+  body.dead .goldPill { animation: buyPulse 1s ease-in-out infinite; } @keyframes buyPulse { 50% { box-shadow: 0 0 0 3px #ffd27a, 0 0 18px #ffb84d; transform: scale(1.06); } }
+  #camBtn { position: fixed; right: calc(max(12px, env(safe-area-inset-right)) + 6px); bottom: calc(max(10px, env(safe-area-inset-bottom)) + var(--skh) + 16px); z-index: 4; width: 50px; height: 50px; padding: 0; border: 0; background: none; touch-action: none;
+    --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --skh: calc(var(--a) + var(--s) * 1.4); } /* cùng số đo cụm kỹ năng */
+  #camBtn .ring { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #0f122440 40%, #0f1224a8); border: 2px solid #c9b47a99; transition: transform .15s, border-color .15s; }
+  #camBtn .knob { position: absolute; inset: 9px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 40% 35%, #3a3f66, #171b33); box-shadow: 0 2px 6px #000a; pointer-events: none; }
+  #camBtn .knob svg { width: 22px; height: 22px; }
+  #camBtn.on .ring { transform: scale(1.9); border-color: #ffd27a; background: radial-gradient(circle, #0f122420 50%, #0f122470); }
   #shopRoot > * { pointer-events: auto; }
   .cell .pr { position: absolute; right: 2px; bottom: 1px; font: 800 11px ui-monospace, monospace; color: #ffe08a; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .slot { padding: 0; border: 0; background: none; border-radius: 9px; } .slot.blank { border: 2px dashed #f3e9d633; background: #0a0d1c88; }

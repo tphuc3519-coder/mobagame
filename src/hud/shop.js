@@ -1,4 +1,4 @@
-// Cửa hàng trượt vào từ trái (hoặc phải) — 6 ô trang bị chỉ hiện trong bảng cửa hàng — + ô "Mua nhanh" dưới bản đồ nhỏ (05 §1, 07). Mua được mọi lúc khi còn sống.
+// Cửa hàng trượt vào từ trái (hoặc phải) — 6 ô trang bị chỉ hiện trong bảng cửa hàng — + ô "Mua nhanh" dưới bản đồ nhỏ (05 §1, 07). Mua được mọi lúc, kể cả khi đang chờ hồi sinh.
 import { ITEMS, SHOP_TABS, SELL_RATE, cleanBuild } from '../data/items.js';
 import { planBuy, quickBuys } from '../sim/inventory.js';
 import { itemIcon, coinIcon, statLines } from './icons.js';

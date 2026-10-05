@@ -27,6 +27,7 @@ import { warmItemArt } from './hud/itemArt.js';
 import { preloadMonsters } from './render/monsterModels.js';
 import { PLAYER_POS } from './render/env/foliage.js';
 import { createSpellButtons } from './hud/spellButtons.js';
+import { createCamLook } from './hud/camLook.js';
 import { STARTER, ITEMS } from './data/items.js';
 
 import { SPELLS } from './data/spells.js';
@@ -88,7 +89,8 @@ const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, s
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
-const hud = createHud(document.getElementById('hud'), input);
+const hud = createHud(document.getElementById('hud'), input, portraits);
+const camLook = createCamLook({ minimap, map }); // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
@@ -118,7 +120,7 @@ document.getElementById('again').onclick = () => (opts.onExit ? opts.onExit() : 
 const minFrame = 1000 / LEVELS[level].fps - 2;
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
 const fxSlow = parseFloat(q.get('fxslow') || '1'); // kiểm thử: quay chậm hiệu ứng
-let lastDraw = 0, fpsAcc = 0, fpsN = 0, fps = 0;
+let lastDraw = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false;
 
 const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
@@ -139,7 +141,8 @@ const loopCfg = {
     buttons.update(); spells.update(); shop.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
-    cam.follow(px, py, d.x, d.y, dt); sun.follow(px, py); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi
+    cam.follow(px, py, d.x, d.y, dt, camLook.look(px, py)); sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn
+    if (dead !== !player.alive) { dead = !player.alive; document.body.classList.toggle('dead', dead); } // chết: màn hình xám, nút cửa hàng nhấp nháy
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
@@ -160,7 +163,7 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất
 return window.__game;

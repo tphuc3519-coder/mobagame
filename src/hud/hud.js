@@ -4,10 +4,11 @@ import { canSee } from '../sim/vision.js';
 const DMG = { physical: '#ffd6a0', magic: '#a8c8ff', true: '#ffffff' };
 
 /** Canvas 2D phủ trên cảnh: joystick, thanh máu trên đầu, số sát thương bay, thanh máu/mana của mình, debug. */
-export function createHud(canvas, input) {
+export function createHud(canvas, input, portraits = null) {
   const ctx = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1;
   const floats = [], banners = [];
+  let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
   addEventListener('resize', resize); resize();
 
@@ -16,18 +17,46 @@ export function createHud(canvas, input) {
     ctx.fillStyle = fill; ctx.fillRect(x, y, bw * Math.max(0, Math.min(1, pct)), bh);
   };
 
+  // Bảng bị hạ (giữa trên, dưới tỉ số): vòng đếm ngược hồi sinh + "Bị hạ bởi" chân dung/tên kẻ hạ. Màn hình xám do game.js bật lớp .dead.
+  function drawDeath(world, player) {
+    const leftT = Math.max(0, (player.respawnTick - world.tick) / 30), left = Math.ceil(leftT), d = death || { name: 'Bị hạ gục', total: leftT || 1 };
+    const cx = w / 2, y = 48, pw = 268, ph = 58, x = cx - pw / 2;
+    const g = ctx.createLinearGradient(x, 0, x + pw, 0); g.addColorStop(0, 'rgba(70,12,16,0.0)'); g.addColorStop(0.18, 'rgba(70,12,16,0.88)'); g.addColorStop(0.82, 'rgba(70,12,16,0.88)'); g.addColorStop(1, 'rgba(70,12,16,0.0)');
+    ctx.fillStyle = g; ctx.fillRect(x, y, pw, ph);
+    ctx.fillStyle = 'rgba(255,190,110,0.55)'; ctx.fillRect(x + 30, y, pw - 60, 1.5); ctx.fillRect(x + 30, y + ph - 1.5, pw - 60, 1.5);
+    // vòng đếm ngược
+    const rx = x + 62, ry = y + ph / 2, rr = 22;
+    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a0c10'; ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#ffb84d'; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff3d6'; ctx.font = `800 ${left >= 10 ? 21 : 24}px system-ui, sans-serif`; ctx.fillText(String(left), rx, ry + 1);
+    // kẻ hạ
+    ctx.textAlign = 'left'; ctx.fillStyle = '#ffcf9a'; ctx.font = '700 11px system-ui, sans-serif'; ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
+    let nx = rx + 34;
+    const col = d.team == null ? '#e8d48a' : d.team === player.team ? '#38b8ff' : '#ff4a3a';
+    if (d.heroId && portraits) { portraits.draw(ctx, d.heroId, d.name, nx + 11, ry + 9, 11, col, {}); nx += 27; }
+    ctx.font = '800 15px system-ui, sans-serif'; ctx.fillStyle = d.kind === 'monster' ? '#ffe8b0' : d.team === player.team ? '#cfe8ff' : '#ffd0c8';
+    ctx.fillText(d.name, nx, ry + 9);
+    ctx.fillStyle = 'rgba(255,230,190,0.75)'; ctx.font = '600 10px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Vẫn mua đồ được · giữ bản đồ nhỏ để xem trận', cx, y + ph + 10);
+  }
+
   return {
     handle(events, world) {
       for (const ev of events) {
         const e = world.byId(ev.id);
         if (!e) continue;
+        if (ev.type === 'death' && ev.id === world.__localId) {
+          const k = ev.killer != null ? world.byId(ev.killer) : null;
+          death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
+        }
         if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
         if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, t: 0, text: ev.shield ? 'Khiên' : String(ev.amount), color: DMG[ev.dmgType] || '#fff', size: ev.amount > 150 ? 22 : 16 });
         else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, text: '+' + ev.amount, color: '#8affb0', size: 16 });
       }
     },
     draw(world, cam, player, enemy, debugLines) {
-      world.__localTeam = player.team;
+      world.__localTeam = player.team; world.__localId = player.id;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
@@ -98,12 +127,8 @@ export function createHud(canvas, input) {
         ctx.textAlign = 'left'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(String(kills(1 - player.team)), cx + 40, ty + 15);
         ctx.textAlign = 'center'; ctx.fillStyle = '#f3e9d6'; ctx.font = '700 13px ui-monospace, monospace';
         ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, cx, ty + 15);
-        if (!player.alive && player.respawnTick) {
-          const left = Math.max(0, Math.ceil((player.respawnTick - world.tick) / 30));
-          ctx.fillStyle = 'rgba(10,6,12,0.55)'; ctx.fillRect(0, 0, w, h);
-          ctx.font = '800 26px system-ui, sans-serif'; ctx.fillStyle = '#ffb84d'; ctx.fillText(`Hồi sinh sau ${left}s`, cx, h * 0.42);
-        }
       }
+      if (!player.alive && player.respawnTick) drawDeath(world, player);
       // thông báo hạ mục tiêu lớn
       for (let i = banners.length - 1; i >= 0; i--) {
         const b = banners[i]; b.t += 1 / 60; if (b.t > 3.2) { banners.splice(i, 1); continue; }
