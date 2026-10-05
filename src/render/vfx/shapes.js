@@ -149,7 +149,9 @@ export function createShapes(scene) {
     const self = {
       mesh: m, maxSp: 0,
       push(base, tip, dt) { // base/tip: Vector3 thế giới
-        const sp = lastTip && dt > 0 ? tip.distanceTo(lastTip) / dt : 0; lastTip = tip.clone(); self.maxSp = Math.max(self.maxSp, sp);
+        const jump = lastTip ? tip.distanceTo(lastTip) : 0;
+        if (jump > 350) { hist.length = 0; lastTip = null; } // dịch chuyển tức thời (Chớp Bước, hồi sinh, về nhà): không kéo vệt nối chỗ cũ → chỗ mới
+        const sp = lastTip && dt > 0 ? jump / dt : 0; lastTip = tip.clone(); self.maxSp = Math.max(self.maxSp, sp);
         const w = Math.min(1, Math.max(0, (sp - (o.minSpeed ?? 700)) / ((o.maxSpeed ?? 1600) - (o.minSpeed ?? 700))));
         hist.unshift({ b: base.clone(), t: tip.clone(), w }); if (hist.length > n) hist.pop();
         for (let i = 0; i < n; i++) {

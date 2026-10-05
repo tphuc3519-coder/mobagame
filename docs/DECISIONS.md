@@ -353,3 +353,16 @@
 - **Tướng trắng toát (mất màu) trên bản chơi thử**: Emberforge/Mossback/Bamboo Shade dùng ảnh JPEG nhúng trong .glb; GLTFLoader
   tạo URL `blob:` rồi fetch — trang có chính sách bảo mật chặn `blob:` thì texture hỏng. Giờ giải mã thẳng từ bộ đệm bằng
   `createImageBitmap` (plugin trong `assets.js`), lỗi thì quay về cách cũ. Đã tái hiện bằng máy chủ thử có CSP chặn blob:.
+- **Lính làm lại lần 2 (kiểu Liên Quân)**: đầu + mũ trụ to (dễ đọc từ camera cao), chân ngắn chắc, giáp ngực sơn màu đội viền vàng
+  có huy hiệu, vai giáp hai lớp, váy giáp 5 tấm, áo choàng màu đội, ống tay/ống quyển thép, gối đồng. Lính kiếm: mũ chỏm lông màu đội,
+  kiếm lưỡi rộng + khiên diều; lính cung: mũ trùm vải màu đội, cung sừng cong ngược, ống tên; lính đèn lớn: mũ sừng, vai gai, áo tơi
+  rơm, chuỳ đèn lồng có nan; xe đá: khung gỗ đóng ván, vách sơn màu đội đinh tán vàng, bánh nan có đai sắt, giá chữ A, gàu đá, đối
+  trọng, cờ đuôi én. Phần giáp/vũ khí dựng bằng khối hình học sắc cạnh (không qua SDF) nên rõ nét. Shader thêm 2 loại chất liệu:
+  7 = kim loại sáng (phản chiếu môi trường), 8 = vải màu đội; 4 (giáp màu đội) bóng như sơn mài. ~11–14k tam giác/lính.
+  Sửa kèm: hàm trọng số của `m.add()` nhận Vector3 (trước viết như blob → NaN, model không hiện).
+- **Trụ/tế đàn sắc nét hơn**: mái trụ trước bị phẳng do công thức hất góc lệch pha (góc rơi vào giữa mặt, không trúng đỉnh) → mái
+  đình bát giác mép thẳng, sống mái đồng 8 góc có đầu đao cong vút, chuông gió ở góc. Pha lê (trụ + tế đàn) cắt giác 8 mặt có đai,
+  flat shading + cạnh viền sáng mảnh, giảm phát sáng/quầng (trước loá trắng dưới bloom). Tế đàn: cột có đế bậc + đai vàng, lan can
+  đá đầu tầng chừa lối bậc thang.
+- **Vệt vũ khí kéo dài cả màn hình** khi tướng dịch chuyển tức thời (Chớp Bước, hồi sinh, về nhà): vệt nối chỗ cũ → chỗ mới. Đầu vũ
+  khí nhảy > 350 trong một khung thì xoá lịch sử vệt.

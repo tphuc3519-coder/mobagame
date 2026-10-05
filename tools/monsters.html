@@ -15,8 +15,9 @@ if (q.has('minions')) LIST = [['m:sword', 0], ['m:archer', 0], ['m:giant', 0], [
 if (q.get('ids')) LIST = LIST.filter(([id]) => q.get('ids').split(',').includes(id));
 const cols = Math.min(5, LIST.length), rows = Math.ceil(LIST.length / cols), CW = LIST.length <= 3 ? 560 : 380, CH = LIST.length <= 3 ? 460 : 320, W = CW * cols, H = CH * rows;
 const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.84; r.shadowMap.enabled = true; r.setScissorTest(true); document.body.append(r.domElement);
+const ENV = (() => { const s = new THREE.Scene(); s.background = new THREE.Color(0x1a2238); s.add(new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xc4c8d8, side: THREE.BackSide }))); const l = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); l.position.set(3, 3, 3); s.add(l); return new THREE.PMREMGenerator(r).fromScene(s, 0.04).texture; })(); // phản chiếu cho kim loại (trong trận có scene.environment)
 for (let i = 0; i < LIST.length; i++) {
-  const [type, m] = LIST[i], sc = new THREE.Scene(); sc.background = new THREE.Color(0x26342a);
+  const [type, m] = LIST[i], sc = new THREE.Scene(); sc.background = new THREE.Color(0x26342a); sc.environment = ENV;
   sc.add(new THREE.HemisphereLight(0xcfe0ff, 0x4a4030, 0.9)); const k = new THREE.DirectionalLight(0xfff0d8, 2.2); k.position.set(-600, 1600, 900); k.castShadow = true; Object.assign(k.shadow.camera, { left: -900, right: 900, top: 900, bottom: -900 }); k.shadow.mapSize.set(1024, 1024); sc.add(k);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ color: 0x4f6a3e })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; sc.add(ground);
   const p = type.startsWith('m:') ? createMinion(type.slice(2), m) : createMonster(type, m); p.object.rotation.y = ry; sc.add(p.object); p.object.traverse((o) => { if (o.isMesh) o.castShadow = true; });

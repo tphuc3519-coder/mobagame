@@ -45,11 +45,13 @@ function monsterMaterial(id, team = 0) {
         } else if (vMat < 1.5) { diffuseColor.rgb *= 0.88 + 0.24 * mn3(vObj * 14.0); }       // da: đốm loang
         else if (vMat < 2.5) { diffuseColor.rgb *= 0.8 + 0.35 * mn3(vObj * 11.0) * mn3(vObj * 3.0 + 7.0) * 1.6; } // đá/giáp: sần
         else if (vMat < 3.5) { diffuseColor.rgb *= 0.92 + 0.16 * mn3(vObj * 6.0); }
-        if (vMat > 3.5 && vMat < 4.5 || vMat > 5.5) diffuseColor.rgb *= uTeam * 1.25; // vải/giáp/đèn màu đội`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = vMat < 0.5 ? 0.95 : vMat < 1.5 ? 0.45 : vMat < 2.5 ? 0.82 : vMat < 3.5 ? 0.32 : 0.6;')
-      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = vMat > 2.5 && vMat < 3.5 ? 0.55 : vMat > 1.5 && vMat < 2.5 ? 0.08 : 0.0;')
+        else if (vMat > 6.5 && vMat < 7.5) { diffuseColor.rgb *= 0.94 + 0.12 * mn3(vObj * 40.0); }          // kim loại sáng (lính): xước mịn
+        else if (vMat > 7.5) { diffuseColor.rgb *= 0.9 + 0.2 * mn3(vObj * vec3(90.0, 30.0, 90.0)); }    // vải màu đội: thớ dệt
+        if (vMat > 3.5 && vMat < 4.5 || vMat > 5.5 && vMat < 6.5 || vMat > 7.5) diffuseColor.rgb *= uTeam * 1.25; // vải/giáp/đèn màu đội`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = vMat < 0.5 ? 0.95 : vMat < 1.5 ? 0.45 : vMat < 2.5 ? 0.82 : vMat < 3.5 ? 0.32 : vMat < 4.5 ? 0.36 : vMat < 6.5 ? 0.6 : vMat < 7.5 ? 0.28 : 0.88;')
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = vMat > 2.5 && vMat < 3.5 ? 0.55 : vMat > 1.5 && vMat < 2.5 ? 0.08 : vMat > 3.5 && vMat < 4.5 ? 0.3 : vMat > 6.5 && vMat < 7.5 ? 0.88 : 0.0;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        if (vMat > 4.5) totalEmissiveRadiance += diffuseColor.rgb * uGlow;
+        if (vMat > 4.5 && vMat < 6.5) totalEmissiveRadiance += diffuseColor.rgb * uGlow;
         { float rim = pow(clamp(1.0 - abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * rim * uRim; } // viền sáng nhẹ tách khỏi nền`);
   };
   if (id === 'linh_thuy') { m.transparent = true; m.opacity = 0.86; m.emissive = new THREE.Color(0x0a3a6a); m.emissiveIntensity = 1; m.roughness = 0.2; }
