@@ -20,7 +20,7 @@ export function createHud(canvas, input, portraits = null) {
   // Bảng bị hạ (giữa trên, dưới tỉ số): vòng đếm ngược hồi sinh + "Bị hạ bởi" chân dung/tên kẻ hạ. Màn hình xám do game.js bật lớp .dead.
   function drawDeath(world, player) {
     const leftT = Math.max(0, (player.respawnTick - world.tick) / 30), left = Math.ceil(leftT), d = death || { name: 'Bị hạ gục', total: leftT || 1 };
-    const cx = w / 2, y = 48, pw = 268, ph = 58, x = cx - pw / 2;
+    const cx = w / 2, y = 10, pw = 268, ph = 58, x = cx - pw / 2;
     const g = ctx.createLinearGradient(x, 0, x + pw, 0); g.addColorStop(0, 'rgba(70,12,16,0.0)'); g.addColorStop(0.18, 'rgba(70,12,16,0.88)'); g.addColorStop(0.82, 'rgba(70,12,16,0.88)'); g.addColorStop(1, 'rgba(70,12,16,0.0)');
     ctx.fillStyle = g; ctx.fillRect(x, y, pw, ph);
     ctx.fillStyle = 'rgba(255,190,110,0.55)'; ctx.fillRect(x + 30, y, pw - 60, 1.5); ctx.fillRect(x + 30, y + ph - 1.5, pw - 60, 1.5);
@@ -118,16 +118,7 @@ export function createHud(canvas, input, portraits = null) {
       bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 10px ui-monospace, monospace'; ctx.fillStyle = '#fff';
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 6);
-      { // tỉ số + đồng hồ ở giữa trên (07 §9)
-        const sec = Math.floor(world.tick / 30), cx = w / 2, ty = 10;
-        ctx.fillStyle = 'rgba(12,15,32,0.72)'; ctx.beginPath(); ctx.roundRect(cx - 92, ty, 184, 30, 15); ctx.fill();
-        ctx.textBaseline = 'middle'; ctx.font = '800 17px system-ui, sans-serif';
-        const kills = (team) => world.entities.reduce((a, h) => a + (h.kind === 'hero' && h.team === team ? h.kills : 0), 0); // tổng hạ gục của đội
-        ctx.textAlign = 'right'; ctx.fillStyle = '#5fe3d0'; ctx.fillText(String(kills(player.team)), cx - 40, ty + 15);
-        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(String(kills(1 - player.team)), cx + 40, ty + 15);
-        ctx.textAlign = 'center'; ctx.fillStyle = '#f3e9d6'; ctx.font = '700 13px ui-monospace, monospace';
-        ctx.fillText(`${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, cx, ty + 15);
-      }
+      // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
       if (!player.alive && player.respawnTick) drawDeath(world, player);
       // thông báo hạ mục tiêu lớn
       for (let i = banners.length - 1; i >= 0; i--) {

@@ -18,12 +18,26 @@ export function blinkTarget(world, e, dir, range) {
   return { x: e.pos.x, y: e.pos.y };
 }
 
+export const smiteDamage = (e, sp = SPELLS.thu_hoach) => sp.base + sp.perLevel * (e.level - 1);
+/** Mục tiêu của Trừng Trị: trong tầm (tính bán kính mục tiêu), ưu tiên mục tiêu lớn > bùa > quái > lính > tướng địch, cùng hạng thì gần nhất. */
+export function smiteTarget(world, e, sp = SPELLS.thu_hoach) {
+  const rank = (t) => (t.kind === 'monster' ? (t.boss ? 4 : t.monsterType === 'linh_thuy' || t.monsterType === 'hoa_nham' ? 3 : 2) : t.kind === 'minion' ? 1 : t.kind === 'hero' ? 0 : -1);
+  let best = null, br = -1, bd = Infinity;
+  for (const t of enemiesOf(world, e)) {
+    const r = rank(t), d = dist(t.pos, e.pos) - t.radius; if (r < 0 || d > sp.radius) continue;
+    if (r > br || (r === br && d < bd)) { best = t; br = r; bd = d; }
+  }
+  return best;
+}
+
 export function castSpell(world, e, aim) {
   const sp = e.spell && SPELLS[e.spell.id];
   if (!sp || !e.alive) return { ok: false, reason: 'none' };
   if (sp.disabledIn1v1 && world.map.id === 'duel1v1') return { ok: false, reason: 'mode' };
   if (world.tick < e.spell.ready) return { ok: false, reason: 'cooldown' };
   if (isHardCC(e) && sp.id !== 'giai_troi') return { ok: false, reason: 'cc' };
+  const smiteT = sp.id === 'thu_hoach' ? smiteTarget(world, e, sp) : null;
+  if (sp.id === 'thu_hoach' && !smiteT) return { ok: false, reason: 'noTarget' }; // không có mục tiêu: không mất hồi chiêu
   e.spell.ready = world.tick + T(sp.cooldown);
   e.recall = null;
   world.emit('spell', { id: e.id, spell: sp.id });
@@ -47,12 +61,13 @@ export function castSpell(world, e, aim) {
         applyStatus(world, t, { status: 'slow', id: 'tramhon', pct: sp.slow.pct, duration: sp.slow.duration }, e);
       }
       break;
-    case 'thu_hoach':
-      for (const t of enemiesOf(world, e).filter((x) => dist(x.pos, e.pos) - x.radius <= sp.radius)) {
-        if (t.kind === 'hero') { dealDamage(world, e, t, sp.heroDamage, 'true'); applyStatus(world, t, { status: 'slow', id: 'thuhoach', pct: sp.slow.pct, duration: sp.slow.duration }, e); }
-        else if (t.kind === 'minion') dealDamage(world, e, t, sp.base + sp.perLevel * (e.level - 1), 'true');
-      }
+    case 'thu_hoach': { // Trừng Trị: sét giáng một mục tiêu
+      const t = smiteT;
+      world.emit('smite', { id: e.id, target: t.id, x: t.pos.x, y: t.pos.y });
+      if (t.kind === 'hero') { dealDamage(world, e, t, sp.heroDamage, 'true'); applyStatus(world, t, { status: 'slow', id: 'trungtri', pct: sp.slow.pct, duration: sp.slow.duration }, e); }
+      else { dealDamage(world, e, t, smiteDamage(e, sp), 'true'); if (t.alive) applyStatus(world, t, { status: 'stun', duration: sp.stun }, e); }
       break;
+    }
     case 'gio_luot':
       applyStatus(world, e, { status: 'haste', id: 'gioluot', pct: sp.haste.pct, duration: sp.haste.duration }, e);
       applyStatus(world, e, { status: 'ghost', duration: sp.haste.duration }, e);

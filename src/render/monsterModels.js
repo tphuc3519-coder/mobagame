@@ -164,7 +164,7 @@ const ANIM_MINION = {
 export function buildMinionModel(type, team) {
   const id = MINION_MODEL[type], g = id && readyMonster(id); if (!g) return null;
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const obj = cloneSkinned(g.scene), mat = monsterMaterial(id, team), k = { giant: 1.6, siege: 1.45 }[type] || 1.35; // hợp cỡ tướng (đã phóng 1.35)
+  const obj = cloneSkinned(g.scene), mat = monsterMaterial(id, team), k = { giant: 1.85, siege: 1.7 }[type] || 1.6; // to hơn (theo yêu cầu): ngang tầm tướng đã phóng 1.35
   obj.scale.setScalar(100 * k); body.add(obj);
   const B = {};
   obj.traverse((o) => { if (o.isBone) { o.userData.q0 = o.quaternion.clone(); B[o.name] = o; } if (o.isMesh) { o.material = mat; o.frustumCulled = false; o.castShadow = true; } });

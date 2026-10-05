@@ -47,7 +47,7 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   }
   if (type === 'magic' && tgt.kind === 'hero') onMagicTaken(world, tgt);
   if (isStealthed(tgt)) removeStatus(tgt, 'stealth');
-  if (src?.kind === 'hero' && tgt.kind === 'hero') world.onHeroDamaged?.(src, tgt);
+  if (src?.kind === 'hero' && tgt.kind === 'hero') { world.onHeroDamaged?.(src, tgt); (tgt.hitBy ||= {})[src.id] = world.tick; } // ghi ai đánh tướng (tính hỗ trợ)
   world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, shield: absorbed > 0 && dmg <= 0 });
   if (tgt.hp <= 0 && !tryRevive(world, tgt)) kill(world, src, tgt);
   return dmg;
@@ -58,6 +58,11 @@ function kill(world, src, tgt) {
   tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.deadTick = world.tick;
   tgt.dash = null; tgt.moveDir = { x: 0, y: 0 }; tgt.attacking = false; tgt.statuses = []; tgt.shields = [];
   if (src?.kind === 'hero' && tgt.kind === 'hero') src.kills++;
+  if (tgt.kind === 'hero') { // hỗ trợ: tướng địch khác đã gây sát thương trong 10 giây cuối
+    for (const [id, tk] of Object.entries(tgt.hitBy || {})) { const h = world.byId(+id); if (h && h !== src && h.team !== tgt.team && world.tick - tk <= T(10)) h.assists = (h.assists || 0) + 1; }
+    tgt.hitBy = {};
+  }
+  if (tgt.structure && src && tgt.kind === 'tower') { const tm = 1 - tgt.team; (world.teamStats ||= [{}, {}])[tm].towers = ((world.teamStats[tm].towers) || 0) + 1; }
   onKill(world, src, tgt);
   if (tgt.structure) { world.emit('structureDown', { id: tgt.id, sid: tgt.sid, team: tgt.team, kind: tgt.kind }); return; }
   if (tgt.kind === 'hero') tgt.respawnTick = world.tick + T(respawnSeconds(tgt));

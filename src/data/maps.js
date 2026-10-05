@@ -74,7 +74,7 @@ function roundPath(pts, r) {
   return out;
 }
 
-const LANE_W = 1200; // rộng hơn (880 → 1060 → 1200)
+const LANE_W = 1900; // rộng gần bằng vòng bắn của trụ (đường kính 2100): vòng trụ nằm gọn trong đường, không lố vào rừng (880 → 1200 → 2000)
 // Ba đường, đi từ nhà chính Xanh sang nhà chính Đỏ (đối xứng nên đường phía Đỏ chỉ là đi ngược lại).
 const BASE = P(800, 5600), FOE = P(5600, 800);
 const LANES = [
@@ -85,7 +85,7 @@ const LANES = [
 
 const tower = (id, tier, x, y, invulnUntil) => {
   const T = { outer: [4000, 80, 220], inner: [4500, 90, 260], home: [5000, 100, 300] }[tier];
-  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 950, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
+  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
@@ -134,8 +134,8 @@ const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đư�
   // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
   // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
   // Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm): Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8 (phía Đỏ, gần đường Sông).
-  { id: 'long_ngu', type: 'long_ngu', x: 1340, y: 2020, boss: true, back: 2.36 },
-  { id: 'ho_loi', type: 'ho_loi', x: 5060, y: 4380, boss: true, back: -0.785 },
+  { id: 'long_ngu', type: 'long_ngu', x: 1430, y: 2020, boss: true, back: 2.36 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4990, y: 4380, boss: true, back: -0.785 },
   // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
@@ -164,9 +164,10 @@ const BUSHES_BLUE = [
 // phía Đỏ là ảnh x↔y. Đường cánh: nhà cách nhà chính 950, khoảng cách 1575, trụ ngoài cách góc sông 700. Đường giữa: khoảng 997.
 const md = (d) => [800 + d / Math.SQRT2, 5600 - d / Math.SQRT2];
 const TOWER_POS = {
-  temple_outer: [800, 1500], temple_inner: [800, 3075], temple_home: [800, 4650],
-  mid_outer: md(2894), mid_inner: md(1897), mid_home: md(900),
-  river_outer: [4900, 5600], river_inner: [3325, 5600], river_home: [1750, 5600],
+  // trụ cách nhau ~900 gốc (2700 đơn vị) với tầm bắn 1050: giữa hai trụ chỉ còn khe ~600 đi qua mà không bị bắn
+  temple_outer: [800, 2650], temple_inner: [800, 3550], temple_home: [800, 4450],
+  mid_outer: md(2740), mid_inner: md(1820), mid_home: md(900),
+  river_outer: [3750, 5600], river_inner: [2850, 5600], river_home: [1950, 5600],
 };
 const TOWERS_BLUE = Object.values(TOWER_POS);
 const allTowers = [...TOWERS_BLUE, ...TOWERS_BLUE.map(([x, y]) => [y, x])];

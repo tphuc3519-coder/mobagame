@@ -1,5 +1,6 @@
 // Bot dùng kỹ năng/phép/đồ: ngắm dự đoán có sai số theo độ khó (06 §4.5).
 import { dist, norm } from '../sim/util.js';
+import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
 import { ready, velocity, hp01 } from './perception.js';
@@ -64,6 +65,11 @@ export function survival(bot, foe) {
   const slot = e.items.findIndex((i) => i && ITEMS[i].active);
   if (slot >= 0 && h < bot.cfg.itemHp && near && world.tick >= (e.itemCd?.[e.items[slot]] || 0)) { world.command(e.id, { type: 'useItem', slot }); return true; }
   if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall) { world.command(e.id, { type: 'restore' }); return true; }
+  if (spReady && sp.id === 'thu_hoach') { // đi rừng: Trừng Trị kết liễu quái (cướp mục tiêu lớn/bùa) khi máu quái ≤ sát thương sét
+    const t = smiteTarget(world, e, sp);
+    if (t && t.kind === 'monster' && t.hp <= smiteDamage(e, sp) + (t.boss ? 60 : 0)) { world.command(e.id, { type: 'spell' }); return true; }
+    if (t && t.kind === 'hero' && near && t.hp <= sp.heroDamage) { world.command(e.id, { type: 'spell' }); return true; }
+  }
   if (!spReady || !near) return false;
   if (sp.id === 'chop_buoc' && h < bot.cfg.escapeHp) { world.command(e.id, { type: 'spell', aim: bot.homeDir() }); return true; }
   if (sp.id === 'hoi_phuc' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }

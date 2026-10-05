@@ -26,7 +26,7 @@ import { initJungle, updateJungle } from './jungle.js';
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
-  const world = { map, seed, tick: 0, rng: mulberry32(seed), entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
+  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.emit = (type, data) => world.events.push({ type, tick: world.tick, ...data });
   world.drainEvents = () => { const ev = world.events; world.events = []; return ev; };
@@ -37,7 +37,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     const pos = f.pos || { x: 0, y: 0 };
     const e = { id: world.nextId++, isHero: false, alive: true, speed: 0, moveDir: { x: 0, y: 0 }, level: 1, xp: 0, skillPoints: 0, skillLevels: { s1: 0, s2: 0, s3: 0 },
       cooldowns: { s1: 0, s2: 0, s3: 0 }, statuses: [], shields: [], stats: null, hp: 1, mana: 0, attacking: false, attackReady: 0, lastDamagedTick: -99999, dash: null,
-      heat: 0, heatUntil: 0, flags: {}, kills: 0, deaths: 0, atkIndex: 0, height: 200, facing: f.team === 0 ? 0 : Math.PI, ...f,
+      heat: 0, heatUntil: 0, flags: {}, kills: 0, deaths: 0, assists: 0, atkIndex: 0, height: 200, facing: f.team === 0 ? 0 : Math.PI, ...f,
       pos: { ...pos }, prevPos: { ...pos }, spawn: { ...pos } };
     refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana;
     world.entities.push(e);

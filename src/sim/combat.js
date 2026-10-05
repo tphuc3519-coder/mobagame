@@ -46,6 +46,25 @@ function fire(world, e, target, iv) {
   void iv;
 }
 
+/** Đòn vung không mục tiêu: cận chiến trúng địch đầu tiên trong nửa quạt phía trước; đánh xa bắn đạn thẳng theo hướng nhìn, trúng địch đầu tiên. */
+function whiff(world, e, range) {
+  if (!e.alive || isHardCC(e)) return;
+  const fx = Math.cos(e.facing), fy = Math.sin(e.facing), ba = e.data.basicAttack;
+  const pay = { amount: e.stats.atk, bonusMagic: 0, ambush: null, level: Math.max(1, e.skillLevels.s3), hooks: false };
+  if (ba.melee) {
+    let best = null, bd = Infinity;
+    for (const t of world.entities) {
+      if (t.team === e.team || !t.alive || t.noTarget || t.structure && t.kind === 'fountain') continue;
+      const dx = t.pos.x - e.pos.x, dy = t.pos.y - e.pos.y, d = Math.hypot(dx, dy) - t.radius;
+      if (d > range + 30 || (dx * fx + dy * fy) < 0.5 * Math.hypot(dx, dy)) continue;
+      if (d < bd) { bd = d; best = t; }
+    }
+    if (best && nearestEnemy(world, e, range + 30 + best.radius, best.id) === best) resolveHit(world, e, best, pay);
+    return;
+  }
+  spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: fx, dy: fy, speed: ba.projectile?.speed || 1800, remaining: range + 60, width: 50, kind: 'basic', onHit: (t) => { resolveHit(world, e, t, pay); return true; } });
+}
+
 export function updateCombat(world) {
   for (const e of world.entities) {
     if (!e.alive || !e.attacking || e.data.dummy || isHardCC(e) || e.dash) continue;
@@ -53,7 +72,14 @@ export function updateCombat(world) {
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
     const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : nearestEnemy(world, e, range, e.preferTarget);
-    if (!target) continue;
+    if (!target) { // không có mục tiêu: tướng người chơi vẫn vung đòn vào khoảng không theo hướng đang nhìn (như Liên Quân)
+      if (e.kind !== 'hero' || e.bot || forced) continue;
+      const iv = 1 / e.stats.atkSpeed, delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
+      e.attackReady = world.tick + T(iv); e.atkIndex = (e.atkIndex || 0) + 1;
+      world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay, whiff: true });
+      world.pending.push({ tick: world.tick + T(delay), run: () => whiff(world, e, range) });
+      continue;
+    }
     const iv = 1 / e.stats.atkSpeed;
     e.attackReady = world.tick + T(iv);
     e.atkIndex = (e.atkIndex || 0) + 1;

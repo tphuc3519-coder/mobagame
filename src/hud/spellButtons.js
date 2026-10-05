@@ -1,5 +1,6 @@
 // Cụm nút phụ ở đáy màn hình, bên trái cụm kỹ năng (như Liên Quân): Biến về · Hồi Máu (cố định) · Phép bổ trợ (tự chọn) · Đồ kích hoạt.
 // Icon lớn có nhãn tên bên dưới; chạm nhanh = dùng, giữ yên ~0.35s = xem mô tả (thả ra không dùng). Phím: B/R về, H hồi máu, F phép, E đồ.
+import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
 import { ECON } from '../data/economy.js';
@@ -67,6 +68,10 @@ export function createSpellButtons(root, { world, player, indicators }) {
     update() {
       const s = sp(), left = Math.max(0, (player.spell.ready - world.tick) / 30);
       overlay(spellEl, left, s.cooldown);
+      if (s.id === 'thu_hoach') { // Trừng Trị: mờ khi không có mục tiêu trong tầm, loé vàng khi đủ kết liễu quái
+        const t = left <= 0 && player.alive ? smiteTarget(world, player, s) : null;
+        spellEl.classList.toggle('notarget', !t && left <= 0); spellEl.classList.toggle('killable', !!t && t.kind === 'monster' && t.hp <= smiteDamage(player, s));
+      }
       overlay(restoreEl, Math.max(0, ((player.restore?.ready || 0) - world.tick) / 30), RESTORE.cooldown);
       spellEl.classList.toggle('locked', !!(s.disabledIn1v1 && world.map.id === 'duel1v1'));
       if (press?.dir && press.k === 'spell' && s.aim === 'direction') indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, false);

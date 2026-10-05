@@ -19,7 +19,7 @@ function levelRing(max, level, fresh) {
   return out;
 }
 
-const DRAG_MIN = 15, DRAG_MAX = 110, CANCEL = 210;
+const DRAG_MIN = 15, DRAG_MAX = 110;
 const SLOTS = ['s1', 's2', 's3'];
 
 export function createSkillButtons(root, { world, player, indicators }) {
@@ -30,6 +30,19 @@ export function createSkillButtons(root, { world, player, indicators }) {
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
+  // vòng ngắm quanh nút đang kéo (bán kính = độ kéo tối đa) + núm; ô X huỷ góc phải (kéo ngón vào rồi thả để huỷ) — như Liên Quân
+  const pad = document.createElement('div'); pad.className = 'aimpad'; pad.hidden = true; pad.innerHTML = '<i></i>';
+  const xz = document.createElement('div'); xz.className = 'cancelZone'; xz.hidden = true; xz.innerHTML = '<svg viewBox="0 0 40 40"><path d="M11 11L29 29M29 11L11 29" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>';
+  document.body.append(pad, xz);
+  const knob = pad.firstChild;
+  const inCancel = (x, y) => { const r = xz.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; return Math.hypot(x - cx, y - cy) < r.width * 0.62; };
+  const aimUI = (a) => { // a: phiên ngắm đang chạy hoặc null
+    const on = !!a?.aiming; pad.hidden = !on; xz.hidden = !on; document.body.classList.toggle('aiming', on);
+    if (!on) return;
+    pad.style.left = a.cx + 'px'; pad.style.top = a.cy + 'px'; pad.style.width = pad.style.height = DRAG_MAX * 2 + 'px';
+    knob.style.transform = `translate(${a.dir.x * a.f * DRAG_MAX}px, ${a.dir.y * a.f * DRAG_MAX}px)`;
+    xz.classList.toggle('hot', a.cancel); pad.classList.toggle('bad', a.cancel);
+  };
   let active = null;
 
   const facingDir = () => ({ x: Math.cos(player.facing), y: Math.sin(player.facing) });
@@ -61,11 +74,11 @@ export function createSkillButtons(root, { world, player, indicators }) {
       if (!active || e.pointerId !== active.id) return;
       const dx = e.clientX - active.cx, dy = e.clientY - active.cy, l = Math.hypot(dx, dy), sp = spec(slot);
       if (l > DRAG_MIN && sp.aim !== 'none') { active.aiming = true; active.dir = { x: dx / l, y: dy / l }; active.f = Math.min(1, l / DRAG_MAX); }
-      active.cancel = active.aiming && l > CANCEL; cancelEl.hidden = !active.cancel;
+      active.cancel = active.aiming && inCancel(e.clientX, e.clientY); cancelEl.hidden = !active.cancel; aimUI(active);
     });
     const end = (e) => {
       if (!active || e.pointerId !== active.id) return;
-      const a = active, sp = spec(slot); active = null; el.classList.remove('down'); indicators.hide(); cancelEl.hidden = true;
+      const a = active, sp = spec(slot); active = null; el.classList.remove('down'); indicators.hide(); cancelEl.hidden = true; aimUI(null);
       if (a.cancel) return;
       let aim = null;
       if (!a.aiming) aim = autoAim(slot);
@@ -105,7 +118,7 @@ export function createSkillButtons(root, { world, player, indicators }) {
         if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }
         set(el, 'title', `${sk.name}: ${sk.desc || ''}`);
       }
-      if (!player.alive && active) { btn(active.slot).classList.remove('down'); active = null; indicators.hide(); cancelEl.hidden = true; } // chết giữa lúc ngắm: bỏ ngắm
+      if (!player.alive && active) { btn(active.slot).classList.remove('down'); active = null; indicators.hide(); cancelEl.hidden = true; aimUI(null); } // chết giữa lúc ngắm: bỏ ngắm
       if (atkHeld && player.alive && !player.attacking) world.command(player.id, { type: 'attack', on: true }); // giữ nút đánh qua lúc hồi sinh / bị khống chế
       if (active?.aiming) {
         const sp = spec(active.slot), pt = { x: player.pos.x + active.dir.x * (sp.range || 0) * active.f, y: player.pos.y + active.dir.y * (sp.range || 0) * active.f };

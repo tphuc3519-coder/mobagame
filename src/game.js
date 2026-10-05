@@ -28,6 +28,7 @@ import { preloadMonsters } from './render/monsterModels.js';
 import { PLAYER_POS } from './render/env/foliage.js';
 import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
+import { createScoreboard } from './hud/scoreboard.js';
 import { STARTER, ITEMS } from './data/items.js';
 
 import { SPELLS } from './data/spells.js';
@@ -90,7 +91,8 @@ addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
 const hud = createHud(document.getElementById('hud'), input, portraits);
-const camLook = createCamLook({ minimap, map }); // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
+const camLook = createCamLook({ minimap, map });
+const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
@@ -138,7 +140,7 @@ const loopCfg = {
     for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
     views.handle(events); fx.handle(events, world); hud.handle(events, world);
     views.update(world, alpha, dt); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
-    buttons.update(); spells.update(); shop.update();
+    buttons.update(); spells.update(); shop.update(); score.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt, camLook.look(px, py)); sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn

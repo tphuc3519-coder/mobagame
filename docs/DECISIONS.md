@@ -366,3 +366,25 @@
   đá đầu tầng chừa lối bậc thang.
 - **Vệt vũ khí kéo dài cả màn hình** khi tướng dịch chuyển tức thời (Chớp Bước, hồi sinh, về nhà): vệt nối chỗ cũ → chỗ mới. Đầu vũ
   khí nhảy > 350 trong một khung thì xoá lịch sử vệt.
+
+## Ngắm chiêu, bảng tỉ số, đánh không mục tiêu, Trừng Trị, đường rộng (theo ảnh Liên Quân người chơi gửi)
+- **Chỉ báo ngắm** (`render/indicators.js`, vẽ bằng shader theo đơn vị thế giới nên sắc nét): vùng tầm = đĩa xanh trong mờ đậm dần
+  ra mép + viền sáng; chiêu bắn thẳng = dải đúng bề ngang đạn sáng dần + mũi tên; chiêu lướt/nhảy (và Chớp Bước) = thân mảnh nở
+  thành lưỡi có **ô kim cương** ở chỗ đáp; chiêu vùng tại điểm = vòng mục tiêu có tâm ngắm 4 mũi chụm; quạt sáng dần ra mép.
+  Khi kéo nút: vòng ngắm quanh nút + núm; **ô X huỷ** ở góc phải (kéo ngón vào rồi thả để huỷ, thay cho "kéo xa 210px").
+- **Tỉ số góc phải trên**: đồng hồ, tỉ số hai đội, K/D/A của mình (mới tính **hỗ trợ**: tướng địch khác gây sát thương trong 10 giây
+  cuối). Chạm (hoặc phím Tab) mở **bảng tỉ số**: tab Thông số tướng (K/D/A, vàng kiếm được, 6 ô trang bị của cả hai đội; tổng đội:
+  mục tiêu lớn, trụ đã phá, tổng vàng) và tab Thuộc tính tướng (máu, công, phép, giáp, kháng phép hiện tại). Bỏ ô tỉ số giữa trên;
+  bảng "Bị hạ bởi" lên sát mép trên. Nút toàn màn hình thành biểu tượng tròn.
+- **Đánh thường không mục tiêu**: tướng người chơi bấm đánh khi không có ai trong tầm vẫn vung đòn theo hướng đang nhìn (cận chiến
+  trúng địch đầu tiên trong nửa quạt trước mặt; đánh xa bắn đạn thẳng trúng địch đầu tiên). Bot không vung vào khoảng không.
+- **Trừng Trị** (thay Thu Hoạch, giữ id `thu_hoach`): sét giáng MỘT mục tiêu gần nhất trong 520, ưu tiên mục tiêu lớn > bùa > quái >
+  lính > tướng; quái/lính 700 (+50/cấp) sát thương chuẩn + choáng 1s, tướng 350 + chậm 30%. Không có mục tiêu thì không dùng được
+  (không mất hồi chiêu); nút mờ khi không có mục tiêu, loé vàng khi đủ kết liễu quái. Bot có Trừng Trị dùng để cướp/kết liễu quái.
+  Sửa kèm: phép cũ không hề gây sát thương lên quái rừng (chỉ lính/tướng).
+- **Cân bằng đầu trận**: lính yếu hơn (kiếm 400 HP/15 công, cung 260/22, xe 800/38, lính lớn 1600/70) nhưng tăng 7%/phút (trần
+  +125% HP/+140% công); quái nhỏ/bùa giảm ~30% công, ~13% máu, Long Ngư 8000/130, tăng 7%/phút (trần +180%). Model lính to hơn
+  (1.6×, lính lớn 1.85×, xe 1.7×), bán kính va chạm theo đó.
+- **Trụ + đường**: tầm trụ 950 → 1050; đường rộng 1200 → 1900 (vòng trụ gần vừa khít bề ngang đường, không lố vào rừng). Trụ mỗi
+  đường dồn lại cách nhau ~2700 đơn vị: giữa hai trụ chỉ còn khe ~600 không bị bắn. Hai hang Long Ngư/Hổ Lôi lùi vào rừng một chút
+  để vách hang không lấn đường. `tools/mapplan.html`: sơ đồ 2D để chỉnh bố cục (đường, tường, trại, vòng trụ).

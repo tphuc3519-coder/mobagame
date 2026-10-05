@@ -5,7 +5,7 @@ import { itemIcon, coinIcon, statLines } from './icons.js';
 
 const CART = '<svg class="cart" viewBox="0 0 32 32"><defs><linearGradient id="cartg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c0"/><stop offset="1" stop-color="#e0a83a"/></linearGradient></defs><path d="M3 6h4l3 14h15l3-10H9" fill="none" stroke="url(#cartg)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="25" r="2.4" fill="#ffe08a"/><circle cx="23" cy="25" r="2.4" fill="#ffe08a"/><path d="M13 13h11" stroke="#ffe08a" stroke-width="2"/></svg>';
 const stop = (el) => { for (const t of ['pointerdown', 'pointerup', 'pointermove']) el.addEventListener(t, (e) => e.stopPropagation()); };
-const REASON = { gold: 'Chưa đủ vàng', full: 'Túi đã đầy', limit: 'Chỉ mang 1 món cùng loại (giày/rừng/hỗ trợ)', mode: 'Chỉ dùng ở chế độ nhiều người', spell: 'Cần phép Thu Hoạch', auto: 'Nâng cấp tự động' };
+const REASON = { gold: 'Chưa đủ vàng', full: 'Túi đã đầy', limit: 'Chỉ mang 1 món cùng loại (giày/rừng/hỗ trợ)', mode: 'Chỉ dùng ở chế độ nhiều người', spell: 'Cần phép Trừng Trị', auto: 'Nâng cấp tự động' };
 
 export function createShop(root, { world, player }) {
   root.innerHTML = `
