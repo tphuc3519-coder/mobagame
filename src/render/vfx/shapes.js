@@ -143,7 +143,7 @@ export function createShapes(scene, { floor = null } = {}) {
     const mat = new THREE.ShaderMaterial({ ...NRM, uniforms: { uC: { value: col(o.color ?? 0xffffff) }, uK: { value: col(o.core ?? 0xffffff) } },
       vertexShader: 'attribute float aA; varying float vA; varying float vS; void main(){ vA = aA; vS = mod(float(gl_VertexID), 2.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform vec3 uC, uK; varying float vA; varying float vS;
-        void main(){ float a = vA * (0.15 + 0.85 * vS * vS); gl_FragColor = vec4(mix(uC, uK * 2.2, (vA * vS) * (vA * vS)), a * 0.95);
+        void main(){ float a = vA * (0.15 + 0.85 * vS * vS), k = vA * vS; k *= k; gl_FragColor = vec4(mix(uC, uK * 1.6, k * k), a * 0.8);
         ${TAIL}` });
     const m = new THREE.Mesh(g, mat); m.frustumCulled = false; m.renderOrder = 9; scene.add(m);
     const hist = []; let lastTip = null;

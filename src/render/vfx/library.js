@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { TILE } from './atlas.js';
+import { HERO_SCALE } from '../unitView.js';
 
 // Bộ hiệu ứng theo từng tướng (chủ đề màu + hình riêng cho mỗi chiêu) và hiệu ứng chung (trúng đòn, choáng, khiên, hồi máu, lên cấp, về thành).
 // Hàm ở đây chỉ đọc sự kiện mô phỏng và vẽ; không đổi trạng thái trận. Toạ độ: sim (x, y) → thế giới (x, z), y = độ cao (tướng cao ~250).
@@ -104,8 +105,9 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
   /** Hình đạn riêng của từng chiêu bắn (kind 'skill', theo slot): lá tre xoay, giọt bạc trăng khuyết, mũi tên gió, đèn lồng trôi. */
   const PROJ = {
     bong_tre: { s1(p, y) { // Lá Bay: ba lưỡi lá tre xoay vù + vệt gió xanh + lá rụng theo đường bay
-      A.spawn({ x: p.x, y, z: p.y, life: 0.05, size: 150, color: 0x3fd070, alpha: [0.45, 0.45], tile: TILE.glow, fadeIn: 0 });
-      for (let i = 0; i < 3; i++) N.spawn({ x: p.x, y: y + 2, z: p.y, life: 0.05, size: 115, color: [0xc8ffb8, 0x4adf78], alpha: [1, 1], tile: TILE.blade, rot: performance.now() / 50 + i * 2.09, fadeIn: 0 });
+      A.spawn({ x: p.x, y, z: p.y, life: 0.05, size: 160, color: 0x2fd060, alpha: [0.6, 0.6], tile: TILE.glow, fadeIn: 0 });
+      for (let i = 0; i < 3; i++) N.spawn({ x: p.x, y: y + 2, z: p.y, life: 0.05, size: 125, color: [0x8dffa8, 0x1fae50], alpha: [1, 1], tile: TILE.blade, rot: performance.now() / 50 + i * 2.09, fadeIn: 0 });
+      A.spawn({ x: p.x, y: y + 4, z: p.y, life: 0.05, size: 46, color: 0xeaffe0, alpha: [0.9, 0.9], tile: TILE.glow, fadeIn: 0 });
       A.spawn({ x: p.x, y: y + R(-10, 10), z: p.y, life: 0.32, size: [70, 10], color: [0xd8ffd0, 0x2fd060], alpha: [0.6, 0], tile: TILE.streak, rot: screenRot(p.dx, p.dy) });
       if (Math.random() < 0.5) N.spawn({ x: p.x + R(-20, 20), y, z: p.y + R(-20, 20), vx: R(-60, 60), vy: R(0, 60), vz: R(-60, 60), life: 0.8, size: [30, 22], color: [0xb8ffb0, 0x2f9a4a], tile: TILE.blade, spin: R(-10, 10), grav: 200, drag: 2 });
     } },
@@ -161,7 +163,9 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
     const th = themeOf(e), t0 = tipOf(e.id); if (!t0) return;
     flash(t0.x, t0.y, t0.z, 70, th.col, 0.14);
     for (let i = 0; i < 8; i++) { const a = R(0, TAU), d = R(60, 110); A.spawn({ x: t0.x + Math.cos(a) * d, y: t0.y + R(-40, 40), z: t0.z + Math.sin(a) * d, vx: -Math.cos(a) * d * 5, vz: -Math.sin(a) * d * 5, life: 0.18, size: [22, 4], color: [0xffffff, th.col], tile: TILE.glow, drag: 0 }); }
-    later(Math.min(0.5, delayOf(ev)), () => { const t1 = e.alive && tipOf(e.id); if (t1) { flash(t1.x, t1.y, t1.z, 100, th.col, 0.12); A.spawn({ x: t1.x, y: t1.y, z: t1.z, life: 0.22, size: [30, 150], color: [th.core, th.col], alpha: [0.7, 0], tile: TILE.ring, fadeIn: 0 }); } });
+    later(Math.min(0.5, delayOf(ev)), () => { // loé lúc phát chiêu: trước mặt tướng theo hướng chiêu (mũi vũ khí lúc vung ngược có thể ở sau lưng)
+      const t1 = e.alive && tipOf(e.id); if (!t1) return; const f = fwd(e, 70), y = Math.min(170, Math.max(70, t1.y));
+      flash(f.x, y, f.z, 100, th.col, 0.12); A.spawn({ x: f.x, y, z: f.z, life: 0.22, size: [30, 150], color: [th.core, th.col], alpha: [0.7, 0], tile: TILE.ring, fadeIn: 0 }); });
   }
   const fwd = (e, d) => ({ x: e.pos.x + Math.cos(e.facing) * d, z: e.pos.y + Math.sin(e.facing) * d });
   const H = {
@@ -344,7 +348,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
       const th = THEMES[e.heroId]; if (!th?.trail) continue;
       const v = viewOf(e.id); if (!v?.bones?.HandR) continue;
       let tr = trails.get(e.id);
-      if (!tr) { tr = th.trail.hands.map((s) => ({ s, t: sh.trail({ color: th.trail.color, core: th.trail.core, minSpeed: th.trail.minSpeed, maxSpeed: th.trail.maxSpeed }) })); trails.set(e.id, tr); }
+      if (!tr) { tr = th.trail.hands.map((s) => ({ s, t: sh.trail({ color: th.trail.color, core: th.trail.core, minSpeed: th.trail.minSpeed * HERO_SCALE, maxSpeed: th.trail.maxSpeed * HERO_SCALE }) })); trails.set(e.id, tr); } // tướng to hơn → mũi vũ khí đi nhanh hơn cùng một động tác
       const show = e.alive && v.root.visible;
       for (const { s, t } of tr) {
         t.mesh.visible = show;
