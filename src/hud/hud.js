@@ -71,9 +71,9 @@ export function createHud(canvas, input, portraits = null) {
       critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
     }
     const g = ctx.createLinearGradient(0, -size * 0.45, 0, size * 0.45); g.addColorStop(0, st.top); g.addColorStop(1, st.bot);
-    if (st.glow) { ctx.shadowColor = 'rgba(210,225,255,0.95)'; ctx.shadowBlur = f.crit ? 14 : 8; }
+    if (st.glow) { ctx.lineWidth = f.crit ? 13 : 9; ctx.strokeStyle = 'rgba(205,220,255,0.32)'; ctx.strokeText(f.text, 0, 0); } // quầng sáng rẻ (shadowBlur chậm trên điện thoại)
     ctx.lineWidth = f.crit ? 5 : 3.5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);
-    ctx.shadowBlur = 0; ctx.fillStyle = g; ctx.fillText(f.text, 0, 0);
+    ctx.fillStyle = g; ctx.fillText(f.text, 0, 0);
     ctx.restore();
   }
   /** Biểu tượng chí mạng: vết chém (vật lý), sao bốn cánh (phép), viên kim cương (chuẩn). */

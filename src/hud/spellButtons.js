@@ -46,7 +46,7 @@ export function createSpellButtons(root, { world, player, indicators }) {
       press.timer = setTimeout(() => { if (press && !press.dir) { press.tip = true; showTip(info[k](), r); } }, HOLD);
     });
     b.addEventListener('pointermove', (e) => {
-      if (!press || e.pointerId !== press.id || k !== 'spell' || sp().aim !== 'direction' || press.tip) return;
+      if (!press || e.pointerId !== press.id || k !== 'spell' || sp().aim !== 'direction' || press.tip || !player.alive) return;
       const dx = e.clientX - press.cx, dy = e.clientY - press.cy, l = Math.hypot(dx, dy);
       if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / DRAG_MAX); clearTimeout(press.timer); }
       if (press.dir) { press.cancel = inCancel(e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }); }

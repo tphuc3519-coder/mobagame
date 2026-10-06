@@ -77,5 +77,21 @@ const lost = (d) => d.stats.maxHp - d.hp;
   const m = p.mana; w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 1, y: 0 } }); step(1);
   ok('Không tung lại khi đang hồi chiêu', p.mana >= m);
 }
+{ // Ra chiêu: quay mặt về hướng chiêu, đứng yên tới lúc chiêu phát ra (+0,25s), rồi mới chạy/quay theo cần di chuyển
+  const { w, p, step } = setup('nguyet_ha', 600);
+  w.command(p.id, { type: 'move', dir: { x: 1, y: 0 } }); step(5);
+  const x0 = p.pos.x;
+  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 0, y: 1 } }); step(1);
+  w.command(p.id, { type: 'move', dir: { x: 1, y: 0 } }); step(5); // vẫn giữ cần sang phải trong lúc ra chiêu
+  ok('ra chiêu: mặt hướng chiêu', Math.abs(p.facing - Math.PI / 2) < 1e-6, p.facing.toFixed(3));
+  ok('ra chiêu: đứng yên', Math.abs(p.pos.x - x0) < 1, (p.pos.x - x0).toFixed(1));
+  step(6);
+  ok('ra chiêu xong: quay lại theo cần di chuyển', Math.abs(p.facing) < 1e-6 && p.pos.x > x0 + 30, `${p.facing.toFixed(3)} ${(p.pos.x - x0).toFixed(1)}`);
+}
+{ // Chiêu có thời gian vung (Móc Neo 0,2s): đứng ra chiêu = vung + 0,25s
+  const { w, p, step } = setup('thach_quy', 600);
+  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 0, y: -1 } }); step(1);
+  ok('Móc Neo: khoá ra chiêu 0,45s', p.castUntil - w.tick >= 12 && p.castUntil - w.tick <= 14, String(p.castUntil - w.tick));
+}
 console.log(fail ? `\n${fail} lỗi` : '\nTất cả đạt');
 process.exit(fail ? 1 : 0);

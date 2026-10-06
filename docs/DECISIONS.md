@@ -412,3 +412,21 @@
   `'wasm-unsafe-eval'`) thì Moonstream thành khối giữ chỗ. Bản trong trận để không nén (3,0 MB thay vì 2,1 MB); bản sảnh vẫn nén
   (7,8 MB thay vì ~12 MB), không giải nén được thì sảnh dùng bản trong trận.
 
+## Phản hồi chơi thử 06/10: ra chiêu quay mặt, nút huỷ Chớp Bước, 6 kiểu số sát thương, máu tướng, quái yếu đi
+- **Nút huỷ cho Chớp Bước**: phép bổ trợ có hướng dùng chung vòng ngắm + ô X huỷ với nút kỹ năng (`src/hud/aimPad.js`): kéo nút
+  phép để ngắm, kéo ngón vào ô X góc phải (ô đỏ lên) rồi thả là huỷ, không mất hồi chiêu.
+- **Ra chiêu quay mặt về hướng chiêu**: chiêu có hướng/điểm làm tướng quay về hướng chiêu và đứng ra chiêu tới lúc chiêu phát ra
+  + 0,25 s (Móc Neo vung 0,2 s → 0,45 s; Đe Trời: suốt lúc bay). Trong lúc đó cần di chuyển không xoay người, đòn đánh thường chờ
+  chiêu xong. Lướt (Lướt Đốt, Lộn Diều) không khoá vì tự di chuyển. Hết mốc mà đang giữ cần thì clip ra chiêu nhường dáng chạy ngay
+  (trước đây tướng chạy đi ngay, mặt quay theo cần, rồi trượt trong tư thế ra chiêu tới hết clip 0,7 s). Đòn đánh thường cũng vậy.
+- **Tướng to hơn**: `HERO_SCALE` 1,35 → 1,5 (chỉ phần hình; bán kính va chạm giữ nguyên). Thanh máu trên đầu cao theo tỉ lệ.
+- **Máu tướng +30%** (`HERO_HP_MULT`, máu gốc + máu theo cấp; máu cộng từ đồ/bùa giữ nguyên): ít bị dồn chết trong một combo. Chiêu
+  tính theo % máu tối đa của chính tướng (Dậm Áp Suất, khiên Mai Đá của Mossback) mạnh lên tương ứng (test t_combat đã sửa số).
+- **Quái rừng yếu đi** (`MONSTER_POWER`): công ×0,7, máu ×0,85 cho mọi quái và mục tiêu lớn; mức tăng theo phút giữ nguyên.
+- **Số sát thương 6 kiểu** (`DMG_STYLE` trong `hud.js`): vật lý cam vàng, phép tím lam, chuẩn trắng có quầng sáng. Chí mạng: chữ to
+  1,5 lần, nghiêng, nảy mạnh + rung, hình nổ răng cưa phía sau và biểu tượng (vết chém / sao bốn cánh / viên kim cương). Sự kiện
+  `damage` mang cờ `crit` (`dealDamage(..., { crit: true })`). Hiện chỉ đòn đánh thường chí mạng được (vật lý); kiểu chí mạng phép
+  và chuẩn đã sẵn cho chiêu/đồ sau này, xem trước bằng nút "Số sát thương" ở bảng thử `?debug=1`. Số bay tính theo giây thật
+  (trước đây cộng 1/60 mỗi khung: máy 30 FPS thấy số lơ lửng gấp đôi).
+- **Sửa kèm**: lệnh chớp mắt (`mats.update`) bị dính vào sau dấu `//` của chú thích nên mặt anime không chớp.
+
