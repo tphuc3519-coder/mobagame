@@ -1,3 +1,4 @@
+import { ICON } from './uiIcons.js';
 // Cài đặt HUD (nút bánh răng góc phải trên): vị trí cửa hàng (dưới bản đồ nhỏ bên trái / bên phải). Lưu trong máy (localStorage).
 const KEY = 'la.hud';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } };
@@ -7,7 +8,7 @@ export function createHudSettings() {
   const st = { shop: 'left', ...load() };
   const apply = () => document.body.classList.toggle('shop-right', st.shop === 'right');
   apply();
-  const btn = document.createElement('button'); btn.id = 'hudSet'; btn.type = 'button'; btn.setAttribute('aria-label', 'Cài đặt'); btn.textContent = '⚙';
+  const btn = document.createElement('button'); btn.id = 'hudSet'; btn.type = 'button'; btn.setAttribute('aria-label', 'Cài đặt'); btn.innerHTML = ICON.gear();
   const panel = document.createElement('div'); panel.className = 'setp'; panel.hidden = true;
   const render = () => {
     panel.innerHTML = `<h4>Cài đặt giao diện</h4>

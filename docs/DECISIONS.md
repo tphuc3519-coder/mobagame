@@ -440,3 +440,12 @@
 - **Người chơi tự cộng điểm kỹ năng**: tướng người chơi không tự cộng nữa — đầu trận 1 điểm, nút + (to 34 px, nằm trên nút kỹ
   năng, nhấp nháy) hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + trên các chiêu cộng được (K3 từ cấp 4). Bot vẫn tự cộng.
 
+
+## Chữ và biểu tượng giao diện
+- **Font Be Vietnam Pro** (SIL OFL 1.1, tự lưu ở `assets/fonts/`, 12 tệp woff2 ~220 KB: đậm 500–800 × latin/latin-ext/vietnamese,
+  chỉ tải phần chữ cần dùng): thiết kế riêng cho tiếng Việt, dấu rõ ở cỡ nhỏ, số đều nhau (tabular) nên đồng hồ/vàng không nhảy.
+  Dùng cho toàn bộ HUD DOM lẫn chữ vẽ trên canvas (thanh máu, tên, số bay, bảng bị hạ, bản đồ nhỏ); không cần mạng ngoài.
+- **Biểu tượng** (`src/hud/uiIcons.js`): một bộ SVG nét vàng ánh kim chuyển sắc + viền tối, thay emoji ⚙/⛶ và các icon cũ:
+  bánh răng, toàn màn hình, đồng hồ, K/D/A (kiếm chéo, đầu lâu, nắm tay), menu, nút Ăn lính (mũ trụ chỏm đỏ + kiếm) và Đẩy trụ
+  (tháp mái đình + pha lê). Nút tròn nền xanh thẫm viền vàng như Liên Quân.
+- **Cụm nút giãn ra**: nút Ăn lính/Đẩy trụ lùi xa nút Đánh thêm 7px, K1 dạt trái 16px, K3 lên 14px, K2 lệch ra 6px.
