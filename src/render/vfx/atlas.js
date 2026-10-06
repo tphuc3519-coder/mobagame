@@ -79,6 +79,9 @@ export function decalTexture(kind) {
     g.fillStyle = '#fff';
     for (let k = 0; k < 26; k++) { const a = rnd() * 6.28, d = 40 + rnd() * 70, r = 3 + rnd() * 9; g.globalAlpha = 0.5 + rnd() * 0.5; g.beginPath(); g.arc(Math.cos(a) * d, Math.sin(a) * d, r, 0, 6.28); g.fill(); }
     g.globalAlpha = 1; g.lineWidth = 6; g.strokeStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.arc(0, 0, 100, 0, 6.28); g.stroke();
+  } else if (kind === 'glow') { // vầng sáng tròn mềm nằm trên mặt đất (phần quá to của quầng loé)
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, N / 2); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(-N / 2, -N / 2, N, N);
   } else if (kind === 'rune') {
     g.strokeStyle = '#fff'; g.lineWidth = 5; g.beginPath(); g.arc(0, 0, 118, 0, 6.28); g.stroke(); g.lineWidth = 2.5; g.beginPath(); g.arc(0, 0, 100, 0, 6.28); g.stroke();
     for (let k = 0; k < 12; k++) { g.save(); g.rotate((k / 12) * 6.28); g.translate(0, -109); g.lineWidth = 3; g.beginPath(); g.moveTo(-5, -5); g.lineTo(5, 5); g.moveTo(5, -5); g.lineTo(-5, 5); g.moveTo(0, -7); g.lineTo(0, 7); g.stroke(); g.restore(); }

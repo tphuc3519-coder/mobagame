@@ -42,7 +42,11 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
         life: R(...(o.life ?? [0.4, 0.7])), size: o.size ?? [30, 5], color: o.color, alpha: o.alpha ?? [1, 0], drag: o.drag ?? 2, grav: o.grav ?? 0, tile: o.tile ?? TILE.glow, spin: o.spinR ? R(-o.spinR, o.spinR) : 0, floor: o.floor, fadeIn: o.fadeIn, swirl: o.swirl && { ...o.swirl } });
     }
   }
-  const flash = (x, y, z, size, color, life = 0.18) => A.spawn({ x, y, z, life, size: [size, size * 1.4], color, alpha: [1, 0], tile: TILE.glow, fadeIn: 0 });
+  const flash = (x, y, z, size, color, life = 0.18) => { // quầng loé đứng (billboard) to quá ~2,4 × độ cao sẽ cắm xuống đất thành mảng sáng cạnh thẳng: phần dư đổ thành vầng sáng nằm trên đất
+    const max = Math.max(90, y * 2.4), s = Math.min(size, max);
+    if (size > max * 1.15) sh.decal('glow', x, z, size * 0.55, { color, life: life * 1.6, alpha: 0.75, fadeIn: 0, grow: 0.3, y: 6 });
+    A.spawn({ x, y, z, life, size: [s, s * 1.4], color, alpha: [1, 0], tile: TILE.glow, fadeIn: 0 });
+  };
   const sparks = (x, y, z, color, n = 16, k = 1) => burst(A, x, y, z, { n, speed: [250 * k, 700 * k], up: [100, 500], life: [0.25, 0.5], size: [24 * k, 4], color: [0xffffff, color], grav: 1400, drag: 1.5, tile: TILE.glow });
   /** Lửa cuộn (trộn thường: cam sáng → khói nâu sẫm, nổi rõ trên nền sáng). */
   const fire = (x, y, z, n = 12, r = 60, k = 1) => burst(N, x, y, z, { n, r, speed: [40 * k, 160 * k], up: [150 * k, 380 * k], life: [0.45, 0.8], size: [70 * k, 170 * k], color: [0xffb040, 0x2a1810], alpha: [0.95, 0], drag: 2.2, tile: TILE.smoke, fadeIn: 0.03 });
@@ -167,7 +171,15 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
       const t1 = e.alive && tipOf(e.id); if (!t1) return; const f = fwd(e, 70), y = Math.min(170, Math.max(70, t1.y));
       flash(f.x, y, f.z, 100, th.col, 0.12); A.spawn({ x: f.x, y, z: f.z, life: 0.22, size: [30, 150], color: [th.core, th.col], alpha: [0.7, 0], tile: TILE.ring, fadeIn: 0 }); });
   }
+  const HB = HERO_SCALE * 0.9; // khiên cầu bao tướng: theo cỡ tướng (tướng to ×1,5)
   const fwd = (e, d) => ({ x: e.pos.x + Math.cos(e.facing) * d, z: e.pos.y + Math.sin(e.facing) * d });
+  /** Một mũi tên gió bay thẳng đứng (vy < 0: rơi xuống): lõi trắng mảnh + vệt xanh gió dài mờ phía sau + đốm sáng đầu tên. */
+  function arrowFx(x, y, z, vy, life) {
+    const back = vy < 0 ? 1 : -1, rot = vy < 0 ? 0 : Math.PI; // ô streak: đầu sáng ở đáy ô
+    A.spawn({ x, y, z, vy, life, size: 80, color: [0xffffff, 0xe0faff], alpha: [1, 1], tile: TILE.streak, rot, fadeIn: 0 });
+    A.spawn({ x, y: y + back * 70, z, vy, life, size: 170, color: [0x7fd8ff, 0x3fa8ff], alpha: [0.45, 0.3], tile: TILE.streak, rot, fadeIn: 0 });
+    A.spawn({ x, y: y - back * 34, z, vy, life, size: 26, color: 0xeaffff, alpha: [1, 1], tile: TILE.glow, fadeIn: 0 });
+  }
   const H = {
     hoa_ren: {
       cone(ev, e) { // Vung Búa: hai cung lửa quét ngang + lửa cuộn và tàn lửa bay theo hình quạt + vệt cháy
@@ -189,7 +201,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
           sh.ring(x, z, 20, 260, { color: 0xff6a14, width: 0.12, life: 0.45, fill: 0.4 });
           sh.decal('crack', x, z, 160, { color: 0xff7a20, life: 1.6 }); sh.decal('scorch', x, z, 180, { color: 0x000000, additive: false, alpha: 0.55, life: 2.2 });
           flash(x, 60, z, 260, 0xff8a30, 0.2); sparks(x, 40, z, 0xff6a14, 40, 1.3); fire(x, 20, z, 14, 80); rocks(x, z, 10, 0.8); dust(x, z, 120, 10);
-          sh.bubble(() => rootOf(e.id), 120, { color: 0xff7a20, hex: true, life: 3, kill: () => !e.alive || !e.shields.length });
+          sh.bubble(() => rootOf(e.id), 120 * HB, { color: 0xff7a20, hex: true, life: 3, kill: () => !e.alive || !e.shields.length });
           aura(2, (dt) => { const r = rootOf(e.id); if (r && e.speed > 50 && Math.random() < 0.7) A.spawn({ x: r.x + R(-25, 25), y: 15, z: r.z + R(-25, 25), vy: R(40, 120), life: 0.5, size: [24, 4], color: [0xffd080, 0xff4a00], tile: TILE.glow }); }, () => !e.alive);
           shake(14, 0.2);
         });
@@ -228,7 +240,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
           for (let i = 0; i < 70; i++) { const a = R(0, TAU), d = R(r * 0.4, r); N.spawn({ x: x + Math.cos(a) * d, y: R(10, 60), z: z + Math.sin(a) * d, vy: R(0, 60), life: R(0.6, 1.2), size: [34, 14], color: [0xffffff, 0x7fd8ff], alpha: [0.9, 0], tile: TILE.drop, swirl: { x, z, w: 5, pull: 1.2 }, rot: a }); }
           for (let i = 0; i < 26; i++) { const a = R(0, TAU), d = R(r * 0.5, r); A.spawn({ x: x + Math.cos(a) * d, y: R(10, 40), z: z + Math.sin(a) * d, life: R(0.8, 1.4), size: [28, 10], color: [0xe8ffff, 0x3fa8ff], tile: TILE.glow, swirl: { x, z, w: 4, pull: 1.4 } }); }
           later(0.35, () => { sh.pillar(x, z, 90, 380, { color: 0x3fb8ff, top: 0xffffff, life: 0.5 }); droplets(x, 60, z, 40, 1); });
-          sh.bubble(() => rootOf(e.id), 150, { color: 0x4fc8ff, hex: true, life: 5, kill: () => !e.alive });
+          sh.bubble(() => rootOf(e.id), 150 * HB, { color: 0x4fc8ff, hex: true, life: 5, kill: () => !e.alive });
           shake(18, 0.3);
         }
       },
@@ -287,12 +299,24 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
         else if (ev.slot === 's2') { // Lộn Diều: vòng gió + khói nhẹ + lông vũ bung ra
           sh.ring(r.x, r.z, 20, 200, { color: 0xe0faff, width: 0.08, life: 0.35, fill: 0.1 }); burst(N, r.x, 30, r.z, { n: 14, r: 40, speed: [200, 400], up: [20, 80], life: [0.4, 0.6], size: [60, 140], color: 0xe8f4ff, alpha: [0.5, 0], drag: 4, tile: TILE.smoke });
           burst(N, r.x, r.y + 160, r.z, { n: 14, r: 30, speed: [150, 380], up: [40, 260], life: [0.9, 1.4], size: [40, 30], color: [0xffffff, 0xd8ecf4], tile: TILE.feather, spinR: 6, grav: 180, drag: 2 });
-        } else if (ev.slot === 's3') for (let i = 0; i < 14; i++) later(i * 0.025, () => { const q = rootOf(e.id); if (q) A.spawn({ x: q.x + R(-30, 30), y: q.y + 160, z: q.z + R(-30, 30), vy: 2600, life: 0.45, size: [120, 120], color: [0xffffff, 0x9fe8ff], alpha: [1, 0.2], tile: TILE.streak, rot: Math.PI, fadeIn: 0 }); }); // loạt tên bắn vút lên trời
+        } else if (ev.slot === 's3') for (let i = 0; i < 10; i++) later(i * 0.03, () => { const q = rootOf(e.id); if (q) arrowFx(q.x + R(-30, 30), q.y + 170, q.z + R(-30, 30), 2600, 0.4); }); // loạt tên gió bắn vút lên trời
       },
       aoe(ev) { // Mưa Tên: vòng đánh dấu + tên trút xuống liên tục
         if (!ev.zone) return;
         sh.decal('rune', ev.x, ev.y, ev.radius, { color: 0xc8f4ff, life: ev.dur + 0.2, fadeIn: 0.1, alpha: 0.6 });
-        aura(ev.dur, () => { for (let i = 0; i < 3; i++) { const a = R(0, TAU), d = Math.sqrt(Math.random()) * ev.radius, x = ev.x + Math.cos(a) * d, z = ev.y + Math.sin(a) * d, t = R(0.18, 0.28); A.spawn({ x, y: 2400 * t + 10, z, vy: -2400, life: t, size: [130, 130], color: [0xffffff, 0x9fe8ff], tile: TILE.streak, rot: 0, alpha: [1, 1], fadeIn: 0 }); later(t, () => { A.spawn({ x, y: 15, z, life: 0.22, size: [70, 130], color: 0xd8f8ff, alpha: [1, 0], tile: TILE.glow }); A.spawn({ x, y: 15, z, life: 0.25, size: [40, 60], color: 0xffffff, alpha: [1, 0], tile: TILE.star }); N.spawn({ x, y: 10, z, vy: 60, life: 0.5, size: [50, 110], color: 0xb0a080, alpha: [0.45, 0], tile: TILE.smoke }); }); } });
+        let acc = 0;
+        aura(ev.dur, (dt) => { // ~55 mũi/giây bất kể FPS: tên gió mảnh rơi xiên, chạm đất loé vòng gió + cắm lại một lúc
+          for (acc += 55 * (dt || 1 / 60); acc >= 1; acc--) {
+            const a = R(0, TAU), d = Math.sqrt(Math.random()) * ev.radius, x = ev.x + Math.cos(a) * d, z = ev.y + Math.sin(a) * d, t = R(0.16, 0.24);
+            arrowFx(x, 2400 * t + 10, z, -2400, t);
+            later(t, () => {
+              A.spawn({ x, y: 14, z, life: 0.2, size: [20, 110], color: [0xffffff, 0x8fdcff], alpha: [0.9, 0], tile: TILE.ring, fadeIn: 0 });
+              A.spawn({ x, y: 16, z, life: 0.22, size: [46, 10], color: [0xffffff, 0xbff0ff], alpha: [1, 0], tile: TILE.star });
+              N.spawn({ x, y: 22, z, life: 0.7, size: 44, color: 0x5a4a36, alpha: [0.95, 0], tile: TILE.streak, rot: R(-0.35, 0.35), fadeIn: 0 }); // thân tên cắm đất
+              if (Math.random() < 0.35) N.spawn({ x, y: 10, z, vy: 50, life: 0.45, size: [40, 90], color: 0xc8c0a8, alpha: [0.35, 0], tile: TILE.smoke });
+            });
+          }
+        });
       },
     },
     long_dang: {
@@ -304,9 +328,9 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
       },
       aoe(ev, e) {
         if (ev.slot === 's2') { // Thắp Sáng: cột sáng vàng lên đồng đội + sao lấp lánh
-          sh.pillar(ev.x, ev.y, 90, 420, { color: 0xffc84a, top: 0xfff6d0, life: 0.7 }); sh.ring(ev.x, ev.y, 10, 180, { color: 0xffd36a, width: 0.12, life: 0.45 });
+          sh.pillar(ev.x, ev.y, 60, 460, { color: 0xffb84a, top: 0xfff0c0, life: 0.6, alpha: 0.5 }); sh.ring(ev.x, ev.y, 10, 180, { color: 0xffd36a, width: 0.12, life: 0.45 }); // cột sáng mảnh, mờ: nhìn từ trên xuống không thành đĩa trắng che tướng
           burst(A, ev.x, 40, ev.y, { n: 20, r: 70, speed: [10, 40], up: [150, 350], life: [0.7, 1.2], size: [22, 6], color: [0xffffff, 0xffc84a], tile: TILE.star, drag: 1 });
-          if (ev.target != null) { const t = ent(ev.target); sh.bubble(() => rootOf(ev.target), 120, { color: 0xffc84a, life: 3, kill: () => !t?.alive || !t.shields.length }); }
+          if (ev.target != null) { const t = ent(ev.target); sh.bubble(() => rootOf(ev.target), 120 * HB, { color: 0xffc84a, alpha: 0.7, life: 3, kill: () => !t?.alive || !t.shields.length }); }
         } else if (ev.slot === 's3') { // Hội Đèn: vòng sáng lớn + hàng chục đèn lồng bay lên
           const { x, y: z, radius: r } = ev;
           sh.ring(x, z, 40, r, { color: 0xffc84a, width: 0.06, life: 0.8, fill: 0.25 }); sh.decal('rune', x, z, r * 0.6, { color: 0xffd36a, life: 1.6, spin: 0.6, grow: 0.3 });
@@ -381,7 +405,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
       case 'shield': {
         if (!e || !e.isHero || !visible(e)) break;
         const th = themeOf(e); if (e.heroId === 'hoa_ren' || e.heroId === 'long_dang') break; // đã có khiên riêng trong chiêu
-        sh.bubble(() => rootOf(e.id), 115, { color: e.heroId === 'thach_quy' ? 0x8fe8ff : th.col, life: 30, alpha: e.heroId === 'thach_quy' ? 0.7 : 0.9, kill: () => !e.alive || !e.shields.length });
+        sh.bubble(() => rootOf(e.id), 115 * HB, { color: e.heroId === 'thach_quy' ? 0x8fe8ff : th.col, life: 30, alpha: e.heroId === 'thach_quy' ? 0.7 : 0.9, kill: () => !e.alive || !e.shields.length });
         if (e.heroId === 'thach_quy') { const r = rootOf(e.id); if (r) bubbles(r.x, r.z, 60, 10); }
         break;
       }

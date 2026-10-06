@@ -449,3 +449,20 @@
   bánh răng, toàn màn hình, đồng hồ, K/D/A (kiếm chéo, đầu lâu, nắm tay), menu, nút Ăn lính (mũ trụ chỏm đỏ + kiếm) và Đẩy trụ
   (tháp mái đình + pha lê). Nút tròn nền xanh thẫm viền vàng như Liên Quân.
 - **Cụm nút giãn ra**: nút Ăn lính/Đẩy trụ lùi xa nút Đánh thêm 7px, K1 dạt trái 16px, K3 lên 14px, K2 lệch ra 6px.
+
+## Hiệu ứng kỹ năng v2 (06/10)
+- **Ba lớp cho mỗi đòn trúng**: (1) hiệu ứng trúng theo chủ đề tướng (lửa / nước / lá / gió / trăng / đèn — `hitFx`), (2) lớp
+  theo **loại sát thương** (`typeFx`): vật lý = vệt chém cam + mảnh văng, phép = ký tự phép tím lam + sao, chuẩn = mảnh kim cương
+  trắng + vòng sáng; **chí mạng** thêm vết chém chữ X lớn + vòng nổ, và rung màn hình nhẹ nếu là đòn của chính mình; (3) hiệu ứng
+  riêng từng chiêu (`SKILL_HIT[tướng][K1|K2|K3]`). Cùng một đòn vì thế đọc được cả "ai đánh", "loại gì", "có chí mạng không".
+- **Đạn chiêu riêng** (`PROJ`): lưỡi lá tre xoay (Bamboo Shade K1), trăng khuyết bạc (Moonstream K1), mũi tên gió có luồng xoắn
+  (Kitewing K1), đèn lồng giấy lắc lư (Lanternward K1); các đạn khác giữ lõi sáng + vệt hạt theo chủ đề.
+- **Dấu hiệu ra chiêu** (`castTell`): vũ khí loé + tia sáng tụ vào lúc bắt đầu, loé vòng **trước mặt tướng theo hướng chiêu** đúng
+  lúc phát (không đặt ở mũi vũ khí vì lúc vung ngược mũi vũ khí nằm sau lưng). Mỗi tướng có thêm phần riêng lúc ra chiêu (lửa ở
+  búa, vết chém chéo, trăng lớn trên đầu, vòng gió + lông vũ, đèn lồng trên tay...).
+- **Atlas hạt 4×4 = 16 ô** (thêm trăng, lông vũ, đèn lồng, vòng, vết chém, lưỡi lá, ký tự phép, kim cương).
+- **Soát bằng bảng chụp** (K1/K2/K3/chí mạng × 3 khung, cả 6 tướng). Sửa sau khi soát: vệt vũ khí bớt trắng (màu tướng đậm, lõi
+  trắng chỉ ở mép đầu), ngưỡng tốc độ hiện vệt nhân theo cỡ tướng; quầng loé to (billboard) cắm xuống đất thành mảng sáng cạnh
+  thẳng → phần dư đổ thành vầng sáng nằm trên mặt đất; khiên cầu bao đủ tướng to (bán kính × cỡ tướng) và lòng khiên gần trong
+  suốt (trước đây trắng xoá tướng bên trong); Mưa Tên của Kitewing là tên gió mảnh (lõi trắng + vệt xanh + đầu sáng, rơi rồi cắm
+  đất) với mật độ theo thời gian (~55 mũi/giây, trước đây theo khung hình nên 60 FPS dày gấp 3 thành những vạch trắng).

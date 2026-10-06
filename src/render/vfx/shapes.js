@@ -90,7 +90,7 @@ export function createShapes(scene, { floor = null } = {}) {
       fragmentShader: `uniform vec3 uC; uniform float uA, uT, uH; varying vec3 vN; varying vec3 vV; varying vec3 vP;
         void main(){ float f = pow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.2);
           float band = 0.5 + 0.5 * sin(vP.y * 0.12 - uT * 4.0); float hex = uH > 0.5 ? step(0.88, fract(atan(vP.z, vP.x + 1e-5) * 2.5)) + step(0.9, fract(vP.y * 0.05)) : 0.0;
-          gl_FragColor = vec4(uC * (f * 1.3 + 0.06 + band * 0.08 + hex * 0.25) * uA, 1.0);
+          gl_FragColor = vec4(uC * (f * 1.05 + 0.03 + band * 0.05 + hex * 0.22) * uA, 1.0); // cộng màu: lòng khiên gần trong suốt (không trắng xoá tướng bên trong)
         ${TAIL}` });
     const m = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 18), mat); m.renderOrder = 8;
     const life = o.life ?? 2;
@@ -112,9 +112,9 @@ export function createShapes(scene, { floor = null } = {}) {
           float streak = 0.6 + 0.4 * sin(vUv.x * 40.0 + v * 6.0 - uT * 14.0);
           gl_FragColor = vec4(mix(uC, uK, 1.0 - v) * side * fade * streak * uA * 1.4, 1.0);
         ${TAIL}` });
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.75, r, h, 24, 1, true), mat); m.position.set(x, h / 2 + fl(x, z, r), z); m.renderOrder = 7;
+    const base = fl(x, z, r), m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.75, r, h, 24, 1, true), mat); m.position.set(x, h / 2 + base, z); m.renderOrder = 7;
     const life = o.life ?? 0.6;
-    return add(m, life, (k, dt, t) => { mat.uniforms.uT.value = t; mat.uniforms.uA.value = (o.alpha ?? 1) * Math.min(1, t / 0.06) * (1 - k); m.scale.set(1 + k * 0.4, 0.3 + 0.7 * Math.min(1, t / 0.12), 1 + k * 0.4); m.position.y = (h * m.scale.y) / 2; });
+    return add(m, life, (k, dt, t) => { mat.uniforms.uT.value = t; mat.uniforms.uA.value = (o.alpha ?? 1) * Math.min(1, t / 0.06) * (1 - k); m.scale.set(1 + k * 0.4, 0.3 + 0.7 * Math.min(1, t / 0.12), 1 + k * 0.4); m.position.y = base + (h * m.scale.y) / 2; });
   }
 
   /** Xích/dây nối hai điểm (cập nhật mỗi khung bằng a(), b()). o: { color, width, life, kill } */
