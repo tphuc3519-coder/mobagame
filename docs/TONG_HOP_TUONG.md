@@ -147,7 +147,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Đòn phục kích: 150 (+90/cấp) + 1.2 Công thêm VL, chậm 40% 1s
   - Hiệu ứng: bản thân: tàng hình 2.5s, tăng tốc 30% 2.5s
 - **Bot:** combo K3 → K1 → K2 · giữ cự ly 160 · vào giao tranh khi HP ≥ 80%
-- **Phép mặc định:** Thu Hoạch · **Build:** Giày Chiến → Huyết Kiếm → Lưỡi Huyết Nguyệt → Dao Trăng Khuyết → Thương Phá Giáp → Mặt Nạ Hồi Sinh
+- **Phép mặc định:** Trừng Trị · **Build:** Giày Chiến → Huyết Kiếm → Lưỡi Huyết Nguyệt → Dao Trăng Khuyết → Thương Phá Giáp → Mặt Nạ Hồi Sinh
 
 ![bong_tre](previews/heroes/bong_tre.jpg)
 
@@ -183,7 +183,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 ![nguyet_ha](previews/heroes/nguyet_ha.jpg)
 
 - **Ngoại hình model:** pháp sư nữ tóc bạc trắng dài quá hông, hai kẹp tóc; váy dài xanh đêm chạm đất, tay áo phồng, vạt trước xẻ lộ lớp váy trắng, dải lụa trắng uốn cong bên vạt váy (model có texture do hoạ sĩ gửi, 2026-10-06; ý tưởng cũ: áo lụa hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người). Vũ khí: chiếc bình bạc nhỏ cầm tay phải (rót dòng nước bạc); điều khiển nước bằng tay.
-- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (2132 KB) · model nhập (`tools/modelgen/imports/moonstream_pbr_game.glb`, có texture, 8 ảnh)
+- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (3051 KB) · model nhập (`tools/modelgen/imports/moonstream_pbr_game.glb`, có texture, 8 ảnh)
 - **Thông số:** 31,589 tam giác · 24 xương · 3 vật liệu · cao 200 cm · runRefSpeed 315
 - **Bản sảnh (chọn tướng):** `assets/heroes/nguyet_ha/nguyet_ha_showcase.glb` (7763 KB, 113,957 tam giác, từ `tools/modelgen/imports/moonstream_pbr_hq.glb`)
 - **Cách tô:** trong trận `pbr` + viền đen · sảnh `pbr`, không viền đen

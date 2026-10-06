@@ -13,9 +13,10 @@ export default {
   import: { // model liền khối có texture do hoạ sĩ gửi (thân / đầu+tóc / mắt, 3 vật liệu): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
     // Tư thế trong file: đứng thẳng, tay trái buông, tay phải gập khuỷu nâng chiếc bình bạc trước bụng; váy dài chạm đất, không có chân bên trong (chỉ có đôi giày).
     mode: 'fused', file: './imports/moonstream_pbr_game.glb', simplify: { tris: { body: 16000, head: 14000 }, error: 0.05, flags: ['Permissive'] },
-    texMax: { base: 1024, normal: 1024, mr: 512 }, compress: true,
+    texMax: { base: 1024, normal: 1024, mr: 512 }, // không nén meshopt: giải nén cần WebAssembly, trang chơi thử có CSP chặn WASM thì tướng thành khối giữ chỗ
     shading: 'pbr', // texture PBR (màu nền không vẽ sẵn sáng tối): giữ vật liệu gốc + ánh sáng môi trường; toon làm váy tối và tóc xám, unlit thì phẳng, bình bạc như nhựa
     showcase: { file: './imports/moonstream_pbr_hq.glb', simplify: { tris: { body: 60000, head: 50000 }, error: 0.02, flags: ['Permissive'] }, texMax: { base: 2048, normal: 2048, mr: 1024 }, // bản trưng bày ở sảnh (LOD0)
+      compress: true, // nén meshopt (12 → 7,8 MB); không giải nén được (CSP chặn WASM) thì sảnh dùng bản trong trận
       outline: false }, // nhìn gần, viền đen kẻ thành vệt trên từng lọn tóc mảnh
     centerX: 0.04, centerZ: -0.02, bodyTop: 1.89, height: 2.0, // bodyTop = đỉnh tóc kể cả hai kẹp tóc
     rig: { // toạ độ tương đối thân (đơn vị file gốc): x + = bên trái nhân vật, z + = phía trước
