@@ -466,3 +466,16 @@
   thẳng → phần dư đổ thành vầng sáng nằm trên mặt đất; khiên cầu bao đủ tướng to (bán kính × cỡ tướng) và lòng khiên gần trong
   suốt (trước đây trắng xoá tướng bên trong); Mưa Tên của Kitewing là tên gió mảnh (lõi trắng + vệt xanh + đầu sáng, rơi rồi cắm
   đất) với mật độ theo thời gian (~55 mũi/giây, trước đây theo khung hình nên 60 FPS dày gấp 3 thành những vạch trắng).
+
+## Sảnh: tóc Moonstream, búa Emberforge, cỡ tướng (06/10)
+- **Tóc Moonstream "bị cắt ngang"**: lỗi có sẵn trong cả hai file gốc (hq và game) — mái tóc bị cắt đôi theo một mặt phẳng ngang vai: nửa
+  trên thuộc vật liệu đầu và khép lại thành "búi" tròn, nửa dưới (các lọn trắng sau lưng) thuộc vật liệu áo với mép trên thẳng. Sửa khi
+  nhập (`import_fused.mjs`): `morph` nắn lưới gốc trước khi gắn xương — nửa dưới búi giãn dọc ×1,7 và nở ra phủ mép, mép trên các lọn
+  thu hẹp và lùi vào trong búi → nhìn như một mái tóc dài liền. Thêm `hair`: mọi đỉnh tóc (cả hai vật liệu, trừ mặt/cằm) gắn xương
+  CHỈ theo độ cao dọc chuỗi Đầu → Cổ → Ngực → Lưng (cùng một hàm), trước đây phần trên theo đầu với vùng chuyển rất hẹp còn các lọn
+  dưới bị gắn cả vào cánh tay → khi cử động gãy ngang và xoè ra.
+- **Emberforge "mất búa" ở sảnh**: dáng đứng vác búa trên vai làm đầu búa khuất sau lưng; clip trưng bày giơ búa thẳng lên thì đầu búa
+  vượt khỏi mép trên khung. Thêm clip `ShowIdle` (sảnh dùng thay `Idle` nếu có): đứng chống búa xuống đất bên phải; `Showcase` mới:
+  nhấc búa đưa ra trước khoe rồi dộng xuống chống lại — búa luôn trong khung.
+- **Khung hình sảnh**: tướng chiếm ~52% chiều cao khung (trước ~61%, người chơi thấy to quá) và khung tự lùi xa đủ chứa tầm với cao
+  nhất của bàn tay/mũi vũ khí trong clip trưng bày + dáng đứng (tính khi nạp model bằng cách lấy mẫu clip).

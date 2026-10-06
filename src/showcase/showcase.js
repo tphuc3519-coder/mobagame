@@ -121,14 +121,21 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     let base = null, shot = null;
     const play = (name) => { const a = acts[name]; if (!a) return; shot = name; a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; a.fadeIn(0.15).play(); base?.fadeOut(0.15);
       mixer.addEventListener('finished', function f(ev) { if (ev.action === a) { mixer.removeEventListener('finished', f); if (shot === name) shot = null; a.fadeOut(0.3); base?.reset().fadeIn(0.3).play(); } }); };
-    base = acts.Idle; base?.play();
+    // tầm với: độ cao cao nhất các xương (mũi vũ khí, bàn tay, đỉnh đầu) trong clip trưng bày + dáng đứng ở sảnh → khung hình chứa trọn vũ khí
+    let reach = 0;
+    { const v = new THREE.Vector3(), tips = []; obj.traverse((o) => { if (o.isBone && /Hand(L|R)(_Tip)?$/.test(o.name)) tips.push([o, /_Tip$/.test(o.name) ? 0.3 : 0.12]); }); // mũi vũ khí: + nửa đầu vũ khí
+      for (const nm of ['Showcase', 'ShowIdle', 'Idle']) { const a = acts[nm]; if (!a) continue; const d = a.getClip().duration; a.reset().play();
+        for (let k = 0; k <= 20; k++) { mixer.setTime((d * k) / 20); obj.updateMatrixWorld(true); for (const [b, m] of tips) reach = Math.max(reach, b.getWorldPosition(v).y + m); }
+        a.stop(); }
+      mixer.setTime(0); }
+    base = acts.ShowIdle || acts.Idle; base?.play(); // ShowIdle: dáng đứng riêng cho sảnh (vd Emberforge chống búa thay vì vác búa khuất sau lưng)
     /** Nhận trạng thái clip của holder khác (cùng bộ xương, cùng clip) để đổi sang bản trưng bày mà không giật. */
     const syncFrom = (o) => {
       const w = (a) => (a ? a.getEffectiveWeight() : 0);
       if (o.shot) { play(o.shot); const a = acts[o.shot], b = o.acts[o.shot]; a.time = b.time; a.stopFading().setEffectiveWeight(w(b)); }
       if (base && o.base) { base.time = o.base.time; base.stopFading().setEffectiveWeight(w(o.base)); }
     };
-    return { id, g, mixer, mats, h, art: inst.art, play, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
+    return { id, g, mixer, mats, h, reach, art: inst.art, play, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
   }
 
   const burst = (() => { // hạt sáng khi đổi tướng
@@ -158,8 +165,8 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     sp.mat.uniforms.uCol.value.copy(rimCol).lerp(new THREE.Color(0xffe0a0), 0.5);
     const pal = h.art.palette || [], cA = new THREE.Color(pal[1] || h.art.rim || '#ff9a40'), cB = new THREE.Color(pal[2] || '#ffe0a0');
     splash.setColors(cA, cB);
-    // khung hình theo chiều cao tướng
-    const hh = Math.max(1.6, h.h); camera.position.set(0.25, hh * 0.45, hh * 2.6 + 1.2); camera.lookAt(0.25, hh * 0.58, 0);
+    // khung hình theo chiều cao tướng, gồm cả vũ khí giơ cao (tầm với của xương + nửa đầu vũ khí); tướng chiếm ~52% chiều cao khung (trước ~61%: to quá)
+    const hh = Math.max(1.6, h.h, h.reach || 0); camera.position.set(0.25, hh * 0.47, hh * 3.15 + 1.3); camera.lookAt(0.25, hh * 0.56, 0);
   }
 
   function frame(now) {

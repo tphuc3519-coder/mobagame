@@ -31,6 +31,27 @@ export default {
     radii: { Hips: 0.4, Spine: 0.38, Chest: 0.35, Neck: 0.3, Head: 0.4, UpperArmL: 0.3, UpperArmR: 0.3, ForearmL: 0.3, ForearmR: 0.3, HandL: 0.3, HandR: 0.3, FootL: 0.4, FootR: 0.4 },
     softness: 0.009, // vùng chuyển giữa hai xương hẹp: thân áo không bị tay áo phồng kéo theo
     allow: { head: ['Head', 'Neck', 'Chest', 'Spine'], eyes: ['Head'] }, // tóc dài chỉ theo đầu/cổ/ngực (không dính vào tay); mắt cứng theo đầu
+    // File gốc cắt mái tóc làm đôi theo mặt phẳng ngang ngang vai: nửa trên (vật liệu đầu) khép lại thành "búi" tròn, nửa dưới (các lọn trắng, vật liệu
+    // áo) có mép trên thẳng — nhìn từ sau như tóc bị cắt ngang. Nắn lại: phần dưới búi kéo dài xuống + nở ra phủ mép, mép trên các lọn thu hẹp và
+    // lùi vào trong búi (lọn như mọc ra từ trong mái tóc).
+    morph: ({ x, y, z, mat, rgb }) => {
+      const sm = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+      if (mat === 'head' && z < -0.04 && y < 1.5) { // nửa dưới búi (sau gáy): giãn dọc ×1,7 quanh đường xích đạo y = 1,5 + nở ngang/ra sau
+        const u = sm(1.5, 1.37, y), k = 1 + 0.32 * u, w = sm(-0.04, -0.1, z);
+        return { x: x * (1 + (k - 1) * w), y: 1.5 - (1.5 - y) * (1 + 0.7 * w), z: -0.1 + (z + 0.1) * (1 + (k - 1) * w) };
+      }
+      if (mat === 'body' && z < -0.09 && y > 1.12 && y < 1.5 && Math.min(...rgb) > 150) { // lọn tóc dưới: mép trên thu hẹp + lùi vào trong búi
+        const t = sm(1.22, 1.43, y);
+        return { x: x * (1 - 0.3 * t), y: y - 0.03 * t, z: z + 0.045 * t };
+      }
+      return null;
+    },
+    hair: { // tóc dài nằm ở hai vật liệu (phần trên chung với đầu, các lọn dưới sau lưng chung với áo): gắn theo độ cao đầu → cổ → ngực → lưng,
+      // cùng một hàm → hết đường gãy ngang khi đầu/tay cử động (trước đây phần trên theo đầu, lọn dưới theo cả cánh tay nên xoè ra)
+      chain: [['Head', 1.64], ['Neck', 1.5], ['Chest', 1.3], ['Spine', 1.1]],
+      pick: ({ x, y, z, mat, rgb }) => (mat === 'head' ? !(z > -0.04 && Math.abs(x) < 0.08 && y > 1.44) // trừ mặt + cằm (giữ trọng số đầu)
+        : mat === 'body' && Math.min(...rgb) > 150 && z < -0.09 && y > 1.12 && y < 1.5), // lọn tóc trắng sau lưng (áo xanh thẫm, vạt trắng ở thấp hơn)
+    },
     skirt: { max: 0.92, from: 0.0, span: 0.15, gap0: 0.0, gap1: 0.04 },
     minComponent: 4,
     portrait: { dist: 1.5, dy: -0.12 },

@@ -125,9 +125,15 @@ const victory = spline([
   [1, {}],
 ]);
 
-const showcase = (u) => {
-  const accent = spline([[0, {}], [0.25, {}], [0.38, { chest: [-8, 0, 0], head: [-8, 0, 0], ...A.raise, uaL: [-40, 0, 16], hipsPos: [0, 0.02, 0] }], [0.6, { chest: [-8, 0, 0], head: [-8, 0, 0], ...A.raise, uaL: [-40, 0, 16], hipsPos: [0, 0.02, 0] }], [0.78, {}], [1, {}]])(u);
-  return add(accent, idle(u));
+// Sảnh (chọn tướng): đứng chống búa — đầu búa tì đất bên phải, tay phải đặt trên cán, ngực ưỡn; búa luôn trong khung hình (vác trên vai thì
+// đầu búa khuất sau lưng, giơ thẳng lên thì vượt khỏi khung → người chơi tưởng mất búa).
+const showStance = { chest: [-4, 6, 0], spine: [-2, 3, 0], head: [-4, -8, 0], uaL: [6, 0, 10], faL: [-14, 0, 0] };
+const showIdle = (u) => add(idle(u), showStance);
+const showcase = (u) => { // nhấc búa, đưa ra trước khoe, rồi dộng xuống chống lại bên cạnh (giữ trong khung)
+  const accent = spline([[0, {}], [0.16, { chest: [6, 0, 0], hipsPos: [0, -0.02, 0] }], [0.36, { chest: [-10, -6, 0], head: [-8, 0, 0], hipsPos: [0, 0.015, 0], uaL: [-24, 0, 16] }],
+    [0.56, { chest: [-10, -6, 0], head: [-6, 0, 0], hipsPos: [0, 0.015, 0], uaL: [-24, 0, 16] }], [0.72, { chest: [14, 4, 0], spine: [5, 0, 0], head: [6, 0, 0], hipsPos: [0, -0.06, 0.02], thL: [-14, 0, 0], thR: [-12, 0, 0], shL: [26, 0, 0], shR: [22, 0, 0] }],
+    [0.86, {}], [1, {}]])(u);
+  return add(add(accent, showStance), idle(u));
 };
 
 // Chồng lấp: thân dẫn, đầu/cổ/tay trái/vải đi sau một nhịp ngắn (u) để chuyển động có đà.
@@ -159,6 +165,9 @@ const ikCast2 = P([0, REST], [0.12, W.lift], [0.32, [[-0.15, 2.85, 0.3], [0, 0.9
 const ikUlt = P([0, REST], [0.12, W.lift], [0.25, W.over], [0.34, W.top], [0.42, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.55, [[-0.1, 1.55, 1.0], [0, -0.72, 0.7]]], [0.7, W.fwdUp], [0.86, W.lift], [1, REST]);
 const ikDeath = P([0, REST], [0.1, W.lift], [0.3, [[-0.45, 2.0, 0.4], [-0.5, 0.6, -0.6]]], [0.6, [[-0.7, 1.7, 0.25], [-0.9, 0.3, -0.3]]], [1, [[-0.75, 1.55, 0.2], [-0.95, 0.3, 0]]]);
 const ikRecall = (u) => ({ R: { hand: W.plant[0].map((x, i) => x + (i === 1 ? 0.01 * wave(u) : 0)), dir: W.plant[1] } });
+const STAND = [[-0.62, 1.64, 0.32], [-0.05, -0.99, 0.08]]; // chống búa: tay bên hông phải, búa dựng thẳng, đầu búa chạm đất
+const ikShowIdle = (u) => ({ R: { hand: STAND[0].map((x, i) => x + (i === 1 ? 0.012 * wave(u, 0.1) : 0)), dir: STAND[1] } });
+const ikShowcase = P([0, STAND], [0.16, [[-0.42, 1.92, 0.6], [-0.2, 0.3, 0.93]]], [0.36, W.fwdUp], [0.56, [[-0.15, 2.0, 0.78], [0, 0.42, 0.9]]], [0.72, [[-0.6, 1.58, 0.36], [-0.05, -0.99, 0.1]]], [0.86, STAND], [1, STAND]);
 const ikVictory = P([0, REST], [0.16, W.lift], [0.32, [[-0.15, 2.95, 0.4], [0, 1, 0.05]]], [0.46, [[-0.15, 2.95, 0.4], [0, 1, 0.05]]], [0.56, W.plant], [0.74, W.fwdUp], [0.88, W.lift], [1, REST]);
 
 const LAG = { spine: 0.012, chest: 0.026, neck: 0.04, head: 0.06, uaL: 0.03, faL: 0.05, hdL: 0.07, skF: 0.07, skB: 0.07, skL: 0.08, skR: 0.08 };
@@ -180,6 +189,7 @@ export const emberAnim = {
     Death: { dur: 1.6, pose: death, ik: ikDeath, warp: snap([[0.08, 0.1, 'out'], [0.3, 0.3, 'io'], [0.64, 0.74, 'in'], [0.76, 0.84, 'out'], [1, 1, 'io']]) },
     Recall: { dur: 2.0, loop: true, pose: recall, ik: ikRecall },
     Victory: { dur: 2.2, pose: L(victory), ik: ikVictory },
-    Showcase: { dur: 4.0, loop: true, pose: showcase },
+    Showcase: { dur: 4.0, loop: true, pose: L(showcase), ik: ikShowcase },
+    ShowIdle: { dur: 2.8, loop: true, pose: showIdle, ik: ikShowIdle }, // đứng ở sảnh thay cho Idle (showcase.js)
   },
 };

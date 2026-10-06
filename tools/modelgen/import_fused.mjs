@@ -298,6 +298,16 @@ async function buildFused(id, def, cfg, here) {
   const src = await readMesh(path.resolve(here, cfg.file));
   if (cfg.simplify) await simplifyMesh(src, cfg.simplify);
   const n = src.pos.length / 3;
+  if (cfg.morph) { // nắn hình lưới gốc trước khi gắn xương (sửa lỗi sẵn có trong file, vd tóc bị cắt đôi theo mặt phẳng ngang): toạ độ file gốc tương đối thân
+    const tx = new Map(), cX = cfg.centerX ?? 0, cZ = cfg.centerZ ?? 0;
+    const rgbAt = (i) => { const k = src.mat[i], m = src.mats[k]; if (m.refs.base == null) return [128, 128, 128]; if (!tx.has(k)) tx.set(k, jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true })); const t = tx.get(k), u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]), o = 4 * (Math.min(t.height - 1, Math.floor(v * t.height)) * t.width + Math.min(t.width - 1, Math.floor(u * t.width))); return [t.data[o], t.data[o + 1], t.data[o + 2]]; };
+    let moved = 0;
+    for (let i = 0; i < n; i++) {
+      const r = cfg.morph({ x: src.pos[3 * i] - cX, y: src.pos[3 * i + 1], z: src.pos[3 * i + 2] - cZ, mat: src.mats[src.mat[i]].name, rgb: rgbAt(i) }); if (!r) continue;
+      src.pos[3 * i] = r.x + cX; src.pos[3 * i + 1] = r.y; src.pos[3 * i + 2] = r.z + cZ; moved++;
+    }
+    console.log(`  nắn hình: ${moved} đỉnh`);
+  }
   // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
   const texCache = new Map(), texOf = (k) => { if (!texCache.has(k)) { const m = src.mats[k]; texCache.set(k, m.refs.base != null ? jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true }) : null); } return texCache.get(k); };
   const rgbOf = (i) => { const tex = texOf(src.mat[i]); if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };
@@ -360,8 +370,19 @@ async function buildFused(id, def, cfg, here) {
   const NB = bones.length, R = split.reps, Wd = new Float32Array(R.length * NB);
   // cfg.allow: { tênVậtLiệu: [xương…] } — đỉnh của vật liệu đó chỉ nhận trọng số từ các xương liệt kê (vd tóc dài chỉ theo đầu/cổ/ngực, không dính tay)
   const allowOf = src.mats.map((m) => cfg.allow?.[m.name] && new Set(cfg.allow[m.name].map((b) => cfg.merge?.[b] ?? b)));
+  // cfg.hair: tóc dài không có xương riêng (thường nằm ở hai vật liệu: phần trên chung với đầu, lọn dưới chung với áo) → trọng số CHỈ theo độ cao
+  // dọc chuỗi xương thân, cùng một hàm cho mọi vật liệu: không còn đường gãy ngang giữa phần theo đầu và phần theo ngực, lọn dưới không bị
+  // tay kéo xoè ra. { chain: [[xương, y], …] từ trên xuống (đơn vị file gốc), pick({ x, y, z, mat, rgb }) → đỉnh có phải tóc (toạ độ file gốc, tương đối thân) }
+  const HC = cfg.hair, hairW = (y) => {
+    const ch = HC.chain, out = new Float32Array(NB), sm = (t) => t * t * (3 - 2 * t);
+    if (y >= ch[0][1]) { out[idx[B(ch[0][0])]] = 1; return out; }
+    for (let k = 1; k < ch.length; k++) if (y >= ch[k][1]) { const t = sm((y - ch[k][1]) / (ch[k - 1][1] - ch[k][1])); out[idx[B(ch[k - 1][0])]] += t; out[idx[B(ch[k][0])]] += 1 - t; return out; }
+    out[idx[B(ch[ch.length - 1][0])]] = 1; return out;
+  };
+  let hairN = 0;
   R.forEach((v, r) => {
     const p = [posN[3 * v], posN[3 * v + 1], posN[3 * v + 2]], al = allowOf[src.mat[v]];
+    if (HC && HC.pick({ x: p[0] / s, y: p[1] / s, z: p[2] / s, mat: src.mats[src.mat[v]].name, rgb: rgbOf(v) })) { Wd.set(hairW(p[1] / s), r * NB); hairN++; return; }
     const dd = (al ? bsegs.filter((sg) => al.has(sg.bone)) : bsegs).map((sg) => ({ b: idx[B(sg.bone)], sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r) }));
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
     const acc = new Float32Array(NB); for (const c of dd) acc[c.b] += Math.exp(-Math.pow((c.d - dmin) / c.sig, 2));
@@ -381,6 +402,7 @@ async function buildFused(id, def, cfg, here) {
     }
     Wd.set(acc, r * NB);
   });
+  if (HC) console.log(`  tóc: ${hairN} điểm gắn theo chuỗi ${HC.chain.map((c) => c[0]).join(' → ')}`);
   { // làm mượt Laplace theo cạnh lưới (chỉ phần thân): chỗ chuyển giữa hai xương trải trên nhiều tam giác hơn → tam giác không bị kéo thành mảnh
     const nb = Array.from({ length: R.length }, () => new Set());
     for (let t = 0; t < index0.length; t += 3) { if (vlab[index0[t]]) continue; const a = rep[index0[t]], b = rep[index0[t + 1]], c = rep[index0[t + 2]]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }

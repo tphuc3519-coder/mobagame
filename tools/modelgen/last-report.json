@@ -1,10 +1,10 @@
 [
   {
-    "id": "nguyet_ha",
-    "tris": 31589,
+    "id": "hoa_ren",
+    "tris": 19967,
     "bones": 24,
-    "kb": 3051,
-    "mats": 3,
-    "runRef": 315
+    "kb": 1805,
+    "mats": 1,
+    "runRef": 320
   }
 ]
