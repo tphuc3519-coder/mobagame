@@ -153,8 +153,8 @@ export function createHud(canvas, input, portraits = null) {
             bar(x0, y0, bw, bh, pct, '#f2b33a');
             if (tr.v > pct + 0.002) { ctx.fillStyle = 'rgba(255,248,232,0.85)'; ctx.fillRect(x0 + bw * pct, y0, bw * (tr.v - pct), bh); }
             const hot = e.aggro != null || tn - (monHit.get(e.id) ?? -99) < 4;
-            if (hot) { ctx.font = '800 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); }
-            if (e.boss || bw > 90) { const ny = hot ? y0 - 16 : p.y - 10; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
+            if (hot) { ctx.font = `800 ${e.boss ? 16 : 12}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.lineWidth = e.boss ? 4 : 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); } // boss: số to hơn
+            if (e.boss || bw > 90) { const ny = hot ? y0 - (e.boss ? 20 : 16) : p.y - 10; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
             ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
             continue;
           }

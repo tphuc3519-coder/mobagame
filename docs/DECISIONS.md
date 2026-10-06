@@ -480,5 +480,5 @@
 - **Khung hình sảnh**: tướng chiếm ~52% chiều cao khung (trước ~61%, người chơi thấy to quá) và khung tự lùi xa đủ chứa tầm với cao
   nhất của bàn tay/mũi vũ khí trong clip trưng bày + dáng đứng (tính khi nạp model bằng cách lấy mẫu clip).
 
-- **Số máu quái khi giao chiến** (như Liên Quân): quái đang có mục tiêu hoặc vừa bị đánh trong 4 giây hiện số máu hiện tại (trắng viền
+- **Số máu quái khi giao chiến** (như Liên Quân, cả quái thường lẫn boss — số của boss to hơn, 16px): quái đang có mục tiêu hoặc vừa bị đánh trong 4 giây hiện số máu hiện tại (trắng viền
   đen) ngay trên thanh máu; tên quái lớn đẩy lên trên số. Thanh máu quái có thêm vệt trắng phần máu vừa mất, rút dần (~45%/giây).
