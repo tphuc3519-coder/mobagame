@@ -314,7 +314,7 @@ function toad() {
   m.blob({ ell: [[0, 0.45, 0.6], [0.32, 0.12, 0.25]], k: 0.08, mat: SKIN, color: '#eadca6', weights: W1('Bone_Jaw') });       // túi cổ
   m.blob({ ell: [[0.38, 0.93, 0.16], [0.16, 0.1, 0.22], [0, 20, 0]], k: 0.07, mat: SKIN, color: skin, weights: W1('Bone_Body'), mirror: true }); // tuyến sau mắt
   m.blob({ ell: [[0.34, 1.0, 0.55], [0.17, 0.16, 0.16]], k: 0.08, mat: SKIN, color: skin, weights: HW, mirror: true });      // hốc mắt lồi
-  m.blob({ ell: [[0, 0.615, 0.62], [0.6, 0.022, 0.42]], sub: true, k: 0.02, color: '#000', weights: HW });                   // khe miệng rộng
+  m.blob({ ell: [[0, 0.615, 0.62], [0.6, 0.016, 0.42]], sub: true, k: 0.018, color: '#000', weights: HW });                   // khe miệng rộng
   m.blob({ ell: [[0.36, 1.04, 0.62], [0.11, 0.11, 0.1]], k: 0.01, mat: GLOW, color: '#ffc02a', weights: HW, mirror: true }); // mắt vàng
   m.blob({ ell: [[0.35, 1.11, 0.57], [0.15, 0.05, 0.13], [-14, 0, 0]], k: 0.025, mat: SKIN, color: skin, weights: HW, mirror: true }); // mí trên cau có
   m.box(0.1, 0.026, 0.02, { bone: 'Bone_Head', at: [0.37, 1.04, 0.716], rot: [0, 18, 0], color: '#120c04', mat: SKIN, mirror: true }); // con ngươi ngang
@@ -568,9 +568,9 @@ function bird() {
   const fprof = (v) => Math.min(1, 0.35 + v * 1.6) * Math.sqrt(Math.max(0, 1 - Math.pow(v, 6)));
   const feather = (bone, at, dir, w, len, c0, c1, c2, glowTip, lift = 0) => addK(m, leafGeo(w, len, { bend: 0.05, ridge: 0.05, nv: 6, prof: fprof }), { bone, at, rot: frame(dir, [0, 1, lift]), mirror: true },
     (u, v) => { if (glowTip && v > 0.9) return ['#8aeaff', GLOW]; if (glowTip && Math.abs(u - 0.5) < 0.1 && v > 0.3 && v < 0.82) return ['#38c4ff', GLOW]; /* tia sét dọc sống lông */ const c = v < 0.6 ? mixC(c0, c1, v / 0.6) : mixC(c1, c2, (v - 0.6) / 0.4); return [hex(Math.abs(u - 0.5) < 0.1 ? c.lerp(new THREE.Color('#d8f4ff'), 0.25) : c), FUR]; });
-  for (let i = 0; i < 9; i++) { const t = i / 8; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.9, 3.6, 0.05], [2.7, 3.84, -0.15], t).map((q, k) => (k === 1 ? q + i * 0.006 : q)), [0.15 + t * 0.25, -0.04, -1], 0.44, 1.5 + t * 0.4, '#08305a', '#106ea8', '#e8a830', false); }
-  for (let i = 0; i < 8; i++) { const t = i / 7; feather(t < 0.45 ? 'Bone_WingLL' : 'Bone_WingTipL', lerp3([2.75, 3.84, -0.12], [4.7, 3.76, -0.45], t).map((q, k) => (k === 1 ? q + 0.05 + i * 0.006 : q)), lerp3([0.35, -0.04, -1], [1, -0.05, -0.12], t), 0.4 - t * 0.06, 1.9 + t * 0.9, '#062a50', '#0e64a0', '#3ab8e6', true); }
-  for (let i = 0; i < 10; i++) { const t = i / 9; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.8, 3.76, 0.2], [4.1, 3.92, -0.28], t).map((q, k) => (k === 1 ? q + 0.08 : q)), [0.2 + t * 0.5, -0.02, -1], 0.36, 0.85 + t * 0.3, '#0a4a7c', '#1886c0', '#f6c044', false, 0.1); }
+  for (let i = 0; i < 9; i++) { const t = i / 8; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.9, 3.6, 0.05], [2.7, 3.84, -0.15], t).map((q, k) => (k === 1 ? q + i * 0.006 : q)), [0.15 + t * 0.25, -0.04, -1], 0.44, 1.5 + t * 0.4, '#041c40', '#0a4c8c', '#e0a024', false); }
+  for (let i = 0; i < 8; i++) { const t = i / 7; feather(t < 0.45 ? 'Bone_WingLL' : 'Bone_WingTipL', lerp3([2.75, 3.84, -0.12], [4.7, 3.76, -0.45], t).map((q, k) => (k === 1 ? q + 0.05 + i * 0.006 : q)), lerp3([0.35, -0.04, -1], [1, -0.05, -0.12], t), 0.4 - t * 0.06, 1.9 + t * 0.9, '#03163a', '#0a428a', '#2a9cd6', true); }
+  for (let i = 0; i < 10; i++) { const t = i / 9; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.8, 3.76, 0.2], [4.1, 3.92, -0.28], t).map((q, k) => (k === 1 ? q + 0.08 : q)), [0.2 + t * 0.5, -0.02, -1], 0.36, 0.85 + t * 0.3, '#062e5e', '#0f62a6', '#f0b030', false, 0.1); }
   // đuôi phượng: lông dài có mắt đốm vàng, 2 dải đuôi sáng
   for (let i = 0; i < 7; i++) {
     const a = (i - 3) * 0.2, len = 3.3 + (3 - Math.abs(i - 3)) * 0.35;
@@ -768,11 +768,14 @@ function helmet(b, o = {}) {
   m.add(place(new THREE.BoxGeometry(S(0.022), S(0.17), S(0.02)), { rx: -8, at: s([0, 1.4, 0.165]) }), { bone: 'Bone_Head', color: STEEL, mat: METAL }); // thanh che mũi
   m.box(S(0.03), S(0.11), S(0.1), { bone: 'Bone_Head', at: s([0.158, 1.39, 0.04]), rot: [0, 0, 8], color: STEEL, mat: METAL, mirror: true });   // che má
   if (o.crest !== false) { // chỏm lông: vây cong từ trán ra sau gáy
-    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10, z = 0.15 - t * 0.38, y = Math.sin(t * Math.PI) * 0.12 + (t > 0.7 ? -(t - 0.7) * 0.25 : 0); pts.push([z, y]); }
+    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10, z = 0.15 - t * 0.4, y = Math.sin(t * Math.PI) * 0.16 + (t > 0.7 ? -(t - 0.7) * 0.3 : 0); pts.push([z, y]); }
     for (let i = 10; i >= 0; i--) { const t = i / 10, z = 0.13 - t * 0.33; pts.push([z, -0.02 - Math.sin(t * Math.PI) * 0.01]); }
     m.add(place(new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(S(x), S(y)))), { depth: S(0.035), bevelEnabled: true, bevelSize: S(0.008), bevelThickness: S(0.008), bevelSegments: 1, curveSegments: 4 }).translate(0, 0, -S(0.0175)), { ry: -90, at: s([0, 1.6, 0.0]) }), { bone: 'Bone_Head', color: '#e8e8e8', mat: TEAMCLOTH, flat: true });
     m.sphere(S(0.03), { bone: 'Bone_Head', at: s([0, 1.62, 0.13]), color: GOLD, mat: METAL });
   }
+  // hoa văn vàng hình búp sen/ngọn lửa trên trán mũ
+  m.add(place(new THREE.ExtrudeGeometry(new THREE.Shape([[0, 0], [0.032, 0.022], [0.022, 0.062], [0, 0.095], [-0.022, 0.062], [-0.032, 0.022]].map(([x, y]) => new THREE.Vector2(S(x), S(y)))), { depth: S(0.012), bevelEnabled: true, bevelSize: S(0.005), bevelThickness: S(0.005), bevelSegments: 1 }), { rx: -24, at: s([0, 1.492, r - 0.01]) }), { bone: 'Bone_Head', color: GOLD, mat: METAL, flat: true });
+  m.sphere(S(0.014), { bone: 'Bone_Head', at: s([0, 1.52, r + 0.004]), color: '#ffffff', mat: TEAMGLOW });
 }
 
 function swordsman() {
@@ -802,8 +805,10 @@ function archer() {
   m.add(place(new THREE.SphereGeometry(1, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), { sc: [S(0.178), S(0.175), S(0.182)], at: s([0, 1.49, -0.02]) }), { bone: 'Bone_Head', color: '#e4e4e4', mat: TEAMCLOTH });
   m.blob({ cone: [s([0, 1.46, -0.15]), s([0, 1.22, -0.2]), S(0.09), S(0.05)], k: S(0.02), mat: TEAMCLOTH, color: '#d8d8d8', weights: W1('Bone_Head') }); // vạt mũ trùm sau gáy
   m.add(place(ring(S(0.176), S(0.011), 28), { at: s([0, 1.5, -0.02]) }), { bone: 'Bone_Head', color: GOLD, mat: METAL }); // viền mũ trùm
-  m.sphere(S(0.02), { bone: 'Bone_Head', at: s([0, 1.505, 0.155]), color: '#ffffff', mat: TEAMGLOW });
-  m.add(place(new THREE.ExtrudeGeometry(new THREE.Shape([[0, 0], [0.03, 0.08], [0.018, 0.2], [0, 0.24], [-0.012, 0.12]].map(([x, y]) => new THREE.Vector2(S(x), S(y)))), { depth: S(0.004), bevelEnabled: false }), { rz: -35, ry: 70, at: s([0.15, 1.5, -0.04]) }), { bone: 'Bone_Head', color: '#f4f0e6', mat: FUR, flat: true });
+  m.sphere(S(0.02), { bone: 'Bone_Head', at: s([0, 1.51, 0.182]), color: '#ffffff', mat: TEAMGLOW });
+  for (const [rz, dz, sc2] of [[-35, -0.04, 1.15], [-55, -0.09, 0.9]]) // cặp lông vũ màu đội cắm bên mũ trùm
+    m.add(place(new THREE.ExtrudeGeometry(new THREE.Shape([[0, 0], [0.03, 0.08], [0.018, 0.2], [0, 0.24], [-0.012, 0.12]].map(([x, y]) => new THREE.Vector2(S(x * sc2), S(y * sc2)))), { depth: S(0.006), bevelEnabled: false }), { rz, ry: 70, at: s([0.15, 1.5, dz]) }), { bone: 'Bone_Head', color: '#ececec', mat: TEAMCLOTH, flat: true });
+  m.add(place(new THREE.ExtrudeGeometry(new THREE.Shape([[0, 0], [0.032, 0.022], [0.022, 0.062], [0, 0.095], [-0.022, 0.062], [-0.032, 0.022]].map(([x, y]) => new THREE.Vector2(S(x), S(y)))), { depth: S(0.012), bevelEnabled: true, bevelSize: S(0.005), bevelThickness: S(0.005), bevelSegments: 1 }), { rx: -20, at: s([0, 1.485, 0.163]) }), { bone: 'Bone_Head', color: GOLD, mat: METAL, flat: true }); // hoa văn búp sen vàng
   // cung sừng hai đầu cong ngược, chuôi quấn da, dây cung, chóp vàng
   const bowPts = []; for (let i = 0; i <= 16; i++) { const t = i / 16 * 2 - 1, y = t * 0.47, z = 0.11 * (1 - t * t) - 0.05 * Math.pow(Math.abs(t), 6); bowPts.push(new THREE.Vector3(0, y, z)); }
   const bow = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bowPts), 20, S(0.018), 6, false); bow.scale(S(1), S(1), S(1));
