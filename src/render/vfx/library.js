@@ -44,7 +44,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
   }
   const flash = (x, y, z, size, color, life = 0.18) => { // quầng loé đứng (billboard) to quá ~2,4 × độ cao sẽ cắm xuống đất thành mảng sáng cạnh thẳng: phần dư đổ thành vầng sáng nằm trên đất
     const max = Math.max(90, y * 2.4), s = Math.min(size, max);
-    if (size > max * 1.15) sh.decal('glow', x, z, size * 0.55, { color, life: life * 1.6, alpha: 0.75, fadeIn: 0, grow: 0.3, y: 6 });
+    if (size > max * 1.15) sh.decal('glow', x, z, size * 0.55, { color, glow: 1, life: life * 1.6, alpha: 0.6, fadeIn: 0, grow: 0.3, y: 6 });
     A.spawn({ x, y, z, life, size: [s, s * 1.4], color, alpha: [1, 0], tile: TILE.glow, fadeIn: 0 });
   };
   const sparks = (x, y, z, color, n = 16, k = 1) => burst(A, x, y, z, { n, speed: [250 * k, 700 * k], up: [100, 500], life: [0.25, 0.5], size: [24 * k, 4], color: [0xffffff, color], grav: 1400, drag: 1.5, tile: TILE.glow });
