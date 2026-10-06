@@ -310,6 +310,13 @@ async function buildFused(id, def, cfg, here) {
     }
     console.log(`  nắn hình: ${moved} đỉnh`);
   }
+  if (cfg.drop) { // bỏ hẳn phần thừa của lưới gốc (vd lọn tóc lởm chởm dính vào lưng áo): tam giác có cả 3 đỉnh thoả điều kiện
+    const tx = new Map(), cX = cfg.centerX ?? 0, cZ = cfg.centerZ ?? 0, dropV = new Uint8Array(n);
+    const rgbAt = (i) => { const k = src.mat[i], m = src.mats[k]; if (m.refs.base == null) return [128, 128, 128]; if (!tx.has(k)) tx.set(k, jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true })); const t = tx.get(k), u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]), o = 4 * (Math.min(t.height - 1, Math.floor(v * t.height)) * t.width + Math.min(t.width - 1, Math.floor(u * t.width))); return [t.data[o], t.data[o + 1], t.data[o + 2]]; };
+    for (let i = 0; i < n; i++) dropV[i] = cfg.drop({ x: src.pos[3 * i] - cX, y: src.pos[3 * i + 1], z: src.pos[3 * i + 2] - cZ, mat: src.mats[src.mat[i]].name, rgb: rgbAt(i) }) ? 1 : 0;
+    const keep = []; for (let t = 0; t < src.index.length; t += 3) { const a = src.index[t], b = src.index[t + 1], c = src.index[t + 2]; if (!(dropV[a] && dropV[b] && dropV[c])) keep.push(a, b, c); }
+    console.log(`  bỏ phần thừa: ${(src.index.length - keep.length) / 3} tam giác`); src.index = keep;
+  }
   // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
   const texCache = new Map(), texOf = (k) => { if (!texCache.has(k)) { const m = src.mats[k]; texCache.set(k, m.refs.base != null ? jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true }) : null); } return texCache.get(k); };
   const rgbOf = (i) => { const tex = texOf(src.mat[i]); if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };

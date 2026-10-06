@@ -40,12 +40,10 @@ export default {
         const u = sm(1.5, 1.37, y), k = 1 + 0.32 * u, w = sm(-0.04, -0.1, z);
         return { x: x * (1 + (k - 1) * w), y: 1.5 - (1.5 - y) * (1 + 0.7 * w), z: -0.1 + (z + 0.1) * (1 + (k - 1) * w) };
       }
-      if (mat === 'body' && z < -0.09 && y > 1.12 && y < 1.5 && Math.min(...rgb) > 150) { // lọn tóc dưới: mép trên thu hẹp + lùi vào trong búi
-        const t = sm(1.22, 1.43, y);
-        return { x: x * (1 - 0.3 * t), y: y - 0.03 * t, z: z + 0.045 * t };
-      }
       return null;
     },
+    // các lọn tóc trắng lởm chởm dính vào lưng áo (phần dưới của mái tóc bị cắt đôi): bỏ hẳn — mái tóc chỉ còn một khối liền (người chơi: "bỏ luôn búi tóc thừa")
+    drop: ({ y, z, mat, rgb }) => mat === 'body' && z < -0.09 && y > 1.1 && y < 1.5 && Math.min(...rgb) > 150,
     hair: { // tóc dài nằm ở hai vật liệu (phần trên chung với đầu, các lọn dưới sau lưng chung với áo): gắn theo độ cao đầu → cổ → ngực → lưng,
       // cùng một hàm → hết đường gãy ngang khi đầu/tay cử động (trước đây phần trên theo đầu, lọn dưới theo cả cánh tay nên xoè ra)
       chain: [['Head', 1.64], ['Neck', 1.5], ['Chest', 1.3], ['Spine', 1.1]],

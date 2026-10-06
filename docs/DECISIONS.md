@@ -470,8 +470,9 @@
 ## Sảnh: tóc Moonstream, búa Emberforge, cỡ tướng (06/10)
 - **Tóc Moonstream "bị cắt ngang"**: lỗi có sẵn trong cả hai file gốc (hq và game) — mái tóc bị cắt đôi theo một mặt phẳng ngang vai: nửa
   trên thuộc vật liệu đầu và khép lại thành "búi" tròn, nửa dưới (các lọn trắng sau lưng) thuộc vật liệu áo với mép trên thẳng. Sửa khi
-  nhập (`import_fused.mjs`): `morph` nắn lưới gốc trước khi gắn xương — nửa dưới búi giãn dọc ×1,7 và nở ra phủ mép, mép trên các lọn
-  thu hẹp và lùi vào trong búi → nhìn như một mái tóc dài liền. Thêm `hair`: mọi đỉnh tóc (cả hai vật liệu, trừ mặt/cằm) gắn xương
+  nhập (`import_fused.mjs`): `morph` nắn lưới gốc trước khi gắn xương — nửa dưới búi giãn dọc ×1,7 và nở ra phủ mép → một mái tóc dài
+  liền tới giữa lưng; `drop` bỏ hẳn các lọn tóc lởm chởm phía dưới (người chơi thấy như "búi tóc thừa"; lưng áo bên dưới vẫn còn lưới,
+  không thủng). Thêm `hair`: mọi đỉnh tóc (cả hai vật liệu, trừ mặt/cằm) gắn xương
   CHỈ theo độ cao dọc chuỗi Đầu → Cổ → Ngực → Lưng (cùng một hàm), trước đây phần trên theo đầu với vùng chuyển rất hẹp còn các lọn
   dưới bị gắn cả vào cánh tay → khi cử động gãy ngang và xoè ra.
 - **Emberforge "mất búa" ở sảnh**: dáng đứng vác búa trên vai làm đầu búa khuất sau lưng; clip trưng bày giơ búa thẳng lên thì đầu búa
