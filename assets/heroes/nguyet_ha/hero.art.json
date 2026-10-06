@@ -1,11 +1,13 @@
 {
   "model": "nguyet_ha.glb",
+  "showcase": "nguyet_ha_showcase.glb",
   "scale": 100,
-  "height": 178,
+  "height": 200,
   "runRefSpeed": 315,
   "hitTime": {
-    "Attack1": 0.3,
-    "Attack2": 0.3
+    "Attack1": 0.26,
+    "Attack2": 0.26,
+    "Ult": 0.8
   },
   "attach": {
     "weapon_tip": "Bone_HandR_Tip",
@@ -31,5 +33,13 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen"
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "moonstream_pbr_game.glb",
+  "showcaseSource": "moonstream_pbr_hq.glb",
+  "portrait": {
+    "dist": 1.5,
+    "dy": -0.12
+  },
+  "shading": "pbr",
+  "showcaseOutline": false
 }

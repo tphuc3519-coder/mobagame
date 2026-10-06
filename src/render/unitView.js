@@ -32,12 +32,12 @@ export function createUnitViews(scene, localTeam, localId) {
     if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); return v; }
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
-    const attach = (obj) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim); castShadows(obj); };
+    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: art?.outline !== false }); castShadows(obj); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
     const useCapsule = () => { const c = createCapsule(); attach(c.object); v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} }; };
     loadHero(e.heroId).then((m) => {
       if (!m) return useCapsule();
-      const inst = instantiate(m); attach(inst.object);
+      const inst = instantiate(m); attach(inst.object, inst.art);
       v.art = inst.art; v.animator = createAnimator(inst);
       v.bones = Object.fromEntries(['HandR', 'HandR_Tip', 'HandL', 'HandL_Tip', 'Head', 'Chest'].map((n) => [n, inst.object.getObjectByName('Bone_' + n)]).filter(([, b]) => b)); // cho hiệu ứng bám xương (vệt vũ khí, sao choáng)
     }).catch(useCapsule);

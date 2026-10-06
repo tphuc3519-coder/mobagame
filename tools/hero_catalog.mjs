@@ -84,8 +84,8 @@ function skillMd(key, s) {
   if (s.desc) L.push(`  - Mô tả: ${s.desc}`);
   return L.join('\n');
 }
-function glbInfo(id) {
-  const f = `assets/heroes/${id}/${id}.glb`;
+function glbInfo(id, file = `${id}.glb`) {
+  const f = `assets/heroes/${id}/${file}`;
   if (!fs.existsSync(f)) return null;
   const b = fs.readFileSync(f), n = b.readUInt32LE(12), j = JSON.parse(b.subarray(20, 20 + n));
   let tris = 0;
@@ -93,16 +93,19 @@ function glbInfo(id) {
   const art = JSON.parse(fs.readFileSync(`assets/heroes/${id}/hero.art.json`, 'utf8'));
   return { kb: Math.round(b.length / 1024), tris: Math.round(tris), bones: j.skins?.[0]?.joints.length || 0, mats: j.materials?.length || 0, tex: j.images?.length || 0, clips: j.animations.map((a) => a.name), art };
 }
+const shade = (s = 'toon', outline) => `\`${s}\`${outline === false ? ', không viền đen' : ' + viền đen'}`; // hero.art.json shading/outline (09 §3.4)
 function modelMd(id, look) {
   const g = glbInfo(id);
   if (!g) return '- **Model:** chưa có.';
-  const a = g.art, src = a.source ? `model nhập (\`tools/modelgen/imports/${a.source}\`, có texture, ${g.tex} ảnh)` : `sinh bằng code (\`tools/modelgen/heroes/${id}.mjs\`, màu theo đỉnh, chưa texture)`;
+  const a = g.art, sc = a.showcase && glbInfo(id, a.showcase), src = a.source ? `model nhập (\`tools/modelgen/imports/${a.source}\`, có texture, ${g.tex} ảnh)` : `sinh bằng code (\`tools/modelgen/heroes/${id}.mjs\`, màu theo đỉnh, chưa texture)`;
   return [
     `![${id}](previews/heroes/${id}.jpg)`,
     '',
     `- **Ngoại hình model:** ${look}`,
     `- **File:** \`assets/heroes/${id}/${id}.glb\` (${g.kb} KB) · ${src}`,
     `- **Thông số:** ${g.tris.toLocaleString('en')} tam giác · ${g.bones} xương · ${g.mats} vật liệu · cao ${a.height} cm · runRefSpeed ${a.runRefSpeed}`,
+    ...(sc ? [`- **Bản sảnh (chọn tướng):** \`assets/heroes/${id}/${a.showcase}\` (${sc.kb} KB, ${sc.tris.toLocaleString('en')} tam giác${a.showcaseSource ? `, từ \`tools/modelgen/imports/${a.showcaseSource}\`` : ''})`] : []),
+    ...(a.shading || a.showcase ? [`- **Cách tô:** trong trận ${shade(a.shading, a.outline)} · sảnh ${shade(a.showcaseShading || a.shading, a.showcaseOutline ?? a.outline)}`] : []),
     `- **Màu:** viền sáng \`${a.rim}\` · bảng màu ${a.palette.map((c) => `\`${c}\``).join(' ')}`,
     `- **Clip (${g.clips.length}):** ${g.clips.join(', ')}`,
   ].join('\n');
@@ -181,7 +184,7 @@ issues.push('**Tên không đồng bộ**: 6 tướng Alpha dùng tên tiếng A
 issues.push('**Mèo Thần Tài**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".');
 issues.push('**Build khác docs/04**: Mossback, Bamboo Shade, Kitewing, Lanternward có build trong code khác build ghi trong docs/04 §6 (code là nguồn đang chạy).');
 issues.push('**docs/PROGRESS.md**: bảng thông số model chỉ có 16 tướng gốc; 14 model đợt 2 chưa được ghi. Số liệu 3 model nhập (Mossback, Emberforge, Bamboo Shade) đã thay đổi so với bảng.');
-issues.push('**Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 3 model nhập; nên ưu tiên làm lại khi mở khoá.');
+issues.push('**Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 4 model nhập (Mossback, Emberforge, Bamboo Shade, Moonstream); nên ưu tiên làm lại khi mở khoá.');
 issues.push('**Hàng chờ (10 tướng)**: cần tạo `src/data/heroes/<id>.js` (dùng khuôn `hero()` trong `_make.js`) và thêm vào `HEROES` trong `index.js`; Kiếm Mây và Sói Núi dùng tài nguyên "Không" (không mana) — khuôn `_make.js` hiện mặc định `resource: \'mana\'`.');
 out.push(...issues.map((s, i) => `${i + 1}. ${s}`), '');
 

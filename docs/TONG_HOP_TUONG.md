@@ -57,7 +57,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 4. **Mèo Thần Tài**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".
 5. **Build khác docs/04**: Mossback, Bamboo Shade, Kitewing, Lanternward có build trong code khác build ghi trong docs/04 §6 (code là nguồn đang chạy).
 6. **docs/PROGRESS.md**: bảng thông số model chỉ có 16 tướng gốc; 14 model đợt 2 chưa được ghi. Số liệu 3 model nhập (Mossback, Emberforge, Bamboo Shade) đã thay đổi so với bảng.
-7. **Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 3 model nhập; nên ưu tiên làm lại khi mở khoá.
+7. **Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 4 model nhập (Mossback, Emberforge, Bamboo Shade, Moonstream); nên ưu tiên làm lại khi mở khoá.
 8. **Hàng chờ (10 tướng)**: cần tạo `src/data/heroes/<id>.js` (dùng khuôn `hero()` trong `_make.js`) và thêm vào `HEROES` trong `index.js`; Kiếm Mây và Sói Núi dùng tài nguyên "Không" (không mana) — khuôn `_make.js` hiện mặc định `resource: 'mana'`.
 
 ## 2. ✅ Tướng hiện có (6)
@@ -182,9 +182,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 
 ![nguyet_ha](previews/heroes/nguyet_ha.jpg)
 
-- **Ngoại hình model:** pháp sư nữ tóc bạc dài chạm đất, áo lụa xanh đêm có hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người. Vũ khí: không; điều khiển nước bằng tay và dải lụa.
-- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (861 KB) · sinh bằng code (`tools/modelgen/heroes/nguyet_ha.mjs`, màu theo đỉnh, chưa texture)
-- **Thông số:** 12,092 tam giác · 30 xương · 3 vật liệu · cao 178 cm · runRefSpeed 315
+- **Ngoại hình model:** pháp sư nữ tóc bạc trắng dài quá hông, hai kẹp tóc; váy dài xanh đêm chạm đất, tay áo phồng, vạt trước xẻ lộ lớp váy trắng, dải lụa trắng uốn cong bên vạt váy (model có texture do hoạ sĩ gửi, 2026-10-06; ý tưởng cũ: áo lụa hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người). Vũ khí: chiếc bình bạc nhỏ cầm tay phải (rót dòng nước bạc); điều khiển nước bằng tay.
+- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (2132 KB) · model nhập (`tools/modelgen/imports/moonstream_pbr_game.glb`, có texture, 8 ảnh)
+- **Thông số:** 31,589 tam giác · 24 xương · 3 vật liệu · cao 200 cm · runRefSpeed 315
+- **Bản sảnh (chọn tướng):** `assets/heroes/nguyet_ha/nguyet_ha_showcase.glb` (7763 KB, 113,957 tam giác, từ `tools/modelgen/imports/moonstream_pbr_hq.glb`)
+- **Cách tô:** trong trận `pbr` + viền đen · sảnh `pbr`, không viền đen
 - **Màu:** viền sáng `#8fd3ff` · bảng màu `#1d2b64` `#8fd3ff` `#e8f4ff` `#c9a24a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 

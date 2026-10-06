@@ -9,7 +9,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import jpeg from 'jpeg-js';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { MeshoptSimplifier, MeshoptEncoder } from 'meshoptimizer';
 import { buildClips } from './anim.mjs';
 import { makeRig } from './import_glb.mjs';
 
@@ -33,27 +33,41 @@ function packGlb(json, bin) {
   return out;
 }
 
-/** Đọc mesh: bỏ texture khỏi bản đưa cho GLTFLoader (Node không giải mã được ảnh), lấy vị trí/pháp tuyến/uv đã giải nén, thế giới, float. */
+/** Đọc mesh: bỏ texture khỏi bản đưa cho GLTFLoader (Node không giải mã được ảnh), lấy vị trí/pháp tuyến/uv đã giải nén, thế giới, float.
+ *  File có nhiều vật liệu (vd thân / đầu / mắt, mỗi vật liệu một primitive): gộp thành một lưới, `mat[i]` = vật liệu của đỉnh i,
+ *  `mats[k]` = { name, refs, baseImg } của từng vật liệu (refs/baseImg/matName ở gốc là của vật liệu đầu tiên, như bản một vật liệu). */
 export async function readMesh(file) {
   const { json, bin } = parseGlb(fs.readFileSync(file));
   const imgs = (json.images || []).map((im) => { const bv = json.bufferViews[im.bufferView]; return Buffer.from(bin.subarray(bv.byteOffset || 0, (bv.byteOffset || 0) + bv.byteLength)); });
-  const mat = json.materials[0], tex = (t) => t && t.index;
-  const refs = { base: tex(mat.pbrMetallicRoughness?.baseColorTexture), mr: tex(mat.pbrMetallicRoughness?.metallicRoughnessTexture), normal: tex(mat.normalTexture) };
-  const tt = mat.pbrMetallicRoughness?.baseColorTexture?.extensions?.KHR_texture_transform || { offset: [0, 0], scale: [1, 1] };
+  const tex = (t) => t && t.index;
+  const mats = json.materials.map((mat) => {
+    const refs = { base: tex(mat.pbrMetallicRoughness?.baseColorTexture), mr: tex(mat.pbrMetallicRoughness?.metallicRoughnessTexture), normal: tex(mat.normalTexture) };
+    const tt = (mat.pbrMetallicRoughness?.baseColorTexture || mat.normalTexture)?.extensions?.KHR_texture_transform || { offset: [0, 0], scale: [1, 1] };
+    return { name: mat.name || 'm', refs, tt, baseImg: json.textures?.[refs.base]?.source };
+  });
   const j2 = JSON.parse(JSON.stringify(json)); delete j2.textures; delete j2.images; delete j2.samplers;
-  j2.materials = [{ name: mat.name || 'm' }];
+  j2.materials = mats.map((m) => ({ name: m.name }));
   const glb = packGlb(j2, Buffer.from(bin));
   const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength), '');
   gltf.scene.updateMatrixWorld(true);
-  let mesh; gltf.scene.traverse((o) => { if (o.isMesh) mesh = o; });
-  const g = mesh.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, v = new THREE.Vector3();
-  const pos = new Float32Array(P.count * 3), nor = new Float32Array(P.count * 3), uv = new Float32Array(P.count * 2);
-  for (let i = 0; i < P.count; i++) {
-    v.set(P.getX(i), P.getY(i), P.getZ(i)).applyMatrix4(mesh.matrixWorld); pos.set([v.x, v.y, v.z], i * 3);
-    nor.set([N.getX(i), N.getY(i), N.getZ(i)], i * 3);
-    uv.set([U.getX(i) * tt.scale[0] + tt.offset[0], U.getY(i) * tt.scale[1] + tt.offset[1]], i * 2); // khôi phục uv thật (gltfpack nén uv rồi bù bằng KHR_texture_transform)
+  const meshes = []; gltf.scene.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  const total = meshes.reduce((a, m) => a + m.geometry.attributes.position.count, 0);
+  const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2), mat = new Uint8Array(total), index = [], v = new THREE.Vector3();
+  let base = 0;
+  for (const mesh of meshes) {
+    const k = Math.max(0, mats.findIndex((m) => m.name === mesh.material.name)), tt = mats[k].tt;
+    const g = mesh.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv;
+    for (let i = 0; i < P.count; i++) {
+      const j = base + i;
+      v.set(P.getX(i), P.getY(i), P.getZ(i)).applyMatrix4(mesh.matrixWorld); pos.set([v.x, v.y, v.z], j * 3);
+      nor.set([N.getX(i), N.getY(i), N.getZ(i)], j * 3);
+      uv.set([U.getX(i) * tt.scale[0] + tt.offset[0], U.getY(i) * tt.scale[1] + tt.offset[1]], j * 2); // khôi phục uv thật (gltfpack nén uv rồi bù bằng KHR_texture_transform)
+      mat[j] = k;
+    }
+    for (const t of g.index.array) index.push(base + t);
+    base += P.count;
   }
-  return { pos, nor, uv, index: Array.from(g.index.array), imgs, refs, baseImg: json.textures[refs.base]?.source, matName: mat.name };
+  return { pos, nor, uv, mat, index, imgs, mats, texSource: (json.textures || []).map((t) => t.source), refs: mats[0].refs, baseImg: mats[0].baseImg, matName: mats[0].name };
 }
 
 /** Chạy thử mọi clip và cắt các tam giác bị kéo giãn thành "mảnh vụn" (cạnh dài ra quá nhiều so với tư thế gốc, hoặc có đỉnh bay quá xa thân).
@@ -117,17 +131,28 @@ function segDist(p, a, b) {
   return Math.hypot(p[0] - a[0] - abx * t, p[1] - a[1] - aby * t, p[2] - a[2] - abz * t);
 }
 
-/** Giảm tam giác bằng meshoptimizer (giữ biên uv/pháp tuyến), rồi dồn lại đỉnh. cfg: { tris, error }. */
+/** Giảm tam giác bằng meshoptimizer (giữ biên uv/pháp tuyến), rồi dồn lại đỉnh. cfg: { tris, error, flags }.
+ *  Nhiều vật liệu: giảm riêng từng vật liệu để không gộp đỉnh qua ranh giới vật liệu. `tris` là số (chia theo tỉ lệ số tam giác
+ *  từng vật liệu) hoặc { tênVậtLiệu: số } (vật liệu không có tên trong bảng thì giữ nguyên). */
 async function simplifyMesh(src, { tris, error = 0.02, flags = [] }) {
   await MeshoptSimplifier.ready;
   const n = src.pos.length / 3, attr = new Float32Array(n * 5);
   for (let i = 0; i < n; i++) { attr.set([src.uv[2 * i], src.uv[2 * i + 1]], i * 5); attr.set([src.nor[3 * i], src.nor[3 * i + 1], src.nor[3 * i + 2]], i * 5 + 2); }
-  const before = src.index.length / 3;
-  const [out] = MeshoptSimplifier.simplifyWithAttributes(Uint32Array.from(src.index), src.pos, 3, attr, 5, [4, 4, 0.6, 0.6, 0.6], null, tris * 3, error, flags);
+  const before = src.index.length / 3, mats = src.mats || [{ name: 'm' }], mat = src.mat || new Uint8Array(n);
+  const parts = mats.map(() => []); for (let t = 0; t < src.index.length; t += 3) parts[mat[src.index[t]]].push(src.index[t], src.index[t + 1], src.index[t + 2]);
+  const out = [];
+  mats.forEach((m, k) => {
+    const idx = parts[k]; if (!idx.length) return;
+    const target = typeof tris === 'number' ? Math.round((tris * idx.length) / src.index.length) : tris[m.name];
+    if (target == null || target * 3 >= idx.length) { out.push(...idx); return; }
+    const [res] = MeshoptSimplifier.simplifyWithAttributes(Uint32Array.from(idx), src.pos, 3, attr, 5, [4, 4, 0.6, 0.6, 0.6], null, target * 3, error, flags);
+    if (mats.length > 1) console.log(`  giảm ${m.name}: ${idx.length / 3} → ${res.length / 3} tam giác`);
+    for (const v of res) out.push(v);
+  });
   const remap = new Int32Array(n).fill(-1); let m = 0; for (const v of out) if (remap[v] < 0) remap[v] = m++;
-  const pos = new Float32Array(m * 3), nor = new Float32Array(m * 3), uv = new Float32Array(m * 2);
-  for (let i = 0; i < n; i++) { const j = remap[i]; if (j < 0) continue; pos.set(src.pos.subarray(3 * i, 3 * i + 3), 3 * j); nor.set(src.nor.subarray(3 * i, 3 * i + 3), 3 * j); uv.set(src.uv.subarray(2 * i, 2 * i + 2), 2 * j); }
-  src.pos = pos; src.nor = nor; src.uv = uv; src.index = Array.from(out, (v) => remap[v]);
+  const pos = new Float32Array(m * 3), nor = new Float32Array(m * 3), uv = new Float32Array(m * 2), mat2 = new Uint8Array(m);
+  for (let i = 0; i < n; i++) { const j = remap[i]; if (j < 0) continue; pos.set(src.pos.subarray(3 * i, 3 * i + 3), 3 * j); nor.set(src.nor.subarray(3 * i, 3 * i + 3), 3 * j); uv.set(src.uv.subarray(2 * i, 2 * i + 2), 2 * j); mat2[j] = mat[i]; }
+  src.pos = pos; src.nor = nor; src.uv = uv; src.mat = mat2; src.index = out.map((v) => remap[v]);
   console.log(`  giảm ${before} → ${src.index.length / 3} tam giác, ${n} → ${m} đỉnh`);
 }
 
@@ -141,7 +166,7 @@ function weld(pos, n) {
 /** Gán nhãn vũ khí theo vùng rồi nhân đôi đỉnh ở ranh giới nhãn.
  *  vlab0: nhãn thô theo đỉnh (0 thân, >0 vũ khí). cfg: { chartMin, chartHi, chartLo, passes, island }.
  *  Trả về mảng mới (pos/nor/uv/index), nhãn từng đỉnh và chỉ số điểm hàn. */
-function splitByLabel(pos, nor, uv, index, vlab0, cfg) {
+function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.length / 3)) {
   const n = pos.length / 3, T = index.length / 3, { rep } = weld(pos, n);
   const tl = new Int16Array(T);
   for (let t = 0; t < T; t++) { const a = vlab0[index[3 * t]], b = vlab0[index[3 * t + 1]], c = vlab0[index[3 * t + 2]]; tl[t] = a && (a === b || a === c) ? a : b && b === c ? b : 0; }
@@ -177,20 +202,20 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg) {
     else if (!L && border.size === 1) { const b = [...border][0]; for (const t of comp) tl[t] = b; }
   }
   // 4) nhân đôi đỉnh dùng chung bởi tam giác khác nhãn
-  const vl = new Int16Array(n).fill(-1), dup = new Map(), P = Array.from(pos), N = Array.from(nor), U = Array.from(uv), R = Array.from(rep), out = index.slice(), VL = [];
+  const vl = new Int16Array(n).fill(-1), dup = new Map(), P = Array.from(pos), N = Array.from(nor), U = Array.from(uv), R = Array.from(rep), M = Array.from(mat), out = index.slice(), VL = [];
   let m = n, nd = 0;
   for (let t = 0; t < T; t++) for (let k = 0; k < 3; k++) {
     const v = index[3 * t + k], L = tl[t];
     if (vl[v] < 0) { vl[v] = L; continue; }
     if (vl[v] === L) continue;
     const key = v * 64 + L; let d = dup.get(key);
-    if (d == null) { d = m++; nd++; dup.set(key, d); P.push(pos[3 * v], pos[3 * v + 1], pos[3 * v + 2]); N.push(nor[3 * v], nor[3 * v + 1], nor[3 * v + 2]); U.push(uv[2 * v], uv[2 * v + 1]); R.push(rep[v]); VL[d - n] = L; }
+    if (d == null) { d = m++; nd++; dup.set(key, d); P.push(pos[3 * v], pos[3 * v + 1], pos[3 * v + 2]); N.push(nor[3 * v], nor[3 * v + 1], nor[3 * v + 2]); U.push(uv[2 * v], uv[2 * v + 1]); R.push(rep[v]); M.push(mat[v]); VL[d - n] = L; }
     out[3 * t + k] = d;
   }
   const vlab = new Int16Array(m); for (let i = 0; i < n; i++) vlab[i] = Math.max(0, vl[i]); for (let i = n; i < m; i++) vlab[i] = VL[i - n];
   const after = tl.reduce((q, l) => q + (l > 0), 0), reps = []; const repA = Int32Array.from(R); for (let i = 0; i < m; i++) if (reps[repA[i]] == null) reps[repA[i]] = i;
   console.log(`  tách vũ khí theo vùng: ${before} → ${after} tam giác vũ khí, nhân đôi ${nd} đỉnh ở ranh giới`);
-  return { n: m, pos: Float32Array.from(P), nor: Float32Array.from(N), uv: Float32Array.from(U), index: out, vlab, rep: repA, reps };
+  return { n: m, pos: Float32Array.from(P), nor: Float32Array.from(N), uv: Float32Array.from(U), mat: Uint8Array.from(M), index: out, vlab, rep: repA, reps };
 }
 
 /** Báo cáo độ giãn lưới theo clip (STRETCH=1): số tam giác có cạnh dài ra > 1.5× / 2× so với tư thế gốc, và xương chính của chúng. */
@@ -213,14 +238,69 @@ function stretchReport(mesh, root, clips, pos, index, names) {
   mixer.stopAllAction(); mixer.setTime(0); root.updateMatrixWorld(true);
 }
 
-export async function importFused(id, def, outRoot, here) {
-  const cfg = def.import;
+
+/** Sắp lại tam giác (bộ đệm đỉnh) và thứ tự đỉnh theo từng nhóm vật liệu để bộ nén meshopt nén tốt hơn; hình không đổi. */
+async function reorderForCompression(geo) {
+  await MeshoptEncoder.ready;
+  const idx = geo.index.array, n = geo.attributes.position.count, groups = geo.groups.length ? geo.groups : [{ start: 0, count: idx.length }];
+  const out = new Uint32Array(idx.length), pairs = []; let next = 0;
+  for (const g of groups) {
+    const sub = Uint32Array.from(idx.subarray(g.start, g.start + g.count));
+    const [remap, used] = MeshoptEncoder.reorderMesh(sub, true, true); // sub: tam giác đã sắp, chỉ số đỉnh mới cục bộ; remap: đỉnh cũ → mới (0xffffffff = không dùng)
+    for (let v = 0; v < remap.length; v++) if (remap[v] !== 0xffffffff) pairs.push(v, next + remap[v]);
+    for (let i = 0; i < sub.length; i++) out[g.start + i] = next + sub[i];
+    next += used;
+  }
+  for (const [name, a] of Object.entries(geo.attributes)) {
+    const it = a.itemSize, arr = new a.array.constructor(next * it);
+    for (let k = 0; k < pairs.length; k += 2) for (let c = 0; c < it; c++) arr[pairs[k + 1] * it + c] = a.array[pairs[k] * it + c];
+    geo.setAttribute(name, new THREE.BufferAttribute(arr, it, a.normalized));
+  }
+  geo.setIndex(new THREE.BufferAttribute(next > 65535 ? out : Uint16Array.from(out), 1));
+  console.log(`  sắp lại cho nén: ${n} → ${next} đỉnh`);
+}
+
+/** Nén lưới, xương, clip trong GLB bằng EXT_meshopt_compression (game đã có MeshoptDecoder trong assets.js); ảnh JPEG giữ nguyên.
+ *  Mỗi bufferView nén trỏ tới bộ đệm "fallback" rỗng (buffer 1), dữ liệu nén nằm trong buffer 0 như file gltfpack. */
+async function compressGlb(glb) {
+  await MeshoptEncoder.ready;
+  const { json, bin } = parseGlb(glb);
+  const CS = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }, CN = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
+  const plan = new Map(); // bufferView → { mode, stride, count }
+  const mark = (ai, mode) => {
+    if (ai == null) return; const a = json.accessors[ai], bv = json.bufferViews[a.bufferView], el = CS[a.componentType] * CN[a.type], stride = bv.byteStride || el;
+    if ((a.byteOffset || 0) !== 0 || plan.has(a.bufferView)) return;
+    if (mode === 'ATTRIBUTES' && stride % 4 !== 0) return;
+    if (mode === 'TRIANGLES' && (a.count % 3 !== 0 || !(stride === 2 || stride === 4))) return;
+    plan.set(a.bufferView, { mode, stride, count: a.count });
+  };
+  for (const m of json.meshes || []) for (const p of m.primitives) { for (const ai of Object.values(p.attributes)) mark(ai, 'ATTRIBUTES'); mark(p.indices, 'TRIANGLES'); }
+  for (const sk of json.skins || []) mark(sk.inverseBindMatrices, 'ATTRIBUTES');
+  for (const an of json.animations || []) for (const sm of an.samplers) { mark(sm.input, 'ATTRIBUTES'); mark(sm.output, 'ATTRIBUTES'); }
+  const parts = []; let off = 0, fb = 0, raw = 0, packed = 0;
+  const put = (buf) => { const o = off; parts.push(buf, Buffer.alloc(align4(buf.length) - buf.length)); off += align4(buf.length); return o; };
+  json.bufferViews.forEach((bv, i) => {
+    const src = bin.subarray(bv.byteOffset || 0, (bv.byteOffset || 0) + bv.byteLength), p = plan.get(i);
+    if (!p) { bv.byteOffset = put(Buffer.from(src)); bv.buffer = 0; return; }
+    const enc = Buffer.from(MeshoptEncoder.encodeGltfBuffer(new Uint8Array(src.buffer, src.byteOffset, p.count * p.stride), p.count, p.stride, p.mode));
+    raw += p.count * p.stride; packed += enc.length;
+    bv.extensions = { EXT_meshopt_compression: { buffer: 0, byteOffset: put(enc), byteLength: enc.length, byteStride: p.stride, mode: p.mode, count: p.count } };
+    bv.buffer = 1; bv.byteOffset = fb; fb += align4(bv.byteLength);
+  });
+  json.buffers = [{ byteLength: off }, { byteLength: fb, extensions: { EXT_meshopt_compression: { fallback: true } } }];
+  for (const k of ['extensionsUsed', 'extensionsRequired']) json[k] = [...new Set([...(json[k] || []), 'EXT_meshopt_compression'])];
+  console.log(`  nén meshopt: lưới/xương/clip ${Math.round(raw / 1024)} KB → ${Math.round(packed / 1024)} KB`);
+  return packGlb(json, Buffer.concat(parts));
+}
+
+/** Dựng một bản model từ file nhập. cfg = def.import (bản trong trận), hoặc def.import ghép def.import.showcase (bản trưng bày ở sảnh). */
+async function buildFused(id, def, cfg, here) {
   const src = await readMesh(path.resolve(here, cfg.file));
   if (cfg.simplify) await simplifyMesh(src, cfg.simplify);
   const n = src.pos.length / 3;
   // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
-  const tex = src.refs.base != null ? jpeg.decode(src.imgs[src.baseImg], { useTArray: true }) : null;
-  const rgbOf = (i) => { if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };
+  const texCache = new Map(), texOf = (k) => { if (!texCache.has(k)) { const m = src.mats[k]; texCache.set(k, m.refs.base != null ? jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true }) : null); } return texCache.get(k); };
+  const rgbOf = (i) => { const tex = texOf(src.mat[i]); if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };
   const X = cfg.centerX ?? 0, Z = cfg.centerZ ?? 0; // dời để thân nằm giữa x=0, z=0 (đơn vị file gốc)
   const isStaff = (x) => cfg.staffMaxX != null && x - X < cfg.staffMaxX; // (tuỳ chọn) cắt cứng theo x; mặc định dùng đoạn vũ khí mềm bên dưới
   // chiều cao thân (bỏ vũ khí) → hệ số co
@@ -272,19 +352,21 @@ export async function importFused(id, def, outRoot, here) {
     const hs = wsegs.find((sg) => (!sg.test || sg.test(rgb)) && segDist(p, sg.a, sg.b) - sg.r <= sg.hard);
     if (hs) vlab0[i] = idx[B(hs.bone)] + 1;
   }
-  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {});
+  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {}, src.mat);
   const n2 = split.n, vlab = split.vlab, rep = split.rep, index0 = split.index;
-  src.pos = null; src.nor = split.nor; src.uv = split.uv;
+  src.pos = null; src.nor = split.nor; src.uv = split.uv; src.mat = split.mat;
   const posN = split.pos;
   // —— Trọng số thân: tính theo điểm đã hàn (bản sao ở đường may uv nhận y hệt trọng số → không nứt), rồi làm mượt trên bề mặt lưới ——
   const NB = bones.length, R = split.reps, Wd = new Float32Array(R.length * NB);
+  // cfg.allow: { tênVậtLiệu: [xương…] } — đỉnh của vật liệu đó chỉ nhận trọng số từ các xương liệt kê (vd tóc dài chỉ theo đầu/cổ/ngực, không dính tay)
+  const allowOf = src.mats.map((m) => cfg.allow?.[m.name] && new Set(cfg.allow[m.name].map((b) => cfg.merge?.[b] ?? b)));
   R.forEach((v, r) => {
-    const p = [posN[3 * v], posN[3 * v + 1], posN[3 * v + 2]];
-    const dd = bsegs.map((sg) => ({ b: idx[B(sg.bone)], sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r) }));
+    const p = [posN[3 * v], posN[3 * v + 1], posN[3 * v + 2]], al = allowOf[src.mat[v]];
+    const dd = (al ? bsegs.filter((sg) => al.has(sg.bone)) : bsegs).map((sg) => ({ b: idx[B(sg.bone)], sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r) }));
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
     const acc = new Float32Array(NB); for (const c of dd) acc[c.b] += Math.exp(-Math.pow((c.d - dmin) / c.sig, 2));
     let tot = acc.reduce((a, w) => a + w, 0); for (let b = 0; b < NB; b++) acc[b] /= tot;
-    if (SK) { // vải thả dưới hông và cách xa chân: chuyển một phần trọng số sang xương váy theo hướng đỉnh nhìn từ hông
+    if (SK && (!al || al.has('Hips'))) { // vải thả dưới hông và cách xa chân: chuyển một phần trọng số sang xương váy theo hướng đỉnh nhìn từ hông
       const hy = W.Hips.y, v2 = Math.min(1, Math.max(0, (hy + (SK.from ?? 0.05) * K * s - p[1]) / ((SK.span ?? 0.5) * K * s)));
       const dLeg = Math.min(...segs.filter((sg) => /^(Thigh|Shin|Foot)/.test(sg.bone)).map((sg) => Math.max(0, segDist(p, sg.a, sg.b) - sg.r)));
       const g0 = (SK.gap0 ?? 0.04) * K * s, g1 = (SK.gap1 ?? 0.2) * K * s, hz = Math.min(1, Math.max(0, (dLeg - g0) / (g1 - g0)));
@@ -340,10 +422,17 @@ export async function importFused(id, def, outRoot, here) {
     for (let t = 0; t < index.length; t += 3) { const r = f(rep[index[t]]); if (cnt.get(r) < minC) { dropped++; continue; } out.push(index[t], index[t + 1], index[t + 2]); }
     comps = [...cnt.values()].filter((c) => c >= minC).length; index = out; console.log(`  bỏ ${dropped} tam giác ở các mảnh rời nhỏ (< ${minC} tam giác); còn ${comps} khối`);
   }
+  const nm = src.mats.length; // nhiều vật liệu: xếp tam giác theo vật liệu, mỗi vật liệu một nhóm (xuất thành nhiều primitive dùng chung xương)
+  if (nm > 1) {
+    if (cfg.deshard) throw new Error('deshard chưa hỗ trợ model nhiều vật liệu');
+    const by = Array.from({ length: nm }, () => []); for (let t = 0; t < index.length; t += 3) by[src.mat[index[t]]].push(index[t], index[t + 1], index[t + 2]);
+    index = []; by.forEach((b, k) => { if (b.length) geo.addGroup(index.length, b.length, k); for (const v of b) index.push(v); });
+  }
   geo.setIndex(index);
   geo.computeBoundingBox(); geo.computeBoundingSphere();
-  const body = new THREE.MeshStandardMaterial({ name: `${id}_body`, color: 0xffffff, roughness: 1, metalness: 1 });
-  const mesh = new THREE.SkinnedMesh(geo, body);
+  const mkMat = (name) => new THREE.MeshStandardMaterial({ name, color: 0xffffff, roughness: 1, metalness: 1 });
+  const matList = nm > 1 ? src.mats.map((m) => mkMat(`${id}_${m.name}`)) : [mkMat(`${id}_body`)];
+  const mesh = new THREE.SkinnedMesh(geo, nm > 1 ? matList : matList[0]);
   mesh.name = `${id}_body`; mesh.frustumCulled = false;
   root.add(mesh); root.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(bones));
@@ -353,6 +442,7 @@ export async function importFused(id, def, outRoot, here) {
   const clips = buildClips(ctx, bones, def.anim || {});
   if (process.env.STRETCH) stretchReport(mesh, root, clips, posN, index, bones.map((b) => b.name));
   if (cfg.deshard && !process.env.NO_DESHARD) index = deshard(mesh, geo, root, clips, posN, index, cfg.deshard, isHard);
+  if (cfg.compress) await reorderForCompression(geo); // sắp lại đỉnh/tam giác cho bộ nén meshopt (không đổi hình)
   const scene = new THREE.Scene();
   for (const ch of root.children.slice()) scene.add(ch);
   const glb0 = Buffer.from(await new GLTFExporter().parseAsync(scene, { binary: true, animations: Object.values(clips), onlyVisible: false }));
@@ -361,33 +451,55 @@ export async function importFused(id, def, outRoot, here) {
   const { json, bin } = parseGlb(glb0);
   let off = align4(bin.length); const parts = [bin, Buffer.alloc(off - bin.length)];
   json.images = []; json.textures = []; json.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }];
-  const addTex = (imgIdx) => {
-    const data = cfg.texMax ? shrinkJpeg(src.imgs[imgIdx], cfg.texMax) : src.imgs[imgIdx]; const bv = json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: data.length }) - 1;
+  const added = new Map(), limit = (kind) => (cfg.texMax && typeof cfg.texMax === 'object' ? cfg.texMax[kind] : cfg.texMax); // texMax: số, hoặc { base, normal, mr }
+  const addTex = (texIdx, kind) => {
+    const imgIdx = src.texSource[texIdx], key = imgIdx + ':' + kind; if (added.has(key)) return added.get(key);
+    const data = limit(kind) ? shrinkJpeg(src.imgs[imgIdx], limit(kind)) : src.imgs[imgIdx]; const bv = json.bufferViews.push({ buffer: 0, byteOffset: off, byteLength: data.length }) - 1;
     json.images.push({ bufferView: bv, mimeType: 'image/jpeg' }); json.textures.push({ sampler: 0, source: json.images.length - 1 });
     parts.push(data, Buffer.alloc(align4(data.length) - data.length)); off += align4(data.length);
-    return json.textures.length - 1;
+    added.set(key, json.textures.length - 1); return json.textures.length - 1;
   };
-  const m = json.materials[0];
-  m.pbrMetallicRoughness = { baseColorFactor: [1, 1, 1, 1], metallicFactor: 1, roughnessFactor: 1 };
-  const refs = src.refs;
-  if (refs.base != null) m.pbrMetallicRoughness.baseColorTexture = { index: addTex(refs.base) };
-  if (refs.mr != null) m.pbrMetallicRoughness.metallicRoughnessTexture = { index: addTex(refs.mr) };
-  if (refs.normal != null) m.normalTexture = { index: addTex(refs.normal) };
-  m.doubleSided = true;
+  for (const m of json.materials) {
+    const refs = src.mats[nm > 1 ? Math.max(0, src.mats.findIndex((sm) => `${id}_${sm.name}` === m.name)) : 0].refs;
+    m.pbrMetallicRoughness = { baseColorFactor: [1, 1, 1, 1], metallicFactor: 1, roughnessFactor: 1 };
+    if (refs.base != null) m.pbrMetallicRoughness.baseColorTexture = { index: addTex(refs.base, 'base') };
+    if (refs.mr != null) m.pbrMetallicRoughness.metallicRoughnessTexture = { index: addTex(refs.mr, 'mr') };
+    if (refs.normal != null) m.normalTexture = { index: addTex(refs.normal, 'normal') };
+    m.doubleSided = true;
+  }
   json.buffers[0].byteLength = off;
-  const glb = packGlb(json, Buffer.concat(parts));
+  let glb = packGlb(json, Buffer.concat(parts));
+  if (cfg.compress) glb = await compressGlb(glb);
+  return { glb, H, s, runRefSpeed: ctx.runRefSpeed, clips, tris: index.length / 3, bones: bones.length, mats: json.materials.length };
+}
 
+export async function importFused(id, def, outRoot, here) {
+  const cfg = def.import;
   const dir = path.join(outRoot, id);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, `${id}.glb`), glb);
+  const main = await buildFused(id, def, cfg, here);
+  fs.writeFileSync(path.join(dir, `${id}.glb`), main.glb);
+  const log = (tag, file, r) => console.log(`${(id + tag).padEnd(10)} nhập ${path.basename(file)}: tris ${r.tris}, xương ${r.bones}, ${r.mats} vật liệu, ${Math.round(r.glb.length / 1024)} KB, hệ số co ${r.s.toFixed(2)}, runRef ${r.runRefSpeed}`);
+  log('', cfg.file, main);
+  // bản trưng bày (sảnh, chọn tướng): cùng xương, cùng clip, lưới/texture chi tiết hơn (09 §3.1 LOD0)
+  let showcase = null;
+  if (cfg.showcase) {
+    const scCfg = { ...cfg, ...cfg.showcase }; delete scCfg.showcase;
+    const sc = await buildFused(id, def, scCfg, here);
+    showcase = `${id}_showcase.glb`;
+    fs.writeFileSync(path.join(dir, showcase), sc.glb);
+    log(' (sảnh)', scCfg.file, sc);
+  }
   const art = {
-    model: `${id}.glb`, scale: 100, height: Math.round(H * 100), runRefSpeed: ctx.runRefSpeed,
+    model: `${id}.glb`, ...(showcase && { showcase }), scale: 100, height: Math.round(main.H * 100), runRefSpeed: main.runRefSpeed,
     hitTime: def.hitTime || { Attack1: 0.28, Attack2: 0.28 },
     attach: { weapon_tip: 'Bone_HandR_Tip', head: 'Bone_Head', ...(def.attach || {}) },
     rim: def.rim || def.palette?.[1] || '#ffffff', palette: def.palette || [],
-    clips: Object.keys(clips), generator: 'tools/modelgen/import_fused.mjs', source: path.basename(cfg.file), ...(cfg.portrait && { portrait: cfg.portrait }),
+    clips: Object.keys(main.clips), generator: 'tools/modelgen/import_fused.mjs', source: path.basename(cfg.file), ...(showcase && { showcaseSource: path.basename(cfg.showcase.file) }), ...(cfg.portrait && { portrait: cfg.portrait }),
+    // cách tô vật liệu (materials.js): mặc định toon + viền; model PBR có texture có thể giữ vật liệu gốc ('pbr') hoặc chỉ màu texture ('unlit')
+    ...(cfg.shading && { shading: cfg.shading }), ...(cfg.outline === false && { outline: false }),
+    ...(showcase && cfg.showcase.shading && { showcaseShading: cfg.showcase.shading }), ...(showcase && cfg.showcase.outline !== undefined && { showcaseOutline: cfg.showcase.outline }),
   };
   fs.writeFileSync(path.join(dir, 'hero.art.json'), JSON.stringify(art, null, 2) + '\n');
-  console.log(`${id.padEnd(10)} nhập ${path.basename(cfg.file)}: tris ${index.length / 3}, xương ${bones.length}, ${Math.round(glb.length / 1024)} KB, hệ số co ${s.toFixed(2)}, runRef ${ctx.runRefSpeed}`);
-  return { id, tris: index.length / 3, bones: bones.length, kb: Math.round(glb.length / 1024), mats: 1, runRef: ctx.runRefSpeed };
+  return { id, tris: main.tris, bones: main.bones, kb: Math.round(main.glb.length / 1024), mats: main.mats, runRef: main.runRefSpeed };
 }
