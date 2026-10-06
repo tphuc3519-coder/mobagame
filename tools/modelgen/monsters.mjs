@@ -178,7 +178,9 @@ function quadruped(id, S, P) {
   m.blob({ ell: [hp([0.088, 0.075, 0.15]), hr([0.075, 0.034, 0.07]), [-15, 0, -12]], k: 0.04 * S, mat: FUR, color: fur('brow'), weights: HW, mirror: true });
   m.blob({ cone: [hp([0, -0.04, 0.16]), hp([0, -0.08, 0.16 + 0.28 * mz]), 0.125 * S * hd, 0.07 * S * hd * (1.6 - mz * 0.6)], k: 0.05 * S, mat: FUR, color: fur('muzzle'), weights: HW });
   m.blob({ ell: [hp([0, 0.02, 0.24 + 0.05 * mz]), hr([0.06, 0.045, 0.14 * mz])], k: 0.045 * S, mat: FUR, color: fur('bridge'), weights: HW }); // sống mũi
-  m.blob({ cone: [hp([0, -0.14, 0.12]), hp([0, -0.16, 0.12 + 0.24 * mz]), 0.09 * S * hd, 0.05 * S * hd], k: 0.035 * S, mat: FUR, color: fur('jaw'), weights: W1('Bone_Jaw') });
+  { const j0 = hp([0, -0.14, 0.12]), j1 = hp([0, -0.16, 0.12 + 0.24 * mz]), jc = fur('jaw'), ay = (z) => j0[1] + (j1[1] - j0[1]) * clamp((z - j0[2]) / (j1[2] - j0[2])); // hàm dưới: mặt trong đỏ sẫm (lộ khi há)
+    m.blob({ cone: [j0, j1, 0.09 * S * hd, 0.05 * S * hd], k: 0.035 * S, mat: FUR, color: (x, y, z) => (y > ay(z) + 0.012 * S * hd ? '#5a1e24' : jc(x, y, z)), weights: W1('Bone_Jaw') });
+    m.blob({ ell: [hp([0, -0.115, 0.24]), hr([0.055, 0.025, 0.11])], k: 0.01 * S, mat: SKIN, color: '#4a161c', weights: HW }); } // vòm miệng trên
   m.blob({ ell: [hp([0, -0.045, 0.16 + 0.315 * mz]), hr([0.05, 0.038, 0.04])], k: 0.015 * S, mat: SKIN, color: '#151214', weights: HW });   // mũi
   m.blob({ cone: [hp([0.13, 0.15, -0.08]), hp([0.17, P.roundEar ? 0.25 : 0.38, -0.11]), (P.roundEar ? 0.085 : 0.078) * S * hd, (P.roundEar ? 0.06 : 0.012) * S * hd], k: 0.03 * S, mat: FUR, color: fur('ear'), weights: HW, mirror: true });
   for (const [b, t, r] of [[[0.17, -0.08, -0.02], [0.3, -0.17, -0.17], 0.06], [[0.15, -0.16, 0.0], [0.25, -0.28, -0.13], 0.05]]) // chòm lông má
@@ -208,8 +210,9 @@ function quadruped(id, S, P) {
   for (const [bone, pw] of [['Bone_FPawL', F.pw], ['Bone_BPawL', B.pw]]) for (const d of [-1.5, -0.5, 0.5, 1.5])
     m.add(new THREE.ConeGeometry(0.014 * S * lg, 0.065 * S * lg, 5), { bone, at: s([pw[0] + d * 0.034 * lg, 0.04, pw[2] + 0.06 + 0.13 * lg]), rot: [100, 0, 0], color: P.claw || '#2a2420', mat: SKIN, mirror: true });
   // đuôi rậm
-  m.blob({ cone: [s([0, 1.1, -0.9]), s([0, 0.98, -1.4]), 0.1 * S, 0.15 * S], k: 0.06 * S, mat: furM('tail'), color: fur('tail'), weights: segWeights('Bone_Tail1', 'Bone_Tail2', s([0, 1.12, -0.98]), s([0, 0.98, -1.42]), 0.4, 1, 0, 1) });
-  m.blob({ cone: [s([0, 0.98, -1.4]), s([0, 0.8, -1.82]), 0.15 * S, 0.04 * S], k: 0.05 * S, mat: furM('tailtip'), color: fur('tailtip'), weights: W1('Bone_Tail2') });
+  const tl = P.tail || 1; // đuôi xù (to hơn cho kiểu cách điệu)
+  m.blob({ cone: [s([0, 1.1, -0.9]), s([0, 0.98, -1.4]), 0.1 * S * tl, 0.15 * S * tl], k: 0.06 * S, mat: furM('tail'), color: fur('tail'), weights: segWeights('Bone_Tail1', 'Bone_Tail2', s([0, 1.12, -0.98]), s([0, 0.98, -1.42]), 0.4, 1, 0, 1) });
+  m.blob({ cone: [s([0, 0.98, -1.4]), s([0, 0.8, -1.82]), 0.15 * S * tl, 0.04 * S], k: 0.05 * S, mat: furM('tailtip'), color: fur('tailtip'), weights: W1('Bone_Tail2') });
   P.extra?.(m, s, S, { hp, hr });
   return finish(m, id);
 }
@@ -934,7 +937,7 @@ function siege() { // xe đá: khung gỗ đóng ván, vách sơn màu đội đ
 }
 
 const BUILD = {
-  soi_da: () => quadruped('soi_da', 1, { ...wolf(), tris: 15000 }),
+  soi_da: () => quadruped('soi_da', 1, { ...wolf(), tris: 15000, head: 1.12, leg: 1.08, tufts: 9, tail: 1.18 }),
   ho_loi: () => quadruped('ho_loi', 1, { ...tiger(), tris: 18000, cell: 0.012, head: 1.3, muzzle: 0.62, leg: 1.35, body: 1.12, roundEar: true }),
   coc_reu: toad, hoa_nham: golem, linh_thuy: spirit, long_ngu: carp, than_dieu: bird, ta_than: demon,
   linh_kiem: swordsman, linh_cung: archer, linh_den: giant, xe_da: siege,
