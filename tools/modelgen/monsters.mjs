@@ -177,7 +177,7 @@ function quadruped(id, S, P) {
   m.blob({ ell: [hp([0.12, -0.07, 0.06]), hr([0.12, 0.12, 0.13])], k: 0.06 * S, mat: FUR, color: fur('cheek'), weights: HW, mirror: true });
   m.blob({ ell: [hp([0.088, 0.075, 0.15]), hr([0.075, 0.034, 0.07]), [-15, 0, -12]], k: 0.04 * S, mat: FUR, color: fur('brow'), weights: HW, mirror: true });
   m.blob({ cone: [hp([0, -0.04, 0.16]), hp([0, -0.08, 0.16 + 0.28 * mz]), 0.125 * S * hd, 0.07 * S * hd * (1.6 - mz * 0.6)], k: 0.05 * S, mat: FUR, color: fur('muzzle'), weights: HW });
-  m.blob({ ell: [hp([0, 0.02, 0.24 + 0.05 * mz]), hr([0.06, 0.045, 0.14 * mz])], k: 0.045 * S, mat: FUR, color: fur('muzzle'), weights: HW });
+  m.blob({ ell: [hp([0, 0.02, 0.24 + 0.05 * mz]), hr([0.06, 0.045, 0.14 * mz])], k: 0.045 * S, mat: FUR, color: fur('bridge'), weights: HW }); // sống mũi
   m.blob({ cone: [hp([0, -0.14, 0.12]), hp([0, -0.16, 0.12 + 0.24 * mz]), 0.09 * S * hd, 0.05 * S * hd], k: 0.035 * S, mat: FUR, color: fur('jaw'), weights: W1('Bone_Jaw') });
   m.blob({ ell: [hp([0, -0.045, 0.16 + 0.315 * mz]), hr([0.05, 0.038, 0.04])], k: 0.015 * S, mat: SKIN, color: '#151214', weights: HW });   // mũi
   m.blob({ cone: [hp([0.13, 0.15, -0.08]), hp([0.17, P.roundEar ? 0.25 : 0.38, -0.11]), (P.roundEar ? 0.085 : 0.078) * S * hd, (P.roundEar ? 0.06 : 0.012) * S * hd], k: 0.03 * S, mat: FUR, color: fur('ear'), weights: HW, mirror: true });
@@ -250,7 +250,7 @@ function wolf() {
 // —— Hổ Lôi: hổ to, lông cam vằn đen, bụng trắng, vằn sét phát sáng dọc sống lưng, chữ Vương (王) sáng trên trán, bờm + gai sét ——
 function tiger() {
   const stripe = (x, y, z, r) => {
-    if (r === 'muzzle' || r === 'jaw' || r === 'paw' || r === 'brow') return 0;
+    if (r === 'muzzle' || r === 'jaw' || r === 'paw' || r === 'brow' || r === 'bridge') return 0;
     const w = Math.sin(z * 15 + fbm(x * 3, y * 4, z * 3) * 6 + Math.abs(x) * 6) * (r === 'head' || r === 'cheek' ? Math.sin(y * 40 + x * 30) : 1);
     return clamp((w - 0.5) * 5);
   };
@@ -260,7 +260,7 @@ function tiger() {
     if (glowS(x, y, z, r)) return '#52d2ff';
     if (r === 'tailtip' && z < -1.62) return '#7ae2ff';
     let c = mixC('#f48c2a', '#b84a14', clamp((y - 1.0) / 0.45) * 0.6 + (n - 0.5) * 0.3);
-    const belly = (r === 'body' || r === 'belly' ? clamp((0.98 - y) / 0.28) : r === 'paw' ? 0.55 : 0) + (r === 'belly' ? 0.5 : 0) + (r === 'muzzle' || r === 'jaw' ? 0.9 : 0) + (r === 'cheek' ? 0.42 : r === 'brow' ? 0.3 : 0);
+    const belly = (r === 'body' || r === 'belly' ? clamp((0.98 - y) / 0.28) : r === 'paw' ? 0.55 : 0) + (r === 'belly' ? 0.5 : 0) + (r === 'jaw' ? 0.9 : r === 'muzzle' ? 0.6 : 0) + (r === 'cheek' ? 0.42 : r === 'brow' ? 0.3 : 0);
     c = mixC(c, '#f8f0e0', clamp(belly));
     const st = stripe(x, y, z, r);
     if (st > 0) c = mixC(c, '#160e0c', st * (belly > 0.7 ? 0.3 : 0.95));
@@ -482,7 +482,7 @@ function carp() {
   const scaleC = (x, y, z) => {
     const t = (1.9 - z) / L, n = fbm(x * 3, y * 3, z * 3);
     let c = mixC('#ffbe2a', '#c85a0c', clamp((y - 1.35) / 0.6) * 0.85 + (n - 0.5) * 0.3);
-    if (y < 1.25) c = mixC(c, '#ffe2a0', clamp((1.28 - y) / 0.3) * 0.85);
+    if (y < 1.25) c = mixC(c, '#ffd88a', clamp((1.28 - y) / 0.3) * 0.6);
     if (t > 0.72) c = mixC(c, '#ea4a26', clamp((t - 0.72) * 4));
     return hex(c);
   };
@@ -492,14 +492,14 @@ function carp() {
     m.blob({ ell: [lerp3(a, b, 0.5), [(r0 + r1) * 0.24, (r0 + r1) * 0.6, (zs(i) - zs(i + 1)) * 0.62]], k: 0.2, mat: SCALE, color: scaleC, weights: segW(i) }); // sống lưng/bụng cao → mặt cắt bầu dục
   }
   // đầu: trán gồ, mõm tròn, môi dày, mang, mắt to, ngọc trán, sừng hươu, bờm vây đỏ, râu rồng
-  const headC = (x, y, z) => { let c = mixC('#ffc83a', '#d06a12', clamp((y - 1.4) / 0.6)); if (y < 1.32) c = mixC(c, '#fff0c8', clamp((1.36 - y) / 0.3)); return hex(c.multiplyScalar(0.88 + fbm(x * 9, y * 9, z * 9) * 0.24)); };
+  const headC = (x, y, z) => { let c = mixC('#ffc83a', '#d06a12', clamp((y - 1.4) / 0.6)); if (y < 1.32) c = mixC(c, '#ffd88a', clamp((1.36 - y) / 0.3) * 0.7); return hex(c.multiplyScalar(0.88 + fbm(x * 9, y * 9, z * 9) * 0.24)); };
   const H = (o) => m.blob({ mat: SKIN, color: headC, weights: W1('Bone_S0'), ...o });
   H({ ell: [[0, 1.55, 2.0], [0.58, 0.62, 0.64]], k: 0.22 });
   H({ ell: [[0, 1.86, 2.08], [0.42, 0.3, 0.42]], k: 0.15 });
   H({ ell: [[0, 1.46, 2.48], [0.36, 0.3, 0.26]], k: 0.12 });
   H({ ell: [[0.44, 1.48, 1.68], [0.14, 0.44, 0.3], [0, 18, 0]], k: 0.08, mirror: true });
   m.blob({ ell: [[0, 1.36, 2.68], [0.26, 0.09, 0.11]], k: 0.05, mat: SKIN, color: '#ff9a5a', weights: W1('Bone_S0') });            // môi trên
-  m.blob({ ell: [[0, 1.27, 2.42], [0.3, 0.2, 0.24]], k: 0.12, mat: SKIN, color: '#ffe2a8', weights: W1('Bone_Jaw') });             // hàm dưới
+  m.blob({ ell: [[0, 1.27, 2.42], [0.3, 0.2, 0.24]], k: 0.12, mat: SKIN, color: '#ffcf70', weights: W1('Bone_Jaw') });             // hàm dưới
   m.blob({ ell: [[0, 1.22, 2.6], [0.22, 0.08, 0.1]], k: 0.05, mat: SKIN, color: '#ff9a5a', weights: W1('Bone_Jaw') });             // môi dưới
   H({ ell: [[0.4, 1.74, 2.26], [0.15, 0.15, 0.13]], k: 0.06, color: '#ffe9a0', mirror: true });                                    // gờ mắt
   m.sphere(1, { bone: 'Bone_S0', at: [0.47, 1.75, 2.32], radii: [0.075, 0.11, 0.11], rot: [0, -32, 0], color: '#ffb820', mat: GLOW, mirror: true });
@@ -541,11 +541,14 @@ function bird() {
   m.jointLR('Bone_LegL', 'Bone_Body', 0.4, 2.2, 0.0); m.jointLR('Bone_FootL', 'Bone_LegL', 0.45, 1.35, -0.6);
   const plume = (x, y, z) => { const n = fbm(x * 3, y * 3, z * 3); return hex(mixC('#0a3866', '#1e9ad6', n * 0.8 + clamp((y - 2.6) / 2) * 0.35)); };
   const chestC = (x, y, z) => hex(mixC('#ffd86a', '#d8801a', fbm(x * 5, y * 5, z * 5) * 0.8 + clamp((3.4 - y) / 1.2) * 0.4));
-  const neckC = (x, y, z) => (z > 1.0 + (y - 3.5) / 1.2 * 0.6 + 0.22 && y < 4.4 ? chestC(x, y, z) : plume(x, y, z));
+  const headC = (x, y, z) => hex(mixC('#f6fbff', '#9cb8cc', fbm(x * 6, y * 6, z * 6) * 0.6 + clamp((4.7 - y) / 0.5) * 0.4));
+  const neckC = (x, y, z) => (y > 4.15 ? hex(mixC(plume(x, y, z), headC(x, y, z), clamp((y - 4.15) / 0.35))) : z > 1.0 + (y - 3.5) / 1.2 * 0.6 + 0.22 ? chestC(x, y, z) : plume(x, y, z));
   m.blob({ ell: [[0, 3.05, 0], [1.1, 1.2, 1.6], [-20, 0, 0]], k: 0.3, mat: FEATHER, color: plume, weights: W1('Bone_Body') });
   m.blob({ ell: [[0, 3.3, 1.0], [0.8, 0.9, 0.7]], k: 0.25, mat: FEATHER, color: chestC, weights: W1('Bone_Body') });                       // ức vàng
   m.blob({ cone: [[0, 3.5, 1.0], [0, 4.7, 1.6], 0.6, 0.4], k: 0.25, mat: FEATHER, color: neckC, weights: segWeights('Bone_Neck', 'Bone_Head', [0, 3.6, 1.1], [0, 4.9, 1.7], 0.5, 1, 0, 1) });
-  m.blob({ ell: [[0, 4.97, 1.75], [0.56, 0.54, 0.62]], k: 0.15, mat: FEATHER, color: plume, weights: W1('Bone_Head') });
+  m.blob({ ell: [[0, 4.97, 1.75], [0.56, 0.54, 0.62]], k: 0.15, mat: FEATHER, color: headC, weights: W1('Bone_Head') });
+  { const g = new THREE.SphereGeometry(1, 14, 10, Math.PI / 2 - 0.85, 1.7, Math.PI * 0.32, Math.PI * 0.46); g.setAttribute('k', g.getAttribute('uv').clone()); g.deleteAttribute('uv'); // giáp ngực vàng chạm vảy
+    addK(m, g, { bone: 'Bone_Body', at: [0, 3.3, 0.98], scale: [0.86, 0.96, 0.76] }, (u, v) => (Math.abs(Math.sin(v * Math.PI * 6 + Math.abs(u - 0.5) * 6)) < 0.18 || u < 0.05 || u > 0.95 ? ['#a8681a', METAL] : ['#ffd060', METAL])); }
   m.blob({ ell: [[0.3, 5.04, 2.02], [0.17, 0.11, 0.17]], k: 0.05, mat: FUR, color: '#08263a', weights: W1('Bone_Head'), mirror: true }); // vệt mắt sẫm
   m.sphere(1, { bone: 'Bone_Head', at: [0.34, 5.08, 2.1], radii: [0.06, 0.08, 0.11], rot: [0, -40, 0], color: '#d8fcff', mat: GLOW, mirror: true });
   const beakC = (x, y, z) => hex(mixC('#ffd868', '#c8841a', clamp((z - 2.2) / 0.9)));
@@ -564,10 +567,10 @@ function bird() {
   m.blob({ cone: [[2.6, 3.9, 0.0], [4.6, 3.8, -0.4], 0.24, 0.1], k: 0.15, mat: FEATHER, color: plume, weights: W1('Bone_WingLL'), mirror: true });
   const fprof = (v) => Math.min(1, 0.35 + v * 1.6) * Math.sqrt(Math.max(0, 1 - Math.pow(v, 6)));
   const feather = (bone, at, dir, w, len, c0, c1, c2, glowTip, lift = 0) => addK(m, leafGeo(w, len, { bend: 0.05, ridge: 0.05, nv: 6, prof: fprof }), { bone, at, rot: frame(dir, [0, 1, lift]), mirror: true },
-    (u, v) => { if (glowTip && v > 0.9) return ['#8aeaff', GLOW]; if (glowTip !== null && Math.abs(u - 0.5) < 0.1 && v > 0.25 && v < 0.8) return ['#46d2ff', GLOW]; /* tia sét dọc sống lông */ const c = v < 0.6 ? mixC(c0, c1, v / 0.6) : mixC(c1, c2, (v - 0.6) / 0.4); return [hex(Math.abs(u - 0.5) < 0.1 ? c.lerp(new THREE.Color('#d8f4ff'), 0.25) : c), FUR]; });
-  for (let i = 0; i < 9; i++) { const t = i / 8; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.9, 3.6, 0.05], [2.7, 3.84, -0.15], t).map((q, k) => (k === 1 ? q + i * 0.006 : q)), [0.15 + t * 0.25, -0.04, -1], 0.44, 1.5 + t * 0.4, '#0a3e6a', '#168cc4', '#f0b83a', false); }
-  for (let i = 0; i < 8; i++) { const t = i / 7; feather(t < 0.45 ? 'Bone_WingLL' : 'Bone_WingTipL', lerp3([2.75, 3.84, -0.12], [4.7, 3.76, -0.45], t).map((q, k) => (k === 1 ? q + 0.05 + i * 0.006 : q)), lerp3([0.35, -0.04, -1], [1, -0.05, -0.12], t), 0.4 - t * 0.06, 1.9 + t * 0.9, '#08345a', '#1478b8', '#5ad2f0', true); }
-  for (let i = 0; i < 10; i++) { const t = i / 9; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.8, 3.76, 0.2], [4.1, 3.92, -0.28], t).map((q, k) => (k === 1 ? q + 0.08 : q)), [0.2 + t * 0.5, -0.02, -1], 0.36, 0.85 + t * 0.3, '#0e5a8a', '#22a8d8', '#ffd060', null, 0.1); }
+    (u, v) => { if (glowTip && v > 0.9) return ['#8aeaff', GLOW]; if (glowTip && Math.abs(u - 0.5) < 0.1 && v > 0.3 && v < 0.82) return ['#38c4ff', GLOW]; /* tia sét dọc sống lông */ const c = v < 0.6 ? mixC(c0, c1, v / 0.6) : mixC(c1, c2, (v - 0.6) / 0.4); return [hex(Math.abs(u - 0.5) < 0.1 ? c.lerp(new THREE.Color('#d8f4ff'), 0.25) : c), FUR]; });
+  for (let i = 0; i < 9; i++) { const t = i / 8; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.9, 3.6, 0.05], [2.7, 3.84, -0.15], t).map((q, k) => (k === 1 ? q + i * 0.006 : q)), [0.15 + t * 0.25, -0.04, -1], 0.44, 1.5 + t * 0.4, '#08305a', '#106ea8', '#e8a830', false); }
+  for (let i = 0; i < 8; i++) { const t = i / 7; feather(t < 0.45 ? 'Bone_WingLL' : 'Bone_WingTipL', lerp3([2.75, 3.84, -0.12], [4.7, 3.76, -0.45], t).map((q, k) => (k === 1 ? q + 0.05 + i * 0.006 : q)), lerp3([0.35, -0.04, -1], [1, -0.05, -0.12], t), 0.4 - t * 0.06, 1.9 + t * 0.9, '#062a50', '#0e64a0', '#3ab8e6', true); }
+  for (let i = 0; i < 10; i++) { const t = i / 9; feather(t < 0.5 ? 'Bone_WingUL' : 'Bone_WingLL', lerp3([0.8, 3.76, 0.2], [4.1, 3.92, -0.28], t).map((q, k) => (k === 1 ? q + 0.08 : q)), [0.2 + t * 0.5, -0.02, -1], 0.36, 0.85 + t * 0.3, '#0a4a7c', '#1886c0', '#f6c044', false, 0.1); }
   // đuôi phượng: lông dài có mắt đốm vàng, 2 dải đuôi sáng
   for (let i = 0; i < 7; i++) {
     const a = (i - 3) * 0.2, len = 3.3 + (3 - Math.abs(i - 3)) * 0.35;
