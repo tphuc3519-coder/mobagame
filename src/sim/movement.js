@@ -51,7 +51,9 @@ export function updateMovement(world) {
     if (e.dash) { updateDash(world, e); e.speed = 0; }
     else {
       let { x, y } = e.moveDir;
-      if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn
+      if (world.tick < (e.castUntil || 0)) { // đang ra chiêu: đứng yên, mặt giữ hướng chiêu (skills.js) tới lúc chiêu phát ra
+        e.facing = e.castFacing ?? e.facing; x = 0; y = 0;
+      } else if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn
         const t = e.swingTarget != null ? world.byId(e.swingTarget) : null;
         if (t && t.alive) e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
         x = 0; y = 0;

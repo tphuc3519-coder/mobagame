@@ -1,13 +1,21 @@
 import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
+import { HERO_SCALE } from '../render/unitView.js';
 
-const DMG = { physical: '#ffd6a0', magic: '#a8c8ff', true: '#ffffff' };
+// Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
+// chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
+export const DMG_STYLE = {
+  physical: { top: '#fff1cf', bot: '#ff9426', stroke: '#3c1500', burst: '#ff6a1c', icon: 'slash' },
+  magic: { top: '#f0e4ff', bot: '#8f6bff', stroke: '#1c0d4c', burst: '#a64dff', icon: 'spark' },
+  true: { top: '#ffffff', bot: '#d4dbef', stroke: '#2a2d3c', burst: '#e8f0ff', icon: 'gem', glow: true },
+};
+const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
 
 /** Canvas 2D phủ trên cảnh: joystick, thanh máu trên đầu, số sát thương bay, thanh máu/mana của mình, debug. */
 export function createHud(canvas, input, portraits = null) {
   const ctx = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1;
-  const floats = [], banners = [];
+  const floats = [], banners = [], now = () => performance.now() / 1000;
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
   addEventListener('resize', resize); resize();
@@ -41,7 +49,54 @@ export function createHud(canvas, input, portraits = null) {
     ctx.fillText('Vẫn mua đồ được · giữ bản đồ nhỏ để xem trận', cx, y + ph + 10);
   }
 
+  /** Một số bay: nảy lên (to rồi co lại), trôi lên, mờ dần. Chí mạng: hình nổ + biểu tượng + rung nhẹ lúc xuất hiện. */
+  function drawFloat(f, p) {
+    const k = f.t / f.life, pop = f.crit ? 1 + 1.1 * Math.max(0, 1 - f.t / 0.14) ** 2 : 1 + 0.45 * Math.max(0, 1 - f.t / 0.1) ** 2;
+    const size = (f.crit ? f.size * 1.5 : f.size) * pop, x = p.x + f.drift * Math.sqrt(k) + (f.crit && f.t < 0.16 ? Math.sin(f.t * 120) * 3 : 0), y = p.y;
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (1 - k) * 3.2, f.t * 30)); ctx.translate(x, y); ctx.rotate(f.crit ? -0.12 + f.tilt * 0.5 : f.tilt * 0.3);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    const st = f.st;
+    if (!st) { // hồi máu, chặn bằng khiên
+      ctx.font = `800 ${size}px system-ui, sans-serif`; ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.strokeText(f.text, 0, 0);
+      ctx.fillStyle = f.color || '#f4f4f4'; ctx.fillText(f.text, 0, 0); ctx.restore(); return;
+    }
+    ctx.font = `${f.crit ? 'italic 900' : '800'} ${size}px system-ui, sans-serif`;
+    const tw = ctx.measureText(f.text).width;
+    if (f.crit) { // hình nổ răng cưa sau số + biểu tượng loại sát thương bên trái
+      const rx = tw * 0.62 + size * 0.5, ry = size * 0.78, n = 14, spin = f.t * 1.6;
+      ctx.beginPath();
+      for (let j = 0; j < n * 2; j++) { const a = spin + (j / (n * 2)) * Math.PI * 2, r = j % 2 ? 0.62 : 1; ctx.lineTo(Math.cos(a) * rx * r, Math.sin(a) * ry * r); }
+      ctx.closePath(); ctx.globalAlpha *= 0.85; ctx.fillStyle = st.burst; ctx.fill(); ctx.globalAlpha /= 0.85;
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.stroke();
+      critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
+    }
+    const g = ctx.createLinearGradient(0, -size * 0.45, 0, size * 0.45); g.addColorStop(0, st.top); g.addColorStop(1, st.bot);
+    if (st.glow) { ctx.shadowColor = 'rgba(210,225,255,0.95)'; ctx.shadowBlur = f.crit ? 14 : 8; }
+    ctx.lineWidth = f.crit ? 5 : 3.5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);
+    ctx.shadowBlur = 0; ctx.fillStyle = g; ctx.fillText(f.text, 0, 0);
+    ctx.restore();
+  }
+  /** Biểu tượng chí mạng: vết chém (vật lý), sao bốn cánh (phép), viên kim cương (chuẩn). */
+  function critIcon(kind, x, y, s, st) {
+    ctx.save(); ctx.translate(x, y); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (kind === 'slash') {
+      for (let j = -1; j <= 1; j++) { ctx.beginPath(); ctx.moveTo(-s * 0.5 + j * s * 0.32, s * 0.55); ctx.lineTo(s * 0.45 + j * s * 0.32, -s * 0.55); ctx.lineWidth = s * 0.34; ctx.strokeStyle = st.stroke; ctx.stroke(); ctx.lineWidth = s * 0.16; ctx.strokeStyle = st.top; ctx.stroke(); }
+    } else {
+      ctx.beginPath();
+      if (kind === 'spark') for (let j = 0; j < 8; j++) { const a = (j / 8) * Math.PI * 2 - Math.PI / 2, r = j % 2 ? s * 0.22 : s * 0.62; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      else { ctx.moveTo(0, -s * 0.62); ctx.lineTo(s * 0.46, 0); ctx.lineTo(0, s * 0.62); ctx.lineTo(-s * 0.46, 0); }
+      ctx.closePath(); ctx.lineWidth = s * 0.2; ctx.strokeStyle = st.stroke; ctx.stroke();
+      const g = ctx.createLinearGradient(0, -s * 0.6, 0, s * 0.6); g.addColorStop(0, '#ffffff'); g.addColorStop(1, st.bot); ctx.fillStyle = g; ctx.fill();
+    }
+    ctx.restore();
+  }
+
   return {
+    /** Xem trước 6 kiểu số sát thương trên đầu một đơn vị (bảng thử ?debug=1). */
+    previewDamage(e) {
+      const kinds = ['physical', 'magic', 'true'];
+      kinds.forEach((t, j) => [false, true].forEach((c, m) => floats.push({ x: e.pos.x - 480 + j * 480, y: e.pos.y + (m ? 170 : -150), t: 0, born: now() + 0.22 * (j * 2 + m), text: String(c ? 486 + j * 37 : 128 + j * 21), st: DMG_STYLE[t], crit: c, size: 17, life: 2.6, drift: 0, tilt: 0 })));
+    },
     handle(events, world) {
       for (const ev of events) {
         const e = world.byId(ev.id);
@@ -51,8 +106,9 @@ export function createHud(canvas, input, portraits = null) {
           death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
         }
         if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
-        if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, t: 0, text: ev.shield ? 'Khiên' : String(ev.amount), color: DMG[ev.dmgType] || '#fff', size: ev.amount > 150 ? 22 : 16 });
-        else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, text: '+' + ev.amount, color: '#8affb0', size: 16 });
+        if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
+          size: ev.amount > 150 ? 22 : 17, life: ev.crit ? 1.15 : 0.9, drift: (Math.random() - 0.5) * 36, tilt: (Math.random() - 0.5) * 0.18 });
+        else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, born: now(), text: '+' + ev.amount, color: '#8affb0', size: 16, life: 0.9, drift: 0, tilt: 0 });
       }
     },
     draw(world, cam, player, enemy, debugLines) {
@@ -63,7 +119,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
-        const p = project(cam, e.pos.x, e.kind === 'hero' ? 372 : e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
+        const p = project(cam, e.pos.x, e.kind === 'hero' ? HERO_BAR_Y : e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
         const isHero = e.kind === 'hero', col = e.id === player.id ? '#52d860' : e.team === player.team ? '#38b8ff' : '#ff4a3a';
         if (isHero) { // kiểu Liên Quân: huy hiệu cấp lục giác bên trái, thanh máu chia vạch mỗi 250 HP, tên ở trên
           const bw = 86, bh = 8, x0 = p.x - bw / 2 + 8, y0 = p.y - 14; // gọn, cao trên đầu: tên không bị đầu tướng che
@@ -103,12 +159,9 @@ export function createHud(canvas, input, portraits = null) {
       }
       // số bay
       for (let i = floats.length - 1; i >= 0; i--) {
-        const f = floats[i]; f.t += 1 / 60;
-        if (f.t > 0.9) { floats.splice(i, 1); continue; }
-        const p = project(cam, f.x, 200 + f.t * 120, f.y, w, h);
-        ctx.globalAlpha = Math.min(1, (0.9 - f.t) * 2.5); ctx.font = `800 ${f.size}px system-ui, sans-serif`;
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.strokeText(f.text, p.x, p.y);
-        ctx.fillStyle = f.color; ctx.fillText(f.text, p.x, p.y); ctx.globalAlpha = 1;
+        const f = floats[i]; f.t = now() - f.born; // giây thật (không phụ thuộc FPS)
+        if (f.t > f.life) { floats.splice(i, 1); continue; }
+        if (f.t >= 0) drawFloat(f, project(cam, f.x, 200 + Math.sqrt(f.t / f.life) * (f.crit ? 150 : 120), f.y, w, h)); // t < 0: số xem trước chờ tới lượt
       }
       // thanh máu / mana của mình
       const bx = 16, by = h - 25, bw = Math.min(220, w * 0.24); // sát mép dưới, mảnh: không đè lên cần di chuyển

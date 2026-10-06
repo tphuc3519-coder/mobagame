@@ -104,8 +104,9 @@ if (q.has('shop')) shop.open(true);
 // bảng thử (chỉ khi ?debug=1)
 const panel = document.getElementById('lab');
 panel.hidden = !debug;
-panel.innerHTML = `<button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button>`;
+panel.innerHTML = `<button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button><button id="labDmg">Số sát thương</button>`;
 document.getElementById('labGold').onclick = () => { player.gold += 3000; };
+document.getElementById('labDmg').onclick = () => hud.previewDamage(player); // xem 6 kiểu số sát thương (vật lý / phép / chuẩn, thường + chí mạng)
 document.getElementById('labCd').onclick = () => world.debug.resetCooldowns(player);
 document.getElementById('labLv').onclick = () => world.debug.level15(player);
 document.getElementById('labHeal').onclick = () => world.debug.fullHeal(player);

@@ -12,7 +12,7 @@ import { createMonster } from './monsters.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
 /** Tướng trong trận to hơn tỉ lệ gốc (bớt cảm giác chibi khi nhìn từ camera trên cao); bán kính va chạm mô phỏng giữ nguyên. */
-export const HERO_SCALE = 1.35;
+export const HERO_SCALE = 1.5;
 /** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không. */
 const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
 
@@ -52,8 +52,8 @@ export function createUnitViews(scene, localTeam, localId) {
       for (const ev of events) {
         const v = views.get(ev.id);
         if (ev.type === 'attack' && v && v.atk !== undefined) v.atk = 0.001;
-        if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, ev.delay);
-        else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, ev.delay ?? 0);
+        if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, ev.delay, (ev.delay ?? 0.25) + 0.06);
+        else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, ev.delay ?? 0, ev.lock ?? 0);
         else if (ev.type === 'damage' && v) v.flash = 0.08;
         else if (ev.type === 'knockup' && v) v.lift = { t: 0, dur: ev.dur, h: 130 };
         else if (ev.type === 'jump' && v) v.lift = { t: 0, dur: ev.dur, h: 320 };
@@ -82,7 +82,7 @@ export function createUnitViews(scene, localTeam, localId) {
         }
         if (e.kind === 'minion') { v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
-          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); // trong bụi: sáng lên chút để không chìm vào màu bụi tối v.mats.update(dt);
+          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); v.mats.update(dt); // trong bụi: sáng lên chút để không chìm vào màu bụi tối; update: chớp mắt
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
           const ghost = e.statuses.some((s) => s.kind === 'stealth') || inBush;
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }

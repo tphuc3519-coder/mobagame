@@ -5,6 +5,7 @@ import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
 import { heroSkillArt, fistArt } from './heroArt.js';
 import { THEMES } from '../render/vfx/library.js';
+import { DRAG_MIN, DRAG_MAX, inCancel, aimUI } from './aimPad.js';
 
 /** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
  *  đoạn vừa nâng (fresh) loé sáng một nhịp. */
@@ -19,7 +20,6 @@ function levelRing(max, level, fresh) {
   return out;
 }
 
-const DRAG_MIN = 15, DRAG_MAX = 110;
 // biểu tượng nút ăn lính (mũ lính) / đẩy trụ (tháp)
 const MINION_IC = '<svg viewBox="0 0 40 40"><path d="M9 22c0-7 5-12 11-12s11 5 11 12v3H9z" fill="#e8dcc0"/><path d="M20 6l2.5 5h-5z" fill="#ffd27a"/><rect x="8" y="24" width="24" height="4" rx="2" fill="#c9a24a"/><path d="M13 28h14l-2 6H15z" fill="#e8dcc0"/><rect x="18.5" y="16" width="3" height="9" fill="#8a7a5a"/></svg>';
 const TOWER_IC = '<svg viewBox="0 0 40 40"><path d="M12 34h16l-2-16h3l-2-6H13l-2 6h3z" fill="#e8dcc0"/><path d="M14 12l6-6 6 6z" fill="#c9a24a"/><rect x="18" y="22" width="4" height="7" rx="2" fill="#5a4a3a"/><circle cx="20" cy="16" r="2.2" fill="#ffd27a"/></svg>';
@@ -35,19 +35,7 @@ export function createSkillButtons(root, { world, player, indicators }) {
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
-  // vòng ngắm quanh nút đang kéo (bán kính = độ kéo tối đa) + núm; ô X huỷ góc phải (kéo ngón vào rồi thả để huỷ) — như Liên Quân
-  const pad = document.createElement('div'); pad.className = 'aimpad'; pad.hidden = true; pad.innerHTML = '<i></i>';
-  const xz = document.createElement('div'); xz.className = 'cancelZone'; xz.hidden = true; xz.innerHTML = '<svg viewBox="0 0 40 40"><path d="M11 11L29 29M29 11L11 29" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>';
-  document.body.append(pad, xz);
-  const knob = pad.firstChild;
-  const inCancel = (x, y) => { const r = xz.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; return Math.hypot(x - cx, y - cy) < r.width * 0.62; };
-  const aimUI = (a) => { // a: phiên ngắm đang chạy hoặc null
-    const on = !!a?.aiming; pad.hidden = !on; xz.hidden = !on; document.body.classList.toggle('aiming', on);
-    if (!on) return;
-    pad.style.left = a.cx + 'px'; pad.style.top = a.cy + 'px'; pad.style.width = pad.style.height = DRAG_MAX * 2 + 'px';
-    knob.style.transform = `translate(${a.dir.x * a.f * DRAG_MAX}px, ${a.dir.y * a.f * DRAG_MAX}px)`;
-    xz.classList.toggle('hot', a.cancel); pad.classList.toggle('bad', a.cancel);
-  };
+  // vòng ngắm + ô X huỷ: aimPad.js (dùng chung với nút phép bổ trợ)
   let active = null;
 
   const facingDir = () => ({ x: Math.cos(player.facing), y: Math.sin(player.facing) });

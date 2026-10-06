@@ -30,10 +30,10 @@ const lost = (d) => d.stats.maxHp - d.hp;
   ok('Moonstream K1 phép ≈61.5', near(lost(d), 61.54), lost(d).toFixed(2));
   ok('Moonstream hồi 3% mana khi trúng tướng', p.mana > p.stats.maxMana - 50 + 14);
 }
-{ // Mossback K2: (50 + 4% × 1000) = 90 phép → 69.23; làm chậm 30%
+{ // Mossback K2: (50 + 4% × 1300 máu (1000 × HERO_HP_MULT 1.3)) = 102 phép → 78.46; làm chậm 30%
   const { w, p, d, step } = setup('thach_quy', 200);
   w.command(p.id, { type: 'cast', slot: 's2' }); step(12);
-  ok('Mossback K2 ≈69.2', near(lost(d), 69.23), lost(d).toFixed(2));
+  ok('Mossback K2 ≈78.5', near(lost(d), 78.46), lost(d).toFixed(2));
 }
 { // Mossback K1 Móc Neo: trúng địch ở xa → kéo về sát trước mặt, choáng
   const { w, p, d, step } = setup('thach_quy', 700);

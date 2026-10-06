@@ -23,6 +23,9 @@ export function skillHit(world, owner, target, cast) {
   if (skill.onHitHero === 'cutS2' && target.isHero) { const left = owner.cooldowns.s2 - world.tick; if (left > 0) owner.cooldowns.s2 = world.tick + Math.floor(left / 2); }
 }
 
+/** Nhịp đứng ra chiêu (giây) của chiêu có hướng/điểm sau khi chiêu phát ra: đủ để thấy tướng quay về hướng chiêu rồi mới chạy tiếp. */
+export const CAST_LOCK = 0.25;
+
 const selfEffects = (world, e, list, level) => { for (const eff of list || []) applyStatus(world, e, resolveEffect(eff, level), e); };
 const inRadius = (world, e, pos, r) => enemiesOf(world, e).filter((t) => dist(t.pos, pos) - t.radius <= r);
 
@@ -134,8 +137,12 @@ export function castSkill(world, e, slot, aim) {
   e.recall = null; onCastSkill(world, e);
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
   if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
+  // khoá ra chiêu: đứng yên, mặt giữ hướng chiêu tới lúc chiêu phát ra (+ một nhịp ngắn), sau đó mới đi/quay theo cần di chuyển.
+  // Lướt tự di chuyển nên không khoá; chiêu nhảy tới điểm (Đe Trời) khoá suốt lúc bay.
+  const lock = skill.type === 'dash' ? 0 : skill.untargetableDuringDelay ? (skill.delay || 0.5) : skill.aim === 'direction' || skill.aim === 'point' ? (skill.windup || 0) + CAST_LOCK : skill.windup || 0;
+  if (lock > 0) { e.castUntil = world.tick + T(lock); e.castFacing = e.facing; }
   const cast = { slot, skill, level, flags: {}, hitHero: false };
-  world.emit('cast', { id: e.id, slot, skillType: skill.type, delay: skill.windup ?? skill.delay ?? 0 }); // delay: độ trễ tới lúc chiêu trúng (animation khớp theo art.hitTime)
+  world.emit('cast', { id: e.id, slot, skillType: skill.type, delay: skill.windup ?? skill.delay ?? 0, lock }); // delay: độ trễ tới lúc chiêu trúng (animation khớp theo art.hitTime); lock: thời gian đứng ra chiêu
   // windup: chiêu phát ra sau một nhịp vung (đúng lúc ống/búa chạm đất trong animation); bị khống chế cứng hoặc chết trong lúc vung thì mất chiêu
   if (skill.windup) world.pending.push({ tick: world.tick + T(skill.windup), run: () => { if (e.alive && !isHardCC(e)) handler(world, e, cast, aim); } });
   else handler(world, e, cast, aim);

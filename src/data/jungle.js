@@ -33,6 +33,8 @@ export const MONSTERS = {
     buff: { to: 'team', id: 'ta_luc', name: 'Tà Lực', duration: 150, mod: { atk: 60, ap: 90, dmgReducePct: 0.12 }, desc: '+60 công, +90 phép, giảm 12% sát thương nhận' },
     desc: 'Tà thần trong hang tím ngoài mép vực, xuất hiện phút 15. Hạ được: cả đội nhận Tà Lực 150s.' },
 };
-export const monsterScale = (minute) => ({ hp: 1 + Math.min(1.8, 0.07 * Math.max(0, minute)), atk: 1 + Math.min(1.8, 0.07 * Math.max(0, minute)) });
+/** Sức mạnh chung của quái rừng + mục tiêu lớn so với số trong bảng: công −30%, máu −15% (đi rừng đỡ mất máu, hạ nhanh hơn). */
+export const MONSTER_POWER = { hp: 0.85, atk: 0.7 };
+export const monsterScale = (minute) => ({ hp: MONSTER_POWER.hp * (1 + Math.min(1.8, 0.07 * Math.max(0, minute))), atk: MONSTER_POWER.atk * (1 + Math.min(1.8, 0.07 * Math.max(0, minute))) });
 export const LEASH = 900;      // đuổi quá xa trại thì quay về
 export const RESET_HEAL = 0.25; // hồi 25% máu/giây khi quay về trại
