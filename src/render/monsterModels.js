@@ -4,7 +4,8 @@ import { loadGLB } from './assets.js';
 
 // Quái rừng & mục tiêu lớn dùng model SDF có xương (tools/modelgen/monsters.mjs → assets/monsters/<id>.glb).
 // Hoạt cảnh không dùng clip: xoay xương theo thời gian (đi/chạy, thở, vồ cắn, đập, vỗ cánh, uốn thân).
-// Vật liệu: PBR + vẽ thêm theo loại chất liệu của đỉnh (_mat): sợi lông, da ẩm đốm, đá sần, vảy ánh kim, phần phát sáng.
+// Vật liệu: PBR + vẽ thêm theo loại chất liệu của đỉnh (_mat): sợi lông, da ẩm đốm, đá sần, hàng vảy cá ánh kim, lớp lông vũ chồng,
+// kim loại sáng, vải màu đội, phần phát sáng. _mat truyền phẳng (không nội suy giữa 2 loại → không lẫn sọc vật liệu khác ở ranh giới).
 
 const IDS = ['soi_da', 'coc_reu', 'linh_thuy', 'hoa_nham', 'long_ngu', 'ho_loi', 'than_dieu', 'ta_than', 'linh_kiem', 'linh_cung', 'linh_den', 'xe_da'];
 /** Loại lính (mô phỏng) → model. */
@@ -23,20 +24,31 @@ export function loadMonsterModel(id) {
 export const preloadMonsters = () => Promise.all(IDS.map(loadMonsterModel));
 export const readyMonster = (id) => cache.get(id)?.gltf;
 
-const FUR_V = 'attribute float _mat;\nvarying float vMat; varying vec3 vObj;';
-const FUR_F = `varying float vMat; varying vec3 vObj; uniform float uGlow; uniform float uRim; uniform vec3 uTeam;
+const FUR_V = 'attribute float _mat;\nflat varying float vMat; varying float vGlow; varying vec3 vObj; varying vec3 vONor;';
+const FUR_F = `flat varying float vMat; varying float vGlow; varying vec3 vObj; varying vec3 vONor; uniform float uGlow; uniform float uRim; uniform vec3 uTeam; uniform float uScale;
 float mh3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float mn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mix(mh3(i), mh3(i + vec3(1,0,0)), f.x), mix(mh3(i + vec3(0,1,0)), mh3(i + vec3(1,1,0)), f.x), f.y),
-             mix(mix(mh3(i + vec3(0,0,1)), mh3(i + vec3(1,0,1)), f.x), mix(mh3(i + vec3(0,1,1)), mh3(i + vec3(1,1,1)), f.x), f.y), f.z); }`;
+             mix(mix(mh3(i + vec3(0,0,1)), mh3(i + vec3(1,0,1)), f.x), mix(mh3(i + vec3(0,1,1)), mh3(i + vec3(1,1,1)), f.x), f.y), f.z); }
+// lớp vảy/lông vũ chồng như ngói: p.x dọc thân về đuôi, p.y quanh thân (đơn vị = 1 vảy); vảy phía đầu đè lên vảy sau.
+// Trả (r: 0 tâm → 1 mép tự do, dx: lệch dọc, dy: lệch ngang).
+vec3 tile(vec2 p) {
+  for (int k = 0; k <= 1; k++) {
+    float row = floor(p.x) + float(k), off = 0.5 * mod(row, 2.0), col = floor(p.y - off + 0.5) + off;
+    vec2 d = vec2((p.x - row) * 1.15, p.y - col); float r = length(d) / 0.72;
+    if (r < 1.0) return vec3(r, d);
+  }
+  return vec3(1.0, 0.0, 0.0);
+}
+vec3 tileAt(float sz) { vec3 an = abs(vONor); return tile((an.x > an.y ? vec2(-vObj.z, vObj.y) : vec2(-vObj.z, vObj.x)) / sz); }`;
 const mats = new Map(), SHARED = {}; // hình/vật liệu phụ dùng chung giữa các lần quái hồi sinh (không rò bộ nhớ GPU)
 function monsterMaterial(id, team = 0) {
   const key = id + ':' + team; if (mats.has(key)) return mats.get(key);
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
-  const u = { uGlow: { value: id === 'hoa_nham' ? 2.4 : 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 }, uTeam: { value: TEAM_TINT[team] || TEAM_TINT[0] } };
+  const u = { uGlow: { value: id === 'hoa_nham' ? 2.4 : 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 }, uTeam: { value: TEAM_TINT[team] || TEAM_TINT[0] }, uScale: { value: id === 'long_ngu' ? 0.19 : id === 'than_dieu' ? 0.17 : 0.15 } };
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uGlow = u.uGlow; sh.uniforms.uRim = u.uRim; sh.uniforms.uTeam = u.uTeam;
-    sh.vertexShader = FUR_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vObj = position;');
+    sh.uniforms.uGlow = u.uGlow; sh.uniforms.uRim = u.uRim; sh.uniforms.uTeam = u.uTeam; sh.uniforms.uScale = u.uScale;
+    sh.vertexShader = FUR_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vGlow = _mat > 4.5 && _mat < 6.5 ? 1.0 : 0.0; vObj = position; vONor = normal;');
     sh.fragmentShader = FUR_F + '\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vMat < 0.5) { // lông: sợi dài theo chiều dọc + chùm lông
@@ -44,14 +56,16 @@ function monsterMaterial(id, team = 0) {
           diffuseColor.rgb *= 0.74 + 0.5 * s;
         } else if (vMat < 1.5) { diffuseColor.rgb *= 0.88 + 0.24 * mn3(vObj * 14.0); }       // da: đốm loang
         else if (vMat < 2.5) { diffuseColor.rgb *= 0.8 + 0.35 * mn3(vObj * 11.0) * mn3(vObj * 3.0 + 7.0) * 1.6; } // đá/giáp: sần
-        else if (vMat < 3.5) { diffuseColor.rgb *= 0.92 + 0.16 * mn3(vObj * 6.0); }
+        else if (vMat < 3.5) { vec3 t = tileAt(uScale); float k = 0.78 + 0.34 * smoothstep(-0.7, 0.7, t.y / 0.63); k *= 1.0 - 0.42 * smoothstep(0.84, 1.0, t.x);
+          k = mix(k, 1.0, smoothstep(0.45, 0.8, dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))) * 0.7); diffuseColor.rgb *= k * (0.95 + 0.1 * mn3(vObj * 6.0)); } // vảy cá: sáng dần ra mép, viền tối; bụng sáng vảy mờ
         else if (vMat > 6.5 && vMat < 7.5) { diffuseColor.rgb *= 0.94 + 0.12 * mn3(vObj * 40.0); }          // kim loại sáng (lính): xước mịn
-        else if (vMat > 7.5) { diffuseColor.rgb *= 0.9 + 0.2 * mn3(vObj * vec3(90.0, 30.0, 90.0)); }    // vải màu đội: thớ dệt
-        if (vMat > 3.5 && vMat < 4.5 || vMat > 5.5 && vMat < 6.5 || vMat > 7.5) diffuseColor.rgb *= uTeam * 1.25; // vải/giáp/đèn màu đội`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = vMat < 0.5 ? 0.95 : vMat < 1.5 ? 0.45 : vMat < 2.5 ? 0.82 : vMat < 3.5 ? 0.32 : vMat < 4.5 ? 0.36 : vMat < 6.5 ? 0.6 : vMat < 7.5 ? 0.28 : 0.88;')
+        else if (vMat > 7.5 && vMat < 8.5) { diffuseColor.rgb *= 0.9 + 0.2 * mn3(vObj * vec3(90.0, 30.0, 90.0)); }    // vải màu đội: thớ dệt
+        else if (vMat > 8.5) { vec3 t = tileAt(uScale * 1.7); float k = 0.8 + 0.28 * smoothstep(-0.7, 0.7, t.y / 0.63); k *= 1.0 - 0.3 * smoothstep(0.82, 1.0, t.x); k += 0.12 * (1.0 - smoothstep(0.0, 0.06, abs(t.z))) * step(-0.3, t.y); diffuseColor.rgb *= k * (0.94 + 0.12 * mn3(vObj * vec3(30.0, 8.0, 30.0))); } // lông vũ: lớp chồng + sống lông
+        if (vMat > 3.5 && vMat < 4.5 || vMat > 5.5 && vMat < 6.5 || vMat > 7.5 && vMat < 8.5) diffuseColor.rgb *= uTeam * 1.25; // vải/giáp/đèn màu đội`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = vMat < 0.5 ? 0.95 : vMat < 1.5 ? 0.45 : vMat < 2.5 ? 0.82 : vMat < 3.5 ? 0.32 : vMat < 4.5 ? 0.36 : vMat < 6.5 ? 0.6 : vMat < 7.5 ? 0.28 : vMat < 8.5 ? 0.88 : 0.7;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = vMat > 2.5 && vMat < 3.5 ? 0.55 : vMat > 1.5 && vMat < 2.5 ? 0.08 : vMat > 3.5 && vMat < 4.5 ? 0.3 : vMat > 6.5 && vMat < 7.5 ? 0.88 : 0.0;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        if (vMat > 4.5 && vMat < 6.5) totalEmissiveRadiance += diffuseColor.rgb * uGlow;
+        totalEmissiveRadiance += diffuseColor.rgb * uGlow * vGlow; // vGlow nội suy mượt → quầng sáng không răng cưa ở ranh giới
         { float rim = pow(clamp(1.0 - abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * rim * uRim; } // viền sáng nhẹ tách khỏi nền`);
   };
   if (id === 'linh_thuy') { m.transparent = true; m.opacity = 0.86; m.emissive = new THREE.Color(0x0a3a6a); m.emissiveIntensity = 1; m.roughness = 0.2; }
@@ -106,6 +120,7 @@ const ANIM = {
     rot(B.Bone_Body, Math.sin(t * 1.2) * 0.04, 0, Math.sin(t * 0.9) * 0.05); rot(B.Bone_Chest, -cast * 0.2, Math.sin(t * 0.7) * 0.12, 0);
     for (const [sd, m] of [['L', 1], ['R', -1]]) { rot(B['Bone_ArmU' + sd], -cast * 1.2 + Math.sin(t * 1.5 + m) * 0.15, 0, m * (0.25 + Math.sin(t * 1.5 + m) * 0.1)); rot(B['Bone_ArmL' + sd], -cast * 0.5 + Math.sin(t * 2 + m) * 0.2, 0, 0); }
     rot(B.Bone_Head, Math.sin(t * 1.1) * 0.06, Math.sin(t * 0.5) * 0.2, 0);
+    rot(B.Bone_Tail1, Math.sin(t * 1.7) * 0.12 + cast * 0.15, 0, Math.sin(t * 1.3) * 0.1); rot(B.Bone_Tail2, Math.sin(t * 1.7 - 0.8) * 0.2 + cast * 0.2, 0, Math.sin(t * 1.3 - 0.7) * 0.16); // đuôi xoáy nước lượn
     if (s.drops) { s.drops.children.forEach((d) => { if (d === s.ring) return; const a = d.userData.a + t * 1.4; d.position.set(Math.cos(a) * d.userData.r, d.userData.h + Math.sin(t * 2 + d.userData.a) * 20, Math.sin(a) * d.userData.r); }); s.ring.scale.setScalar(1 + Math.sin(t * 2) * 0.08); s.ring.position.y = 12 - s.body.position.y; }
   },
   long_ngu(B, t, dt, mv, atk, s) { // cá chép hoá rồng: dựng mình khỏi mặt nước thành chữ S, thân lượn sóng, vươn đầu khi phun
@@ -128,7 +143,7 @@ const ANIM = {
     const sl = strike(atk);
     rot(B.Bone_Chest, Math.sin(t * 1.5) * 0.04 - sl * 0.12, Math.sin(t * 0.5) * 0.08, 0); rot(B.Bone_Head, -sl * 0.25, Math.sin(t * 0.7) * 0.15, 0);
     rot(B.Bone_ArmUL, -sl * 1.5 + Math.sin(t) * 0.06, 0, 0.12); rot(B.Bone_ArmUR, -sl * 1.2 - Math.sin(t) * 0.06, 0, -0.12);
-    rot(B.Bone_ArmLL, -sl * 0.6, 0, 0); rot(B.Bone_ArmLR, -sl * 0.5, 0, 0);
+    rot(B.Bone_ArmLL, -sl * 0.6, 0, 0); rot(B.Bone_ArmLR, -sl * 0.5, 0, 0); rot(B.Bone_Jaw, 0.06 + sl * 0.45 + Math.sin(t * 1.5) * 0.03, 0, 0); // há hàm gầm khi vung
     s.body.position.set(0, 0, lunge(atk) * 70);
     if (s.rings) { s.rings.rotation.y += dt * 0.7; s.rings.children.forEach((r, i) => { r.rotation.z += dt * (0.3 + i * 0.2); }); }
     s.mat.userData.u.uGlow.value = 1.9 + Math.sin(t * 4) * 0.4;
