@@ -30,7 +30,7 @@ export function createSkillButtons(root, { world, player, indicators }) {
     <button class="sb atk" data-k="atk" aria-label="Đánh">${fistArt()}</button>
     <button class="sb amode" data-k="minion" aria-label="Ăn lính" title="Ăn lính: đánh lính máu thấp nhất trong tầm (kết liễu lấy vàng)">${MINION_IC}</button>
     <button class="sb amode" data-k="tower" aria-label="Đẩy trụ" title="Đẩy trụ: chỉ đánh trụ/nhà chính trong tầm">${TOWER_IC}</button>
-    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}">${player.data.skills[s] ? heroSkillArt(player.heroId, s, player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
+    ${SLOTS.map((s, i) => `<button class="sb sk" data-k="${s}" aria-label="${player.data.skills[s]?.name || 'K' + (i + 1)}"><span class="clip">${player.data.skills[s] ? heroSkillArt(player.heroId, s, player.data.skills[s], theme) : ''}<span class="nm">K${i + 1}</span><i class="cd"></i><b class="cdt"></b></span><em class="lvl" data-up="${s}">+</em><svg class="lvring" viewBox="0 0 100 100" aria-hidden="true"></svg></button>`).join('')}
     <div class="cancel" hidden>Thả để huỷ</div>`;
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
