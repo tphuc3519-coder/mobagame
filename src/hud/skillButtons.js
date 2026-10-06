@@ -36,7 +36,10 @@ export function createSkillButtons(root, { world, player, indicators }) {
   const btn = (k) => root.querySelector(`[data-k="${k}"]`);
   const cancelEl = root.querySelector('.cancel');
   // vòng ngắm + ô X huỷ: aimPad.js (dùng chung với nút phép bổ trợ)
-  let active = null;
+  // Mỗi nút giữ ngón riêng (nhiều ngón cùng lúc: đang ngắm K1 vẫn chạm K2, giữ nút đánh, kéo cần…); chỉ báo vẽ theo ngón kéo gần nhất.
+  const actives = new Map();
+  let shown = null;
+  const hideAim = () => { shown = null; indicators.hide(); cancelEl.hidden = true; aimUI(null); };
 
   const facingDir = () => ({ x: Math.cos(player.facing), y: Math.sin(player.facing) });
   function spec(slot) { return player.data.skills[slot]; }
@@ -57,21 +60,23 @@ export function createSkillButtons(root, { world, player, indicators }) {
   for (const slot of SLOTS) {
     const el = btn(slot);
     el.addEventListener('pointerdown', (e) => {
-      if (e.target.dataset.up) return;
-      e.preventDefault(); el.setPointerCapture(e.pointerId);
+      if (e.target.dataset.up || actives.has(slot)) return; // nút đã có ngón khác giữ
+      e.preventDefault(); el.setPointerCapture?.(e.pointerId);
       const r = el.getBoundingClientRect();
-      active = { slot, id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, aiming: false, dir: facingDir(), f: 1, cancel: false };
+      actives.set(slot, { slot, id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, aiming: false, dir: facingDir(), f: 1, cancel: false });
       el.classList.add('down');
     });
     el.addEventListener('pointermove', (e) => {
-      if (!active || e.pointerId !== active.id) return;
-      const dx = e.clientX - active.cx, dy = e.clientY - active.cy, l = Math.hypot(dx, dy), sp = spec(slot);
-      if (l > DRAG_MIN && sp.aim !== 'none') { active.aiming = true; active.dir = { x: dx / l, y: dy / l }; active.f = Math.min(1, l / DRAG_MAX); }
-      active.cancel = active.aiming && inCancel(e.clientX, e.clientY); cancelEl.hidden = !active.cancel; aimUI(active);
+      const a = actives.get(slot); if (!a || e.pointerId !== a.id) return;
+      const dx = e.clientX - a.cx, dy = e.clientY - a.cy, l = Math.hypot(dx, dy), sp = spec(slot);
+      if (l > DRAG_MIN && sp.aim !== 'none') { a.aiming = true; a.dir = { x: dx / l, y: dy / l }; a.f = Math.min(1, l / DRAG_MAX); }
+      a.cancel = a.aiming && inCancel(e.clientX, e.clientY);
+      if (a.aiming) { shown = a; cancelEl.hidden = !a.cancel; aimUI(a); }
     });
     const end = (e) => {
-      if (!active || e.pointerId !== active.id) return;
-      const a = active, sp = spec(slot); active = null; el.classList.remove('down'); indicators.hide(); cancelEl.hidden = true; aimUI(null);
+      const a = actives.get(slot); if (!a || e.pointerId !== a.id) return;
+      const sp = spec(slot); actives.delete(slot); el.classList.remove('down');
+      if (shown === a) hideAim();
       if (a.cancel) return;
       let aim = null;
       if (!a.aiming) aim = autoAim(slot);
@@ -114,11 +119,11 @@ export function createSkillButtons(root, { world, player, indicators }) {
         if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }
         set(el, 'title', `${sk.name}: ${sk.desc || ''}`);
       }
-      if (!player.alive && active) { btn(active.slot).classList.remove('down'); active = null; indicators.hide(); cancelEl.hidden = true; aimUI(null); } // chết giữa lúc ngắm: bỏ ngắm
+      if (!player.alive && actives.size) { for (const a of actives.values()) btn(a.slot).classList.remove('down'); actives.clear(); hideAim(); } // chết giữa lúc ngắm: bỏ ngắm
       if (atkHeld && player.alive && !player.attacking) world.command(player.id, { type: 'attack', on: true, mode: atkMode }); // giữ nút đánh qua lúc hồi sinh / bị khống chế
-      if (active?.aiming) {
-        const sp = spec(active.slot), pt = { x: player.pos.x + active.dir.x * (sp.range || 0) * active.f, y: player.pos.y + active.dir.y * (sp.range || 0) * active.f };
-        indicators.show(sp, player.pos, active.dir, pt, active.cancel);
+      if (shown?.aiming) {
+        const sp = spec(shown.slot), pt = { x: player.pos.x + shown.dir.x * (sp.range || 0) * shown.f, y: player.pos.y + shown.dir.y * (sp.range || 0) * shown.f };
+        indicators.show(sp, player.pos, shown.dir, pt, shown.cancel);
       }
     },
   };

@@ -1,6 +1,7 @@
 import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
+import { floorAt } from '../render/env/floor.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -106,9 +107,9 @@ export function createHud(canvas, input, portraits = null) {
           death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
         }
         if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
-        if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
+        if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
           size: ev.amount > 150 ? 22 : 17, life: ev.crit ? 1.15 : 0.9, drift: (Math.random() - 0.5) * 36, tilt: (Math.random() - 0.5) * 0.18 });
-        else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, t: 0, born: now(), text: '+' + ev.amount, color: '#8affb0', size: 16, life: 0.9, drift: 0, tilt: 0 });
+        else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: '+' + ev.amount, color: '#8affb0', size: 16, life: 0.9, drift: 0, tilt: 0 });
       }
     },
     draw(world, cam, player, enemy, debugLines) {
@@ -119,7 +120,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
-        const p = project(cam, e.pos.x, e.kind === 'hero' ? HERO_BAR_Y : e.kind === 'dummy' ? 230 : e.height, e.pos.y, w, h); if (!p.visible) continue;
+        const p = project(cam, e.pos.x, (e.kind === 'hero' ? HERO_BAR_Y : e.kind === 'dummy' ? 230 : e.height) + floorAt(world.map, e.pos.x, e.pos.y), e.pos.y, w, h); // đứng trên bệ trại quái: thanh máu nâng theo if (!p.visible) continue;
         const isHero = e.kind === 'hero', col = e.id === player.id ? '#52d860' : e.team === player.team ? '#38b8ff' : '#ff4a3a';
         if (isHero) { // kiểu Liên Quân: huy hiệu cấp lục giác bên trái, thanh máu chia vạch mỗi 250 HP, tên ở trên
           const bw = 86, bh = 8, x0 = p.x - bw / 2 + 8, y0 = p.y - 14; // gọn, cao trên đầu: tên không bị đầu tướng che
@@ -161,7 +162,7 @@ export function createHud(canvas, input, portraits = null) {
       for (let i = floats.length - 1; i >= 0; i--) {
         const f = floats[i]; f.t = now() - f.born; // giây thật (không phụ thuộc FPS)
         if (f.t > f.life) { floats.splice(i, 1); continue; }
-        if (f.t >= 0) drawFloat(f, project(cam, f.x, 200 + Math.sqrt(f.t / f.life) * (f.crit ? 150 : 120), f.y, w, h)); // t < 0: số xem trước chờ tới lượt
+        if (f.t >= 0) drawFloat(f, project(cam, f.x, 200 + (f.gy || 0) + Math.sqrt(f.t / f.life) * (f.crit ? 150 : 120), f.y, w, h)); // t < 0: số xem trước chờ tới lượt
       }
       // thanh máu / mana của mình
       const bx = 16, by = h - 25, bw = Math.min(220, w * 0.24); // sát mép dưới, mảnh: không đè lên cần di chuyển

@@ -10,8 +10,9 @@ const VS_UV = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projection
 const col = (c) => new THREE.Color(c);
 const ground = (m, y = 4) => { m.rotation.x = -Math.PI / 2; m.position.y = y; return m; };
 
-export function createShapes(scene) {
-  const live = [];
+/** floor(x, z, r): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn — env/floor.js); hình sát đất đặt lên trên mặt đó. */
+export function createShapes(scene, { floor = null } = {}) {
+  const live = [], fl = (x, z, r = 0) => (floor ? floor(x, z, r) : 0);
   const add = (obj, life, update, opts = {}) => { scene.add(obj); const it = { obj, life, t: 0, update, ...opts }; live.push(it); return it; };
 
   /** Sóng xung kích: vòng sáng nở từ r0 đến r1. o: { color, width (0..1), fill, alpha, life, y, ease } */
@@ -24,7 +25,7 @@ export function createShapes(scene) {
           float a = clamp(band + inner, 0.0, 1.0) * uA; vec3 c = mix(uC, uK * 2.2, band * band * 0.6);
           gl_FragColor = vec4(c, a);
         ${TAIL}` });
-    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r1, 2 * r1), mat), o.y ?? 5); m.position.x = x; m.position.z = z; m.renderOrder = 4;
+    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r1, 2 * r1), mat), (o.y ?? 5) + fl(x, z, r1)); m.position.x = x; m.position.z = z; m.renderOrder = 4;
     const life = o.life ?? 0.5;
     return add(m, life, (k) => { const e = 1 - Math.pow(1 - k, o.ease ?? 2.2); mat.uniforms.uR.value = (r0 + (r1 - r0) * e) / r1; mat.uniforms.uA.value = (o.alpha ?? 1) * (1 - k) * (1 - k); });
   }
@@ -33,7 +34,7 @@ export function createShapes(scene) {
   function decal(kind, x, z, r, o = {}) {
     const mat = new THREE.MeshBasicMaterial({ map: decalTexture(kind), color: col(o.color ?? 0xffffff).multiplyScalar(o.glow ?? (o.additive === false ? 1 : 1.8)), transparent: true, depthWrite: false, opacity: 0,
       blending: THREE.NormalBlending, polygonOffset: true, polygonOffsetFactor: -2, toneMapped: o.additive === false }); // vệt sáng (nứt dung nham, ký tự): màu > 1 cho bloom
-    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r, 2 * r), mat), o.y ?? 8); m.position.x = x; m.position.z = z; m.rotation.z = o.rot ?? Math.random() * 6.28; m.renderOrder = 3;
+    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r, 2 * r), mat), (o.y ?? 8) + fl(x, z, r)); m.position.x = x; m.position.z = z; m.rotation.z = o.rot ?? Math.random() * 6.28; m.renderOrder = 3;
     const life = o.life ?? 1.5, a = o.alpha ?? 1, fi = o.fadeIn ?? 0.05;
     return add(m, life, (k, dt, t) => {
       mat.opacity = a * Math.min(1, t / Math.max(0.001, fi)) * (k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4);
@@ -59,7 +60,7 @@ export function createShapes(scene) {
           float a = clamp(edge * tail * 1.7, 0.0, 1.0) * uA; vec3 c = mix(uC * 1.3, uK * 2.6, hot);
           gl_FragColor = vec4(c, a);
         ${TAIL}` });
-    const m = new THREE.Mesh(g, mat); m.position.set(x, o.y ?? 120, z); m.rotation.x = o.tilt ?? 0; m.renderOrder = 7;
+    const m = new THREE.Mesh(g, mat); m.position.set(x, (o.y ?? 120) + fl(x, z), z); m.rotation.x = o.tilt ?? 0; m.renderOrder = 7;
     const life = o.life ?? 0.28;
     return add(m, life, (k) => { mat.uniforms.uH.value = Math.min(1.3, k * 2.6); mat.uniforms.uA.value = (o.alpha ?? 1) * (k < 0.4 ? 1 : 1 - (k - 0.4) / 0.6); });
   }
@@ -76,7 +77,7 @@ export function createShapes(scene) {
           vec3 c = mix(uD, uC * 1.6, arms) + vec3(1.0) * lip * 0.8;
           gl_FragColor = vec4(c, (rim * (0.55 + 0.45 * arms) + lip * 0.6) * uA);
         ${TAIL}` });
-    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r, 2 * r), mat), o.y ?? 6); m.position.x = x; m.position.z = z; m.renderOrder = 4;
+    const m = ground(new THREE.Mesh(new THREE.PlaneGeometry(2 * r, 2 * r), mat), (o.y ?? 6) + fl(x, z, r)); m.position.x = x; m.position.z = z; m.renderOrder = 4;
     const life = o.life ?? 1.2;
     return add(m, life, (k, dt, t) => { mat.uniforms.uT.value = t * (o.speed ?? 1); mat.uniforms.uA.value = (o.alpha ?? 1) * Math.min(1, t / 0.15) * (k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3); m.scale.setScalar(0.6 + 0.4 * Math.min(1, t / 0.25)); });
   }
@@ -111,7 +112,7 @@ export function createShapes(scene) {
           float streak = 0.6 + 0.4 * sin(vUv.x * 40.0 + v * 6.0 - uT * 14.0);
           gl_FragColor = vec4(mix(uC, uK, 1.0 - v) * side * fade * streak * uA * 1.4, 1.0);
         ${TAIL}` });
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.75, r, h, 24, 1, true), mat); m.position.set(x, h / 2, z); m.renderOrder = 7;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.75, r, h, 24, 1, true), mat); m.position.set(x, h / 2 + fl(x, z, r), z); m.renderOrder = 7;
     const life = o.life ?? 0.6;
     return add(m, life, (k, dt, t) => { mat.uniforms.uT.value = t; mat.uniforms.uA.value = (o.alpha ?? 1) * Math.min(1, t / 0.06) * (1 - k); m.scale.set(1 + k * 0.4, 0.3 + 0.7 * Math.min(1, t / 0.12), 1 + k * 0.4); m.position.y = (h * m.scale.y) / 2; });
   }

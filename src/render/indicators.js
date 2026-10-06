@@ -55,13 +55,13 @@ const SECTOR = mk(`uniform float uHalf; void main(){ vec2 p = (vUv - 0.5) * 2.0;
   float rim = edge(r - 1.0 + 6.0 * px, 6.0 * px) + edge((uHalf - abs(a)) * r, 5.0 * px) * 0.8;
   gl_FragColor = vec4(uC * (1.0 + rim * 0.5), (0.2 + 0.3 * r * r + rim * 0.9) * uA); }`, { uHalf: { value: 0.78 } });
 
-export function createIndicators(scene) {
+export function createIndicators(scene, { floor = null } = {}) { // floor: độ cao mặt nền (bệ trại quái) để chỉ báo không chìm dưới bệ
   const g = new THREE.Group(); g.visible = false; scene.add(g);
   const plane = (m, xOff = 0) => { const geo = new THREE.PlaneGeometry(1, 1); geo.translate(xOff, 0, 0); geo.rotateX(-Math.PI / 2); const o = new THREE.Mesh(geo, m); o.renderOrder = 3; o.frustumCulled = false; o.visible = false; g.add(o); return o; };
   const range = plane(RANGE), ret = plane(RETICLE), arrow = plane(ARROW, 0.5), sector = plane(SECTOR), self = plane(RANGE.clone());
   self.material.uniforms.uSize = { value: new THREE.Vector2(1, 1) };
   const all = [range, ret, arrow, sector, self];
-  const put = (o, x, z, sx, sz, ang = 0) => { o.visible = true; o.position.set(x, 6, z); o.scale.set(sx, 1, sz); o.rotation.y = -ang; o.material.uniforms.uSize.value.set(sx, sz); };
+  const put = (o, x, z, sx, sz, ang = 0) => { o.visible = true; o.position.set(x, 6 + (floor ? floor(x, z, Math.max(sx, sz) / 2) : 0), z); o.scale.set(sx, 1, sz); o.rotation.y = -ang; o.material.uniforms.uSize.value.set(sx, sz); };
   return {
     hide() { g.visible = false; },
     /** spec: { type, aim, range, width, radius, angle }; dir: {x,y} chuẩn hoá; point: {x,y} thế giới; cancel: bool */

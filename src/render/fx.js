@@ -8,11 +8,12 @@ import { createLibrary } from './vfx/library.js';
 const add = (color, op = 0.5) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 const flat = (m) => { m.rotation.x = -Math.PI / 2; m.renderOrder = 2; return m; };
 
-/** opts: { views (unitView), camera, renderer, shake(amount, dur), team (đội người chơi) } */
+/** opts: { views (unitView), camera, renderer, shake(amount, dur), team (đội người chơi), floor(x, z, r) (độ cao mặt nền) } */
 export function createFx(scene, opts = {}) {
-  const A = createParticles(scene, { max: 2600, additive: true });
-  const N = createParticles(scene, { max: 1600, additive: false });
-  const sh = createShapes(scene);
+  const floor = opts.floor || null; // độ cao mặt nền phần nhìn (env/floor.js): hiệu ứng tung vào hang bùa không chìm dưới bệ đá
+  const A = createParticles(scene, { max: 2600, additive: true, floor });
+  const N = createParticles(scene, { max: 1600, additive: false, floor });
+  const sh = createShapes(scene, { floor });
   const lib = createLibrary({ A, N, sh, views: opts.views || { get: () => null }, shake: opts.shake || (() => {}), team: opts.team ?? 0 });
   const towerRings = new Map(), seenProj = new Set(), sz = new THREE.Vector2();
 

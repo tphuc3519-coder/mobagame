@@ -17,7 +17,8 @@ export const HERO_SCALE = 1.5;
 const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
 
 /** Entity mô phỏng ↔ object 3D. Render chỉ đọc trạng thái (nội suy prevPos → pos). */
-export function createUnitViews(scene, localTeam, localId) {
+/** floor(x, z): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn): đơn vị đứng lên trên bệ thay vì lút chân. */
+export function createUnitViews(scene, localTeam, localId, { floor = null } = {}) {
   const views = new Map();
   const spawn = (e, world) => {
     const root = new THREE.Group();
@@ -68,8 +69,10 @@ export function createUnitViews(scene, localTeam, localId) {
         const v = views.get(e.id) || spawn(e, world);
         const y = v.lift ? Math.sin(Math.min(1, v.lift.t / v.lift.dur) * Math.PI) * v.lift.h : 0;
         if (v.lift) { v.lift.t += dt; if (v.lift.t >= v.lift.dur) v.lift = null; }
-        v.root.position.set(lerp(e.prevPos.x, e.pos.x, alpha), y, lerp(e.prevPos.y, e.pos.y, alpha));
-        if (v.blob) { v.blob.position.set(v.root.position.x, 0, v.root.position.z); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); }
+        const rx = lerp(e.prevPos.x, e.pos.x, alpha), rz = lerp(e.prevPos.y, e.pos.y, alpha);
+        if (!e.structure) { const g = floor ? floor(rx, rz) : 0; v.gy = v.gy == null ? g : v.gy + (g - v.gy) * (1 - Math.exp(-14 * dt)); } // bước lên/xuống bệ êm
+        v.root.position.set(rx, y + (v.gy || 0), rz);
+        if (v.blob) { v.blob.position.set(v.root.position.x, v.gy || 0, v.root.position.z); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); }
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)

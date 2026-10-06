@@ -18,6 +18,7 @@ import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
+import { floorAt } from './render/env/floor.js';
 import { createTowerRanges } from './render/towerRange.js';
 import { createInput } from './hud/joystick.js';
 import { createHud } from './hud/hud.js';
@@ -63,6 +64,8 @@ if (arena) {
   if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
 if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, ready: 0 };
+// người chơi tự cộng điểm kỹ năng: đầu trận có 1 điểm, nút + hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + (bot vẫn tự cộng)
+player.autoLevel = false; player.skillLevels = { s1: 0, s2: 0, s3: 0 }; player.skillPoints = player.level;
 if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts.charmId]; player.bonus = computeBonus(player); }
 
 let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
@@ -74,12 +77,13 @@ const { renderer } = createRenderer(document.getElementById('world'), level, {
 });
 const sun = addLights(scene, renderer, level);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
-const views = createUnitViews(scene, 0, player.id);
-const indicators = createIndicators(scene);
+const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
+const views = createUnitViews(scene, 0, player.id, { floor });
+const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
-const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team });
+const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, floor });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }

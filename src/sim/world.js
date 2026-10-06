@@ -62,7 +62,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     /** Bỏ bùa và đồ để đo sát thương thuần (dùng trong kiểm thử). */
     bare(e) { e.charm = null; e.items = e.items.map(() => null); e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; },
     resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; },
-    level15(e) { setLevel(world, e, 15); },
+    level15(e) { setLevel(world, e, 15); autoLevel(e); }, // thử nghiệm: cộng luôn điểm kỹ năng (người chơi bình thường tự cộng bằng nút +)
     fullHeal(e) { e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; },
   };
   if (structures) spawnStructures(world);

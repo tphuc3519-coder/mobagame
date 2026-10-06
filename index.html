@@ -129,7 +129,7 @@
   .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
   .lvring path { fill: none; stroke-width: 8; stroke-linecap: round; } .lvring .off { stroke: #0b0e1e; opacity: 0.8; }
   .lvring .on { stroke: url(#lvg); filter: drop-shadow(0 0 2px #ffcf6a) drop-shadow(0 0 4px #ff9a2a88); }
-  .sk .lvl { box-shadow: 0 0 0 2px #1a1200, 0 0 10px #ffcf6a; animation: lvpulse 1.1s ease-in-out infinite; z-index: 5; } @keyframes lvpulse { 50% { transform: scale(1.15); box-shadow: 0 0 0 2px #1a1200, 0 0 18px #ffe08a; } }
+  .sk .lvl { top: -24px; left: 50%; right: auto; margin-left: -17px; width: 34px; height: 34px; font-size: 24px; font-weight: 900; line-height: 1; box-shadow: 0 0 0 2px #1a1200, 0 0 10px #ffcf6a; animation: lvpulse 1.1s ease-in-out infinite; z-index: 5; } /* nút + cộng điểm kỹ năng: to, nằm trên nút kỹ năng (dễ bấm bằng ngón cái) */ @keyframes lvpulse { 50% { transform: scale(1.15); box-shadow: 0 0 0 2px #1a1200, 0 0 18px #ffe08a; } }
   .lvring .fresh { animation: lvup 0.9s ease-out; } @keyframes lvup { 0% { stroke-width: 16; stroke: #fff; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 18px #ffcf6a); } 100% { stroke-width: 8; } }
   .sk.nomana .art { filter: saturate(0.3) brightness(0.75); } .sk.nomana { box-shadow: 0 0 0 3px #4a9cff; }
   .sk.locked .art { filter: grayscale(1) brightness(0.55); } .sk.locked { opacity: 1; }
