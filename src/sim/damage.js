@@ -49,7 +49,7 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   if (type === 'magic' && tgt.kind === 'hero') onMagicTaken(world, tgt);
   if (isStealthed(tgt)) removeStatus(tgt, 'stealth');
   if (src?.kind === 'hero' && tgt.kind === 'hero') { world.onHeroDamaged?.(src, tgt); (tgt.hitBy ||= {})[src.id] = world.tick; } // ghi ai đánh tướng (tính hỗ trợ)
-  world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, crit: !!opts.crit, shield: absorbed > 0 && dmg <= 0 }); // crit: số bay kiểu chí mạng (hud.js)
+  world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, crit: !!opts.crit, slot: opts.slot, shield: absorbed > 0 && dmg <= 0 }); // crit: số bay kiểu chí mạng (hud.js)
   if (tgt.hp <= 0 && !tryRevive(world, tgt)) kill(world, src, tgt);
   return dmg;
 }

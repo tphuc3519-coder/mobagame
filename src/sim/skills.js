@@ -13,7 +13,7 @@ import { forceMove } from './movement.js';
 /** Sát thương + hiệu ứng lên một mục tiêu, rồi gọi hook onHit/onSkillHit của tướng. */
 export function skillHit(world, owner, target, cast) {
   const { skill, level } = cast;
-  if (skill.damage) { dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type); onSkillDamage(world, owner, target); }
+  if (skill.damage) { dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type, { slot: cast.slot }); onSkillDamage(world, owner, target); } // slot: hiệu ứng trúng đòn riêng của chiêu
   for (const eff of skill.effects || []) applyStatus(world, target, resolveEffect(eff, level), owner);
   const hooks = owner.data.passive?.hooks;
   const ctx = makeCtx(world, owner, { target, cast, skill });

@@ -21,7 +21,7 @@ void main() {
   p = vec2(c * p.x - s * p.y, s * p.x + c * p.y) + 0.5;
   if (p.x < 0.0 || p.y < 0.0 || p.x > 1.0 || p.y > 1.0) discard;
   float tx = mod(vTile, 4.0), ty = floor(vTile / 4.0);
-  vec4 t = texture2D(uMap, vec2((tx + p.x) / 4.0, 1.0 - (ty + p.y) / 2.0));
+  vec4 t = texture2D(uMap, vec2((tx + p.x) / 4.0, 1.0 - (ty + p.y) / 4.0)); // atlas 4×4 ô
   float a = t.a * vAlpha;
   if (a < 0.003) discard;
   gl_FragColor = uAdd > 0.5 ? vec4(vColor * t.rgb * a, 1.0) : vec4(vColor * t.rgb, a);

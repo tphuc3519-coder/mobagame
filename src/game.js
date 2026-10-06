@@ -83,7 +83,7 @@ const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
-const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, floor });
+const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, me: player.id, floor });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }

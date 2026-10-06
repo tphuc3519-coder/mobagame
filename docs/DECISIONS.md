@@ -429,4 +429,14 @@
   và chuẩn đã sẵn cho chiêu/đồ sau này, xem trước bằng nút "Số sát thương" ở bảng thử `?debug=1`. Số bay tính theo giây thật
   (trước đây cộng 1/60 mỗi khung: máy 30 FPS thấy số lơ lửng gấp đôi).
 - **Sửa kèm**: lệnh chớp mắt (`mats.update`) bị dính vào sau dấu `//` của chú thích nên mặt anime không chớp.
+- **Hiệu ứng chìm dưới bệ trại bùa** (Moonstream tung chiêu vào hang bùa): bệ đá lãnh thổ trại quái cao 12, bệ hang mục tiêu lớn
+  ~32–40, còn hiệu ứng mặt đất vẽ ở độ cao cố định 4–8 nên bị bệ che. `src/render/env/floor.js` (`floorAt`) cho độ cao mặt nền
+  phần nhìn; vòng/vệt/xoáy/cột sáng, hạt sát đất, vòng ngắm chiêu, thanh máu, số bay và chính các đơn vị + bóng chân đặt lên
+  trên mặt đó (đơn vị bước lên/xuống bệ êm). Mô phỏng vẫn phẳng.
+- **Cảm ứng nhiều ngón (≥ 5)**: trước đây nút kỹ năng chỉ nhớ một ngón (bấm K2 lúc đang ngắm K1 thì K1 mất lượt), nút phép cũng
+  vậy; trên iPhone, ngón thứ 2–3 còn bị trình duyệt hiểu là phóng to/cuộn trang và huỷ các chạm đang giữ. Giờ mỗi nút giữ ngón
+  riêng, chặn cử chỉ trình duyệt khi có từ 2 ngón (touchstart/touchmove/gesturestart), vòng ngắm dùng chung có "chủ". Đã thử bằng
+  sự kiện chạm CDP: cần + giữ nút đánh + ngắm K1 + ngắm Chớp Bước + vuốt camera cùng lúc, thả từng ngón đều đúng.
+- **Người chơi tự cộng điểm kỹ năng**: tướng người chơi không tự cộng nữa — đầu trận 1 điểm, nút + (to 34 px, nằm trên nút kỹ
+  năng, nhấp nháy) hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + trên các chiêu cộng được (K3 từ cấp 4). Bot vẫn tự cộng.
 

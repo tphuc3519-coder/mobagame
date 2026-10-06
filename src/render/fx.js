@@ -14,7 +14,7 @@ export function createFx(scene, opts = {}) {
   const A = createParticles(scene, { max: 2600, additive: true, floor });
   const N = createParticles(scene, { max: 1600, additive: false, floor });
   const sh = createShapes(scene, { floor });
-  const lib = createLibrary({ A, N, sh, views: opts.views || { get: () => null }, shake: opts.shake || (() => {}), team: opts.team ?? 0 });
+  const lib = createLibrary({ A, N, sh, views: opts.views || { get: () => null }, shake: opts.shake || (() => {}), team: opts.team ?? 0, me: opts.me ?? null });
   const towerRings = new Map(), seenProj = new Set(), sz = new THREE.Vector2();
 
   if (typeof window !== 'undefined') window.__fxdbg = () => ({ add: A.count, norm: N.count, shapes: sh.count, trails: lib.dbg() });
