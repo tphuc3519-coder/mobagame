@@ -24,6 +24,8 @@ export function loadMonsterModel(id) {
 export const preloadMonsters = () => Promise.all(IDS.map(loadMonsterModel));
 export const readyMonster = (id) => cache.get(id)?.gltf;
 
+// độ sáng phần phát quang: hổ (vằn sét + pha lê ở lưng) và chim sấm (dải đuôi) có nhiều mảng sáng lớn → bloom trong trận loá trắng cả lưng nếu để 1,9
+const GLOW = { hoa_nham: 2.4, ho_loi: 1.0, than_dieu: 1.15 };
 const FUR_V = 'attribute float _mat;\nflat varying float vMat; varying float vGlow; varying vec3 vObj; varying vec3 vONor;';
 const FUR_F = `flat varying float vMat; varying float vGlow; varying vec3 vObj; varying vec3 vONor; uniform float uGlow; uniform float uRim; uniform vec3 uTeam; uniform float uScale;
 float mh3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -45,7 +47,7 @@ const mats = new Map(), SHARED = {}; // hình/vật liệu phụ dùng chung gi�
 function monsterMaterial(id, team = 0) {
   const key = id + ':' + team; if (mats.has(key)) return mats.get(key);
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
-  const u = { uGlow: { value: id === 'hoa_nham' ? 2.4 : 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 }, uTeam: { value: TEAM_TINT[team] || TEAM_TINT[0] }, uScale: { value: id === 'long_ngu' ? 0.19 : id === 'than_dieu' ? 0.17 : 0.15 } };
+  const u = { uGlow: { value: GLOW[id] ?? 1.9 }, uRim: { value: id === 'linh_thuy' ? 1.6 : 0.35 }, uTeam: { value: TEAM_TINT[team] || TEAM_TINT[0] }, uScale: { value: id === 'long_ngu' ? 0.19 : id === 'than_dieu' ? 0.17 : 0.15 } };
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uGlow = u.uGlow; sh.uniforms.uRim = u.uRim; sh.uniforms.uTeam = u.uTeam; sh.uniforms.uScale = u.uScale;
     sh.vertexShader = FUR_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vGlow = _mat > 4.5 && _mat < 6.5 ? 1.0 : 0.0; vObj = position; vONor = normal;');
