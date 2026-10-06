@@ -17,6 +17,7 @@ export function createHud(canvas, input, portraits = null) {
   const ctx = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1;
   const floats = [], banners = [], now = () => performance.now() / 1000;
+  const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
   addEventListener('resize', resize); resize();
@@ -107,6 +108,8 @@ export function createHud(canvas, input, portraits = null) {
           death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
         }
         if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
+        if (ev.type === 'damage' && e.kind === 'monster') monHit.set(e.id, now());
+        if (ev.type === 'death') { monHit.delete(ev.id); monTrail.delete(ev.id); }
         if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
           size: ev.amount > 150 ? 22 : 17, life: ev.crit ? 1.15 : 0.9, drift: (Math.random() - 0.5) * 36, tilt: (Math.random() - 0.5) * 0.18 });
         else if (ev.type === 'heal') floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: '+' + ev.amount, color: '#8affb0', size: 16, life: 0.9, drift: 0, tilt: 0 });
@@ -144,9 +147,15 @@ export function createHud(canvas, input, portraits = null) {
         } else {
           const mon = e.kind === 'monster';
           const bw = e.structure ? 120 : mon ? (e.boss ? 150 : e.monsterType === 'linh_thuy' || e.monsterType === 'hoa_nham' ? 96 : 60) : e.kind === 'minion' ? 44 : e.kind === 'dummy' ? 74 : 84;
-          if (mon) { // quái rừng: thanh vàng cam, có tên với bùa và mục tiêu lớn
-            bar(p.x - bw / 2, p.y - 6, bw, e.boss ? 9 : 6, e.hp / e.stats.maxHp, '#f2b33a');
-            if (e.boss || bw > 90) { ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, p.y - 10); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, p.y - 10); ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif'; }
+          if (mon) { // quái rừng: thanh vàng cam (phần máu vừa mất trắng, rút dần), có tên với bùa và mục tiêu lớn; đang giao chiến/vừa bị đánh: số máu trên thanh (như Liên Quân)
+            const pct = Math.max(0, e.hp / e.stats.maxHp), bh = e.boss ? 9 : 6, x0 = p.x - bw / 2, y0 = p.y - 6, tn = now();
+            const tr = monTrail.get(e.id) || { v: pct, t: tn }; tr.v = Math.max(pct, tr.v - (tn - tr.t) * 0.45); tr.t = tn; monTrail.set(e.id, tr);
+            bar(x0, y0, bw, bh, pct, '#f2b33a');
+            if (tr.v > pct + 0.002) { ctx.fillStyle = 'rgba(255,248,232,0.85)'; ctx.fillRect(x0 + bw * pct, y0, bw * (tr.v - pct), bh); }
+            const hot = e.aggro != null || tn - (monHit.get(e.id) ?? -99) < 4;
+            if (hot) { ctx.font = '800 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); }
+            if (e.boss || bw > 90) { const ny = hot ? y0 - 16 : p.y - 10; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
+            ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
             continue;
           }
           bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
