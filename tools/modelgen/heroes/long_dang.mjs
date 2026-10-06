@@ -5,11 +5,22 @@ import { swayChain, tube } from '../parts.mjs';
 
 const C = { ivory: '#fff1d8', ivory2: '#f3dcb4', gold: '#e2b04a', red: '#d8452f', hair: '#1c1620', wood: '#7a5230', shade: '#2b2b52', skin: '#f2cdb0' };
 
+// Gậy đèn gắn cứng vào tay phải, dựng dọc khi tay buông. Kiểu chung "giơ hai tay" xoay cánh tay ~165° nên gậy lật ngược: đầu đèn chúc xuống
+// hông, thân gậy xuyên qua đầu. Hai khung riêng dưới đây: tay trái giơ cao, tay phải nâng gậy lên trước mặt và bẻ cổ tay bù lại để gậy
+// luôn gần thẳng đứng, đèn ở trên cao (góc gậy ≈ tổng rx vai + khuỷu + cổ tay; 0 = thẳng đứng, dương = nghiêng ra trước).
+const LANTERN_UP = [[0, {}], [0.4, { uaL: [-165, 0, 22], faL: [-20, 0, 0], uaR: [-80, 0, -10], faR: [-50, 0, 0], hdR: [140, 0, 0], chest: [-14, 0, 0], head: [-16, 0, 0], hipsPos: [0, 0.03, 0] }],
+  [0.65, { uaL: [-150, 0, 30], faL: [-15, 0, 0], uaR: [-76, 0, -12], faR: [-48, 0, 0], hdR: [132, 0, 0], chest: [-10, 0, 0], head: [-12, 0, 0], hipsPos: [0, 0.04, 0] }],
+  [0.85, { uaL: [-60, 0, 10], faL: [-30, 0, 0], uaR: [-40, 0, -10], faR: [-30, 0, 0], hdR: [50, 0, 0], chest: [10, 0, 0], hipsPos: [0, -0.02, 0.02] }], [1, {}]];
+const LANTERN_VICTORY = [[0, {}], [0.2, { hipsPos: [0, -0.05, 0], thL: [-20, 0, 0], thR: [-20, 0, 0], shL: [40, 0, 0], shR: [40, 0, 0], uaL: [-30, 0, 20], uaR: [-20, 0, -12], faR: [-20, 0, 0], hdR: [30, 0, 0] }],
+  [0.4, { hipsPos: [0, 0.16, 0], uaL: [-160, 0, 25], faL: [-14, 0, 0], uaR: [-78, 0, -12], faR: [-48, 0, 0], hdR: [140, 0, 0], chest: [-10, 0, 0], head: [-14, 0, 0], thL: [-30, 0, 0], thR: [10, 0, 0], shL: [50, 0, 0], shR: [30, 0, 0] }],
+  [0.6, { hipsPos: [0, 0, 0], uaL: [-165, 0, 22], uaR: [-80, 0, -12], faR: [-50, 0, 0], hdR: [142, 0, 0], chest: [-8, 0, 0], head: [-10, 0, 0] }],
+  [0.9, { uaL: [-160, 0, 26], uaR: [-78, 0, -12], faR: [-48, 0, 0], hdR: [138, 0, 0], chest: [-8, 0, 0], head: [-8, 0, 0], hipsPos: [0, 0.01, 0] }], [1, {}]];
+
 export default {
   name: 'Lanternward', glow: '#ffb347',
   palette: ['#fff4e0', '#ffc15e', '#e0513b', '#2b2b52'], rim: '#ffc15e',
   hitTime: { Attack1: 0.3, Attack2: 0.27 },
-  anim: { style: { atk1: 'swingR', atk2: 'chopR', cast1: 'pushR', cast2: 'sweep2', ult: 'raise2' }, run: { hold: 'R', amp: 33, arm: 0.55, bob: 0.018 }, swayAmp: 8, moveSpeed: 315 },
+  anim: { style: { atk1: 'swingR', atk2: 'chopR', cast1: 'pushR', cast2: 'sweep2', ult: LANTERN_UP }, victory: LANTERN_VICTORY, run: { hold: 'R', amp: 33, arm: 0.55, bob: 0.018 }, swayAmp: 8, moveSpeed: 315 },
   build(id) {
     const ctx = humanoid(id, {
       H: 1.72, headS: 1.1, shoulder: 0.152, chestW: 0.122, waistW: 0.088, hipW: 0.118, armR: 0.024, legR: 0.038, legOut: 0.05,

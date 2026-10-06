@@ -195,7 +195,7 @@ export function buildClips(ctx, bones, o = {}) {
   };
 
   const keyed = (keys) => (u) => sampleKeys(keys, u);
-  const styleKeys = (name) => { const k = STYLES[name]; if (!k) throw new Error('Không có kiểu ' + name); return k; };
+  const styleKeys = (name) => { if (Array.isArray(name)) return name; const k = STYLES[name]; if (!k) throw new Error('Không có kiểu ' + name); return k; }; // tướng có thể đưa thẳng mảng khung riêng
   const withSway = (fn, g) => (u, t) => ({ swayGain: g, ...fn(u, t) });
 
   // Idle
@@ -233,7 +233,7 @@ export function buildClips(ctx, bones, o = {}) {
   mk('Ult', 1.4, withSway(keyed(styleKeys(st.ult)), 2));
   mk('Death', 1.6, keyed(DEATH));
   mk('Recall', 2.0, (u) => RECALL(u), true);
-  mk('Victory', 2.2, keyed(VICTORY));
+  mk('Victory', 2.2, keyed(o.victory || VICTORY)); // o.victory: khung riêng (vd tướng cầm gậy dài: giơ hai tay thẳng thì gậy lật ngược xuyên qua đầu)
   // Showcase: nhịp thở + một điệu nhấn từ kiểu chiêu cuối, lặp
   const sc = styleKeys(st.showcase || st.atk1);
   mk('Showcase', 4.0, (u) => {

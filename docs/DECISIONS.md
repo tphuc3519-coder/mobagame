@@ -482,3 +482,15 @@
 
 - **Số máu quái khi giao chiến** (như Liên Quân, cả quái thường lẫn boss — số của boss to hơn, 16px): quái đang có mục tiêu hoặc vừa bị đánh trong 4 giây hiện số máu hiện tại (trắng viền
   đen) ngay trên thanh máu; tên quái lớn đẩy lên trên số. Thanh máu quái có thêm vệt trắng phần máu vừa mất, rút dần (~45%/giây).
+
+## Vũ khí đứt khúc khi vung (06/10)
+- **Emberforge búa vỡ thành 4–5 khúc** khi giơ/bổ: lưới AI là một khối liền, cán búa đi qua vai/cổ/nắm tay nên bị chia thành nhiều
+  đoạn nhỏ giữa các vòng đai. Bước dọn ranh giới vũ khí (`splitByLabel`) coi các đoạn nhỏ đó là "đảo vũ khí lẻ loi" và trả về thân →
+  chúng gắn theo ngực/cẳng tay, khi vung thì ở lại → cán đứt khúc. Sửa: đoạn vũ khí có thêm phép thử `core` (màu, vd không phải da):
+  đỉnh nằm hẳn trong thân vũ khí (≤ r) và qua phép thử là **lõi** — không bước dọn nào được trả về thân; da vai/cổ sát cán (trượt phép
+  thử) vẫn được dọn như cũ. Thêm: bước bỏ "tam giác sợi chỉ" (`maxEdge`) không xoá tam giác vũ khí cứng (cả 3 đỉnh cùng gắn một xương).
+- **Lanternward** (model sinh bằng code): chiêu cuối và động tác chiến thắng dùng kiểu chung "giơ hai tay" xoay cánh tay ~165° nên gậy đèn
+  gắn ở tay phải bị lật ngược — đầu đèn chúc xuống hông, thân gậy xuyên qua đầu. Thêm khung riêng (`LANTERN_UP`, `LANTERN_VICTORY`):
+  tay trái giơ cao, tay phải nâng gậy trước mặt và bẻ cổ tay bù để gậy dựng đứng; `anim.mjs` cho phép `style` là mảng khung và `victory` riêng.
+- Đã soi bảng tư thế (mọi clip × 5 thời điểm) của cả 6 tướng: Mossback (pháo), Bamboo Shade (2 kiếm), Moonstream (bình), Kitewing (cung)
+  không đứt; chỗ "lỗ" ở găng tay Mossback quanh pháo là lưới gốc (găng rỗng ôm pháo), không phải đứt khúc.

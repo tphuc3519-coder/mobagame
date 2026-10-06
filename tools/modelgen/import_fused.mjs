@@ -166,10 +166,12 @@ function weld(pos, n) {
 /** Gán nhãn vũ khí theo vùng rồi nhân đôi đỉnh ở ranh giới nhãn.
  *  vlab0: nhãn thô theo đỉnh (0 thân, >0 vũ khí). cfg: { chartMin, chartHi, chartLo, passes, island }.
  *  Trả về mảng mới (pos/nor/uv/index), nhãn từng đỉnh và chỉ số điểm hàn. */
-function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.length / 3)) {
+function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.length / 3), core = null) {
   const n = pos.length / 3, T = index.length / 3, { rep } = weld(pos, n);
   const tl = new Int16Array(T);
   for (let t = 0; t < T; t++) { const a = vlab0[index[3 * t]], b = vlab0[index[3 * t + 1]], c = vlab0[index[3 * t + 2]]; tl[t] = a && (a === b || a === c) ? a : b && b === c ? b : 0; }
+  const all3 = (arr, t) => arr && arr[index[3 * t]] && arr[index[3 * t + 1]] && arr[index[3 * t + 2]];
+  const keep = Uint8Array.from({ length: T }, (_, t) => (tl[t] && all3(core, t) ? 1 : 0)); // tam giác lõi vũ khí: giữ nhãn qua mọi bước dọn
   const before = tl.reduce((q, l) => q + (l > 0), 0);
   // 1) bỏ phiếu theo mảng uv: mảng lớn nằm phần lớn trên vũ khí thì cả mảng là vũ khí (và ngược lại)
   const par = Int32Array.from({ length: n }, (_, i) => i), f = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
@@ -180,7 +182,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
   for (let t = 0; t < T; t++) {
     const c = ch.get(f(index[3 * t])); if (c.n < chartMin) continue;
     let bl = 0, bc = 0; for (const [l, k] of c.l) if (l && k > bc) { bl = l; bc = k; }
-    if (bc / c.n >= hi) tl[t] = bl; else if (bc / c.n <= lo && tl[t]) tl[t] = 0;
+    if (bc / c.n >= hi) tl[t] = bl; else if (bc / c.n <= lo && tl[t] && !keep[t]) tl[t] = 0;
   }
   // 2) lọc đa số theo hàng xóm qua cạnh (đã hàn) để ranh giới gọn, không lởm chởm
   const ek = (a, b) => (a < b ? a * 4194304 + b : b * 4194304 + a), edges = new Map();
@@ -189,7 +191,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
   for (const l of edges.values()) for (const a of l) for (const b of l) if (a !== b) nbr[a].push(b);
   for (let pass = 0; pass < (cfg.passes ?? 4); pass++) {
     const nt = tl.slice();
-    for (let t = 0; t < T; t++) { const cnt = new Map(); for (const q of nbr[t]) cnt.set(tl[q], (cnt.get(tl[q]) || 0) + 1); for (const [l, k] of cnt) if (l !== tl[t] && k >= 2 && k > (cnt.get(tl[t]) || 0)) nt[t] = l; }
+    for (let t = 0; t < T; t++) { if (keep[t]) continue; const cnt = new Map(); for (const q of nbr[t]) cnt.set(tl[q], (cnt.get(tl[q]) || 0) + 1); for (const [l, k] of cnt) if (l !== tl[t] && k >= 2 && k > (cnt.get(tl[t]) || 0)) nt[t] = l; }
     tl.set(nt);
   }
   // 3) đảo nhỏ: cụm vũ khí lẻ loi → thân; lỗ thân nhỏ nằm giữa vũ khí → vũ khí
@@ -198,7 +200,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
     if (seen[t0]) continue; const L = tl[t0], comp = [t0], border = new Set(); seen[t0] = 1;
     for (let k = 0; k < comp.length; k++) for (const q of nbr[comp[k]]) { if (tl[q] !== L) { border.add(tl[q]); continue; } if (!seen[q]) { seen[q] = 1; comp.push(q); } }
     if (comp.length >= island) continue;
-    if (L && border.size) for (const t of comp) tl[t] = 0;
+    if (L && border.size) { if (comp.filter((t) => keep[t]).length * 2 < comp.length) for (const t of comp) tl[t] = 0; } // đảo vũ khí nằm hẳn trong thân vũ khí (khúc cán giữa 2 vòng đai) thì giữ
     else if (!L && border.size === 1) { const b = [...border][0]; for (const t of comp) tl[t] = b; }
   }
   // 4) nhân đôi đỉnh dùng chung bởi tam giác khác nhãn
@@ -356,13 +358,19 @@ async function buildFused(id, def, cfg, here) {
   // để hai bên tách ra khi vung (không xoá tam giác nào, không có tam giác nối tay–thân bị kéo thành dải).
   const wsegs = segs.filter((sg) => sg.cut != null), bsegs = segs.filter((sg) => sg.cut == null);
   const vlab0 = new Int16Array(n); // 0 = thân, b+1 = gắn cứng vào xương b
+  // core: đỉnh nằm hẳn trong thân vũ khí (≤ r) và qua phép thử màu `core` của đoạn (vd không phải da) → bước dọn ranh giới không được trả
+  // về thân. Trước đây các khúc cán búa giữa những vòng đai là "đảo vũ khí nhỏ" nên bị trả về thân → khi vung, cán đứt thành nhiều khúc.
+  const core = new Uint8Array(n), needRgb = wsegs.some((sg) => sg.test || sg.core);
   for (let i = 0; i < n; i++) {
     if (isStaff(src.pos[3 * i])) { vlab0[i] = hand + 1; continue; }
-    const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], rgb = wsegs.some((sg) => sg.test) ? rgbOf(i) : null;
-    const hs = wsegs.find((sg) => (!sg.test || sg.test(rgb)) && segDist(p, sg.a, sg.b) - sg.r <= sg.hard);
-    if (hs) vlab0[i] = idx[B(hs.bone)] + 1;
+    const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], rgb = needRgb ? rgbOf(i) : null;
+    for (const sg of wsegs) {
+      const d = segDist(p, sg.a, sg.b) - sg.r; if (d > sg.hard || (sg.test && !sg.test(rgb))) continue;
+      if (!vlab0[i]) vlab0[i] = idx[B(sg.bone)] + 1;
+      if (d <= 0 && (!sg.core || sg.core(rgb))) core[i] = 1;
+    }
   }
-  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {}, src.mat);
+  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {}, src.mat, core);
   const n2 = split.n, vlab = split.vlab, rep = split.rep, index0 = split.index;
   src.pos = null; src.nor = split.nor; src.uv = split.uv; src.mat = split.mat;
   const posN = split.pos;
@@ -430,7 +438,8 @@ async function buildFused(id, def, cfg, here) {
   let index = index0;
   if (cfg.maxEdge) { // tam giác sợi chỉ nối hai chỗ xa nhau (lỗi lưới quét): bỏ
     const lim = (cfg.maxEdge * s) ** 2, e = (a, b) => (posN[3 * a] - posN[3 * b]) ** 2 + (posN[3 * a + 1] - posN[3 * b + 1]) ** 2 + (posN[3 * a + 2] - posN[3 * b + 2]) ** 2; const out = [];
-    for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; if (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim) continue; out.push(a, b, c); }
+    // trừ tam giác của vũ khí (cả 3 đỉnh gắn cứng cùng một xương): khối cứng không bị kéo giãn, mặt dài là thân cán thật — xoá đi thì cán búa thành từng khúc hở
+    for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; const rigid = vlab[a] && vlab[a] === vlab[b] && vlab[a] === vlab[c]; if (!rigid && (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim)) continue; out.push(a, b, c); }
     console.log(`  bỏ ${(index.length - out.length) / 3} tam giác quá dài`); index = out;
   }
   { // bỏ mảnh vụn rời (sau khi cắt, vài cụm tam giác nhỏ mất liên kết sẽ bay lơ lửng khi vung mạnh)

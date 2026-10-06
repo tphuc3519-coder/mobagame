@@ -4,6 +4,7 @@ import { emberAnim } from './hoa_ren.anim.mjs';
 import { belt, boots, flaps } from '../costume.mjs';
 import { swayChain, tube, ribbon, curve, band, orient, along, place, handPos, wy, spike } from '../parts.mjs';
 
+const notSkin = ([r, g, b]) => !(r > b + 40 && 0.3 * r + 0.59 * g + 0.11 * b > 90); // da ấm và sáng; gỗ/sắt/đồng của búa tối hoặc không ấm
 const dark = ([r, g, b]) => 0.3 * r + 0.59 * g + 0.11 * b < 60; // gỗ tối của cán búa; tóc đỏ (~80), da, vải sáng hơn của búa; da và tóc sáng hơn
 const C = { skin: '#9b6440', pants: '#3b2b24', pants2: '#2f231e', iron: '#2a2a2e', iron2: '#45454c', leather: '#7a4524', leather2: '#4a2814', hair: '#2a1810', gold: '#ffd166', ember: '#ff7a1a' };
 
@@ -22,9 +23,9 @@ export default {
       UpperArmL: [0.2, 1.38, 0], ForearmL: [0.32, 1.18, 0.05], HandL: [0.42, 1.03, 0.1], HandL_Tip: [0.46, 0.93, 0.1],
       UpperArmR: [-0.22, 1.38, 0], ForearmR: [-0.38, 1.28, 0.25], HandR: [-0.05, 1.38, 0.47], HandR_Tip: [-0.08, 1.68, -0.46], HandEndR: [-0.03, 1.4, 0.62], // tip = tâm đầu búa; HandEndR = mút bàn tay (để trọng số không chạy dọc cả cán búa)
     },
-    weapon: [
-      { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.28, hard: 0.03, cut: 0.002 }, // đầu búa (trục dọc theo x)
-      { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.045, hard: 0.012, cut: 0.002 }, // cán búa, qua vai ra phía trước
+    weapon: [ // core notSkin: phần lõi (≤ r, không phải da) luôn thuộc búa — các khúc cán giữa vòng đai không bị trả về thân, da vai sát cán thì vẫn được dọn
+      { a: [-0.45, 1.68, -0.46], b: [0.3, 1.68, -0.46], r: 0.28, hard: 0.03, cut: 0.002, core: notSkin }, // đầu búa (trục dọc theo x)
+      { a: [-0.08, 1.62, -0.23], b: [-0.03, 1.18, 0.92], r: 0.045, hard: 0.012, cut: 0.002, core: notSkin }, // cán búa, qua vai ra phía trước
     ],
     maxEdge: 0.3, // bỏ tam giác sợi chỉ
     radii: { Hips: 1.5, Spine: 1.4, Chest: 1.4 },
