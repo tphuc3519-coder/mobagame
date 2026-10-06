@@ -69,6 +69,30 @@ function toToon(m, u) { // map/normalMap: model có texture (Mossback dùng ản
   return t;
 }
 
+function toPbr(m, u, envMap) { // giữ vật liệu PBR gốc của model (màu, normal, kim loại/nhám) + ánh sáng môi trường; vẫn có viền sáng phe và chớp khi trúng đòn
+  const c = m.clone(); if (envMap) c.envMap = envMap; c.envMapIntensity = 0.85; patch(c, u);
+  return c;
+}
+
+/** Không chiếu sáng: chỉ màu texture như hoạ sĩ vẽ; viền sáng phe tính ở vertex shader (cần pháp tuyến, có khi skinning). */
+function toUnlit(m, u) {
+  const c = new THREE.MeshBasicMaterial({ name: m.name, map: m.map, color: m.color.clone(), transparent: m.transparent, alphaTest: m.alphaTest });
+  c.onBeforeCompile = (sh) => {
+    sh.uniforms.rimColor = u.rim; sh.uniforms.flashAmt = u.flash; sh.uniforms.rimAmt = u.rimAmt;
+    sh.vertexShader = 'varying float vRimF;\n' + sh.vertexShader.replace('#include <project_vertex>', `#include <project_vertex>
+      #ifdef USE_SKINNING
+        vRimF = smoothstep(0.55, 1.0, 1.0 - abs(dot(normalize(normalMatrix * objectNormal), normalize(-mvPosition.xyz))));
+      #else
+        vRimF = 0.0;
+      #endif`);
+    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\nuniform float rimAmt;\nvarying float vRimF;\n' + sh.fragmentShader
+      .replace('#include <opaque_fragment>', 'outgoingLight += rimColor * vRimF * rimAmt + vec3(flashAmt);\n#include <opaque_fragment>')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = diffuseColor.a;');
+  };
+  c.customProgramCacheKey = () => 'unit-unlit';
+  return c;
+}
+
 function outlineMaterial() {
   const m = new THREE.MeshBasicMaterial({ color: 0x120e1a, side: THREE.BackSide });
   m.onBeforeCompile = (sh) => {
@@ -82,8 +106,10 @@ function outlineMaterial() {
 const outlineMat = outlineMaterial();
 const hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
 
-/** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi màu viền/độ trong suốt. */
-export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8 } = {}) {
+/** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi màu viền/độ trong suốt.
+ *  shading (hero.art.json): 'toon' (mặc định, chất vẽ tay), 'pbr' (vật liệu gốc của model có texture, cần envMap ở cảnh không có scene.environment),
+ *  'unlit' (chỉ màu texture). Model tô màu theo đỉnh (không phải MeshStandardMaterial) luôn dùng chất vẽ tay. */
+export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8, shading = 'toon', envMap = null } = {}) {
   const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 }, rimAmt: { value: rim } };
   const mats = [], outlines = [], faces = [];
   const meshes = [];
@@ -92,7 +118,9 @@ export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8
     const src = [].concat(o.material);
     const list = src.map((m) => {
       if (/_face$/.test(m.name)) { const f = o.userData?.face || o.parent?.userData?.face; if (!f) { const k = m.clone(); k.visible = false; return k; } const fm = faceMaterial(f); faces.push(fm); return fm.material; }
-      const c = m.isMeshStandardMaterial ? toToon(m, u) : (() => { const k = m.clone(); patch(k, u); return k; })(); mats.push(c); return c;
+      const c = !m.isMeshStandardMaterial ? (() => { const k = m.clone(); patch(k, u); return k; })()
+        : shading === 'pbr' ? toPbr(m, u, envMap) : shading === 'unlit' ? toUnlit(m, u) : toToon(m, u);
+      mats.push(c); return c;
     });
     o.material = Array.isArray(o.material) ? list : list[0];
     if (outline && o.isSkinnedMesh) { // viền đen: bản sao cùng xương, mặt trong, đẩy ra theo pháp tuyến

@@ -2,14 +2,40 @@
 import { humanoid, BONE, hairLocks } from '../humanoid.mjs';
 import { swayChain, tube, ribbon, dangle, handPos, band, wy } from '../parts.mjs';
 import { smooth } from '../kit.mjs';
+import { moonAnim } from './nguyet_ha.anim.mjs';
 
 const C = { skin: '#f3dccd', hair: '#e2e8f4', hair2: '#a8c2ea', robe: '#1d2b64', robe2: '#0f1a44', blue: '#8fd3ff', pale: '#e8f4ff', gold: '#c9a24a' };
 
 export default {
   name: 'Moonstream', glow: '#8fd3ff',
   palette: ['#1d2b64', '#8fd3ff', '#e8f4ff', '#c9a24a'], rim: '#8fd3ff',
-  hitTime: { Attack1: 0.3, Attack2: 0.3 },
-  anim: { style: { atk1: 'pushR', atk2: 'pushL', cast1: 'push2', cast2: 'sweep2', ult: 'raise2' }, run: { amp: 30, arm: 0.5, bob: 0.014, lean: 6 }, idle: 'float', moveSpeed: 315, swayAmp: 8 },
+  hitTime: { Attack1: 0.26, Attack2: 0.26, Ult: 0.8 }, // Ult: lũ dâng đúng lúc vùng nổ (delay 0.8s của chiêu)
+  import: { // model liền khối có texture do hoạ sĩ gửi (thân / đầu+tóc / mắt, 3 vật liệu): xem import_fused.mjs; build() bên dưới là bản sinh bằng code cũ, không còn dùng
+    // Tư thế trong file: đứng thẳng, tay trái buông, tay phải gập khuỷu nâng chiếc bình bạc trước bụng; váy dài chạm đất, không có chân bên trong (chỉ có đôi giày).
+    mode: 'fused', file: './imports/moonstream_pbr_game.glb', simplify: { tris: { body: 16000, head: 14000 }, error: 0.05, flags: ['Permissive'] },
+    texMax: { base: 1024, normal: 1024, mr: 512 }, // không nén meshopt: giải nén cần WebAssembly, trang chơi thử có CSP chặn WASM thì tướng thành khối giữ chỗ
+    shading: 'pbr', // texture PBR (màu nền không vẽ sẵn sáng tối): giữ vật liệu gốc + ánh sáng môi trường; toon làm váy tối và tóc xám, unlit thì phẳng, bình bạc như nhựa
+    showcase: { file: './imports/moonstream_pbr_hq.glb', simplify: { tris: { body: 60000, head: 50000 }, error: 0.02, flags: ['Permissive'] }, texMax: { base: 2048, normal: 2048, mr: 1024 }, // bản trưng bày ở sảnh (LOD0)
+      compress: true, // nén meshopt (12 → 7,8 MB); không giải nén được (CSP chặn WASM) thì sảnh dùng bản trong trận
+      outline: false }, // nhìn gần, viền đen kẻ thành vệt trên từng lọn tóc mảnh
+    centerX: 0.04, centerZ: -0.02, bodyTop: 1.89, height: 2.0, // bodyTop = đỉnh tóc kể cả hai kẹp tóc
+    rig: { // toạ độ tương đối thân (đơn vị file gốc): x + = bên trái nhân vật, z + = phía trước
+      Hips: [0, 0.95, 0], Spine: [0, 1.12, 0], Chest: [0, 1.32, 0], Neck: [0.005, 1.52, -0.03], Head: [0.005, 1.6, -0.02], HeadTop: [0.005, 1.85, -0.03],
+      ThighL: [0.09, 0.92, 0], ShinL: [0.07, 0.5, 0], FootL: [0.03, 0.08, 0.05], ToeL: [0.03, 0.02, 0.18],
+      ThighR: [-0.09, 0.92, 0], ShinR: [-0.07, 0.5, 0], FootR: [-0.03, 0.08, -0.06], ToeR: [-0.03, 0.02, 0.05],
+      UpperArmL: [0.14, 1.47, -0.05], ForearmL: [0.225, 1.19, -0.09], HandL: [0.28, 0.975, -0.015], HandL_Tip: [0.29, 0.84, 0.02],
+      UpperArmR: [-0.14, 1.47, -0.05], ForearmR: [-0.225, 1.2, -0.06], HandR: [-0.245, 1.14, 0.18], HandR_Tip: [-0.26, 1.11, 0.32], HandEndR: [-0.255, 1.11, 0.28],
+    },
+    weapon: { a: [-0.25, 1.12, 0.29], b: [-0.25, 1.25, 0.29], r: 0.06, hard: 0.05, cut: 0.002 }, // chiếc bình bạc trên tay phải: gắn cứng vào bàn tay
+    merge: { ThighL: 'Hips', ThighR: 'Hips', ShinL: 'Hips', ShinR: 'Hips' }, // váy liền không có chân bên trong: thân váy theo hông + 4 xương váy, chân chỉ kéo đôi giày
+    radii: { Hips: 0.4, Spine: 0.38, Chest: 0.35, Neck: 0.3, Head: 0.4, UpperArmL: 0.3, UpperArmR: 0.3, ForearmL: 0.3, ForearmR: 0.3, HandL: 0.3, HandR: 0.3, FootL: 0.4, FootR: 0.4 },
+    softness: 0.009, // vùng chuyển giữa hai xương hẹp: thân áo không bị tay áo phồng kéo theo
+    allow: { head: ['Head', 'Neck', 'Chest', 'Spine'], eyes: ['Head'] }, // tóc dài chỉ theo đầu/cổ/ngực (không dính vào tay); mắt cứng theo đầu
+    skirt: { max: 0.92, from: 0.0, span: 0.15, gap0: 0.0, gap1: 0.04 },
+    minComponent: 4,
+    portrait: { dist: 1.5, dy: -0.12 },
+  },
+  anim: moonAnim,
   build(id) {
     const ctx = humanoid(id, {
       H: 1.78, headS: 1.06, shoulder: 0.15, chestW: 0.12, chestD: 0.074, waistW: 0.083, hipW: 0.108, armR: 0.023, legR: 0.036, legOut: 0.048,

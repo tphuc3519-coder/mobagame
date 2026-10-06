@@ -95,6 +95,8 @@ assets/units/  assets/map/  assets/vfx/  assets/LICENSES.md
 ```
 - `attach`: tên xương để gắn hiệu ứng (đạn bắn ra từ đầu vũ khí, hào quang trên đầu). Không có thì dùng vị trí mặc định theo chiều cao.
 - `runRefSpeed`: tốc chạy mà clip `Run` trông khớp chân (không trượt). Đo khi xem thử (11 §8).
+- `shading` (tuỳ chọn): cách tô vật liệu trong trận. `toon` (mặc định): đổ bóng 2 tông vẽ tay như các tướng sinh bằng code. `pbr`: giữ vật liệu PBR gốc của model có texture (màu nền, normal, kim loại/nhám) + ánh sáng môi trường, hợp với texture không vẽ sẵn sáng tối. `unlit`: chỉ màu texture, không nhận ánh sáng, hợp với texture đã vẽ sẵn sáng tối (hand-painted). Cả ba vẫn có viền sáng màu đội và nháy trắng khi trúng đòn. `"outline": false` tắt viền đen.
+- `showcase` (tuỳ chọn): file bản trưng bày cho sảnh/chọn tướng (nạp sau bản trong trận rồi thay vào). `showcaseShading`, `showcaseOutline`: như `shading`/`outline` nhưng cho sảnh; không ghi thì theo bản trong trận. Moonstream: `"shading": "pbr"`, `"showcaseOutline": false` (nhìn gần, viền đen kẻ thành vệt trên từng lọn tóc).
 
 ## 4. Mô tả từng tướng
 
@@ -175,9 +177,9 @@ Nếu công cụ hỗ trợ nhiều ảnh: tạo thêm ảnh **nhìn nghiêng** 
 - **Prompt:** `young man with black-violet hair, high-collared cloak edged like bat wings, eyes closed, small bell earrings, long clawed right hand, floating upside down in a cave, cloak spread like wings, violet sonic rings spreading outward, swarm of small bats`
 
 ### 4.9 Moonstream — Guide of the Moon River
-- **Ngoại hình:** pháp sư nữ tóc bạc dài chạm đất, áo lụa xanh đêm có hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người.
+- **Ngoại hình:** pháp sư nữ tóc bạc trắng dài quá hông, hai kẹp tóc; váy dài xanh đêm chạm đất, tay áo phồng, vạt trước xẻ lộ lớp váy trắng, dải lụa trắng uốn cong bên vạt váy (model có texture do hoạ sĩ gửi, 2026-10-06; ý tưởng cũ: áo lụa hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người).
 - **Màu:** `#1d2b64`, `#8fd3ff`, `#e8f4ff`, `#c9a24a`.
-- **Vũ khí:** không; điều khiển nước bằng tay và dải lụa.
+- **Vũ khí:** chiếc bình bạc nhỏ cầm tay phải (rót dòng nước bạc); điều khiển nước bằng tay.
 - **Splash:** đứng trên mặt sông phẳng như gương, trăng tròn phía sau, xoáy nước dâng lên quanh chân.
 - **Hiệu ứng:** giọt bạc sáng; xoáy nước xanh; K3 sóng lũ dạng tròn hất tung.
 - **Prompt:** `sorceress with floor-length silver hair, midnight-blue silk robe with wave patterns, crescent moon crown, ribbons of flowing water orbiting her, standing on a mirror-still river, full moon behind, whirlpool rising around her feet`

@@ -400,3 +400,15 @@
 - **Trụ ngoài hai đường cánh sát sông**: đặt đúng chỗ vòng bắn (1050) tiếp xúc mép sông (cách ~20 đơn vị) — sát nhất có thể mà
   không chạm nước (vị trí cũ y=1500 thật ra vòng bắn đã lấn xuống sông ~200). Trụ ngoài giữa cũng tiếp xúc mép sông. Trụ trong/nhà
   chia đều phía sau: khe giữa hai vòng trụ ~1350 ở đường cánh, ~730 ở đường giữa (đổi lại cho trụ ngoài sát sông).
+
+## Moonstream: model hoạ sĩ có texture PBR, tô kiểu PBR; bản trong trận không nén meshopt
+- **Model**: file hoạ sĩ gửi, `_pbr_game` dùng trong trận, `_hq` dùng ở sảnh/chọn tướng (`<id>_showcase.glb`, nạp sau bản trong
+  trận rồi thay vào). Giảm lưới theo từng vật liệu: trong trận 101k → 31,6k tam giác (texture 1024), sảnh 454k → 114k (texture 2048).
+- **Cách tô (`shading` trong `hero.art.json`)**: so sánh toon / PBR / unlit ở sảnh và trong trận. Texture của model là PBR (màu nền
+  không vẽ sẵn sáng tối): toon làm váy tối và tóc xám, unlit phẳng như dán giấy, bình bạc như nhựa; PBR + env map giữ khối, mặt sạch,
+  nhận cùng nắng với bản đồ. Chọn `pbr` (trong trận giữ viền đen như các tướng khác; sảnh bỏ viền vì viền kẻ vệt trên lọn tóc).
+  `unlit` để dành cho model có texture vẽ tay sẵn sáng tối.
+- **Không nén meshopt bản trong trận**: giải nén meshopt cần WebAssembly; thử máy chủ có CSP chặn WASM (`script-src` không có
+  `'wasm-unsafe-eval'`) thì Moonstream thành khối giữ chỗ. Bản trong trận để không nén (3,0 MB thay vì 2,1 MB); bản sảnh vẫn nén
+  (7,8 MB thay vì ~12 MB), không giải nén được thì sảnh dùng bản trong trận.
+

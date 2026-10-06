@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { loadHero, instantiate } from '../render/assets.js';
+import { loadHero, peekHero, instantiate } from '../render/assets.js';
 import { prepareUnitMaterials, setOutlineResolution } from '../render/materials.js';
 import { glowTexture } from '../render/env/textures.js';
+import { makeEnvMap } from '../render/lights.js';
 import { createSplash } from './splash.js';
 
 // Cảnh trưng bày (02 §13.9): bệ đá sen phát sáng, ánh sáng 3 điểm (key ấm, fill lạnh, rim màu tướng), đèn trời bay,
@@ -88,6 +89,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   const lan = lanterns(); scene.add(lan.group);
   const sp = sparkles(); scene.add(sp.object);
   const stage = new THREE.Group(); scene.add(stage);
+  let env = null; // env map cho tướng dùng vật liệu PBR (cảnh trưng bày không đặt scene.environment để không đổi màu bệ đá)
 
   // Vẽ thẳng ra màn hình (không hậu kỳ): so sánh A/B cho thấy hậu kỳ làm nhạt màu tướng; đèn đã có quầng sáng riêng.
 
@@ -109,16 +111,24 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
 
   function holder(m, id) {
     const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
-    const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35 });
+    const sh = inst.art.showcaseShading || inst.art.shading; // sảnh có thể dùng kiểu khác trong trận (bản trưng bày chi tiết)
+    if (sh === 'pbr' && !env) env = makeEnvMap(renderer);
+    const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: env, outline: (inst.art.showcaseOutline ?? inst.art.outline) !== false });
     const mixer = new THREE.AnimationMixer(obj), acts = {};
     for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
     const g = new THREE.Group(); g.add(obj);
     const h = (inst.art.height || 190) / 100;
-    let base = null;
-    const play = (name) => { const a = acts[name]; if (!a) return; a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; a.fadeIn(0.15).play(); base?.fadeOut(0.15);
-      mixer.addEventListener('finished', function f(ev) { if (ev.action === a) { mixer.removeEventListener('finished', f); a.fadeOut(0.3); base?.reset().fadeIn(0.3).play(); } }); };
+    let base = null, shot = null;
+    const play = (name) => { const a = acts[name]; if (!a) return; shot = name; a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; a.fadeIn(0.15).play(); base?.fadeOut(0.15);
+      mixer.addEventListener('finished', function f(ev) { if (ev.action === a) { mixer.removeEventListener('finished', f); if (shot === name) shot = null; a.fadeOut(0.3); base?.reset().fadeIn(0.3).play(); } }); };
     base = acts.Idle; base?.play();
-    return { id, g, mixer, mats, h, art: inst.art, play, life: 0, out: 0 };
+    /** Nhận trạng thái clip của holder khác (cùng bộ xương, cùng clip) để đổi sang bản trưng bày mà không giật. */
+    const syncFrom = (o) => {
+      const w = (a) => (a ? a.getEffectiveWeight() : 0);
+      if (o.shot) { play(o.shot); const a = acts[o.shot], b = o.acts[o.shot]; a.time = b.time; a.stopFading().setEffectiveWeight(w(b)); }
+      if (base && o.base) { base.time = o.base.time; base.stopFading().setEffectiveWeight(w(o.base)); }
+    };
+    return { id, g, mixer, mats, h, art: inst.art, play, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
   }
 
   const burst = (() => { // hạt sáng khi đổi tướng
@@ -132,8 +142,14 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
 
   async function show(id) {
     const token = (next = id);
-    const m = await loadHero(id); if (!m || next !== token) return;
-    const h = holder(m, id);
+    // bản trưng bày (chi tiết, nặng) nạp sau: hiện ngay bản trong trận rồi đổi sang khi xong; đã nạp sẵn thì dùng luôn
+    const m = peekHero(id, { showcase: true }) || await loadHero(id); if (!m || next !== token) return;
+    if (m.art.showcase && !m.showcase) loadHero(id, { showcase: true }).then((hq) => {
+      if (!hq?.showcase || next !== token || cur?.id !== id || cur.showcase) return;
+      const h2 = holder(hq, id); h2.showcase = true; h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
+      stage.remove(cur.g); stage.add(h2.g); cur = h2;
+    });
+    const h = holder(m, id); h.showcase = !!m.showcase;
     if (cur) { cur.out = 0.001; burst.fire(cur.h); }
     const old = cur; cur = h; h.g.scale.setScalar(0.001); stage.add(h.g); h.play('Showcase');
     spin = -0.35 - Math.round((spin + 0.35) / (Math.PI * 2)) * Math.PI * 2; // quay lại góc 3/4 mặt trước
