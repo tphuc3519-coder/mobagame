@@ -134,6 +134,6 @@ export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8
     setFlash(v) { u.flash.value = v; },
     /** Chớp mắt (gọi mỗi khung hình). */
     update(dt) { for (const f of faces) f.update(dt); },
-    setGhost(on) { for (const m of mats) { m.transparent = on; m.opacity = on ? 0.35 : 1; m.depthWrite = !on; m.needsUpdate = true; } for (const ol of outlines) ol.visible = !on; },
+    setGhost(on) { for (const m of mats) { m.transparent = on; m.opacity = on ? 0.62 : 1; m.needsUpdate = true; } for (const ol of outlines) ol.visible = !on; }, // trong bụi: mờ vừa phải, vẫn ghi chiều sâu để không lộ mặt trong tối
   };
 }

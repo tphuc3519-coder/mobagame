@@ -15,7 +15,9 @@ const tw = createTower(team), co = createCore(team), fo = createFountain(team);
 tw.object.position.x = -900; co.object.position.x = 400; fo.object.position.x = 1700; sc.add(tw.object, co.object, fo.object);
 for (const p of [tw, co]) p.update(0.016, 1, false);
 const views = [[0, 0.5, [-900, 260, 0], 1300, 0.42], [0.5, 0.5, [400, 300, 0], 2600, 0.42]];
-for (const [x0, w, tgt, d, pitch] of [[0, 0.33, [-900, 330, 0], 1500, 0.35], [0.33, 0.67, [400, 380, 0], 3000, 0.62]]) {
+const close = new URLSearchParams(location.search).has('close'); // ?close=1: cận trụ (góc trận + ngang) và tế đàn
+const V = close ? [[0, 0.25, [-900, 450, 0], 1300, 0.95], [0.25, 0.25, [-900, 560, 0], 900, 0.2], [0.5, 0.5, [400, 380, 0], 2300, 0.95]] : [[0, 0.33, [-900, 330, 0], 1500, 0.35], [0.33, 0.67, [400, 380, 0], 3000, 0.62]];
+for (const [x0, w, tgt, d, pitch] of V) {
   const cam = new THREE.PerspectiveCamera(40, (W * w) / H, 10, 20000); cam.position.set(tgt[0] + d * 0.35, tgt[1] + d * Math.sin(pitch), tgt[2] + d * Math.cos(pitch)); cam.lookAt(...tgt);
   r.setViewport(W * x0, 0, W * w, H); r.setScissor(W * x0, 0, W * w, H); r.render(sc, cam);
 }

@@ -8,9 +8,9 @@ import { enemiesOf } from './targeting.js';
 function updateDash(world, e) {
   const d = e.dash;
   if (isHardCC(e)) { e.dash = null; return; }
-  const step = Math.min(d.perTick, d.left);
-  e.pos.x += d.dx * step; e.pos.y += d.dy * step; d.left -= step;
-  clampToMap(world.map, e.pos, e.radius);
+  const step = Math.min(d.perTick, d.left), n = Math.ceil(step / 30); // chia bước nhỏ: lướt nhanh không xuyên qua bệ đá mỏng
+  for (let i = 0; i < n; i++) { e.pos.x += d.dx * step / n; e.pos.y += d.dy * step / n; clampToMap(world.map, e.pos, e.radius); }
+  d.left -= step;
   const { skill } = d.cast;
   if (skill.damage) {
     for (const t of enemiesOf(world, e)) {
@@ -35,9 +35,10 @@ function updateForced(world) {
     const f = e.forced; if (!f) continue;
     if (!e.alive) { e.forced = null; continue; }
     const dx = f.x - e.pos.x, dy = f.y - e.pos.y, d = Math.hypot(dx, dy), step = Math.min(d, f.perTick);
-    if (d > 0.01) { e.pos.x += (dx / d) * step; e.pos.y += (dy / d) * step; }
-    clampToMap(world.map, e.pos, e.radius);
-    if (d - step <= 0.5) e.forced = null;
+    const n = Math.max(1, Math.ceil(step / 30));
+    for (let i = 0; i < n; i++) { if (d > 0.01) { e.pos.x += (dx / d) * step / n; e.pos.y += (dy / d) * step / n; } clampToMap(world.map, e.pos, e.radius); }
+    const left = Math.hypot(f.x - e.pos.x, f.y - e.pos.y);
+    if (left <= 0.5 || d - left < step * 0.3) e.forced = null; // tới đích, hoặc bị tường chặn (trước đây kẹt mãi, không đi được nữa)
   }
 }
 
@@ -50,13 +51,18 @@ export function updateMovement(world) {
     if (e.dash) { updateDash(world, e); e.speed = 0; }
     else {
       let { x, y } = e.moveDir;
+      if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn
+        const t = e.swingTarget != null ? world.byId(e.swingTarget) : null;
+        if (t && t.alive) e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
+        x = 0; y = 0;
+      }
       const m = Math.hypot(x, y);
-      if (m > 1) { x /= m; y /= m; }
-      if (isRooted(e) || m < 0.001) { e.speed = 0; if (m > 0.05 && !isRooted(e)) e.facing = Math.atan2(y, x); }
+      if (m > 0.001) { x /= m; y /= m; } // chỉ hướng có nghĩa: mọi tướng chạy đúng tốc độ của mình, không chậm lại khi kéo cần ngắn
+      if (isRooted(e) || m < 0.001) { e.speed = 0; }
       else {
-        const step = e.stats.moveSpeed * TICK * Math.min(1, m);
+        const step = e.stats.moveSpeed * TICK;
         e.pos.x += x * step; e.pos.y += y * step;
-        e.speed = e.stats.moveSpeed * Math.min(1, m);
+        e.speed = e.stats.moveSpeed;
         e.facing = Math.atan2(y, x);
       }
     }

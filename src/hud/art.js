@@ -36,7 +36,7 @@ export const GLYPHS = {
   heal: (a, b) => withGrad(a, b, `<path d="M26 12h12v14h14v12H38v14H26V38H12V26h14z" fill="FILL" stroke="#f4fff0" stroke-width="2" stroke-linejoin="round"/><circle cx="46" cy="48" r="4" fill="#fff" opacity="0.85"/><circle cx="17" cy="17" r="2.5" fill="#fff" opacity="0.8"/>`),
   // Trảm Hồn: lưỡi rìu + vết chém
   execute: (a, b) => withGrad(a, b, `<path d="M18 50L46 14" stroke="#5a3a22" stroke-width="5" stroke-linecap="round"/><path d="M36 10c10 0 18 8 18 18-6-2-10-6-12-10l-8 4z" fill="FILL" stroke="#fff4f0" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 30c8 4 14 10 16 22" stroke="#ffd0c8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.8"/>`),
-  // Thu Hoạch: lưỡi liềm + bông lúa
+  // Trừng Trị (id thu_hoach): biểu tượng phép đi rừng
   smite: (a, b) => withGrad(a, b, `<path d="M20 52c-6-14 0-32 18-40-10 10-12 22-8 34z" fill="FILL" stroke="#fffbe0" stroke-width="1.6"/><path d="M40 52V24" stroke="#fff3c0" stroke-width="2.5"/><g fill="#ffe8a0">${[0, 1, 2, 3].map((i) => `<ellipse cx="${i % 2 ? 44 : 36}" cy="${30 + i * 5}" rx="3.2" ry="5" transform="rotate(${i % 2 ? 30 : -30} ${i % 2 ? 44 : 36} ${30 + i * 5})"/>`).join('')}</g>`),
   // Gió Lướt: ba dải gió cuộn + chiếc lông
   haste: (a, b) => withGrad(a, b, `<path d="M8 22h30a7 7 0 10-7-7M8 34h40a8 8 0 11-8 8M8 46h22" fill="none" stroke="FILL" stroke-width="5" stroke-linecap="round"/>`),

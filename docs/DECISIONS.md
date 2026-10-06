@@ -306,3 +306,97 @@
   Phục/Thắp Sáng (đài sen nâng vật thay đôi tay), Mũi Tên Gió, Mưa Tên, Lộn Diều, Rừng Nuốt Bóng, Thu Hoạch, Giải Trói.
 - Icon trang bị được vẽ sẵn lúc rảnh (requestIdleCallback) ngay khi vào trận để mở shop lần đầu không khựng.
 - Trang xem trước: tools/items.html?s=200&ids=a,b (lọc món), tools/icons.html?s=180.
+
+## Sửa lỗi vận hành + quái rừng làm lại (theo phản hồi chơi thử trên iPhone)
+- **Màn hình đen khi dùng chiêu**: vài shader hiệu ứng có `pow()` cơ số âm (khiên, cột sáng) và `atan(0,0)` (xoáy nước, vòng phù văn)
+  → GPU di động trả NaN; chỉ một điểm ảnh NaN lọt vào bloom sẽ bị làm mờ lan cả khung → đen lòm. Sửa các shader + chặn NaN/vô cực
+  ngay ở bước lọc vùng sáng của bloom và ở bước chỉnh màu cuối (không tốn thêm lượt vẽ). Thêm: rò bộ nhớ GPU (bóng chân, cung lính,
+  phụ kiện quái tạo mới mỗi lần sinh) đã dùng chung — máy yếu hết bộ nhớ cũng gây mất đồ hoạ/đen màn.
+- **Hồi sinh vẫn nằm**: clip Chết giữ khung cuối với trọng số 1; hồi sinh giờ dừng hẳn mọi clip rồi mới về Idle.
+- **Thanh máu trên đầu**: neo cao hơn (372) và gọn hơn (86×8, huy hiệu cấp nhỏ) để tên không bị đầu tướng che.
+- **Đi xuyên tường/bệ đá**: vách đá móng ngựa của hang Long Ngư/Hổ Lôi, vòng rễ hang Tà Thần, vòng cành tổ Thần Điểu trước chỉ là hình
+  (không có va chạm) → thêm thành tường va chạm dùng chung dữ liệu với phần dựng hình (`lairWallSegs`). Đẩy ra khỏi tường lặp tối đa
+  3 lượt (góc hai tảng giao nhau). Lướt/kéo chia bước ≤30 để không xuyên bệ mỏng; bị kéo vào tường thì dừng kéo (trước kẹt mãi).
+  Tảng đá phụ quanh bệ thu gọn vào trong vùng va chạm (trước thò ra gấp đôi, nhìn như đi xuyên).
+- **Trong bụi**: độ mờ 0.62 (trước 0.35) + sáng nhẹ, vẫn ghi chiều sâu (không lộ mặt trong tối).
+- **Tướng to hơn**: hệ số 1.35 khi dựng trong trận (bán kính va chạm giữ nguyên); tốc độ phát clip chạy chia theo tỉ lệ để chân không trượt.
+- **Cần di chuyển**: luôn hiện ở góc trái dưới (mờ khi nghỉ), chạm đâu ở nửa trái thì dời tới đó. **Tốc độ chạy** không phụ thuộc độ kéo:
+  mô phỏng chuẩn hoá hướng, mọi tướng chạy đúng tốc độ của mình; chỉ kỹ năng/trang bị/bổ trợ thay đổi tốc độ.
+- **Quái rừng làm lại** (`tools/modelgen/monsters.mjs` → `assets/monsters/*.glb`): thân liền khối SDF có xương (sói, cóc, tinh linh
+  nước, người đá nham thạch, cá chép hoá rồng, hổ thần, chim sấm, tà thần), màu tô theo vùng (lưng sẫm/bụng nhạt, vằn hổ, vảy cá, khe
+  dung nham phát sáng, rêu, đốm cóc) + AO khe; shader vẽ thêm sợi lông/da/đá/vảy theo loại chất liệu đỉnh, viền sáng tách nền.
+  Hoạt cảnh xoay xương: chạy nước kiệu chéo cặp, đuôi vẫy, há mồm vồ; cóc nhảy, phồng túi cổ; người đá bước nặng, đập hai tay; chim vỗ
+  cánh; cá uốn thân chữ S. Model chưa nạp xong thì tạm dùng hình khối cũ. Xem: `tools/monsters.html?game=1`.
+- **Lỗi tự tìm thêm**: lúc chết không mua đồ/nâng chiêu được (Liên Quân cho phép) → cho phép; giữ nút Đánh qua lúc hồi sinh; chết
+  giữa lúc ngắm thì bỏ ngắm; rời ứng dụng giữa lúc giữ cần thì nhả cần; chuyển tab về không chạy tiếp khi đồ hoạ còn mất; tán cây quanh
+  tướng thưa dần (lưới điểm) để không che tướng; nút kỹ năng/bổ trợ chỉ ghi DOM khi giá trị đổi (đỡ giật trên điện thoại); thanh
+  máu/mana của mình mảnh, sát mép dưới để không đè cần di chuyển.
+- **Màn đen (cả laptop)**: chốt chặn thêm `max/min` trước bloom và ở bước chỉnh màu cuối — trên GPU D3D (ANGLE Windows)/Metal
+  `max(NaN, 0)` trả 0 nên vẫn chặn được kể cả khi trình dịch shader bỏ qua `isnan`. Nguồn hay gặp nhất: cột sáng/khiên tính
+  `pow(1 − |N·V|, k)` — ở mép vật |N·V| có thể nhỉnh hơn 1 một chút → cơ số âm → NaN (đã kẹp về [0,1]).
+- **Lính làm lại** (cùng bộ sinh `monsters.mjs`): lính kiếm (nón lá, giáp vảy, kiếm + khiên tròn), lính cung (khăn đội đầu, cung,
+  ống tên), lính đèn lớn (hộ pháp áo tơi rơm vác cột đèn lồng phát sáng), xe đá (4 bánh lăn, cần ném gàu đá, cờ). Màu đội tô bằng
+  shader (vùng đỉnh _mat 4/6) nên một model dùng cho cả hai phe. Hoạt cảnh: bước đi tay vung ngược chân, chém kiếm từ trên xuống,
+  kéo dây cung, bánh xe lăn + cần ném bật. Cỡ phóng theo tướng.
+
+## Lúc chết + điều khiển góc nhìn (kiểu Liên Quân)
+- **Mua đồ lúc chết**: mô phỏng đã cho mua/bán/nâng chiêu khi chết; giao diện giữ nguyên cửa hàng + Mua nhanh, nút giỏ hàng nhấp
+  nháy trong lúc chờ hồi sinh để nhắc.
+- **Bảng bị hạ** (giữa trên, ngay dưới tỉ số) thay cho dòng chữ to "Hồi sinh sau Xs" giữa màn: vòng đếm ngược (số giây + vòng cạn
+  dần) + "Bị hạ bởi" chân dung/tên kẻ hạ (tướng, Trụ, lính, quái; tự hạ thì ghi "Tự hạ gục"). Màn 3D chuyển xám bằng CSS filter
+  (không thêm lượt vẽ), HUD vẫn đủ màu.
+- **Giữ bản đồ nhỏ**: chạm/rê ngón trên bản đồ nhỏ thì camera tới chỗ đó (khung nhìn trắng trên bản đồ nhỏ đi theo), thả tay trượt
+  về tướng. Vẫn chạy bằng ngón khác được.
+- **Kéo camera bên phải**: nút mắt ngay trên cụm kỹ năng — kéo về hướng nào camera lệch về hướng đó, tối đa ~1700 ngang/1300 dọc
+  (thấy "đoạn sau" ngoài mép màn hình); vuốt vùng trống nửa phải màn hình cũng kéo được (chạm trúng nút thì không). Thả tay về tướng.
+  Bóng đổ của mặt trời đi theo chỗ camera nhìn để vùng đang xem vẫn có bóng.
+- **Tướng trắng toát (mất màu) trên bản chơi thử**: Emberforge/Mossback/Bamboo Shade dùng ảnh JPEG nhúng trong .glb; GLTFLoader
+  tạo URL `blob:` rồi fetch — trang có chính sách bảo mật chặn `blob:` thì texture hỏng. Giờ giải mã thẳng từ bộ đệm bằng
+  `createImageBitmap` (plugin trong `assets.js`), lỗi thì quay về cách cũ. Đã tái hiện bằng máy chủ thử có CSP chặn blob:.
+- **Lính làm lại lần 2 (kiểu Liên Quân)**: đầu + mũ trụ to (dễ đọc từ camera cao), chân ngắn chắc, giáp ngực sơn màu đội viền vàng
+  có huy hiệu, vai giáp hai lớp, váy giáp 5 tấm, áo choàng màu đội, ống tay/ống quyển thép, gối đồng. Lính kiếm: mũ chỏm lông màu đội,
+  kiếm lưỡi rộng + khiên diều; lính cung: mũ trùm vải màu đội, cung sừng cong ngược, ống tên; lính đèn lớn: mũ sừng, vai gai, áo tơi
+  rơm, chuỳ đèn lồng có nan; xe đá: khung gỗ đóng ván, vách sơn màu đội đinh tán vàng, bánh nan có đai sắt, giá chữ A, gàu đá, đối
+  trọng, cờ đuôi én. Phần giáp/vũ khí dựng bằng khối hình học sắc cạnh (không qua SDF) nên rõ nét. Shader thêm 2 loại chất liệu:
+  7 = kim loại sáng (phản chiếu môi trường), 8 = vải màu đội; 4 (giáp màu đội) bóng như sơn mài. ~11–14k tam giác/lính.
+  Sửa kèm: hàm trọng số của `m.add()` nhận Vector3 (trước viết như blob → NaN, model không hiện).
+- **Trụ/tế đàn sắc nét hơn**: mái trụ trước bị phẳng do công thức hất góc lệch pha (góc rơi vào giữa mặt, không trúng đỉnh) → mái
+  đình bát giác mép thẳng, sống mái đồng 8 góc có đầu đao cong vút, chuông gió ở góc. Pha lê (trụ + tế đàn) cắt giác 8 mặt có đai,
+  flat shading + cạnh viền sáng mảnh, giảm phát sáng/quầng (trước loá trắng dưới bloom). Tế đàn: cột có đế bậc + đai vàng, lan can
+  đá đầu tầng chừa lối bậc thang.
+- **Vệt vũ khí kéo dài cả màn hình** khi tướng dịch chuyển tức thời (Chớp Bước, hồi sinh, về nhà): vệt nối chỗ cũ → chỗ mới. Đầu vũ
+  khí nhảy > 350 trong một khung thì xoá lịch sử vệt.
+
+## Ngắm chiêu, bảng tỉ số, đánh không mục tiêu, Trừng Trị, đường rộng (theo ảnh Liên Quân người chơi gửi)
+- **Chỉ báo ngắm** (`render/indicators.js`, vẽ bằng shader theo đơn vị thế giới nên sắc nét): vùng tầm = đĩa xanh trong mờ đậm dần
+  ra mép + viền sáng; chiêu bắn thẳng = dải đúng bề ngang đạn sáng dần + mũi tên; chiêu lướt/nhảy (và Chớp Bước) = thân mảnh nở
+  thành lưỡi có **ô kim cương** ở chỗ đáp; chiêu vùng tại điểm = vòng mục tiêu có tâm ngắm 4 mũi chụm; quạt sáng dần ra mép.
+  Khi kéo nút: vòng ngắm quanh nút + núm; **ô X huỷ** ở góc phải (kéo ngón vào rồi thả để huỷ, thay cho "kéo xa 210px").
+- **Tỉ số góc phải trên**: đồng hồ, tỉ số hai đội, K/D/A của mình (mới tính **hỗ trợ**: tướng địch khác gây sát thương trong 10 giây
+  cuối). Chạm (hoặc phím Tab) mở **bảng tỉ số**: tab Thông số tướng (K/D/A, vàng kiếm được, 6 ô trang bị của cả hai đội; tổng đội:
+  mục tiêu lớn, trụ đã phá, tổng vàng) và tab Thuộc tính tướng (máu, công, phép, giáp, kháng phép hiện tại). Bỏ ô tỉ số giữa trên;
+  bảng "Bị hạ bởi" lên sát mép trên. Nút toàn màn hình thành biểu tượng tròn.
+- **Đánh thường không mục tiêu**: tướng người chơi bấm đánh khi không có ai trong tầm vẫn vung đòn theo hướng đang nhìn (cận chiến
+  trúng địch đầu tiên trong nửa quạt trước mặt; đánh xa bắn đạn thẳng trúng địch đầu tiên). Bot không vung vào khoảng không.
+- **Trừng Trị** (thay Thu Hoạch, giữ id `thu_hoach`): sét giáng MỘT mục tiêu gần nhất trong 520, ưu tiên mục tiêu lớn > bùa > quái >
+  lính > tướng; quái/lính 700 (+50/cấp) sát thương chuẩn + choáng 1s, tướng 350 + chậm 30%. Không có mục tiêu thì không dùng được
+  (không mất hồi chiêu); nút mờ khi không có mục tiêu, loé vàng khi đủ kết liễu quái. Bot có Trừng Trị dùng để cướp/kết liễu quái.
+  Sửa kèm: phép cũ không hề gây sát thương lên quái rừng (chỉ lính/tướng).
+- **Cân bằng đầu trận**: lính yếu hơn (kiếm 400 HP/15 công, cung 260/22, xe 800/38, lính lớn 1600/70) nhưng tăng 7%/phút (trần
+  +125% HP/+140% công); quái nhỏ/bùa giảm ~30% công, ~13% máu, Long Ngư 8000/130, tăng 7%/phút (trần +180%). Model lính to hơn
+  (1.6×, lính lớn 1.85×, xe 1.7×), bán kính va chạm theo đó.
+- **Trụ + đường**: tầm trụ 950 → 1050; đường rộng 1200 → 1900 (vòng trụ gần vừa khít bề ngang đường, không lố vào rừng). Trụ mỗi
+  đường dồn lại cách nhau ~2700 đơn vị: giữa hai trụ chỉ còn khe ~600 không bị bắn. Hai hang Long Ngư/Hổ Lôi lùi vào rừng một chút
+  để vách hang không lấn đường. `tools/mapplan.html`: sơ đồ 2D để chỉnh bố cục (đường, tường, trại, vòng trụ).
+
+## Nhịp trận nhanh hơn, nút ăn lính/đẩy trụ, trụ cánh sát sông
+- **Tốc chạy**: tướng ×1.15 so với số gốc (giữ chênh lệch riêng từng tướng; vd. đấu sĩ 325 → 374), lính +18% (kiếm/cung 330, xe
+  305, lính lớn 340) — bản đồ rộng nên nhịp trận cao hơn.
+- **Đánh thường luôn hướng mặt về địch**: trong lúc vung đòn (từ lúc bắt đầu tới lúc đòn chạm) tướng đứng lại và mặt luôn quay về
+  mục tiêu, kể cả khi đang kéo cần chạy hướng khác — như Liên Quân; trước đây chạy mà đánh thì tướng vẫn quay theo hướng chạy.
+- **Nút Ăn lính / Đẩy trụ** cạnh nút Đánh (dưới-trái và trên-phải, như Liên Quân; phím K / L): ăn lính = đánh lính máu thấp nhất
+  trong tầm (rồi tới quái) để kết liễu lấy vàng; đẩy trụ = chỉ đánh trụ/nhà chính đang đánh được trong tầm. Không có mục tiêu đúng
+  loại thì không vung. Cụm kỹ năng giãn ra chút để chừa chỗ.
+- **Trụ ngoài hai đường cánh sát sông**: đặt đúng chỗ vòng bắn (1050) tiếp xúc mép sông (cách ~20 đơn vị) — sát nhất có thể mà
+  không chạm nước (vị trí cũ y=1500 thật ra vòng bắn đã lấn xuống sông ~200). Trụ ngoài giữa cũng tiếp xúc mép sông. Trụ trong/nhà
+  chia đều phía sau: khe giữa hai vòng trụ ~1350 ở đường cánh, ~730 ở đường giữa (đổi lại cho trụ ngoài sát sông).

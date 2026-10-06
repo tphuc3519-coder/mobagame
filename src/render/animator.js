@@ -31,7 +31,8 @@ export function createAnimator({ object, animations, art }) {
       oneShot = { a, end: time + dur / scale, hold };
       if (name === 'Death') dead = true;
     },
-    revive() { dead = false; oneShot = null; cur = null; base('Idle'); },
+    // hồi sinh: dừng hẳn mọi clip (clip Chết giữ khung cuối với trọng số 1 — chỉ phát Idle chồng lên thì tướng vẫn nằm/trượt theo dáng chết)
+    revive() { mixer.stopAllAction(); dead = false; oneShot = null; cur = null; base('Idle'); },
     update(state, speed, dt, art2) {
       time += dt;
       if (oneShot && (time < oneShot.end || oneShot.hold)) { mixer.update(dt); return; }

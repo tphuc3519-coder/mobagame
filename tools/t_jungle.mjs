@@ -42,4 +42,17 @@ const ally = w.spawnHero('nguyet_ha', 0, { x: 1000, y: 1000 }), g1 = ally.gold;
 if (tiger) { dealDamage(w, h, tiger, 1e6, 'true'); step(1); }
 ok('đồng đội nhận Uy Hổ', ally.statuses.some((s) => s.buff === 'uy_ho'));
 ok('đồng đội nhận vàng thưởng', ally.gold >= g1 + 100, (ally.gold - g1).toFixed(0));
+// Trừng Trị: một mục tiêu (ưu tiên quái), sát thương chuẩn + choáng; không có mục tiêu thì không mất hồi chiêu
+{
+  const red = w.byId(w.camps.find((c) => c.id === 'red').alive[0]);
+  const hs = w.spawnHero('bong_tre', 0, { x: red.pos.x + red.radius + 200, y: red.pos.y }); w.debug.level15(hs);
+  hs.spell = { id: 'thu_hoach', ready: 0 }; const hp0 = red.hp;
+  w.command(hs.id, { type: 'spell' }); step(1);
+  ok('Trừng Trị gây sát thương lên quái', hp0 - red.hp >= 700 + 50 * 14 - 1, (hp0 - red.hp).toFixed(0));
+  ok('Trừng Trị choáng quái', red.statuses.some((q) => q.kind === 'stun'));
+  hs.pos.x = hs.prevPos.x = 200; hs.pos.y = hs.prevPos.y = 200; hs.spell.ready = 0;
+  w.command(hs.id, { type: 'spell' }); step(1);
+  ok('không có mục tiêu thì không mất hồi chiêu', hs.spell.ready === 0);
+}
+
 process.exit(fail ? 1 : 0);

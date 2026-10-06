@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeVertices, mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { fbm } from './env/noise.js';
+import { buildMonsterModel, loadMonsterModel } from './monsterModels.js';
 
 // Quái rừng & mục tiêu lớn dựng bằng code (tạo hình riêng của Lantern Arena):
 //  Sói Đá (sói tạc đá rêu, mắt hổ phách, gai pha lê lưng) · Cóc Rêu (cóc khổng lồ phủ rêu, mọc nấm) ·
@@ -271,7 +272,15 @@ function darkLord() {
   });
 }
 
+/** Quái dùng model SDF có xương (monsterModels.js); khi model chưa nạp xong thì tạm dùng hình khối cũ rồi tự thay. */
 export function createMonster(type, member) {
+  const ready = buildMonsterModel(type, member); if (ready) return ready;
+  const root = new THREE.Group(), legacy = createLegacy(type, member); root.add(legacy.object);
+  let impl = legacy;
+  loadMonsterModel(type).then(() => { const m = buildMonsterModel(type, member); if (!m) return; root.remove(legacy.object); root.add(m.object); impl = m; });
+  return { object: root, update: (dt, mv, atk) => impl.update(dt, mv, atk) };
+}
+function createLegacy(type, member) {
   if (type === 'than_dieu') return thunderBird();
   if (type === 'ta_than') return darkLord();
   if (type === 'soi_da') return wolf(member === 'alpha' ? 1 : 0.65);

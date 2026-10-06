@@ -104,6 +104,7 @@ export function onMonsterKilled(world, killer, m, { addGold, gainXp }) {
       applyStatus(world, h, { status: 'statMod', id: b.id, buff: b.id, ...b.mod, burn: b.burn, duration: b.duration }, h);
       world.emit('buff', { id: h.id, buff: b.id, name: b.name, duration: b.duration });
     }
+    if (def.boss) { const ts = (world.teamStats ||= [{}, {}])[killer.team]; ts[m.monsterType] = (ts[m.monsterType] || 0) + 1; ts.boss = (ts.boss || 0) + 1; } // bảng tỉ số
     world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, type: m.monsterType, boss: !!def.boss, name: def.name });
   }
 }

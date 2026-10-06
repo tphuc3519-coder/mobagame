@@ -10,10 +10,12 @@ export function createCamera({ distance = CAM_DISTANCE, pitchDeg = 55, fov = CAM
   const state = { init: false, shake: 0, shakeT: 0 };
   return {
     camera,
-    /** Theo mục tiêu với độ trễ mượt (lerp 12/s), lệch nhẹ về hướng joystick. */
-    follow(x, z, dirX, dirZ, dt) {
-      const tx = x + dirX * 120, tz = z + dirZ * 120;
-      const k = state.init ? 1 - Math.exp(-12 * dt) : 1;
+    target,
+    /** Theo mục tiêu với độ trễ mượt (lerp 12/s), lệch nhẹ về hướng joystick.
+     *  look = {x, z, rate}: nhìn chỗ khác (giữ bản đồ nhỏ / kéo camera) — thả ra thì trượt về tướng. */
+    follow(x, z, dirX, dirZ, dt, look = null) {
+      const tx = look ? look.x : x + dirX * 120, tz = look ? look.z : z + dirZ * 120;
+      const k = state.init ? 1 - Math.exp(-(look?.rate ?? 12) * dt) : 1;
       state.init = true;
       target.x = lerp(target.x, tx, k); target.z = lerp(target.z, tz, k);
       let sx = 0, sz = 0; // rung màn hình (chiêu nặng đập đất): lắc ngẫu nhiên, tắt dần

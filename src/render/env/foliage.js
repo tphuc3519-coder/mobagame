@@ -7,17 +7,28 @@ import { buildTrees } from './trees.js';
 export const WIND = { value: 0 };
 
 /** Gió: đung đưa đỉnh cây/cỏ theo vị trí từng bản sao (không cần xương). */
-function sway(mat, amp) {
+/** Vị trí tướng mình (thế giới): tán cây phía trên và quanh tướng được làm thưa dần để không che mất tướng (như Liên Quân). */
+export const PLAYER_POS = { value: new THREE.Vector3(1e9, 0, 1e9) };
+function sway(mat, amp, fade = false) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uWind = WIND;
-    sh.vertexShader = 'uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+    sh.vertexShader = 'uniform float uWind;\n' + (fade ? 'varying vec3 vFadeW;\n' : '') + sh.vertexShader.replace('#include <begin_vertex>',
       `#include <begin_vertex>
        #ifdef USE_INSTANCING
        float ph = instanceMatrix[3].x * 0.013 + instanceMatrix[3].z * 0.011; float hg = max(position.y, 0.0);
        transformed.x += sin(uWind * 1.7 + ph) * hg * ${amp.toFixed(4)}; transformed.z += cos(uWind * 1.3 + ph * 1.3) * hg * ${(amp * 0.6).toFixed(4)};
+       ${fade ? 'vFadeW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;' : ''}
        #endif`);
+    if (fade) {
+      sh.uniforms.uPlayer = PLAYER_POS;
+      sh.fragmentShader = 'uniform vec3 uPlayer; varying vec3 vFadeW;\n' + sh.fragmentShader.replace('void main() {', `void main() {
+        { float pd = length(vFadeW.xz - uPlayer.xz);
+          if (pd < 520.0 && vFadeW.y > 120.0) { // lưới điểm thưa (không cần sắp xếp trong suốt)
+            vec2 q = floor(gl_FragCoord.xy); float dth = fract(52.9829189 * fract(0.06711056 * q.x + 0.00583715 * q.y));
+            if (dth < smoothstep(520.0, 280.0, pd) * 0.78) discard; } }`);
+    }
   };
-  mat.customProgramCacheKey = () => 'sway' + amp;
+  mat.customProgramCacheKey = () => 'sway' + amp + (fade ? 'f' : '');
   return mat;
 }
 

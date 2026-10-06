@@ -6,6 +6,7 @@ import { scatter } from './foliage.js';
 import { flagstoneSurface, wallStoneSurface, strataSurface } from './surfaces.js';
 import { plazaTexture } from './laneDecor.js';
 import { MONSTERS } from '../../data/jungle.js';
+import { LAIR_R } from '../../data/maps.js';
 import { ROCK_GLSL } from './rockGlsl.js';
 
 // Bệ đá kiểu tảng đá tự nhiên (tham khảo các khối đá rêu trong rừng): mỗi đoạn tường là cụm tảng đá tròn gồ ghề xám lam,
@@ -46,7 +47,7 @@ function roundRockGeo(w, H, seed) {
   const NS = Math.max(24, Math.ceil((half * 2) / 22)), NP = 34, P = [], I = [], p = 3.2, f0 = -0.14;
   for (let i = 0; i <= NS; i++) {
     const t = (i / NS) * 2 - 1, sv = Math.sin(t * Math.PI / 2), X = sv * half, e = Math.pow(Math.max(0, 1 - Math.pow(Math.abs(sv), p)), 1 / p);
-    const lump = 0.66 + 0.62 * fbm(X / 300 + seed * 3.1, seed, 3), Hs = H * Math.pow(e, 0.55) * lump, Ws = hw * e * (0.84 + 0.3 * fbm(X / 260 + seed, seed + 4, 2));
+    const lump = 0.66 + 0.62 * fbm(X / 300 + seed * 3.1, seed, 3), Hs = H * Math.pow(e, 0.55) * lump, Ws = hw * e * (0.8 + 0.2 * fbm(X / 260 + seed, seed + 4, 2)); // bề ngang không vượt quá vùng va chạm (tránh tướng đi "xuyên" mép đá)
     for (let j = 0; j <= NP; j++) {
       const f = f0 + (j / NP) * (Math.PI - 2 * f0), cf = Math.cos(f), sf = Math.sin(f);
       const z = Ws * Math.sign(cf) * Math.pow(Math.abs(cf), 0.62) * (0.94 + 0.1 * Math.max(0, sf)), y = Hs * Math.sign(sf) * Math.pow(Math.abs(sf), 0.8);
@@ -68,9 +69,9 @@ function roundRockGeo(w, H, seed) {
   // tảng phụ dính liền thân (phá dáng ống đều): 1–4 tảng tròn ghé hai bên/hai đầu, lún một phần xuống đất
   const rr = rngFor(Math.floor(seed * 1000) + 7), parts = [g], nb = Math.min(4, 1 + Math.floor(L / 420)), ux = Math.cos(ang), uz = Math.sin(ang);
   for (let k = 0; k < nb; k++) {
-    const t = rr.range(-0.5, 0.5) * L, sd = rr.next() < 0.5 ? -1 : 1, sc = Math.min(hw, H) * rr.range(0.45, 0.75);
-    const b = boulderGeo(seed * 13 + k * 3.7).clone(); b.scale(sc * rr.range(1.1, 1.6), sc * rr.range(0.8, 1.15), sc * rr.range(1.0, 1.3)); b.rotateY(rr.range(0, 7));
-    b.translate(cx + ux * t - uz * sd * hw * rr.range(0.55, 0.85), -sc * 0.15, cz + uz * t + ux * sd * hw * rr.range(0.55, 0.85));
+    const t = rr.range(-0.5, 0.5) * L, sd = rr.next() < 0.5 ? -1 : 1, sc = Math.min(hw, H) * rr.range(0.32, 0.46), off = hw * rr.range(0.4, 0.55); // tảng phụ nằm gọn trong vùng va chạm
+    const b = boulderGeo(seed * 13 + k * 3.7).clone(); b.scale(sc * rr.range(1.0, 1.2), sc * rr.range(0.9, 1.3), sc * rr.range(1.0, 1.2)); b.rotateY(rr.range(0, 7));
+    b.translate(cx + ux * t - uz * sd * off, -sc * 0.15, cz + uz * t + ux * sd * off);
     parts.push(b);
   }
   const tops = []; // mẫu đỉnh để cắm cỏ trên đá
@@ -159,7 +160,7 @@ function footGlow(w, list) {
 export function buildRockWalls(map, dens = 1) {
   const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassFoot = [], flowers = [], glow = { P: [], C: [], I: [] }, pebbles = [], topGrass = [];
   map.walls.segs.forEach((w, si) => {
-    if (w.border || w.baseWall != null) return; // tường biên / bệ nhà dựng riêng
+    if (w.border || w.baseWall != null || w.lair) return; // tường biên / bệ nhà / vách hang dựng riêng
     const W = w.w ?? map.walls.thickness, H = w.bushRock ? 95 : w.ledge ? 110 : Math.min(230, 110 + W * 0.33);
     const rg = roundRockGeo(w, H, si * 1.37); geos.push(rg); footGlow(w, glow);
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L, nx = -uz, nz = ux;
@@ -173,8 +174,8 @@ export function buildRockWalls(map, dens = 1) {
     }
     const nb = Math.max(1, Math.round(L / 320)); // đá tảng ghé chân
     for (let i = 0; i < nb; i++) {
-      const t = (i + r.range(0.1, 0.9)) / nb, sd = r.next() < 0.5 ? -1 : 1, off = W * r.range(0.5, 0.62), sc = W * r.range(0.16, 0.26);
-      boulders[r.int(3)].push({ x: w.x1 + ux * L * t + nx * sd * off, y: -6, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.5), sy: H * r.range(0.25, 0.4), sz: sc });
+      const t = (i + r.range(0.1, 0.9)) / nb, sd = r.next() < 0.5 ? -1 : 1, off = W * r.range(0.36, 0.42), sc = W * r.range(0.07, 0.1);
+      boulders[r.int(3)].push({ x: w.x1 + ux * L * t + nx * sd * off, y: -6, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.2), sy: H * r.range(0.2, 0.32), sz: sc });
     }
     if (!(w.rock || w.ledge)) return; // tường dọc đường: chân gọn
     // cụm cỏ cao ở chân đá: 1–2 cụm mỗi đoạn, mỗi cụm nhiều khóm dày (như Liên Quân), ưu tiên hai đầu bệ
@@ -358,9 +359,9 @@ function strataMat() {
       #endif
       vWp = (modelMatrix * wp4).xyz; vWn = normalize(mat3(modelMatrix) * objectNormal);`);
     sh.fragmentShader = 'uniform sampler2D uStrata; varying vec3 vWp; varying vec3 vWn;\n' + sh.fragmentShader.replace('#include <map_fragment>', `
-      vec3 an = abs(normalize(vWn));
+      vec3 an = abs(vWn) + 1e-4;
       vec3 sx = texture2D(uStrata, vec2(vWp.z / 620.0, vWp.y / 300.0)).rgb, sz = texture2D(uStrata, vec2(vWp.x / 620.0, vWp.y / 300.0)).rgb, sy = texture2D(uStrata, vWp.xz / 520.0).rgb;
-      vec3 w = pow(an, vec3(4.0)); w /= (w.x + w.y + w.z);
+      vec3 w = an * an; w *= w; w /= (w.x + w.y + w.z);
       vec3 st = sx * w.x + sy * w.y + sz * w.z;
       diffuseColor.rgb *= mix(vec3(1.0), st * 2.1, 0.55); // vân lớp nhẹ (màu chính do màu đỉnh của phiến)`);
   };
@@ -446,7 +447,7 @@ function buildBorderWall(map) {
 }
 
 /** Bán kính bệ lãnh thổ theo loại trại. */
-export const campRadius = (type) => ({ soi_da: 300, coc_reu: 250, linh_thuy: 300, hoa_nham: 300, long_ngu: 600, ho_loi: 640, than_dieu: 560, ta_than: 600 }[type] || 260);
+export const campRadius = (type) => LAIR_R[type] || ({ soi_da: 300, coc_reu: 250, linh_thuy: 300, hoa_nham: 300 }[type] || 260);
 
 /** Bệ đá lãnh thổ cho mọi trại + đầm sen Long Ngư + đài sấm Hổ Lôi. */
 export function buildCampSites(map) {
@@ -507,7 +508,7 @@ function buildLair(g, c, R, r, glowHex) {
       float vor(vec2 p){ vec2 i = floor(p), f = fract(p); float d1 = 8.0, d2 = 8.0;
         for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) { vec2 g = vec2(float(x), float(y)), o = h2(i + g + uS); float d = length(g + o - f); if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d; }
         return d2 - d1; }
-      void main(){ float r = length(vP) / uR, a = atan(vP.y, vP.x);
+      void main(){ float r = length(vP) / uR, a = atan(vP.y, vP.x + 1e-5);
         vec2 q = vec2(a * 3.0, log(max(r, 0.05)) * 3.2);                       // toạ độ cực: nứt toả tia
         float e = vor(q * vec2(1.0, 1.0) + vec2(0.0, -uT * 0.05));
         float line = smoothstep(0.13, 0.0, e) + smoothstep(0.03, 0.0, e) * 1.5;

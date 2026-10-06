@@ -11,7 +11,7 @@ export function createTowerRanges(scene) {
     uniforms: { uT: { value: 0 }, uA: { value: 0 }, uIn: { value: 0 }, uHot: { value: 0 } }, transparent: true, depthWrite: false,
     vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform float uT, uA, uIn, uHot; varying vec2 vP;
-      void main(){ float r = length(vP), a = atan(vP.y, vP.x);
+      void main(){ float r = length(vP), a = atan(vP.y, vP.x + 1e-5);
         vec3 out_ = vec3(1.0, 0.86, 0.45), in_ = vec3(1.0, 0.22, 0.16), c = mix(out_, in_, uIn);
         float pulse = 1.0 + uHot * (0.6 + 0.6 * sin(uT * 9.0));
         float edge = smoothstep(0.975, 0.993, r) * smoothstep(1.0, 0.993, r);                 // viền sắc

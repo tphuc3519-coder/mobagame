@@ -66,7 +66,7 @@ export const ITEMS = {
 
   // ---- Hỗ trợ / đi rừng (mỗi loại tối đa 1; chỉ dùng ở chế độ nhiều người) ----
   den_dong_hanh: it('Đèn Đồng Hành', 400, { tier: 1, tab: 'jungle', tags: ['support'], teamOnly: true, stats: { maxHp: 200, cdr: 0.05 }, upgrade: { to: 'den_soi_duong', gold: 600 }, note: 'Hỗ trợ: chia vàng khi đồng minh kết liễu lính; sau 600 vàng tự nâng cấp.' }),
-  nanh_thu_rung: it('Nanh Thú Rừng', 400, { tier: 1, tab: 'jungle', tags: ['jungle'], teamOnly: true, needSpell: 'thu_hoach', stats: { atk: 10, ap: 10 }, note: 'Đi rừng: +30% sát thương lên quái, hồi máu mỗi đòn lên quái. Cần phép Thu Hoạch.' }),
+  nanh_thu_rung: it('Nanh Thú Rừng', 400, { tier: 1, tab: 'jungle', tags: ['jungle'], teamOnly: true, needSpell: 'thu_hoach', stats: { atk: 10, ap: 10 }, note: 'Đi rừng: +30% sát thương lên quái, hồi máu mỗi đòn lên quái. Cần phép Trừng Trị.' }),
   den_soi_duong: it('Đèn Soi Đường', 1000, { tier: 2, tab: 'jungle', tags: ['support'], teamOnly: true, auto: true, stats: { maxHp: 400, cdr: 0.10 }, note: 'Nâng tự động từ Đèn Đồng Hành: hồi máu và khiên cho người khác +15%.' }),
 };
 for (const [id, v] of Object.entries(ITEMS)) v.id = id;

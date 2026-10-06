@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>Sơ đồ bản đồ</title>
+<style>html,body{margin:0;background:#111}</style>
+<canvas id="c"></canvas>
+<script type="module">
+// Sơ đồ 2D bản đồ 5v5 (src/data/maps.js): đường (độ rộng thật), tường/bệ đá, bụi, trại quái, trụ + vòng tầm bắn. Dùng để chỉnh bố cục.
+import { ARENA as M } from '../src/data/maps.js';
+const S = 1100 / M.w, c = document.getElementById('c'), x = c.getContext('2d'); c.width = c.height = 1100;
+x.fillStyle = '#3d6b3f'; x.fillRect(0, 0, 1100, 1100);
+x.lineCap = 'round'; x.lineJoin = 'round';
+for (const ln of M.lanes) { x.strokeStyle = '#cbb98a'; x.lineWidth = ln.width * S; x.beginPath(); ln.pts.forEach(([a, b], i) => (i ? x.lineTo(a * S, b * S) : x.moveTo(a * S, b * S))); x.stroke(); }
+if (M.river) { x.strokeStyle = '#3f8fb8aa'; x.lineWidth = M.river.width * S; x.beginPath(); x.moveTo(0, 0); x.lineTo(1100, 1100); x.stroke(); }
+for (const b of M.bushes || []) { x.fillStyle = '#1f5a2a'; x.fillRect((b.x - b.w / 2) * S, (b.y - b.h / 2) * S, b.w * S, b.h * S); }
+for (const w of M.walls.segs) { x.strokeStyle = w.lair ? '#5a4a6a' : '#2a2e36'; x.lineWidth = Math.max(2, (w.w ?? M.walls.thickness) * S); x.beginPath(); x.moveTo(w.x1 * S, w.y1 * S); x.lineTo(w.x2 * S, w.y2 * S); x.stroke(); }
+for (const cp of M.camps || []) { x.fillStyle = '#e8d48a'; x.beginPath(); x.arc(cp.x * S, cp.y * S, 6, 0, 7); x.fill(); }
+const all = [...M.structures, ...M.structures.map((s) => ({ ...s, ...M.mirror(s.x, s.y), red: true }))];
+for (const s of all) { if (s.kind !== 'tower' && s.kind !== 'core') continue;
+  x.fillStyle = s.red ? '#ff4a3a33' : '#38b8ff33'; x.strokeStyle = s.red ? '#ff4a3a' : '#38b8ff'; x.lineWidth = 1.5;
+  x.beginPath(); x.arc(s.x * S, s.y * S, s.range * S, 0, 7); x.fill(); x.stroke();
+  x.fillStyle = s.red ? '#ff4a3a' : '#38b8ff'; x.fillRect(s.x * S - 4, s.y * S - 4, 8, 8); }
+window.__ready = true;
+</script>

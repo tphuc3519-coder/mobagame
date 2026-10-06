@@ -11,6 +11,8 @@ import { canSee, bushAt } from '../sim/vision.js';
 import { createMonster } from './monsters.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
+/** Tướng trong trận to hơn tỉ lệ gốc (bớt cảm giác chibi khi nhìn từ camera trên cao); bán kính va chạm mô phỏng giữ nguyên. */
+export const HERO_SCALE = 1.35;
 /** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không. */
 const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
 
@@ -22,23 +24,24 @@ export function createUnitViews(scene, localTeam, localId) {
     scene.add(root);
     const v = { root, animator: null, mats: null, angle: e.facing, lift: null, flash: 0, ghost: false, art: null, part: null, fall: 0 };
     views.set(e.id, v);
-    if (!e.structure) { v.blob = createBlobShadow(e.radius); scene.add(v.blob); } // bóng tiếp đất: không xoay theo nhân vật
+    if (!e.structure) { v.blob = createBlobShadow(e.kind === 'hero' ? e.radius * 1.25 : e.radius); scene.add(v.blob); } // bóng tiếp đất: không xoay theo nhân vật
     if (e.kind === 'tower' || e.kind === 'core' || e.kind === 'fountain') {
       v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team, Math.min(1, (world.map.fountain?.healRadius || 650) / 650));
       if (e.kind === 'fountain') { const m = world.map, a = Math.atan2(m.h / 2 - e.pos.y, m.w / 2 - e.pos.x); v.part.object.rotation.y = -a + Math.PI / 2; } // lối vào quay ra giữa bản đồ
       if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
       root.add(v.part.object); return v;
     }
-    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); return v; }
+    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
     const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: art?.outline !== false }); castShadows(obj); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
-    const useCapsule = () => { const c = createCapsule(); attach(c.object); v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} }; };
+    const useCapsule = () => { const c = createCapsule(); c.object.scale.multiplyScalar(HERO_SCALE); attach(c.object); v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} }; };
     loadHero(e.heroId).then((m) => {
       if (!m) return useCapsule();
-      const inst = instantiate(m); attach(inst.object, inst.art);
-      v.art = inst.art; v.animator = createAnimator(inst);
+      const inst = instantiate(m); inst.object.scale.multiplyScalar(HERO_SCALE); attach(inst.object, inst.art);
+      // sải chân dài theo tỉ lệ → tốc độ phát clip chạy chia cho tỉ lệ để chân không trượt; chiều cao cho hiệu ứng bám đầu
+      v.art = { ...inst.art, runRefSpeed: (inst.art.runRefSpeed || 320) * HERO_SCALE, height: (inst.art.height || 250) * HERO_SCALE }; v.animator = createAnimator(inst);
       v.bones = Object.fromEntries(['HandR', 'HandR_Tip', 'HandL', 'HandL_Tip', 'Head', 'Chest'].map((n) => [n, inst.object.getObjectByName('Bone_' + n)]).filter(([, b]) => b)); // cho hiệu ứng bám xương (vệt vũ khí, sao choáng)
     }).catch(useCapsule);
     return v;
@@ -77,9 +80,9 @@ export function createUnitViews(scene, localTeam, localId) {
           if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 1.5); v.root.scale.setScalar(1 - v.fall * 0.95); v.root.position.y -= v.fall * 60; }
           continue;
         }
-        if (e.kind === 'minion') { v.root.visible = seen; v.part?.update(dt, e.speed > 1); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
+        if (e.kind === 'minion') { v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
-          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : 0); v.mats.update(dt);
+          v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); // trong bụi: sáng lên chút để không chìm vào màu bụi tối v.mats.update(dt);
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
           const ghost = e.statuses.some((s) => s.kind === 'stealth') || inBush;
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
