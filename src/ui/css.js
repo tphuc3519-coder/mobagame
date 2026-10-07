@@ -40,7 +40,7 @@ i.ini { display: grid; place-items: center; font: 800 16px 'Be Vietnam Pro', sys
 .ui-dlg h3 { margin: 0 0 10px; color: #ffe08a; font-size: 18px; } .ui-dlg .txt { font-size: 14px; color: #dfe6ff; line-height: 1.5; }
 .ui-dlg .btns { display: flex; gap: 10px; justify-content: center; margin-top: 14px; } .ui-dlg .btns button { min-width: 110px; height: 40px; border-radius: 10px; border: 1px solid #ffffff44; background: #1a2a5a; font: 700 14px 'Be Vietnam Pro', system-ui; }
 .ui-dlg .btns button.gold { background: linear-gradient(180deg, #ffe58a, #e8a23a); color: #3a1c00; border-color: #fff3b0; }
-.ui-dlg input { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; border-radius: 8px; border: 1px solid #8fb8ff88; background: #0a1028; color: #fff; font: 600 16px 'Be Vietnam Pro', system-ui; }
+.ui-dlg input { -webkit-user-select: text; user-select: text; touch-action: manipulation; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; border-radius: 8px; border: 1px solid #8fb8ff88; background: #0a1028; color: #fff; font: 600 16px 'Be Vietnam Pro', system-ui; }
 .ui-panel { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: radial-gradient(120% 90% at 50% 0%, #1c2c66f8, #0a1028fa 60%, #060a1cfc); transform: translateY(18px); opacity: 0; transition: transform .2s, opacity .2s; }
 .ui-panel.on { transform: none; opacity: 1; } .ui-panel.out { opacity: 0; }
 .ui-panel header { flex: none; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); background: linear-gradient(180deg, #0d1638, #0d163800); border-bottom: 1px solid #ffffff14; }
