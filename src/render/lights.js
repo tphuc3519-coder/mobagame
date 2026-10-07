@@ -26,12 +26,28 @@ export function addLights(scene, renderer, level = 'mid') {
     key.shadow.bias = -0.0006; key.shadow.normalBias = 2; key.shadow.radius = 3;
   }
   const texel = size ? 6000 / size : 1;
+  let off = false;
   return {
     /** Hộp bóng theo điểm camera nhìn (bám theo lưới texel để bóng không rung khi camera trượt). */
     follow(x, z) {
-      if (!size) return;
+      if (!size || off) return;
       x = Math.round(x / texel) * texel; z = Math.round(z / texel) * texel;
       key.target.position.set(x, 0, z); key.position.set(x + dir.x * 3000, dir.y * 3000, z + dir.z * 3000);
+    },
+    /** Tắt / bật bóng đổ thời gian thực mà KHÔNG dịch lại shader (đổi shadowMap.enabled / castShadow buộc dịch lại mọi vật liệu —
+     *  khựng vài giây trên iPhone): tắt = vẽ bản đồ bóng một lần ở chỗ trống (không vật nào đổ bóng) rồi thôi cập nhật mỗi khung. */
+    /** Hộp bóng phủ cả bản đồ (tâm x, z, nửa cạnh half) cho MỘT lượt vẽ lúc dịch sẵn shader: mọi vật đổ bóng (cả cây ở xa) vào lượt bóng
+     *  → biến thể shader bóng đổ của chúng được dịch luôn. Gọi lại không đối số để trả về hộp bóng thường quanh camera. */
+    cover(x, z, half) {
+      if (!size) return;
+      const c = key.shadow.camera, h = half ?? 3000, far = half ? half * 2 + 4000 : 6000;
+      c.left = -h; c.right = h; c.top = h; c.bottom = -h; c.far = far; c.updateProjectionMatrix();
+      if (half != null) { key.target.position.set(x, 0, z); key.position.set(x + dir.x * (half + 2000), dir.y * (half + 2000), z + dir.z * (half + 2000)); }
+    },
+    setShadows(on) {
+      if (!size || off === !on) return; off = !on;
+      renderer.shadowMap.autoUpdate = on; renderer.shadowMap.needsUpdate = true;
+      if (off) { key.target.position.set(0, -1e6, 0); key.position.set(dir.x * 3000, -1e6 + dir.y * 3000, dir.z * 3000); }
     },
   };
 }

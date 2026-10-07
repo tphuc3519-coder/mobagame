@@ -15,6 +15,7 @@ import { buildAbyss, isAbyss, ABYSS_PAD } from './env/abyss.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
+import { chunkStatic, freezeStatic } from './env/chunk.js';
 
 export { FOG_COLOR };
 const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
@@ -204,6 +205,7 @@ export function buildArena(scene, map, level = 'mid') {
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
 
   const flies = buildFireflies(map, Math.round(420 * dens)); g.add(flies.object);
+  chunkStatic(g); freezeStatic(g); // khối gộp cả bản đồ → ô 3 200 (chỉ vẽ ô trong khung nhìn); cảnh đứng yên: thôi tính lại ma trận mỗi khung
   scene.add(g);
   return {
     group: g,

@@ -7,6 +7,7 @@ import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
 import { buildFoliage, WIND } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
+import { chunkStatic, freezeStatic } from './env/chunk.js';
 
 export { FOG_COLOR };
 const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
@@ -97,6 +98,7 @@ export function buildMap(scene, map, level = 'mid') {
   g.add(pole, lamp, cap, buildLampGlow(posts));
 
   const flies = buildFireflies(map, Math.round(160 * dens)); g.add(flies.object);
+  chunkStatic(g); freezeStatic(g); // như bản 5v5 (arenaMap.js)
   scene.add(g);
   return {
     group: g,

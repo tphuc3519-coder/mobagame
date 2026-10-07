@@ -69,6 +69,7 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - 2026-10-06: Moonstream dùng model hoạ sĩ có texture PBR: `imports/moonstream_pbr_game.glb` trong trận (101k → 31.589 tam giác, texture 1024, 3,0 MB, không nén để không cần WebAssembly), `moonstream_pbr_hq.glb` ở sảnh/chọn tướng (454k → 113.957 tam giác, texture 2048, nén meshopt 7,8 MB, nạp sau bản trong trận rồi thay vào; không giải nén được thì giữ bản trong trận). `import_fused.mjs`: nhiều vật liệu (thân / đầu-tóc / mắt), giảm lưới và giới hạn texture theo từng vật liệu, nén meshopt (`compress`), `showcase` → `<id>_showcase.glb`; 24 xương (4 xương váy), 11 clip viết tay `heroes/nguyet_ha.anim.mjs`. `hero.art.json` thêm `shading` (`toon` mặc định / `pbr` / `unlit`), `outline`, `showcaseShading`, `showcaseOutline` (09 §3.4); so sánh trong trận và ở sảnh: Moonstream dùng `pbr` (sảnh bỏ viền đen).
 - 2026-10-06: Phản hồi chơi thử: nút X huỷ Chớp Bước (`hud/aimPad.js` dùng chung với nút kỹ năng), tướng quay mặt theo hướng chiêu tới hết lúc ra chiêu (`castUntil`/`castFacing`, `CAST_LOCK` 0,25s) rồi mới theo cần di chuyển, tướng to ×1,5, máu tướng ×1,3 (`HERO_HP_MULT`), quái yếu đi (`MONSTER_POWER`), 6 kiểu số sát thương (vật lý / phép / chuẩn × thường / chí mạng, `DMG_STYLE`), hiệu ứng kỹ năng v2 (lớp theo loại sát thương + chí mạng, đạn và hiệu ứng trúng riêng từng chiêu, dấu hiệu ra chiêu, atlas hạt 16 ô), hiệu ứng/đơn vị nổi trên bệ trại quái (`render/env/floor.js`), cảm ứng ≥ 5 ngón, người chơi tự cộng điểm kỹ năng bằng nút +, gộp font Be Vietnam Pro + bộ biểu tượng SVG.
 - 2026-10-06: Model quái rừng + lính làm lại (`tools/modelgen/monsters.mjs`, `render/monsterModels.js`: đá cắt giác, pha lê, sừng, lông vũ, vây, lửa; shader vảy cá / lông vũ; mỗi model một draw call; lính: khiên quay ra trước mang màu đội, lính đèn khoác giáp màu đội, xe đá đầu rồng). Sảnh: sửa tóc Moonstream bị cắt ngang (`morph` + `hair` trong `import_fused.mjs`), Emberforge đứng chống búa (`ShowIdle`), tướng nhỏ hơn trong khung và khung tự chứa vũ khí giơ cao.
+- 2026-10-07: Tối ưu FPS trận: icon vẽ tay dựng sẵn (`assets/ui/paint`), cắt đơn vị ngoài khung (`render/unitView.js`), chia ô cảnh tĩnh (`render/env/chunk.js`), giảm lưới lính/quái (`tools/modelgen/lod.mjs`), dịch sẵn shader khi vào trận, tự chỉnh chất lượng (`render/autoQuality.js`), mô phỏng nhanh gấp ~2,2 (kết quả y hệt, `tools/t_determinism.mjs`).
 
 ## Sảnh và luồng trước/sau trận kiểu Liên Quân + điểm trận (07/10)
 - **Màn tải game** (ảnh 1): tranh mở màn dựng sẵn (6 tướng dưới trăng), thanh vàng + "Đang tải tài nguyên game (không tốn dung lượng)"
@@ -139,6 +140,35 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Màn lớn (từ 900×560): phóng cả lớp giao diện 1,25–1,5 lần cho cân với cảnh 3D.
 - Đã chạy: `t_rank`, `t_combat`, `t_items`; trình duyệt headless trọn luồng đấu hạng (sảnh → ghép trận → chọn tướng → trận → kết quả →
   Đấu lại), chụp mọi màn / bảng ở 844×390, 640×360, 1280×720 — không lỗi console.
+
+## Tối ưu FPS trận trên web / iPhone (07/10)
+- Báo lỗi: "Game trên web lag lắm". Đo trận 5v5 giữa trận (phút 2–3, mức Vừa): mỗi khung **~2,9 triệu tam giác, ~300 lệnh vẽ**
+  (kể cả lượt bóng đổ) dù camera chỉ thấy ~4% bản đồ; đầu trận còn **vẽ lại ~50 icon trang bị trên luồng chính** (~0,1–0,3 giây mỗi
+  icon → giật liên tục 15–20 giây đầu trận); giữa trận khựng mỗi khi shader mới được dịch (lính / quái / chiêu / vùng bản đồ mới lần đầu
+  hiện ra — iPhone mất 0,05–0,3 giây mỗi shader).
+- Sửa:
+  - **Icon vẽ tay dựng sẵn thành ảnh** (`assets/ui/paint/*.webp`, 80 ảnh 192², ~770 KB, `tools/uiart/paintart.cjs`): 50 trang bị,
+    18 kỹ năng, 8 phép bổ trợ, đánh thường. Màn chọn tướng, màn tải, cửa hàng, bảng kết quả chỉ tải ảnh; món chưa có ảnh vẫn vẽ như cũ.
+  - **Không vẽ đơn vị ngoài khung hình** (`src/render/unitView.js`): lính / quái ngoài màn tách khỏi cảnh (không vẽ, không đổ bóng,
+    không tính xương, ngừng hoạt ảnh); tướng chỉ ẩn. Trước đây mesh có xương đặt `frustumCulled = false` nên ~70 đơn vị cả bản đồ đều vẽ.
+  - **Chia ô cảnh tĩnh** (`src/render/env/chunk.js`): đá / tường / vách gộp cả bản đồ tách thành ô 3 200 đơn vị để chỉ vẽ ô trong khung
+    nhìn và hộp bóng; cảnh đứng yên thôi tính lại ma trận mỗi khung. Ảnh toàn bản đồ so với bản cũ: trùng khớp.
+  - **Lính / quái nhẹ hơn** (`tools/modelgen/lod.mjs`, meshoptimizer): lính 12–15k → 3,6–4,8k tam giác, quái 16–21k → 6,4–10,7k (khoá
+    ranh giới vùng chất liệu, giữ xương / màu); 12 file GLB 6,5 MB → 3,4 MB (tải nhanh hơn). `monsters.mjs` tự giảm lưới khi sinh lại.
+  - **Dịch sẵn shader khi vào trận** (`warmUp` trong `src/game.js`, màn che "Đang vào trận…"): dựng tạm lính 4 loại × 2 đội, quái mọi
+    loại, mỗi loại hình hiệu ứng một cái, dịch cả cảnh (gồm ô bản đồ ngoài màn hình, chỉ báo chiêu đang ẩn) đúng biến thể vẽ qua hậu
+    kỳ, vẽ thử một khung với hộp bóng phủ cả bản đồ. Giữa trận chỉ còn 1 biến thể bóng đổ nhỏ được dịch (lúc ~25 giây).
+  - **Tự chỉnh chất lượng theo FPS thực** (`src/render/autoQuality.js`): máy không giữ nổi FPS mục tiêu → độ phân giải ×0,84 → ×0,7 →
+    tắt bóng đổ thời gian thực (không dịch lại shader) → ×0,6; mỗi bậc đo thử, không nhanh hơn (máy nghẽn CPU, iPhone bật Nguồn điện
+    thấp khoá 30 khung/giây) thì trả lại; chạy đủ nhanh lâu thì thử nâng lại. `?noauto` tắt (kiểm thử).
+  - **Mô phỏng nhanh gấp ~2,2 lần, kết quả y hệt**: tra tường bằng lưới ô (`clampToMap`), lính đẩy nhau bỏ qua cặp xa (`minions.js`).
+    `tools/t_determinism.mjs` băm trạng thái mọi đơn vị mỗi phút: trùng khớp bản cũ (5v5 + 1v1, seed 1 và 7).
+  - Khác: mức Thấp (khoá 30 khung/giây) trước đây hoạt ảnh / camera chạy chậm một nửa (lấy nhịp màn hình thay vì thời gian giữa hai lần
+    vẽ) — đã sửa; bản đồ nhỏ vẽ ~20 lần/giây; số sát thương bay không đo chữ lại mỗi khung.
+- Kết quả đo (cùng cảnh, kể cả lượt bóng): **2,92 triệu → 0,55 triệu tam giác/khung, ~300 → ~225 lệnh vẽ**; mô phỏng 5v5 2,6 → 1,2 ms/tick (Node, phút 1–6).
+  Chưa đo được FPS thật trên iPhone ở đây (máy kiểm thử dùng GPU giả lập) — cần bạn thử lại.
+- Đã chạy: toàn bộ `tools/t_*.mjs` + `simtest` + `t_determinism`, trọn luồng đấu hạng trên trình duyệt headless (sảnh → chọn tướng →
+  tải → trận → kết quả → đấu lại), mức Thấp / Cao, bản đồ 1v1 — không lỗi console.
 
 ## Sửa lỗi tướng không hiện trên iPhone (07/10)
 - Báo lỗi: ở màn chọn tướng đổi sang Moonstream mà sân khấu vẫn là Emberforge; vào trận không thấy model tướng, bản đồ nhỏ chỉ hiện

@@ -14,6 +14,7 @@ import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { Model } from './kit.mjs';
 import { segWeights } from './sdf.mjs';
+import { simplifyGLB, RATIO } from './lod.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outRoot = path.resolve(here, '../../assets/monsters');
@@ -949,7 +950,8 @@ for (const [id, fn] of Object.entries(BUILD)) {
   const t0 = Date.now(), built = fn();
   pack(built.mesh.geometry);
   const scene = new THREE.Scene(); for (const c of built.root.children.slice()) scene.add(c);
-  const glb = await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false });
+  let glb = await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false });
+  if (RATIO[id]) glb = (await simplifyGLB(Buffer.from(glb), RATIO[id])).glb; // giảm lưới cho trận (lod.mjs): lính ~30%, quái 40–50%
   fs.writeFileSync(path.join(outRoot, `${id}.glb`), Buffer.from(glb));
   console.log(`${id.padEnd(10)} tris ${String(built.tris).padStart(6)}  verts ${String(built.verts).padStart(6)}  bones ${String(built.bones.length).padStart(3)}  ${String(Math.round(glb.byteLength / 1024)).padStart(5)} KB  ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }

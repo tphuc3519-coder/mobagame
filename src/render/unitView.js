@@ -21,8 +21,15 @@ const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.d
 /** Mỗi SkinnedMesh nhân bản có bộ xương riêng kèm một texture xương trên GPU: gỡ đơn vị (lính/quái chết) phải giải phóng, nếu không
  *  mỗi đợt lính rò thêm vài chục texture. Hình học / vật liệu dùng chung nên không đụng tới. */
 export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); }
+/** Bán kính cầu xét "trong khung nhìn" quanh chân đơn vị: đủ trùm thân + bóng đổ (nắng xiên ~0,8 × chiều cao) + camera trượt 1 khung. */
+const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.max(380, e.radius * 4) : 560);
+const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
 export function createUnitViews(scene, localTeam, localId, { floor = null } = {}) {
   const views = new Map();
+  // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
+  // xương đặt frustumCulled = false (khối bao không theo động tác) nên trước đây cả bản đồ ~70 đơn vị đều vẽ mỗi khung, kể cả lượt bóng.
+  // Tướng chỉ ẩn (hiệu ứng bám xương tay/đầu vẫn cần ma trận xương cập nhật).
+  const park = (v, on) => { if (on && v.root.parent !== scene) scene.add(v.root); else if (!on && v.root.parent === scene) scene.remove(v.root); };
   const spawn = (e, world) => {
     const root = new THREE.Group();
     scene.add(root);
@@ -78,7 +85,9 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
         else if (ev.type === 'respawn' && v) v.animator?.revive();
       }
     },
-    update(world, alpha, dt) {
+    update(world, alpha, dt, camera = null) {
+      if (camera) { pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); } // khung của lần vẽ trước
+      const inView = (e, x, y, z) => { if (!camera) return true; const r = cullR(e); sph.center.set(x, y + r * 0.35, z); sph.radius = r; return frustum.intersectsSphere(sph); };
       const alive = new Set();
       for (const e of world.entities) {
         alive.add(e.id);
@@ -92,20 +101,20 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
-        const seen = canSee(localTeam, e); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
+        const seen = canSee(localTeam, e), shown = inView(e, rx, v.root.position.y, rz); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
         if (e.kind === 'monster') {
-          v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.7; if (v.atk >= 1) v.atk = 0; }
-          v.part?.update(dt, e.speed > 1, v.atk);
+          v.root.visible = seen; park(v, shown); if (v.atk > 0) { v.atk += dt / 0.7; if (v.atk >= 1) v.atk = 0; }
+          if (shown && seen) v.part?.update(dt, e.speed > 1, v.atk);
           if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 1.5); v.root.scale.setScalar(1 - v.fall * 0.95); v.root.position.y -= v.fall * 60; }
           continue;
         }
-        if (e.kind === 'minion') { v.root.visible = seen; if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
+        if (e.kind === 'minion') { v.root.visible = seen; park(v, shown); if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } if (shown && seen) v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); v.mats.update(dt); // trong bụi: sáng lên chút để không chìm vào màu bụi tối; update: chớp mắt
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
           const ghost = e.statuses.some((s) => s.kind === 'stealth') || inBush;
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
-          v.root.visible = seen && !(ghost && e.team !== localTeam);
+          v.root.visible = seen && !(ghost && e.team !== localTeam) && shown;
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
       }

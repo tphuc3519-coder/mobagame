@@ -4,6 +4,7 @@
 // Toạ độ vẽ 0..128 (ảnh 256²). Mỗi icon sinh một lần rồi lưu đệm.
 import { rngFor, fbm } from '../render/env/noise.js';
 import { D } from './itemArt.js';
+import { staticPaint } from './paintStatic.js';
 
 const S = 256, K = S / 128, TAU = Math.PI * 2, cache = new Map();
 const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
@@ -180,6 +181,7 @@ function finish(x, rim = '#e8d8b0', bloomK = 0.45) {
 }
 const begin = () => { texN = 0; ACC = null; };
 function paint(key, fn, rim, bloomK) {
+  const st = staticPaint(key); if (st) return st; // ảnh dựng sẵn (paintStatic.js): không vẽ lúc chạy
   if (cache.has(key)) return cache.get(key);
   const x = mk(), r = rngFor([...key].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7) >>> 0);
   begin(); fn(x, r); finish(x, rim, bloomK);
@@ -514,9 +516,17 @@ const SPELL = {
 
 const RIM = { hoa_ren: '#f0d8b8', thach_quy: '#ffe2a0', bong_tre: '#c8ffd8', nguyet_ha: '#e8f0ff', canh_dieu: '#ffffff', long_dang: '#ffe8b0' };
 export const hasPaintedSkill = (heroId, slot) => !!ICONS[heroId]?.[slot];
-export const paintedSkill = (heroId, slot) => img(paint(`${heroId}.${slot}`, ICONS[heroId][slot], RIM[heroId]));
-export const paintedSpell = (id) => (SPELL[id] ? img(paint('spell.' + id, SPELL[id], '#e8e0d0')) : null);
-export const paintedFist = () => img(paint('fist', (x, r) => { // găng sắt đấm thẳng tới, vụ nổ lực phía sau
+export const skillURL = (heroId, slot) => paint(`${heroId}.${slot}`, ICONS[heroId][slot], RIM[heroId]);
+export const spellURL = (id) => (SPELL[id] ? paint('spell.' + id, SPELL[id], '#e8e0d0') : null);
+export const paintedSkill = (heroId, slot) => img(skillURL(heroId, slot));
+export const paintedSpell = (id) => (SPELL[id] ? img(spellURL(id)) : null);
+export const paintedFist = () => img(fistURL());
+/** Mọi icon vẽ được (công cụ dựng ảnh tĩnh tools/uiart/paintart.cjs): [khoá, hàm trả data URL]. */
+export const paintJobs = () => [
+  ...Object.entries(ICONS).flatMap(([h, sl]) => Object.keys(sl).map((s) => [`${h}.${s}`, () => skillURL(h, s)])),
+  ...Object.keys(SPELL).map((id) => ['spell.' + id, () => spellURL(id)]), ['fist', () => fistURL()],
+];
+const fistURL = () => paint('fist', (x, r) => { // găng sắt đấm thẳng tới, vụ nổ lực phía sau
   bg(x, 96, 40, [[0, '#ffe2a0'], [0.2, '#ff7a2a'], [0.5, '#8a1e0a'], [1, '#0a0202']], 120);
   rays(x, r, 96, 40, { n: 40, r0: 8, len: [40, 100], w: [2, 7], c: ['#ffe2a0', '#ff8a3a', '#ffffff'], alpha: 0.45 });
   streaks(x, r, -0.6, { n: 16, box: [40, 20, 120, 90], len: [20, 50], w: [1, 3], c: '#ffe2a0', alpha: 0.6 });
@@ -536,6 +546,6 @@ export const paintedFist = () => img(paint('fist', (x, r) => { // găng sắt đ
   solid(x, Pp('M-4 13C2 14 7 16 8 19C6 22 2 22-3 21Z'), D.LG(x, T, -4, 13, 8, 22, 'gold'), { shadow: false, sd: 0.6, surf: 0, ao: 0 });
   D.jewel(x, T, -48, 50, 4, '#ff6a20');
   sparks(x, r, 14, [70, 10, 124, 90], ['#ffe2a0', '#ffffff']);
-}, '#f0d8b0'));
+}, '#f0d8b0');
 // dụng cụ vẽ dùng chung cho icon trang bị (itemArt.js)
 export { mk, layer, blurred, lin, rad, tp, ribbon, linePts, arcPts, rays, streaks, sparks, swirl, solid, shine, bloom, glow, grain, lantern, TAU, K, S, col, atmos, grade, metalRing, mix, setAccent, begin, tex };

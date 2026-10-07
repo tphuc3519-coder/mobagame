@@ -20,6 +20,7 @@ export function createFx(scene, opts = {}) {
   if (typeof window !== 'undefined') window.__fxdbg = () => ({ add: A.count, norm: N.count, shapes: sh.count, trails: lib.dbg() });
   return {
     lib,
+    warm: () => sh.warm(),
     handle(events, world) { lib.handle(events, world); },
     update(world, dt, player) {
       // vòng tầm bắn của trụ địch: hiện khi tướng mình lại gần 900, đỏ khi đang nhắm mình

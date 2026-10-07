@@ -3,6 +3,7 @@
 // (lửa, băng, sét, máu, gió, sao, sương), nền toả sáng theo màu chủ đề, bloom, hạt nhiễu; khung vuông bo góc theo bậc
 // (đồng: thành phần, bạc: giày, vàng chạm góc: đồ hoàn chỉnh). Toạ độ vẽ 0..128 (ảnh 256²). Sinh một lần rồi lưu đệm.
 import { rngFor } from '../render/env/noise.js';
+import { staticPaint } from './paintStatic.js';
 import { mk, layer, blurred, lin, rad, tp, ribbon, linePts, rays, streaks, sparks, swirl, solid, shine, bloom, glow, grain, lantern, TAU, K, S, atmos, grade, mix, setAccent, begin } from './paint.js';
 
 const cache = new Map();
@@ -609,6 +610,7 @@ const ITEM = {
 /** Ảnh icon trang bị (data URL), hoặc null nếu chưa có hình vẽ riêng / không có DOM. */
 export function itemArtURL(id, tier = 1) {
   if (typeof document === 'undefined' || !ITEM[id]) return null;
+  const st = staticPaint('item.' + id); if (st) return st; // ảnh dựng sẵn (paintStatic.js): không vẽ lúc chạy
   if (cache.has(id)) return cache.get(id);
   const h = [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 11) >>> 0, [c0, c1, draw] = ITEM[id], x = mk(), r = rngFor(h);
   begin(); backdrop(x, c0, c1, h % 997);
@@ -625,10 +627,17 @@ export const ITEM_ART_IDS = Object.keys(ITEM);
 // bộ vẽ vật thể dùng lại cho icon kỹ năng (paint.js gọi lúc vẽ, không lúc nạp module)
 export const D = { sword, axe, hammer, boot, chest, kite, crescent, bow, spear, flames, bolt, jewel, wire, etch, bevel, across, LG, RG, P, pt, circ, MAT, stroke, fillA,
   book, hourglass, helmet, pouch, gem, crown, roundShield, scepter, orb, staff, ring, bell, stars }; // (book… dùng lại cho biểu tượng sảnh: tools/uiart/icons.js)
-/** Vẽ sẵn icon trang bị lúc rảnh, mỗi lượt một món (tránh khựng khi mở shop lần đầu); món nào đã vẽ thì bỏ qua. */
+/** Nạp sẵn icon trang bị lúc rảnh (mở shop lần đầu không trống hình): món có ảnh dựng sẵn chỉ tải + giải mã ảnh (rẻ, vài món mỗi
+ *  nhịp); món chưa có ảnh thì vẽ, mỗi nhịp một món. */
 export function warmItemArt(tierOf, ids = ITEM_ART_IDS) {
   if (typeof document === 'undefined') return;
-  const q = ids.filter((id) => !cache.has(id)), idle = globalThis.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8 }), 50));
-  const step = (dl) => { do { const id = q.shift(); if (id) itemArtURL(id, tierOf(id)); } while (q.length && dl.timeRemaining() > 40); if (q.length) idle(step); };
+  const q = ids.filter((id) => !cache.has(id)), idle = globalThis.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8 }), 120));
+  const step = (dl) => {
+    let n = 0;
+    do { const id = q.shift(); if (!id) break; const st = staticPaint('item.' + id);
+      if (st) { const im = new Image(); im.decoding = 'async'; im.src = st; cache.set(id, st); n++; } else { itemArtURL(id, tierOf(id)); n += 6; }
+    } while (q.length && n < 6 && dl.timeRemaining() > 4);
+    if (q.length) idle(step);
+  };
   idle(step);
 }
