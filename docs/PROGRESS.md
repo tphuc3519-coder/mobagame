@@ -98,3 +98,21 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Tên người chơi trên đầu tướng và trong bảng tỉ số trong trận. `?hero=<id>` vẫn vào thẳng trận để kiểm thử.
 - Kiểm thử: `tools/` mô phỏng đều đạt; chạy trình duyệt headless trọn luồng (sảnh → … → kết quả → Đấu lại) cho cả 4 chế độ ở
   844×390 và 640×360, không lỗi console.
+
+## Rà soát lỗi (07/10)
+- **Rò rỉ bộ nhớ GPU cả trận**: mỗi lính/quái có xương tạo một texture xương; lính chết thì view bị gỡ nhưng bộ xương không được giải
+  phóng → mỗi đợt lính rò ~30 texture (đo: 46 → 341 texture sau 3,5 phút 5v5). Nay giải phóng khi gỡ đơn vị, khi đổi tướng ở sảnh,
+  sau khi chụp chân dung bản đồ nhỏ (đo lại: texture được xoá theo lính chết, số còn lại bám theo số đơn vị đang sống).
+- **Lớp CSS trùng với HUD trong trận** (`.cd` lớp phủ hồi chiêu, `.ic`, `.q`, `.sk`): ảnh thẻ ở trang chi tiết tướng phình to che kín
+  màn, ô phép ở màn tải trận to bất thường → đổi tên lớp của giao diện sảnh.
+- Bảng Trang bị ở sảnh trống ở thẻ "Gợi ý" (thẻ ảo của cửa hàng trong trận) → hiện bộ đồ gợi ý của tướng đứng ở sảnh.
+- Mô tả kỹ năng K1–K3 trống ở màn chọn tướng / chi tiết tướng (dữ liệu tướng chưa có câu mô tả) → tự sinh từ số liệu
+  (`src/ui/skilltext.js`: kiểu thi triển, tầm, sát thương theo cấp + hệ số, khống chế, khiên/hồi máu, hồi chiêu, năng lượng).
+- Trong trận không có cách rời trận → nút **Đầu hàng** trong bảng cài đặt (bánh răng; chạm 2 lần để xác nhận; đấu hạng từ phút 8 theo 07 §9).
+- Chọn chất lượng đồ hoạ trong Cài đặt ở sảnh trước đây không có tác dụng → trận và sân khấu sảnh đọc lựa chọn này.
+- Hộp chọn phép / bảng còn mở khi hết giờ chọn tướng bị kẹt sang màn sau → đóng khi đổi màn. Mời bạn khi đang tìm trận → chặn.
+- Cảnh báo console `toNonIndexed()` (đá trang trí 1v1) → bỏ.
+- Bố cục màn nhỏ 640×360: nút ĐẤU HẠNG xuống dòng, viên thuốc phép/bùa/đối thủ đè nút ở màn chọn tướng, màn điểm cá nhân tràn,
+  cột tên tướng ở bảng tỉ số → sửa. Ô nhập tên gõ được trên iOS.
+- Đã chạy: toàn bộ `tools/t_*.mjs` + `simtest` (mới: `t_rank.mjs` luật hạng / điểm trận), trình duyệt headless trọn luồng 4 chế độ
+  (thắng và thua), mở mọi bảng ở sảnh, trận 5v5 dài theo dõi texture / hình học / đối tượng cảnh / DOM / NaN vị trí — không lỗi console.
