@@ -6,11 +6,12 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { SPELLS, SPELL_LIST_1V1 } from '../data/spells.js';
 import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
 import { spellArt } from '../hud/art.js';
-import { ICON, face, cardSrc, toast, dialog } from './kit.js';
+import { icon, face, cardSrc, toast, dialog } from './kit.js';
+import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
 import { profile, saveProfile } from './profile.js';
 import { botLabel, pickHeroes } from './people.js';
 import { MODES, S } from './modes.js';
-import { stage, stageOn } from './stage.js';
+import { stage, stageOn, backdrop } from './stage.js';
 import { ROLE_VI } from './panels.js';
 import { skillDesc } from './skilltext.js';
 
@@ -31,15 +32,15 @@ export function openPick(nav, { mode = S.mode } = {}) {
 
   const el = document.createElement('div'); el.id = 'pick'; el.className = 'scr';
   document.getElementById('ui').append(el);
-  const show = stage(); stageOn(true); show.autoSpin(false); show.frame({ zoom: 1, dy: 0, dx: 0.25 });
-  const place = () => show.setOffset((Math.min(260, innerWidth * 0.31) - Math.min(240, innerWidth * 0.29)) / 2 - 20);
+  const show = stage(); stageOn(true); backdrop('soft'); show.autoSpin(false); show.aura(true, 0.35); show.frame({ zoom: 1, dy: 0, dx: 0.25 });
+  const place = () => show.setOffset((Math.min(272, innerWidth * 0.32) - Math.min(238, innerWidth * 0.285)) / 2 - 20);
   place(); addEventListener('resize', place);
 
   el.innerHTML = `
-    <aside class="pk-left"><h4>Tướng <small>${M.name}</small></h4><div class="pk-grid"></div></aside>
-    <div class="pk-title"><h1></h1><p></p></div>
-    <div class="pk-timer" ${training ? 'hidden' : ''}><b></b><small></small></div>
-    <div class="pk-skills"></div><div class="pk-tip" hidden></div>
+    <aside class="pk-left"><h4 class="hd">Chọn tướng</h4><div class="pk-grid"></div></aside>
+    <div class="pk-title"><h1 class="gt"></h1><p></p></div>
+    <div class="pk-timer" ${training ? 'hidden' : ''}><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="28"/><circle class="tp" cx="32" cy="32" r="28" stroke-dasharray="175.9" stroke-dashoffset="0"/></svg><b></b><small></small></div>
+    <div class="pk-skills"></div><div class="pk-tip fr" hidden></div>
     <aside class="pk-team"><div class="pk-rows"></div><button type="button" class="btn-gold pk-go" data-a="lock"></button></aside>
     <div class="pk-bl"><button type="button" class="pk-spell" data-a="spell"></button><button type="button" class="pk-pill" data-a="charm"></button>${training ? '<button type="button" class="pk-pill" data-a="foe"></button>' : ''}</div>
     <p class="pk-hint">Vuốt ngang để xoay · chạm đúp để xem động tác</p>`;
@@ -58,10 +59,15 @@ export function openPick(nav, { mode = S.mode } = {}) {
     $('.pk-title h1').textContent = h.name;
     $('.pk-title p').innerHTML = `${h.roles.map((r) => `<span>${ROLE_ICO[r] || ''} ${ROLE_VI[r]}</span>`).join('')}<i>${h.title}</i>`;
     const sk = [['Nội tại', h.passive], ['K1', h.skills.s1], ['K2', h.skills.s2], ['K3', h.skills.s3]];
-    $('.pk-skills').innerHTML = sk.map(([k, s], i) => `<button type="button" data-sk="${i}" class="${i ? '' : 'pas'}"><b>${k}</b><span>${s?.name || ''}</span></button>`).join('');
+    const art = (i) => (i && hasPaintedSkill(st.sel, 's' + i) ? paintedSkill(st.sel, 's' + i) : `<i>${icon('star')}</i>`);
+    if ($('.pk-skills').dataset.h === st.sel) return; // biểu tượng kỹ năng chỉ dựng lại khi đổi tướng (đồng đội chọn thì không)
+    $('.pk-skills').dataset.h = st.sel; $('.pk-tip').hidden = true;
+    $('.pk-skills').innerHTML = sk.map(([k, s], i) => `<button type="button" data-sk="${i}" aria-label="${s?.name || k}">${art(i)}<b>${k}</b></button>`).join('');
     $('.pk-skills').onclick = (e) => {
       const b = e.target.closest('[data-sk]'); if (!b) return; const s = sk[+b.dataset.sk][1]; if (!s) return;
-      const tip = $('.pk-tip'); tip.innerHTML = `<b>${s.name}</b><p>${+b.dataset.sk === 0 ? s.desc || "" : skillDesc(s)}</p>`; tip.hidden = false; clearTimeout(tip.t); tip.t = setTimeout(() => (tip.hidden = true), 6000);
+      el.querySelectorAll('.pk-skills button').forEach((x) => x.classList.toggle('on', x === b));
+      const tip = $('.pk-tip'); tip.innerHTML = `<b>${s.name}</b><p>${+b.dataset.sk === 0 ? s.desc || '' : skillDesc(s)}</p>`; tip.hidden = false; clearTimeout(tip.t);
+      tip.t = setTimeout(() => { tip.hidden = true; el.querySelectorAll('.pk-skills button').forEach((x) => x.classList.remove('on')); }, 6000);
     };
   }
   function renderTeam() {
@@ -70,9 +76,9 @@ export function openPick(nav, { mode = S.mode } = {}) {
     let foe = '';
     if (M.size === 1) {
       const f = training ? (st.foe === 'dummy' ? null : st.foe) : null;
-      foe = `<h4 style="color:#ff9a8a;margin-top:8px">ĐỐI THỦ</h4><div class="tm foe">${f ? face(f) : '<i class="qm">?</i>'}<div><b>${training && st.foe === 'dummy' ? 'Hình nộm' : S.match.foes[0].name + ' ' + botLabel}</b><small>${training ? (st.foe === 'dummy' ? '3 hình nộm đứng yên' : f ? HEROES[f].name : 'Ngẫu nhiên') : 'Ẩn tới lúc vào trận'}</small></div></div>`;
+      foe = `<h4 class="hd foe">Đối thủ</h4><div class="tm foe">${f ? face(f) : '<i class="qm">?</i>'}<div><b>${training && st.foe === 'dummy' ? 'Hình nộm' : S.match.foes[0].name + ' ' + botLabel}</b><small>${training ? (st.foe === 'dummy' ? '3 hình nộm đứng yên' : f ? HEROES[f].name : 'Ngẫu nhiên') : 'Ẩn tới lúc vào trận'}</small></div></div>`;
     }
-    $('.pk-rows').innerHTML = `<h4>${M.size === 1 ? 'BẠN' : 'ĐỘI CỦA BẠN'}</h4>${meRow}${rows.join('')}${foe}`;
+    $('.pk-rows').innerHTML = `<h4 class="hd">${M.size === 1 ? 'Bạn' : 'Đội của bạn'}</h4>${meRow}${rows.join('')}${foe}`;
   }
   function renderBottom() {
     $('.pk-spell').innerHTML = `${spellArt(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
@@ -83,9 +89,10 @@ export function openPick(nav, { mode = S.mode } = {}) {
   }
   function renderTimer() {
     if (training) return;
-    const t = $('.pk-timer'), ready = st.ready >= 0, v = ready ? st.ready : st.left;
+    const t = $('.pk-timer'), ready = st.ready >= 0, v = ready ? st.ready : st.left, k = Math.max(0, Math.min(1, v / (ready ? READY_SEC : PICK_SEC)));
     t.querySelector('b').textContent = Math.max(0, Math.ceil(v)); t.querySelector('small').textContent = ready ? 'VÀO TRẬN' : 'CHỌN TƯỚNG';
-    t.classList.toggle('low', !ready && st.left <= 5);
+    t.querySelector('.tp').setAttribute('stroke-dashoffset', (175.9 * (1 - k)).toFixed(1));
+    t.classList.toggle('low', !ready && st.left <= 5); t.classList.toggle('ready', ready);
   }
   const refresh = () => { renderGrid(); renderInfo(); renderTeam(); renderBottom(); renderTimer(); };
   refresh(); show.show(st.sel);

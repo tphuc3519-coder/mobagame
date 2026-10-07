@@ -106,15 +106,33 @@ export function makeHolder(m, id, ctx) {
   return { id, g, mixer, mats, h, reach, art: inst.art, play, freeze, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
 }
 
+/** Canvas nền trong suốt (kênh alpha nhân sẵn): vật liệu cộng màu (quầng sáng, tia, hạt) chỉ cộng vào RGB, giữ nguyên alpha — điểm ảnh
+ *  alpha 0 mà có màu thì trình duyệt cộng ánh sáng đó lên ảnh phông phía sau; để mặc định (SRC_ALPHA, ONE cho cả alpha) thì chỗ có quầng
+ *  sáng thành đục, che mất phông. */
+function keepAlpha(root) {
+  root.traverse((o) => {
+    for (const m of [o.material].flat()) {
+      if (!m || m.blending !== THREE.AdditiveBlending) continue;
+      m.blending = THREE.CustomBlending; m.blendEquation = THREE.AddEquation;
+      m.blendSrc = THREE.SrcAlphaFactor; m.blendDst = THREE.OneFactor; m.blendSrcAlpha = THREE.ZeroFactor; m.blendDstAlpha = THREE.OneFactor;
+      m.needsUpdate = true;
+    }
+  });
+}
+
 /**
  * Cảnh trưng bày một tướng (màn chọn tướng, sảnh chính, màn đội hình). o: { quality, stand (bệ đá, mặc định có), autoSpin (tự xoay chậm),
  * preserve (giữ bộ đệm vẽ để đọc ảnh — công cụ dựng ảnh) }.
  */
-export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin = true, preserve = false } = {}) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, premultipliedAlpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
+export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin = true, preserve = false, transparent = false } = {}) {
+  // transparent: nền trong suốt (sảnh vẽ ảnh phông dựng sẵn phía sau canvas); ánh sáng cộng màu (đèn trời, bụi sáng) vẫn hiện đúng nhờ
+  // kênh alpha nhân sẵn (điểm ảnh alpha 0 mà có màu = ánh sáng cộng lên phông)
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: transparent, premultipliedAlpha: transparent, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
-  const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
+  if (transparent) renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene(); if (!transparent) scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
   const splash = createSplash(); scene.add(splash.group);
+  if (transparent) splash.clouds.visible = false; // mây xoáy là tấm nền đục — phông đã có ảnh dựng sẵn
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
   scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.65));
   const key = new THREE.DirectionalLight(0xfff6ec, 2.4); key.position.set(1.5, 3, 5); scene.add(key); // đèn chính trước mặt để tướng nổi trên phông
@@ -171,10 +189,10 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
     const m = peekHero(id, { showcase: true }) || await loadHero(id); if (!m || next !== token) return;
     if (m.art.showcase && !m.showcase) loadHero(id, { showcase: true }).then((hq) => {
       if (!hq?.showcase || next !== token || cur?.id !== id || cur.showcase) return;
-      const h2 = holder(hq, id); h2.showcase = true; h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
+      const h2 = holder(hq, id); h2.showcase = true; if (transparent) keepAlpha(h2.g); h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
       stage.remove(cur.g); drop(cur.g); stage.add(h2.g); cur = h2;
     });
-    const h = holder(m, id); h.showcase = !!m.showcase;
+    const h = holder(m, id); h.showcase = !!m.showcase; if (transparent) keepAlpha(h.g);
     if (cur) { cur.out = 0.001; burst.fire(cur.h); }
     const old = cur; cur = h; h.g.scale.setScalar(0.001); stage.add(h.g); h.play('Showcase');
     spin = -0.35 - Math.round((spin + 0.35) / (Math.PI * 2)) * Math.PI * 2; // quay lại góc 3/4 mặt trước
@@ -203,6 +221,7 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
     renderer.render(scene, camera);
   }
   req = requestAnimationFrame(frame);
+  if (transparent) keepAlpha(scene);
 
   /** Ảnh chân dung (dataURL) chụp đầu tướng, dùng cho thẻ trong lưới. */
   async function portrait(id, size = 128) {
@@ -234,6 +253,8 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
     /** Phát một động tác (Victory…) / đứng yên ở một khung của clip. */
     play(name) { cur?.play(name); },
     pose(name, time) { return cur?.freeze(name, time); },
+    /** Hiện/ẩn mây xoáy màu tướng sau lưng (sảnh có phông dựng sẵn thì để nhẹ); k: độ đậm 0..1. */
+    aura(on, k = 1) { splash.group.visible = !!on; splash.group.scale.setScalar(0.6 + 0.4 * k); },
     /** Bật/tắt tự xoay chậm (màn chọn tướng xoay, sảnh đứng yên). */
     autoSpin(on) { SPIN_V = on ? 0.12 : 0; spinV = SPIN_V; if (!on) spin = SPIN0 + Math.round((spin - SPIN0) / (Math.PI * 2)) * Math.PI * 2; },
     /** Ngừng vẽ khi bị che (phòng chờ, màn tải) để đỡ tốn pin; tiếp tục khi hiện lại. */

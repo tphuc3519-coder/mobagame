@@ -73,7 +73,7 @@ export function takeNext() {
 }
 /** Mở màn đầu tiên sau màn tải game. */
 export function enter(next) {
-  const u = ui(); if (!u.querySelector('#show')) u.insertAdjacentHTML('afterbegin', '<canvas id="show"></canvas>');
+  const u = ui(); if (!u.querySelector('#show')) u.insertAdjacentHTML('afterbegin', '<div id="showbg" class="home"></div><canvas id="show"></canvas>');
   if (next?.party) S.party = FRIENDS.filter((f) => next.party.includes(f.id));
   if (next?.mode && MODES[next.mode]) S.mode = next.mode;
   nav.go(next?.to || 'home', { mode: next?.mode || S.mode });

@@ -2,7 +2,7 @@
 // (bạn bè cũng là máy — vào trận vẫn ghi "[Máy]"), nút Bắt đầu → đang tìm trận (đồng hồ, huỷ được) → "Đã tìm thấy trận": chấp nhận
 // trong 12 giây, 10 ô sáng dần khi mọi người chấp nhận → màn chọn tướng.
 import { DIFFICULTY } from '../data/ai.js';
-import { ICON, face, rankBadge, stars, toast } from './kit.js';
+import { ICON, icon, face, rankBadge, stars, toast } from './kit.js';
 import { profile, rankOf, missionState, MISSIONS } from './profile.js';
 import { FRIENDS, statusText, chatLine, botNames, nearStars } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
@@ -32,10 +32,10 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const members = [...S.party.map((f) => ({ kind: 'fr', f })), ...[...pending.keys()].map((f) => ({ kind: 'wait', f }))];
     members.forEach((m, i) => { if (order[i] !== undefined) cells[order[i]] = m; });
     return cells.map((c) => {
-      if (c.kind === 'me') { const r = rankOf(p.stars); return `<div class="slot me"><div class="box">${face(p.avatar)}</div><span class="host">${ICON.star()}</span><b class="nm">${p.name}</b><span class="rk">${rankBadge(r, 20)}${r.name}</span></div>`; }
-      if (c.kind === 'fr') return `<div class="slot fr"><div class="box">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="nm">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 20)}${c.f.rank.name}</span></div>`;
-      if (c.kind === 'wait') return `<div class="slot wait"><div class="box">${face(c.f.avatar)}</div><b class="nm">${c.f.name}</b><span class="rk">Đang mời…</span></div>`;
-      return `<div class="slot empty"><div class="box" data-a="invite">+</div><b class="nm" style="color:#9fb4e8">Mời bạn</b></div>`;
+      if (c.kind === 'me') { const r = rankOf(p.stars); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span></div>`; }
+      if (c.kind === 'fr') return `<div class="seat mate"><div class="box fr blue">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="sn">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 22)}${c.f.rank.name}</span></div>`;
+      if (c.kind === 'wait') return `<div class="seat wait"><div class="box fr blue">${face(c.f.avatar)}</div><b class="sn">${c.f.name}</b><span class="rk">Đang mời…</span></div>`;
+      return `<div class="seat empty"><div class="box" data-a="invite"><i class="plus">+</i></div><b class="sn">Mời bạn</b></div>`;
     }).join('');
   };
   const listHtml = () => {
@@ -43,33 +43,33 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     return FRIENDS.map((f) => {
       const inP = S.party.includes(f), wait = pending.has(f), can = M.size > 1 && f.status === 'online' && !inP && !wait && !mm;
       const cls = f.status === 'online' ? 'on' : f.status === 'playing' ? 'st' : 'off';
-      return `<div class="frow">${face(f.avatar)}<div><b>${f.name}</b><small>${rankBadge(f.rank, 14).replace('class="rkb"', 'class="rkb" style="display:inline-block;vertical-align:-3px"')} ${f.rank.name}</small><small class="${cls}">${inP ? 'Trong phòng' : wait ? 'Đang mời…' : statusText(f)}</small></div>
+      return `<div class="frow">${face(f.avatar)}<div><b>${f.name}</b><small>${rankBadge(f.rank, 18)}${f.rank.name}</small><small class="${cls}">${inP ? 'Trong phòng' : wait ? 'Đang mời…' : statusText(f)}</small></div>
         <button type="button" data-inv="${f.id}" ${can ? '' : 'disabled'} aria-label="Mời">${inP ? ICON.check() : ICON.plus()}</button></div>`;
     }).join('');
   };
   const goal = MISSIONS.find((m) => m.id === 'win1'), gs = missionState(goal);
   const r = rankOf(p.stars);
   el.innerHTML = `
-    <div class="rm-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2>${M.name}</h2></div>
-    <div class="rm-sub">Bản đồ <b>${M.mapName}</b> · Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b>${M.ranked ? ` · Hạng <b>${r.name}</b> <span class="stars">${stars(r)}</span>` : ''}</div>
+    <div class="rm-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2 class="gt">${M.name}</h2></div>
+    <div class="rm-sub"><span>Bản đồ <b>${M.mapName}</b></span><span>Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b></span>${M.ranked ? `<span>${rankBadge(r, 20)}<b>${r.name}</b> <i class="stars">${stars(r)}</i></span>` : ''}</div>
     <div class="rm-slots"></div>
     <aside class="rm-side">
-      <div class="rm-tabs"><button type="button" data-tab="fr" class="on" aria-label="Bạn bè">${ICON.friends()}</button><button type="button" data-tab="chat" aria-label="Trò chuyện">${ICON.chat()}</button></div>
-      <div class="rm-ev"><span>${goal.name}</span><b>${gs.done ? 'Đã xong ✓' : `+${goal.gold} vàng`}</b></div>
+      <div class="rm-tabs"><button type="button" data-tab="fr" class="on">${icon('friends')}<span>Bạn bè</span></button><button type="button" data-tab="chat">${icon('chat')}<span>Trò chuyện</span></button></div>
+      <div class="rm-ev">${icon('target')}<span>${goal.name}</span><b>${gs.done ? 'Đã xong ✓' : `+${goal.gold} vàng`}</b></div>
       <div class="rm-list"></div>
-      <div class="rm-btns"><button type="button" data-a="quick" ${M.size > 1 ? '' : 'disabled'}>Mời nhanh</button><button type="button" data-a="clear" ${M.size > 1 ? '' : 'disabled'}>Giải tán</button></div>
+      <div class="rm-btns"><button type="button" class="btn-ghost" data-a="quick" ${M.size > 1 ? '' : 'disabled'}>Mời nhanh</button><button type="button" class="btn-ghost" data-a="clear" ${M.size > 1 ? '' : 'disabled'}>Giải tán</button></div>
       <button type="button" class="btn-gold rm-go" data-a="go">Bắt đầu</button>
     </aside>
-    <div class="rm-bot"><div class="hm-chat">${ICON.chat()}<span></span></div><button type="button" class="icb" data-a="mute" aria-label="Micro">${ICON.mic()}</button><button type="button" class="icb" data-a="mute" aria-label="Âm thanh">${ICON.sound()}</button></div>`;
+    <div class="rm-bot"><div class="chatln">${icon('chat')}<span></span></div><button type="button" class="icb" data-a="mute" aria-label="Micro">${ICON.mic()}</button><button type="button" class="icb" data-a="mute" aria-label="Âm thanh">${ICON.sound()}</button></div>`;
   const $ = (s) => el.querySelector(s);
   const render = () => {
     const list = $('.rm-list'), sc = list.scrollTop; // giữ vị trí cuộn danh sách khi dựng lại
     $('.rm-slots').innerHTML = slotHtml(); list.innerHTML = listHtml(); list.scrollTop = sc;
     el.querySelectorAll('.rm-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
-    const go = $('.rm-go'); go.textContent = mm ? 'Huỷ tìm trận' : 'Bắt đầu'; go.classList.toggle('btn-blue', !!mm); go.classList.toggle('btn-gold', !mm);
+    const go = $('.rm-go'); go.textContent = mm ? 'Huỷ tìm trận' : 'Bắt đầu'; go.classList.toggle('btn-red', !!mm); go.classList.toggle('btn-gold', !mm);
     el.querySelectorAll('.rm-btns button').forEach((b) => { b.disabled = M.size === 1 || !!mm; });
   };
-  let ci = 0; const chat = () => { const [n, t] = chatLine(ci++); $('.rm-bot .hm-chat span').innerHTML = `<b>[Thế giới] ${n}:</b> ${t}`; };
+  let ci = 0; const chat = () => { const [n, t] = chatLine(ci++); $('.rm-bot .chatln span').innerHTML = `<b>[Thế giới] ${n}:</b> ${t}`; };
   chat(); const chatT = setInterval(chat, 4500);
   render();
 
@@ -89,7 +89,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     if (pending.size) { toast('Chờ bạn bè trả lời lời mời đã'); return; }
     let sec = 0; const wait = 3 + Math.floor(Math.random() * 4);
     const pill = document.createElement('div'); pill.className = 'mm';
-    pill.innerHTML = `<i class="spin"></i><span>Đang tìm trận</span><b>00:00</b><button type="button">Huỷ</button>`;
+    pill.innerHTML = `<i class="spin"></i><span>Đang tìm trận</span><b>00:00</b><button type="button" class="btn-red">Huỷ</button>`;
     pill.querySelector('button').onclick = stopSearch;
     el.append(pill);
     mm = { pill, t: setInterval(() => { sec++; pill.querySelector('b').textContent = fmtT(sec); if (sec >= wait) found(); }, 1000) };
@@ -100,8 +100,8 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     clearInterval(mm.t); mm.pill.querySelector('span').textContent = 'Đã tìm thấy trận';
     const n = M.size * 2, acc = new Array(n).fill(false);
     foundEl = document.createElement('div'); foundEl.className = 'ui-dlg';
-    foundEl.innerHTML = `<div class="box found"><h3>ĐÃ TÌM THẤY TRẬN</h3><div class="txt">${M.name} · ${M.mapName}</div><div class="dots">${'<i></i>'.repeat(n)}</div><div class="tm">12</div>
-      <div class="btns"><button type="button" class="gold" data-a="accept">Chấp nhận</button></div></div>`;
+    foundEl.innerHTML = `<div class="box fr found"><h3><span class="gt">Đã tìm thấy trận</span></h3><div class="txt">${M.name} · ${M.mapName}</div><div class="dots">${'<i></i>'.repeat(n)}</div><div class="tm">12</div>
+      <div class="btns"><button type="button" class="btn-gold" data-a="accept">Chấp nhận</button></div></div>`;
     el.append(foundEl);
     const dots = foundEl.querySelectorAll('.dots i'), cur = mm;
     const ok = (i) => { if (mm !== cur) return; acc[i] = true; dots[i].classList.add('ok'); if (acc.every(Boolean)) { clearInterval(cur.tick); later(600, () => mm === cur && begin()); } };

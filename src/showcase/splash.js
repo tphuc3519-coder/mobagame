@@ -82,7 +82,7 @@ export function createSplash() {
   g.add(cl, ry, em);
   for (const s of [1, -1]) for (let i = 0; i < 3; i++) g.add(wing(u, s, i));
   return {
-    group: g,
+    group: g, clouds: cl,
     setColors(a, b) { u.uA.value.set(a); u.uB.value.set(b); },
     update(t, viewH) { u.uT.value = t; em.material.uniforms.uH.value = viewH; },
   };

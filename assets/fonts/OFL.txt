@@ -1,3 +1,7 @@
+Barlow Condensed: Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+Be Vietnam Pro: xem bên dưới.
+Cả hai phông được cấp phép theo SIL Open Font License 1.1 (toàn văn bên dưới).
+
 Copyright 2021 The Be Vietnam Pro Project Authors (https://github.com/bettergui/BeVietnamPro),
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.

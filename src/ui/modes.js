@@ -33,9 +33,12 @@ export function openModes(nav) {
   const p = profile();
   const pn = panel({ title: 'Chọn chế độ' });
   const render = () => {
-    pn.body.innerHTML = `<div class="md-list">${CARDS.map((c) => `<button type="button" class="md-card ${c.hot ? 'hot' : ''}" data-m="${c.mode}" style="background-image:url(./assets/ui/${c.img || 'keyart.jpg'});background-size:${c.img ? 'auto 100%' : 'auto 135%'};background-position:${c.pos} ${c.img ? '30%' : '78%'}">
-      <span class="tag">${c.tag}</span><div class="in">${c.badge ? `<span style="display:flex;align-items:center;gap:6px">${rankBadge(rankOf(profile().stars), 40)}<b style="font-size:12px;color:#ffe8a8">${rankOf(profile().stars).name}</b></span>` : ''}<h3>${MODES[c.mode].short}</h3><p>${c.desc()}</p>
-      ${c.diff ? `<div class="md-diff">${Object.entries(DIFFICULTY).map(([k, d]) => `<span role="button" data-d="${k}" class="${k === (p.diff || 'normal') ? 'on' : ''}">${d.name}</span>`).join('')}</div>` : ''}</div></button>`).join('')}</div>`;
+    pn.body.innerHTML = `<div class="md-list">${CARDS.map((c) => {
+      const r = rankOf(profile().stars);
+      return `<button type="button" class="md-card fr ${c.hot ? 'hot' : ''}" data-m="${c.mode}"><i class="pic" style="background-image:url(./assets/ui/${c.img || 'keyart.jpg'});background-size:${c.img ? 'auto 100%' : 'auto 135%'};background-position:${c.pos} ${c.img ? '30%' : '78%'}"></i>
+      <em class="tagr ${c.hot ? 'gold' : c.mode === 'training' ? 'blue' : ''}">${c.tag}</em><div class="in">${c.badge ? `<span class="md-rank">${rankBadge(r, 50)}${r.name}</span>` : ''}<h3 class="gt">${MODES[c.mode].short}</h3><p>${c.desc()}</p>
+      ${c.diff ? `<div class="md-diff">${Object.entries(DIFFICULTY).map(([k, d]) => `<span role="button" data-d="${k}" class="${k === (p.diff || 'normal') ? 'on' : ''}">${d.name}</span>`).join('')}</div>` : ''}</div></button>`;
+    }).join('')}</div>`;
   };
   render();
   pn.body.onclick = (e) => {

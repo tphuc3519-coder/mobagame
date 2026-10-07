@@ -15,11 +15,13 @@ const POSE = {
 };
 const FACE = { hoa_ren: '&dist=0.95&dy=0.02', thach_quy: '&dist=1.75&dy=-0.02' }; // khung chân dung riêng (tướng đầu nhỏ / mũ lặn to)
 const out = 'assets/ui';
+const FULL = { hoa_ren: '&spin=0.35' }; // ảnh toàn thân: Emberforge xoay để búa chĩa ra sau, đỡ chiếm bề ngang
 const jobs = [
   { name: 'keyart', q: 'mode=keyart&w=1600&h=740&ss=1.5', file: `${out}/keyart.jpg`, w: 1600, h: 740 },
   { name: 'room', q: 'mode=room&w=1600&h=740&ss=1.5', file: `${out}/room.jpg`, w: 1600, h: 740 },
+  { name: 'lobby', q: 'mode=lobby&w=1600&h=740&ss=1.5' + (process.env.Q || ''), file: process.env.OUT || `${out}/lobby.jpg`, w: 1600, h: 740 },
   ...ALPHA.map((id) => { const [clip, t, zoom, dy, spin] = POSE[id]; return { name: 'card:' + id, q: `mode=card&id=${id}&w=420&h=600&clip=${clip}&t=${t}&zoom=${zoom}&dy=${dy}&spin=${spin}`, file: `${out}/heroes/${id}_card.jpg`, w: 420, h: 600, dpr: 2 }; }),
-  ...ALPHA.map((id) => ({ name: 'splash:' + id, q: `mode=splash&id=${id}&w=520&h=760&ss=1.5&clip=ShowIdle&t=0.4`, file: `${out}/heroes/${id}_full.webp`, w: 520, h: 760, webp: true })),
+  ...ALPHA.map((id) => ({ name: 'splash:' + id, q: `mode=splash&id=${id}&w=520&h=760&ss=1.5&clip=ShowIdle&t=0.4${FULL[id] || ''}`, file: `${out}/heroes/${id}_full.webp`, w: 520, h: 760, webp: true })),
   ...ALL.map((id) => ({ name: 'face:' + id, q: `mode=face&id=${id}&size=192&w=192&h=192${FACE[id] || ''}`, file: `${out}/heroes/${id}_face.webp`, w: 192, h: 192, webp: true })),
 ];
 
@@ -32,7 +34,7 @@ const jobs = [
     const logs = []; page.on('pageerror', (e) => logs.push('pageerror ' + e.message)); page.on('console', (m) => { if (m.type() === 'error') logs.push(m.text().slice(0, 200)); });
     const t0 = Date.now();
     await page.goto(`http://localhost:${port}/tools/uiart.html?${j.q}`);
-    await page.waitForFunction('window.out || window.err', null, { polling: 500 });
+    await page.waitForFunction('window.out || window.err', null, { polling: 500, timeout: 180000 });
     const err = await page.evaluate(() => window.err);
     if (err) { console.log(j.name, 'LỖI', err.slice(0, 300)); await page.close(); continue; }
     let data = await page.evaluate(() => window.out);

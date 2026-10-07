@@ -5,8 +5,8 @@ import { startMatch } from './game.js';
 import { loadHero, heroProgress } from './render/assets.js';
 import { injectCss } from './ui/css.js';
 import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
-import { faceSrc, cardSrc } from './ui/kit.js';
-import { profile } from './ui/profile.js';
+import { faceSrc, cardSrc, ICONS, iconSrc } from './ui/kit.js';
+import { profile, rankOf } from './ui/profile.js';
 import { FRIENDS } from './ui/people.js';
 import { enter, takeNext } from './ui/flow.js';
 
@@ -33,10 +33,11 @@ if (q.has('hero')) {
   const next = takeNext(), p = profile();
   bootStart(next ? 'Đang trở về sảnh…' : undefined);
   await bootRun([
-    { w: 1, run: () => Promise.all(['400', '600', '700', '800', '900', 'italic 900'].map((w) => document.fonts?.load?.(`${w} 16px "Be Vietnam Pro"`, 'ĐẤU HẠNG'))) },
+    { w: 1, run: () => Promise.all([...['500', '600', '700', '800'].map((w) => `${w} 16px "Be Vietnam Pro"`), '700 16px "Barlow Condensed"', 'italic 800 16px "Barlow Condensed"'].map((f) => document.fonts?.load?.(f, 'ĐẤU HẠNG'))) },
     { w: 2, run: () => Promise.all([...new Set([...ALPHA, ...FRIENDS.map((f) => f.avatar)])].map((id) => loadImg(faceSrc(id)))) },
     { w: 2, run: () => Promise.all(ALPHA.map((id) => loadImg(cardSrc(id)))) },
-    { w: 1, run: () => Promise.all(['./assets/ui/room.jpg', './assets/ui/keyart.jpg'].map(loadImg)) },
+    { w: 2, run: () => Promise.all(['./assets/ui/lobby.jpg', './assets/ui/lobby_soft.jpg', './assets/ui/room.jpg', './assets/ui/keyart.jpg'].map(loadImg)) },
+    { w: 1, run: () => Promise.all([...ICONS, 'rank_' + rankOf(p.stars).id].map((n) => loadImg(iconSrc(n)))) },
     { w: 6, run: () => loadHero(p.feature, { showcase: true }), part: () => Math.max(heroProgress(p.feature, { showcase: true }), heroProgress(p.feature)) },
   ]);
   enter(next);
