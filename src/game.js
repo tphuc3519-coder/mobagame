@@ -93,7 +93,7 @@ const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }
 const portraits = createPortraits(renderer);
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
-createHudSettings();
+createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30 });
 const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 

@@ -44,6 +44,7 @@ export const nav = {
     startMatch({
       mode: M.map, heroId: P.heroId, enemyId: P.foeHeroes[0] || null, allies: M.map === '5v5' ? P.allyHeroes : undefined, foes: M.map === '5v5' ? P.foeHeroes : undefined,
       spellId: P.spellId, charmId: P.charmId, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
+      surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       onGameOver: gameOver,
     });
   },
@@ -56,6 +57,7 @@ function gameOver({ world, player, winner }) {
   const names = {}; for (const h of heroes) names[h.id] = h === player ? profile().name : `${h.playerName || HEROES[h.heroId].name} ${botLabel}`;
   openPostgame({
     rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: S.mode, modeName: MODES[S.mode].name, rewards,
+    surrender: world.over?.surrender === undefined ? null : world.over.surrender === player.team ? 'Đội ta đầu hàng' : 'Đối thủ đầu hàng',
     onHome: () => leave({ to: 'home' }),
     onAgain: () => leave({ to: MODES[S.mode].room ? 'room' : 'pick', mode: S.mode, party: S.party.map((f) => f.id) }),
   });

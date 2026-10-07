@@ -25,7 +25,7 @@ const STYLE = `
 /* A */
 #pg .team { position: absolute; left: 0; right: 0; bottom: clamp(26px, 8vh, 40px); top: clamp(84px, 25vh, 130px); display: flex; justify-content: center; align-items: flex-end; gap: clamp(6px, 1.4vw, 16px); }
 #pg .ban { position: relative; width: clamp(78px, 13vw, 140px); height: 78%; border-radius: 6px; overflow: hidden; border: 2px solid #8fb8ff66; background: #13204a; box-shadow: 0 8px 20px #000a; display: flex; flex-direction: column; justify-content: flex-end; }
-#pg .ban img.cd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+#pg .ban img.hcard { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
 #pg .ban::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #060a1cf4 0, #060a1c00 50%); }
 #pg .ban > div { position: relative; z-index: 1; padding: 6px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 #pg .ban b { font: 800 clamp(11px, 3.4vh, 14px) 'Be Vietnam Pro', system-ui; color: #9fd8ff; } #pg .ban small { font-size: clamp(9px, 2.8vh, 12px); color: #fff; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -103,7 +103,7 @@ export function openPostgame(o) {
 
   const screenA = () => {
     const al = mine.filter((r) => r !== me);
-    const ban = (r, i) => `<div class="ban in" style="animation-delay:${0.1 + i * 0.08}s;height:${i === 1 || i === 2 ? 74 : 66}%"><img class="cd" src="${cardSrc(r.heroId)}" alt="" draggable="false"><div><b>${HEROES[r.heroId].name}</b><small>${nameOf(r)}</small><span class="sc">${r.score.toFixed(1)} ${mvpChip(r)}</span></div></div>`;
+    const ban = (r, i) => `<div class="ban in" style="animation-delay:${0.1 + i * 0.08}s;height:${i === 1 || i === 2 ? 74 : 66}%"><img class="hcard" src="${cardSrc(r.heroId)}" alt="" draggable="false"><div><b>${HEROES[r.heroId].name}</b><small>${nameOf(r)}</small><span class="sc">${r.score.toFixed(1)} ${mvpChip(r)}</span></div></div>`;
     const hero = `<div class="hero in"><img class="full" src="${fullSrc(me.heroId)}" alt="" draggable="false"><span class="nm">${nameOf(me)} · ${me.score.toFixed(1)} ${mvpChip(me)}</span></div>`;
     const left = al.slice(0, 2).map((r, i) => ban(r, i)).join(''), right = al.slice(2).map((r, i) => ban(r, i + 2)).join('');
     el.innerHTML = `<div class="bg"></div>${res}<div class="team">${left}${hero}${right}</div><p class="tap">Ấn để tiếp tục</p>`;
@@ -115,7 +115,7 @@ export function openPostgame(o) {
     let rank = '';
     if (o.mode === 'ranked' && rw.rankAfter) {
       const d = rw.stars, cls = d > 0 ? 'up' : d < 0 ? 'down' : '';
-      rank = `<span>${rankBadge(rw.rankAfter, 26)}${rw.rankAfter.name} <i class="stars">${stars(rw.rankAfter)}</i> <em class="${cls}">${d > 0 ? '+' + d : d} sao</em></span>`;
+      rank = `<span>${rankBadge(rw.rankAfter, 26)}${rw.rankAfter.name} <i class="stars">${stars(rw.rankAfter)}</i> <em class="${cls}">${d > 0 ? `+${d} sao` : d < 0 ? `${d} sao` : 'giữ sao'}</em></span>`;
     }
     const notes = (rw.notes || []).map((n) => `<span class="note">${n}</span>`).join('');
     const cg = rw.courage ? `<div class="cg">Điểm tích luỹ +${rw.courage.gain}<i><b style="width:${Math.round((rw.courage.now / COURAGE_MAX) * 100)}%"></b></i>${rw.courage.now}/${COURAGE_MAX}</div>` : '';
@@ -139,7 +139,7 @@ export function openPostgame(o) {
     const kills = (rs) => rs.reduce((a, r) => a + r.k, 0), d = new Date();
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     el.innerHTML = `<div class="bg"></div><div class="board">
-      <div class="bh"><span class="r">${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</span><span class="vs"><b class="b">${kills(mine)}</b><em>VS</em><b class="rd">${kills(theirs)}</b></span><span class="tm"><b>${fmtDur(o.ticks)}</b><small>${o.modeName} · ${date}</small></span></div>
+      <div class="bh"><span class="r">${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</span><span class="vs"><b class="b">${kills(mine)}</b><em>VS</em><b class="rd">${kills(theirs)}</b></span><span class="tm"><b>${fmtDur(o.ticks)}</b><small>${o.surrender ? o.surrender + ' · ' : ''}${o.modeName} · ${date}</small></span></div>
       <nav class="tabs"><button type="button" data-t="sum" class="${tab === 'sum' ? 'on' : ''}">Giản lược</button><button type="button" data-t="det" class="${tab === 'det' ? 'on' : ''}">Chi tiết</button></nav>
       <div class="cols"><div class="col ally">${mine.map(row).join('')}</div><div class="col foe">${theirs.map(row).join('')}</div></div>
       <div class="bb"><button type="button" class="btn-blue" data-a="stats">Số liệu</button><button type="button" class="btn-blue" data-a="home">Sảnh</button><button type="button" class="btn-gold" data-a="again">Đấu lại</button></div></div>`;

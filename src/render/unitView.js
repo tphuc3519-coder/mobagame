@@ -18,6 +18,9 @@ const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.d
 
 /** Entity mô phỏng ↔ object 3D. Render chỉ đọc trạng thái (nội suy prevPos → pos). */
 /** floor(x, z): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn): đơn vị đứng lên trên bệ thay vì lút chân. */
+/** Mỗi SkinnedMesh nhân bản có bộ xương riêng kèm một texture xương trên GPU: gỡ đơn vị (lính/quái chết) phải giải phóng, nếu không
+ *  mỗi đợt lính rò thêm vài chục texture. Hình học / vật liệu dùng chung nên không đụng tới. */
+export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); }
 export function createUnitViews(scene, localTeam, localId, { floor = null } = {}) {
   const views = new Map();
   const spawn = (e, world) => {
@@ -93,7 +96,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
       }
-      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); views.delete(id); }
+      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); views.delete(id); releaseSkeletons(v.root); }
     },
   };
 }

@@ -166,8 +166,8 @@ i.ini { display: grid; place-items: center; font: 800 16px 'Be Vietnam Pro', sys
 #pick .pk-rows { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 5px; }
 #pick .pk-team h4 { margin: 0 0 2px; font: 900 13px 'Be Vietnam Pro', system-ui; color: #8fd3ff; letter-spacing: .06em; }
 #pick .tm { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: linear-gradient(90deg, #12306acc, #0b1a4488); border: 1px solid #8fd3ff33; }
-#pick .tm .face, #pick .tm .ini, #pick .tm .q { width: clamp(30px, 9vh, 40px); height: clamp(30px, 9vh, 40px); border-radius: 6px; flex: none; }
-#pick .tm .q { display: grid; place-items: center; background: #1b2350; color: #6f8ae8; font: 900 18px system-ui; }
+#pick .tm .face, #pick .tm .ini, #pick .tm .qm { width: clamp(30px, 9vh, 40px); height: clamp(30px, 9vh, 40px); border-radius: 6px; flex: none; }
+#pick .tm .qm { display: grid; place-items: center; background: #1b2350; color: #6f8ae8; font: 900 18px system-ui; }
 #pick .tm div { min-width: 0; display: flex; flex-direction: column; } #pick .tm b { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #pick .tm small { font-size: 10px; color: #a8c4ff; } #pick .tm small.ok { color: #7dffa8; }
 #pick .tm.me { border-color: #ffd27a; background: linear-gradient(90deg, #5a3a10cc, #2a1a0888); } #pick .tm.me small { color: #ffe08a; } #pick .tm.picking { animation: pulse 1.2s ease-in-out infinite; }
 #pick .tm.foe { background: linear-gradient(90deg, #6a1a1acc, #3a0a0a88); border-color: #ff8a7a44; }
@@ -207,13 +207,13 @@ i.ini { display: grid; place-items: center; font: 800 16px 'Be Vietnam Pro', sys
 #loadscr .ld-card { position: relative; height: 100%; max-height: 46vh; aspect-ratio: 0.66; display: flex; flex-direction: column; }
 #loadscr .ld-card .pic { position: relative; flex: 1; min-height: 0; border-radius: 4px; overflow: hidden; border: 2px solid #c0d4ff88; background: #1a2250; box-shadow: 0 6px 16px #000a; }
 #loadscr .ld-team.foe .ld-card .pic { border-color: #ffb0a088; }
-#loadscr .ld-card .pic img.cd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+#loadscr .ld-card .pic img.hcard { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 #loadscr .ld-card .pic::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #060a1cf0 0, #060a1c00 46%); }
 #loadscr .ld-team.ally .ld-card .pic { background: #1a3a8a; } #loadscr .ld-team.foe .ld-card .pic { background: #6a1a2a; }
 #loadscr .ld-card .info { position: absolute; left: 0; right: 0; bottom: 8px; z-index: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
 #loadscr .ld-card .info b { font: 800 clamp(11px, 3.6vh, 16px) 'Be Vietnam Pro', system-ui; color: #9fd8ff; text-shadow: 0 1px 3px #000; } #loadscr .ld-team.foe .info b { color: #ff9a8a; }
 #loadscr .ld-card .info small { font-size: clamp(9px, 3vh, 13px); color: #fff; text-shadow: 0 1px 3px #000; max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#loadscr .ld-card .info .ic { display: flex; gap: 4px; margin-top: 4px; } #loadscr .ld-card .info .ic > * { flex: none; display: block; width: clamp(16px, 5.4vh, 24px); height: clamp(16px, 5.4vh, 24px); border-radius: 50%; overflow: hidden; background: #0008; box-shadow: 0 0 0 1px #ffffff55; }
+#loadscr .ld-card .info .sp { display: flex; gap: 4px; margin-top: 4px; } #loadscr .ld-card .info .sp > * { flex: none; display: block; width: clamp(16px, 5.4vh, 24px); height: clamp(16px, 5.4vh, 24px); border-radius: 50%; overflow: hidden; background: #0008; box-shadow: 0 0 0 1px #ffffff55; }
 #loadscr .ld-card.me .pic { border-color: #ffd27a; box-shadow: 0 0 0 1px #3a2008, 0 0 18px #ffb84a99; } #loadscr .ld-card.me .info small { color: #ffe08a; font-weight: 800; }
 #loadscr .ld-card .crest { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); z-index: 2; } #loadscr .ld-card .crest .rkb { width: clamp(26px, 8vh, 40px); height: clamp(26px, 8vh, 40px); }
 #loadscr .ld-card .pb { flex: none; height: 4px; margin-top: 4px; border-radius: 2px; background: #00000066; overflow: hidden; }
@@ -231,6 +231,7 @@ i.ini { display: grid; place-items: center; font: 800 16px 'Be Vietnam Pro', sys
 #gover b { font: italic 900 clamp(46px, 16vh, 96px)/1 'Be Vietnam Pro', system-ui; letter-spacing: .08em; } #gover small { font: 800 clamp(12px, 3.6vh, 18px) 'Be Vietnam Pro', system-ui; letter-spacing: .6em; color: #fff; opacity: .85; }
 #gover.win b { color: #ffd36a; text-shadow: 0 0 30px #ffb84a, 0 4px 0 #7a3b12; } #gover.lose b { color: #d4dcf4; text-shadow: 0 0 24px #4f6aa8, 0 4px 0 #1a2040; }
 @keyframes goIn { from { opacity: 0; transform: scale(1.6); } }
+.setp .seg button[disabled] { opacity: .45; } .setp [data-sur] { background: #5a1a1a !important; border-color: #ff8a7a !important; color: #ffd8d0 !important; } .setp [data-sur].on { background: #c8402f !important; color: #fff !important; }
 body.over #skills, body.over #extras, body.over #camBtn, body.over #scoreboard, body.over .setp { visibility: hidden; }
 body.post #hud, body.post #skills, body.post #extras, body.post #shopRoot, body.post #scoreTop, body.post #scoreboard, body.post #fs, body.post #hudSet, body.post #lab, body.post #camBtn { display: none !important; }
 

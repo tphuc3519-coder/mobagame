@@ -12,7 +12,7 @@ import { makeCtx } from './ctx.js';
 import { buildNavGrid } from './navgrid.js';
 import { spawnStructures, updateStructures, onHeroDamaged } from './structures.js';
 import { updateWaves, updateMinions } from './minions.js';
-import { checkMatch } from './match.js';
+import { checkMatch, surrender } from './match.js';
 import { updateVision } from './vision.js';
 import { initEconomy, updateEconomy } from './economy.js';
 import { SPELLS } from '../data/spells.js';
@@ -28,6 +28,7 @@ const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base:
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
   const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
+  world.surrender = (team) => surrender(world, team);
   world.emit = (type, data) => world.events.push({ type, tick: world.tick, ...data });
   world.drainEvents = () => { const ev = world.events; world.events = []; return ev; };
   world.onHeroDamaged = (src, tgt) => onHeroDamaged(world, src, tgt);

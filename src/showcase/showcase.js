@@ -153,6 +153,7 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
   };
 
   const hctx = { renderer, env: null }; // env map PBR dùng chung cho các tướng của cảnh này
+  const drop = (g) => g.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); // tướng cũ rời sân khấu: giải phóng texture xương
   const holder = (m, id) => makeHolder(m, id, hctx);
 
   const burst = (() => { // hạt sáng khi đổi tướng
@@ -171,13 +172,13 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
     if (m.art.showcase && !m.showcase) loadHero(id, { showcase: true }).then((hq) => {
       if (!hq?.showcase || next !== token || cur?.id !== id || cur.showcase) return;
       const h2 = holder(hq, id); h2.showcase = true; h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
-      stage.remove(cur.g); stage.add(h2.g); cur = h2;
+      stage.remove(cur.g); drop(cur.g); stage.add(h2.g); cur = h2;
     });
     const h = holder(m, id); h.showcase = !!m.showcase;
     if (cur) { cur.out = 0.001; burst.fire(cur.h); }
     const old = cur; cur = h; h.g.scale.setScalar(0.001); stage.add(h.g); h.play('Showcase');
     spin = -0.35 - Math.round((spin + 0.35) / (Math.PI * 2)) * Math.PI * 2; // quay lại góc 3/4 mặt trước
-    if (old) setTimeout(() => stage.remove(old.g), 400);
+    if (old) setTimeout(() => { stage.remove(old.g); drop(old.g); }, 400);
     rimCol.set(h.art.rim || '#ffd28a'); rim.color.copy(rimCol).lerp(new THREE.Color(0xffffff), 0.35); ped.beam.material.uniforms.uCol.value.copy(rimCol);
     sp.mat.uniforms.uCol.value.copy(rimCol).lerp(new THREE.Color(0xffe0a0), 0.5);
     const pal = h.art.palette || [], cA = new THREE.Color(pal[1] || h.art.rim || '#ff9a40'), cB = new THREE.Color(pal[2] || '#ffe0a0');

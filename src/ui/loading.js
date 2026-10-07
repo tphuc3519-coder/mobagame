@@ -26,8 +26,8 @@ export function openLoading(nav) {
   for (const c of all) { c.v = 0; c.fake = c.me ? 1 : 0; c.speed = 0.22 + Math.random() * 0.55; c.stall = Math.random() < 0.3 ? 0.55 + Math.random() * 0.3 : 2; }
 
   const el = document.createElement('div'); el.id = 'loadscr'; el.className = 'scr' + (M.size === 1 ? ' solo' : '');
-  const cardHtml = (c, i) => `<div class="ld-card ${c.me ? 'me' : ''}" data-i="${i}"><span class="crest">${rankBadge(rankOf(c.stars), 40)}</span><div class="pic"><img class="cd" src="${cardSrc(c.hero)}" alt="" draggable="false">
-    <div class="info"><b>${HEROES[c.hero].name}</b><small>${c.name}</small><span class="ic">${spellArt(c.spell)}</span></div></div><div class="pb"><i></i></div></div>`;
+  const cardHtml = (c, i) => `<div class="ld-card ${c.me ? 'me' : ''}" data-i="${i}"><span class="crest">${rankBadge(rankOf(c.stars), 40)}</span><div class="pic"><img class="hcard" src="${cardSrc(c.hero)}" alt="" draggable="false">
+    <div class="info"><b>${HEROES[c.hero].name}</b><small>${c.name}</small><span class="sp">${spellArt(c.spell)}</span></div></div><div class="pb"><i></i></div></div>`;
   const ai = ally.map((c, i) => cardHtml(c, i)).join(''), fi = foe.map((c, i) => cardHtml(c, ally.length + i)).join('');
   const mid = `<div class="ld-mid"><span class="ld-tip">Mẹo: ${tip()}</span><b class="vs">VS</b><span class="ld-pct">Đang tải 0%</span></div>`;
   el.innerHTML = `<div class="bg" style="background-image:url(./assets/ui/keyart.jpg)"></div>` + (M.size === 1

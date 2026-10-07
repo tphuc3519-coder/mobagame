@@ -12,6 +12,7 @@ import { botLabel, pickHeroes } from './people.js';
 import { MODES, S } from './modes.js';
 import { stage, stageOn } from './stage.js';
 import { ROLE_VI } from './panels.js';
+import { skillDesc } from './skilltext.js';
 
 const PICK_SEC = 30, READY_SEC = 3;
 const ROLE_ICO = { fighter: '⚔', tank: '⛨', assassin: '✦', mage: '✺', marksman: '➶', support: '✚' };
@@ -60,16 +61,16 @@ export function openPick(nav, { mode = S.mode } = {}) {
     $('.pk-skills').innerHTML = sk.map(([k, s], i) => `<button type="button" data-sk="${i}" class="${i ? '' : 'pas'}"><b>${k}</b><span>${s?.name || ''}</span></button>`).join('');
     $('.pk-skills').onclick = (e) => {
       const b = e.target.closest('[data-sk]'); if (!b) return; const s = sk[+b.dataset.sk][1]; if (!s) return;
-      const tip = $('.pk-tip'); tip.innerHTML = `<b>${s.name}</b><p>${s.desc || ''}</p>`; tip.hidden = false; clearTimeout(tip.t); tip.t = setTimeout(() => (tip.hidden = true), 4500);
+      const tip = $('.pk-tip'); tip.innerHTML = `<b>${s.name}</b><p>${+b.dataset.sk === 0 ? s.desc || "" : skillDesc(s)}</p>`; tip.hidden = false; clearTimeout(tip.t); tip.t = setTimeout(() => (tip.hidden = true), 6000);
     };
   }
   function renderTeam() {
     const meRow = `<div class="tm me ${st.locked ? '' : 'picking'}">${face(st.sel)}<div><b>${p.name}</b><small class="${st.locked ? 'ok' : ''}">${st.locked ? 'Đã khoá · ' + HEROES[st.sel].name : 'Đang chọn…'}</small></div></div>`;
-    const rows = team.map((t) => `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="q">?</i>'}<div><b>${t.name} ${botLabel}</b><small class="${t.locked ? 'ok' : ''}">${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : 'Đang chọn…'}</small></div></div>`);
+    const rows = team.map((t) => `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="qm">?</i>'}<div><b>${t.name} ${botLabel}</b><small class="${t.locked ? 'ok' : ''}">${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : 'Đang chọn…'}</small></div></div>`);
     let foe = '';
     if (M.size === 1) {
       const f = training ? (st.foe === 'dummy' ? null : st.foe) : null;
-      foe = `<h4 style="color:#ff9a8a;margin-top:8px">ĐỐI THỦ</h4><div class="tm foe">${f ? face(f) : '<i class="q">?</i>'}<div><b>${training && st.foe === 'dummy' ? 'Hình nộm' : S.match.foes[0].name + ' ' + botLabel}</b><small>${training ? (st.foe === 'dummy' ? '3 hình nộm đứng yên' : f ? HEROES[f].name : 'Ngẫu nhiên') : 'Ẩn tới lúc vào trận'}</small></div></div>`;
+      foe = `<h4 style="color:#ff9a8a;margin-top:8px">ĐỐI THỦ</h4><div class="tm foe">${f ? face(f) : '<i class="qm">?</i>'}<div><b>${training && st.foe === 'dummy' ? 'Hình nộm' : S.match.foes[0].name + ' ' + botLabel}</b><small>${training ? (st.foe === 'dummy' ? '3 hình nộm đứng yên' : f ? HEROES[f].name : 'Ngẫu nhiên') : 'Ẩn tới lúc vào trận'}</small></div></div>`;
     }
     $('.pk-rows').innerHTML = `<h4>${M.size === 1 ? 'BẠN' : 'ĐỘI CỦA BẠN'}</h4>${meRow}${rows.join('')}${foe}`;
   }

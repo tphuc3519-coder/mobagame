@@ -6,12 +6,13 @@ import { ICON, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from
 import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail, BAG_ITEMS } from './profile.js';
 import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
+import { skillDesc } from './skilltext.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
 .pn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(96px, 15vw, 128px), 1fr)); gap: 10px; }
 .pn-hero { position: relative; aspect-ratio: .72; border-radius: 10px; overflow: hidden; border: 2px solid #8fb8ff44; background: #151332; padding: 0; display: flex; flex-direction: column; }
-.pn-hero img.cd, .pn-hero .face, .pn-hero .ini { width: 100%; flex: 1; min-height: 0; object-fit: cover; object-position: 50% 20%; }
+.pn-hero img.hcard, .pn-hero .face, .pn-hero .ini { width: 100%; flex: 1; min-height: 0; object-fit: cover; object-position: 50% 20%; }
 .pn-hero span { padding: 4px 6px; text-align: left; background: #0b0a18ee; } .pn-hero b { display: block; font-size: 13px; } .pn-hero small { font-size: 10px; color: #cdb8ff; }
 .pn-hero.lock { filter: grayscale(.8) brightness(.55); } .pn-hero em { position: absolute; top: 6px; right: 6px; padding: 2px 6px; border-radius: 6px; background: #000b; font: 700 10px 'Be Vietnam Pro', system-ui; font-style: normal; color: #ffd28a; }
 .pn-hero.on { border-color: #ffd27a; box-shadow: 0 0 14px #ffb84a88; }
@@ -27,7 +28,7 @@ const STYLE = `
 .pn-prof h3 { margin: 0; font-size: 22px; display: flex; align-items: center; gap: 8px; } .pn-prof h3 button { width: 30px; height: 30px; border: 0; background: none; padding: 4px; }
 .pn-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; } .pn-stats div { padding: 8px 10px; border-radius: 10px; background: #ffffff0a; border: 1px solid #ffffff12; } .pn-stats small { display: block; font-size: 11px; color: #a8b4d8; } .pn-stats b { font-size: 18px; color: #ffe8a8; }
 .pn-avs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; } .pn-avs button { width: 48px; height: 48px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid #ffffff22; background: #151332; } .pn-avs button.on { border-color: #ffd27a; } .pn-avs .face, .pn-avs .ini { width: 100%; height: 100%; }
-.pn-detail { display: grid; grid-template-columns: minmax(150px, 34%) 1fr; gap: 16px; } .pn-detail img.cd { width: 100%; border-radius: 12px; border: 2px solid #ffd27a88; } .pn-detail h3 { margin: 0 0 4px; font-size: 24px; color: #fff4dc; } .pn-detail p { margin: 6px 0; font-size: 13px; line-height: 1.5; color: #d8def4; } .pn-detail .sk b { color: #ffd28a; }
+.pn-detail { display: grid; grid-template-columns: minmax(150px, 34%) 1fr; gap: 16px; } .pn-detail img.hcard { width: 100%; border-radius: 12px; border: 2px solid #ffd27a88; } .pn-detail h3 { margin: 0 0 4px; font-size: 24px; color: #fff4dc; } .pn-detail p { margin: 6px 0; font-size: 13px; line-height: 1.5; color: #d8def4; } .pn-detail .skd b { color: #ffd28a; }
 .pn-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 10px 0; } .pn-cal div { aspect-ratio: .8; border-radius: 10px; background: #ffffff0a; border: 1px solid #ffffff18; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; } .pn-cal div svg { width: 30px; height: 30px; } .pn-cal div.got { opacity: .45; } .pn-cal div.today { border-color: #ffd27a; box-shadow: 0 0 12px #ffb84a77; }
 .pn-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 10px; } .pn-sum div { padding: 8px 10px; border-radius: 10px; background: #ffffff0a; border: 1px solid #ffd27a33; text-align: center; } .pn-sum small { display: block; font-size: 11px; color: #a8b4d8; } .pn-sum b { font-size: 19px; color: #ffe8a8; }
 .pn-row .wl { flex: none; width: 46px; text-align: center; font: italic 900 13px 'Be Vietnam Pro', system-ui; } .pn-row .wl.w { color: #ffd36a; } .pn-row .wl.l { color: #9fb0d8; }
@@ -99,13 +100,13 @@ export function openHeroes(onFeature) {
   const ids = Object.keys(HEROES).sort((a, b) => (ALPHA.includes(b) - ALPHA.includes(a)) || ALPHA.indexOf(a) - ALPHA.indexOf(b));
   const grid = () => {
     body.innerHTML = `<div class="pn-grid">${ids.map((id) => { const h = HEROES[id], ok = ALPHA.includes(id);
-      return `<button type="button" class="pn-hero ${ok ? '' : 'lock'} ${id === p.feature ? 'on' : ''}" data-id="${id}">${ok ? `<img class="cd" src="${cardSrc(id)}" alt="">` : face(id)}<span><b>${h.name}</b><small>${ROLE_VI[h.roles[0]] || ''}</small></span>${ok ? '' : '<em>Sắp có</em>'}</button>`; }).join('')}</div>`;
+      return `<button type="button" class="pn-hero ${ok ? '' : 'lock'} ${id === p.feature ? 'on' : ''}" data-id="${id}">${ok ? `<img class="hcard" src="${cardSrc(id)}" alt="">` : face(id)}<span><b>${h.name}</b><small>${ROLE_VI[h.roles[0]] || ''}</small></span>${ok ? '' : '<em>Sắp có</em>'}</button>`; }).join('')}</div>`;
   };
   const detail = (id) => {
     const h = HEROES[id], ok = ALPHA.includes(id), sk = [['Nội tại', h.passive], ['K1', h.skills.s1], ['K2', h.skills.s2], ['K3', h.skills.s3]];
-    body.innerHTML = `<div class="pn-detail"><div>${ok ? `<img class="cd" src="${cardSrc(id)}" alt="">` : face(id, 'face cd')}</div><div>
+    body.innerHTML = `<div class="pn-detail"><div>${ok ? `<img class="hcard" src="${cardSrc(id)}" alt="">` : face(id, 'face hcard')}</div><div>
       <h3>${h.name}</h3><p style="color:#ffd28a">${h.roles.map((r) => ROLE_VI[r]).join(' · ')} — ${h.title}</p>
-      ${sk.map(([k, s]) => (s ? `<p class="sk"><b>${k} · ${s.name}:</b> ${s.desc || ''}</p>` : '')).join('')}
+      ${sk.map(([k, s], i) => (s ? `<p class="skd"><b>${k} · ${s.name}:</b> ${i ? skillDesc(s) : s.desc || ''}</p>` : '')).join('')}
       <div style="display:flex;gap:10px;margin-top:12px">${ok ? `<button type="button" class="btn-gold" data-a="feature" style="height:42px;font-size:15px">Đặt làm tướng ở sảnh</button>` : '<span style="color:#ffd28a">Tướng sắp ra mắt</span>'}<button type="button" class="btn-ghost" data-a="back">Danh sách</button></div></div></div>`;
     body.onclick = (e) => {
       if (e.target.closest('[data-a="back"]')) { grid(); body.onclick = onGrid; }
@@ -122,9 +123,12 @@ export function openItems() {
   let tab = SHOP_TABS[0]?.id;
   const STAT = { atk: 'Công', ap: 'Phép', maxHp: 'Máu', maxMana: 'Năng lượng', armor: 'Giáp', mr: 'Kháng phép', atkSpeedPct: 'Tốc đánh', crit: 'Chí mạng', moveSpeed: 'Tốc chạy', lifesteal: 'Hút máu', spellvamp: 'Hút máu phép', cdr: 'Giảm hồi chiêu', armorPen: 'Xuyên giáp', magicPen: 'Xuyên phép', hpRegen: 'Hồi máu', manaRegen: 'Hồi năng lượng' };
   const pct = (k) => /Pct|crit|lifesteal|spellvamp|cdr/.test(k);
-  const render = () => {
-    const list = Object.entries(ITEMS).filter(([, it]) => it.tab === tab).sort((a, b) => a[1].cost - b[1].cost);
+  const hero = HEROES[profile().feature];
+  const render = () => { // thẻ "Gợi ý": bộ đồ đề xuất của tướng đang đứng ở sảnh (trong trận: của tướng đang chơi)
+    const list = tab === 'rec' ? (hero.recommendedBuild || []).filter((id) => ITEMS[id]).map((id) => [id, ITEMS[id]])
+      : Object.entries(ITEMS).filter(([, it]) => it.tab === tab).sort((a, b) => a[1].cost - b[1].cost);
     body.innerHTML = `<div class="pn-tabs">${SHOP_TABS.map((t) => `<button type="button" data-t="${t.id}" class="${t.id === tab ? 'on' : ''}">${t.name}</button>`).join('')}</div>
+      ${tab === 'rec' ? `<p style="margin:0 0 8px;font-size:12px;color:#a8b4d8">Bộ đồ gợi ý cho <b style="color:#ffe08a">${hero.name}</b> (đổi tướng ở mục Tướng)</p>` : ''}
       <div class="pn-grid" style="grid-template-columns:repeat(auto-fill,minmax(96px,1fr))">${list.map(([id, it]) => `<button type="button" class="pn-item" data-i="${id}"><img src="${itemArtURL(id, it.tier)}" alt=""><b>${it.name}</b><small>${ICON.coin()}${it.cost}</small></button>`).join('')}</div>`;
   };
   render();

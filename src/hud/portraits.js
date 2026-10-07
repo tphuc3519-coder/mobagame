@@ -22,6 +22,7 @@ export function createPortraits(renderer, size = 96) {
     const prevClear = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cam); renderer.setRenderTarget(null); renderer.setClearColor(prevClear, prevA);
     const px = new Uint8Array(size * size * 4); renderer.readRenderTargetPixels(rt, 0, 0, size, size, px); rt.dispose();
+    obj.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); // texture xương của bản sao dùng một lần
     const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), img = x.createImageData(size, size);
     for (let y = 0; y < size; y++) img.data.set(px.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
     x.putImageData(img, 0, 0);
