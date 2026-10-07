@@ -24,7 +24,7 @@ function updateDash(world, e) {
 
 /** Kéo/đẩy cưỡng bức (móc neo, xoáy nước): đơn vị bị dời thẳng tới điểm đích với tốc độ cố định, mất lượt lướt đang có. */
 export function forceMove(world, t, to, speed) {
-  if (!t.alive || t.structure) return;
+  if (!t.alive || t.structure || t.boss) return; // mục tiêu lớn đứng yên trong hang: không bị kéo/hút (trước bị kéo ra, tốc chạy 0 nên kẹt "đang về" mãi — hồi máu liên tục, không đánh trả)
   const d = dist(t.pos, to);
   if (d < 1) return;
   t.dash = null; t.forced = { x: to.x, y: to.y, perTick: speed * TICK };
