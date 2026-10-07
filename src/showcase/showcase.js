@@ -185,8 +185,13 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
 
   async function show(id) {
     const token = (next = id);
-    // bản trưng bày (chi tiết, nặng) nạp sau: hiện ngay bản trong trận rồi đổi sang khi xong; đã nạp sẵn thì dùng luôn
-    const m = peekHero(id, { showcase: true }) || await loadHero(id); if (!m || next !== token) return;
+    // bản trưng bày (chi tiết, nặng) nạp sau: hiện ngay bản trong trận rồi đổi sang khi xong; đã nạp sẵn thì dùng luôn.
+    // Tải lỗi (mạng chập chờn): giữ tướng đang đứng, thử lại dần chừng nào tướng này vẫn đang được chọn (sân khấu hiện "Đang tải tướng…").
+    let m = peekHero(id, { showcase: true }) || peekHero(id);
+    for (let a = 0; !m; a++) {
+      m = await loadHero(id); if (next !== token) return;
+      if (!m) { await new Promise((r) => setTimeout(r, Math.min(8000, 1500 * (a + 1)))); if (next !== token) return; }
+    }
     if (m.art.showcase && !m.showcase) loadHero(id, { showcase: true }).then((hq) => {
       if (!hq?.showcase || next !== token || cur?.id !== id || cur.showcase) return;
       const h2 = holder(hq, id); h2.showcase = true; if (transparent) keepAlpha(h2.g); h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
@@ -246,6 +251,9 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
   return {
     show, portrait, scene, stage, camera, renderer,
     get current() { return cur; },
+    /** Tướng đang được yêu cầu hiện (có thể chưa tải xong) và độ lệch tâm cảnh (px) — cho dòng "Đang tải tướng…". */
+    get wanted() { return next; },
+    get offsetX() { return offX; },
     /** Dời tâm cảnh sang phải (px) để chừa chỗ cho lưới tướng bên trái. */
     setOffset(px) { offX = px; resize(); },
     /** Đổi khung hình: { zoom, dy, dx } (sảnh: tướng to, giữa màn). */

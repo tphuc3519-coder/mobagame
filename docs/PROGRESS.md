@@ -139,3 +139,15 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Màn lớn (từ 900×560): phóng cả lớp giao diện 1,25–1,5 lần cho cân với cảnh 3D.
 - Đã chạy: `t_rank`, `t_combat`, `t_items`; trình duyệt headless trọn luồng đấu hạng (sảnh → ghép trận → chọn tướng → trận → kết quả →
   Đấu lại), chụp mọi màn / bảng ở 844×390, 640×360, 1280×720 — không lỗi console.
+
+## Sửa lỗi tướng không hiện trên iPhone (07/10)
+- Báo lỗi: ở màn chọn tướng đổi sang Moonstream mà sân khấu vẫn là Emberforge; vào trận không thấy model tướng, bản đồ nhỏ chỉ hiện
+  chữ "M". Nguyên nhân: một lần tải model hỏng (mạng điện thoại chập chờn / Safari ngắt tải khi chuyển tab) bị **ghi nhớ thành "không có
+  model"** tới khi tải lại trang. Tái hiện bằng cách chặn tải `nguyet_ha.glb` vài lần — ra đúng các triệu chứng trên.
+- Sửa (`src/render/assets.js`): mỗi lần gọi thử tải 3 lần, lỗi không còn bị ghi nhớ (lần gọi sau tải lại); mạng treo 20 giây không nhận
+  thêm byte nào thì huỷ để thử lại; giải mã lỗi thì đọc lại bằng bộ đọc mặc định của three; điện thoại bỏ bản trưng bày chi tiết
+  (texture 2048², đỡ tốn bộ nhớ).
+- Sân khấu sảnh / chọn tướng: tướng chưa tải được thì giữ tướng cũ, hiện "Đang tải tướng…", tự thử lại tới khi được. Trong trận: hình
+  nhân giữ chỗ rồi tự thay bằng model thật; chân dung bản đồ nhỏ chụp lại; màn tải trận gọi tải lại tướng còn thiếu. Tải lỗi hẳn thì hiện
+  thông báo kèm lý do (để biết nguyên nhân khi chơi trên điện thoại).
+- Đã chạy: giả lập 4–6 lần tải hỏng ở màn chọn tướng và trong trận (tự hồi phục), trọn luồng đấu đơn với Moonstream — không lỗi console.
