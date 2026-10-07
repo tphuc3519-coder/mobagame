@@ -11,6 +11,7 @@ const col = (c) => new THREE.Color(c);
 const ground = (m, y = 4) => { m.rotation.x = -Math.PI / 2; m.position.y = y; return m; };
 
 /** floor(x, z, r): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn — env/floor.js); hình sát đất đặt lên trên mặt đó. */
+const keep = []; // vật liệu mẫu đã dịch sẵn (warm) — giữ sống để chương trình shader không bị giải phóng
 export function createShapes(scene, { floor = null } = {}) {
   const live = [], fl = (x, z, r = 0) => (floor ? floor(x, z, r) : 0);
   const add = (obj, life, update, opts = {}) => { scene.add(obj); const it = { obj, life, t: 0, update, ...opts }; live.push(it); return it; };
@@ -167,8 +168,20 @@ export function createShapes(scene, { floor = null } = {}) {
     return self;
   }
 
+  /** Mỗi loại một hình ở rất xa, sống một khung: để game.js dịch sẵn shader lúc vào trận (trước đây lần đầu mỗi loại hiệu ứng hiện ra thì
+   *  khựng — iPhone dịch một shader mất 0,05–0,3 giây) và vẽ sẵn ảnh vệt đất. Trả về hàm dọn vệt vũ khí mẫu. */
+  function warm() {
+    const n0 = live.length, X = -1e5, p = () => new THREE.Vector3(X, 0, X), q = () => new THREE.Vector3(X, 0, X + 10);
+    ring(X, X, 1, 2); arc(X, X, 0, 1, 1, 2); vortex(X, X, 1); bubble(p, 1); pillar(X, X, 1, 1); chain(p, q);
+    for (const k of ['crack', 'scorch', 'splash', 'glow', 'rune']) decal(k, X, X, 1);
+    decal('crack', X, X, 1, { additive: false });
+    const t = trail(), made = live.splice(n0);
+    // gỡ khỏi cảnh nhưng KHÔNG huỷ vật liệu: vật liệu cuối cùng dùng một chương trình bị huỷ thì three.js xoá luôn chương trình đã dịch
+    return () => { for (const it of made) scene.remove(it.obj); scene.remove(t.mesh); keep.push(...made.map((it) => it.obj.material), t.mesh.material); };
+  }
+
   return {
-    ring, decal, arc, vortex, bubble, pillar, chain, trail,
+    ring, decal, arc, vortex, bubble, pillar, chain, trail, warm,
     get count() { return live.length; },
     update(dt) {
       for (let i = live.length - 1; i >= 0; i--) {

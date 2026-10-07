@@ -62,16 +62,17 @@ export function createHud(canvas, input, portraits = null) {
       ctx.font = `800 ${size}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.strokeText(f.text, 0, 0);
       ctx.fillStyle = f.color || '#f4f4f4'; ctx.fillText(f.text, 0, 0); ctx.restore(); return;
     }
-    ctx.font = `${f.crit ? 'italic 900' : '800'} ${size}px "Be Vietnam Pro", system-ui, sans-serif`;
-    const tw = ctx.measureText(f.text).width;
+    const font = (px) => `${f.crit ? 'italic 900' : '800'} ${px}px "Be Vietnam Pro", system-ui, sans-serif`;
     if (f.crit) { // hình nổ răng cưa sau số + biểu tượng loại sát thương bên trái
+      if (f.tw1 == null) { ctx.font = font(100); f.tw1 = ctx.measureText(f.text).width / 100; } // đo một lần (bề rộng tỉ lệ cỡ chữ) — measureText mỗi khung tốn
+      const tw = f.tw1 * size; ctx.font = font(size);
       const rx = tw * 0.62 + size * 0.5, ry = size * 0.78, n = 14, spin = f.t * 1.6;
       ctx.beginPath();
       for (let j = 0; j < n * 2; j++) { const a = spin + (j / (n * 2)) * Math.PI * 2, r = j % 2 ? 0.62 : 1; ctx.lineTo(Math.cos(a) * rx * r, Math.sin(a) * ry * r); }
       ctx.closePath(); ctx.globalAlpha *= 0.85; ctx.fillStyle = st.burst; ctx.fill(); ctx.globalAlpha /= 0.85;
       ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.stroke();
       critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
-    }
+    } else ctx.font = font(size);
     const g = ctx.createLinearGradient(0, -size * 0.45, 0, size * 0.45); g.addColorStop(0, st.top); g.addColorStop(1, st.bot);
     if (st.glow) { ctx.lineWidth = f.crit ? 13 : 9; ctx.strokeStyle = 'rgba(205,220,255,0.32)'; ctx.strokeText(f.text, 0, 0); } // quầng sáng rẻ (shadowBlur chậm trên điện thoại)
     ctx.lineWidth = f.crit ? 5 : 3.5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);

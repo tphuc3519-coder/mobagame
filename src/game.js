@@ -7,6 +7,7 @@ import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/renderer.js';
 import { createPost } from './render/post.js';
 import { pickLevel, LEVELS } from './render/quality.js';
+import { createAutoQuality } from './render/autoQuality.js';
 import { addLights } from './render/lights.js';
 import { createCamera, CAM_DISTANCE } from './render/camera.js';
 import { buildArena } from './render/arenaMap.js';
@@ -15,7 +16,7 @@ import { createPortraits } from './hud/portraits.js';
 import { createHudSettings } from './hud/settings.js';
 import { createFog } from './render/fog.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
-import { createUnitViews } from './render/unitView.js';
+import { createUnitViews, releaseSkeletons } from './render/unitView.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
@@ -25,7 +26,10 @@ import { createHud } from './hud/hud.js';
 import { createSkillButtons } from './hud/skillButtons.js';
 import { createShop } from './hud/shop.js';
 import { warmItemArt } from './hud/itemArt.js';
-import { preloadMonsters } from './render/monsterModels.js';
+import { preloadMonsters, MINION_MODEL } from './render/monsterModels.js';
+import { createMinion } from './render/structures.js';
+import { createMonster } from './render/monsters.js';
+import { MONSTERS } from './data/jungle.js';
 import { PLAYER_POS } from './render/env/foliage.js';
 import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
@@ -75,10 +79,11 @@ if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts
 let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(FOG_COLOR, 4200, 9500); // xa hơn vì camera đã lùi (2400)
-const { renderer } = createRenderer(document.getElementById('world'), level, {
+const rend = createRenderer(document.getElementById('world'), level, {
   onLost: () => { ctxLost = true; loop.pause(); document.getElementById('lost').classList.add('on'); },
   onRestored: () => { ctxLost = false; document.getElementById('lost').classList.remove('on'); if (!document.hidden) loop.resume(); },
 });
+const { renderer } = rend;
 const sun = addLights(scene, renderer, level);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
@@ -140,9 +145,18 @@ function showResult(winner) {
 document.getElementById('again').onclick = () => location.reload();
 
 const minFrame = 1000 / LEVELS[level].fps - 2;
+// tự hạ chất lượng khi máy không giữ nổi FPS mục tiêu (autoQuality.js): độ phân giải ×0,84 → ×0,7 → tắt bóng đổ thời gian thực → ×0,6
+const auto = (() => {
+  const pr0 = rend.basePixelRatio(), steps = [];
+  for (const k of [1, 0.84, 0.7]) { const v = Math.max(0.75, Math.round(pr0 * k * 100) / 100); if (!steps.length || v < steps[steps.length - 1].pr - 0.05) steps.push({ pr: v, shadow: true }); }
+  const last = steps[steps.length - 1].pr;
+  if (LEVELS[level].shadow) steps.push({ pr: last, shadow: false });
+  if (last * 0.86 >= 0.75) steps.push({ pr: Math.round(last * 0.86 * 100) / 100, shadow: false });
+  return q.has('noauto') ? null : createAutoQuality({ target: LEVELS[level].fps, steps, apply: (st) => { rend.setPixelRatio(st.pr); post?.resize(); sun.setShadows(st.shadow); } });
+})();
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
 const fxSlow = parseFloat(q.get('fxslow') || '1'); // kiểm thử: quay chậm hiệu ứng
-let lastDraw = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false;
+let lastDraw = 0, lastMini = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false;
 
 const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
@@ -151,15 +165,19 @@ const loopCfg = {
     if (!player.bot) world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } }); // (kiểm thử: bot điều khiển thay người chơi)
     world.update(loop.tick);
   },
-  render(alpha, dt, force) {
+  render(alpha, dtFrame, force) {
     if (manual && !force) return;
     const now = performance.now();
     if (!force && now - lastDraw < minFrame) return;
+    // hoạt ảnh / camera / hiệu ứng chạy theo thời gian từ lần VẼ trước (khoá 30 khung/giây ở mức Thấp: mỗi lần vẽ cách 2 nhịp màn hình —
+    // trước đây lấy nhịp màn hình nên mọi thứ chậm một nửa)
+    const dt = force || !lastDraw ? dtFrame : Math.min(0.25, (now - lastDraw) / 1000);
+    if (!force && lastDraw && auto) auto.frame(now - lastDraw);
     lastDraw = now;
     const events = world.drainEvents();
     for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
     views.handle(events); fx.handle(events, world); hud.handle(events, world);
-    views.update(world, alpha, dt); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
+    views.update(world, alpha, dt, cam.camera); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
     buttons.update(); spells.update(); shop.update(); score.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
@@ -173,20 +191,50 @@ const loopCfg = {
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
     const i = renderer.info.render;
     fogOfWar?.update(world, dt);
-    minimap.draw();
-    if (!OVERVIEW) hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
+    if (force || now - lastMini > 45) { lastMini = now; minimap.draw(); } // bản đồ nhỏ ~20 lần/giây là đủ
+    if (!OVERVIEW) hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}  bậc ${auto?.step ?? '-'}  px ${renderer.getPixelRatio()}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
 };
 const loop = createLoop(loopCfg);
 if (q.has('ff')) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
-loop.start();
+/** Dịch sẵn shader trước khi vào trận: trước đây khung đầu đứng hình, rồi lần đầu lính / quái / mỗi loại hiệu ứng chiêu / vùng bản đồ mới
+ *  (ô cảnh ngoài màn hình) xuất hiện lại khựng — iPhone dịch mỗi shader 0,05–0,3 giây. Dựng tạm lính 4 loại × 2 đội, quái mọi loại, mỗi
+ *  loại hình hiệu ứng một cái, compileAsync cả cảnh (gồm chỉ báo chiêu đang ẩn), vẽ thử một khung (bóng đổ, hậu kỳ) sau màn che
+ *  "Đang vào trận…". Quá ~6 giây thì vào luôn. */
+async function warmUp() {
+  const cover = document.createElement('div'); cover.id = 'warm';
+  cover.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;gap:10px;background:#0b0e1a;color:#e8dcc0;font:700 15px "Be Vietnam Pro",system-ui,sans-serif;letter-spacing:.04em';
+  cover.innerHTML = '<span>Đang vào trận…</span>'; document.body.append(cover);
+  const tick = () => new Promise((r) => setTimeout(r, 0)), within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
+  try {
+    views.update(world, 1, 0); await tick(); await tick(); // dựng view mọi đơn vị (model tướng đã tải gắn vào ở lượt kế tiếp)
+    await within(preloadMonsters().catch(() => {}), 3000);
+    const tmp = new THREE.Group(); tmp.position.set(player.pos.x, -420, player.pos.y); scene.add(tmp); // dưới mặt đất, trong hộp bóng: lượt vẽ thử dịch cả biến thể bóng đổ
+    for (const t of Object.keys(MINION_MODEL)) for (const team of [0, 1]) tmp.add(createMinion(t, team).object);
+    for (const [type, d] of Object.entries(MONSTERS)) for (const m of Object.keys(d.stats || { x: 1 })) tmp.add(createMonster(type, m).object);
+    tmp.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    const undo = fx.warm?.();
+    // dịch đúng biến thể sẽ dùng: có hậu kỳ thì cảnh vẽ vào render target của composer (không tone map trong vật liệu, màu tuyến tính)
+    if (post) renderer.setRenderTarget(post.composer.readBuffer);
+    const ready = renderer.extensions.has('KHR_parallel_shader_compile') ? renderer.compileAsync(scene, cam.camera) : (renderer.compile(scene, cam.camera), null); // phần tạo chương trình chạy đồng bộ ngay trong lời gọi
+    renderer.setRenderTarget(null);
+    if (ready) await within(ready, 6000); // không có dịch song song: lượt vẽ thử dưới đây chờ dịch xong (vẫn sau màn che)
+    cam.follow(player.pos.x, player.pos.y, 0, 0, 1);
+    sun.cover(map.w / 2, map.h / 2, Math.max(map.w, map.h) * 1.1); // lượt bóng phủ cả bản đồ: dịch biến thể bóng của mọi vật đổ bóng
+    if (post) post.render(); else renderer.render(scene, cam.camera); // dịch nốt biến thể bóng đổ + hậu kỳ
+    sun.cover(); sun.follow(cam.target.x, cam.target.z);
+    scene.remove(tmp); releaseSkeletons(tmp); undo?.();
+  } catch (e) { console.warn('Dịch sẵn shader lỗi', e); }
+  cover.remove();
+}
+warmUp().then(() => loop.start());
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, auto, sun, post }; // phục vụ kiểm thử tự động
 
-document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
+document.addEventListener('visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;
 }

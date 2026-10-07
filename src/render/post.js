@@ -40,5 +40,5 @@ export function createPost(renderer, scene, camera, level) {
   composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);
   const resize = () => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(innerWidth, innerHeight); bloom.resolution.set(innerWidth / 2, innerHeight / 2); const pr = renderer.getPixelRatio(); grade.uniforms.uPx.value.set(1 / (innerWidth * pr), 1 / (innerHeight * pr)); };
   addEventListener('resize', resize); resize();
-  return { render: () => composer.render(), composer };
+  return { render: () => composer.render(), composer, resize };
 }

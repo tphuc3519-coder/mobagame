@@ -524,3 +524,27 @@
 - **Màn lớn phóng bằng CSS `zoom`** (1,25 / 1,5) thay vì đặt lại mọi kích thước: bố cục được canh cho điện thoại ngang 360–430 px cao.
 - Đặt lại `#ui button` thành `:where(#ui) button` (độ ưu tiên thấp) — trước đây nó đè màu / font của lớp `.pn-tabs`, `.seg`… nên tab
   đang chọn không đổi màu.
+
+## Tối ưu FPS trận (07/10)
+- **Chia ô cảnh sau khi dựng, không sửa từng bộ dựng**: `chunkStatic` duyệt nhóm cảnh, tách mesh / InstancedMesh trải rộng thành ô
+  3 200 đơn vị (theo trọng tâm tam giác / vị trí bản sao), chép nguyên thuộc tính đỉnh — hình ảnh không đổi từng đỉnh, mọi bộ dựng cũ và
+  mới đều được hưởng. Chỉ chia khi phủ ≥ 2 ô và trung bình ≥ 1 500 tam giác mỗi ô (mặt đất thưa thì thêm lệnh vẽ không bõ); bỏ qua
+  mesh trong suốt / nhiều vật liệu / có xương. Ô 3 200 cân bằng: khung nhìn chạm ~5 ô mỗi khối, lệnh vẽ tổng vẫn giảm.
+- **Cắt đơn vị theo khung nhìn ở tầng view, không dựa vào frustumCulled**: khối bao của mesh có xương không theo động tác nên three
+  không cắt được; view tự xét cầu quanh chân đơn vị (bán kính đủ trùm thân + bóng nắng xiên + camera trượt một khung, theo khung của lần vẽ
+  trước). Lính / quái ngoài khung tách hẳn khỏi cảnh (đỡ cả cập nhật ma trận xương); tướng chỉ ẩn vì hiệu ứng bám xương tay / đầu cần
+  vị trí xương đúng kể cả ngoài màn.
+- **Giảm lưới offline, không làm LOD lúc chạy**: lính / quái trên màn hình nhỏ, một mức chi tiết là đủ; meshoptimizer khoá ranh giới
+  vùng `_MAT` (phát sáng / màu đội / giáp) và mép hở, có sai số theo pháp tuyến + màu. Đặt trong `monsters.mjs` để sinh lại vẫn giữ.
+- **Dịch shader trước, đúng biến thể**: có hậu kỳ thì cảnh vẽ vào render target của composer — biến thể shader khác vẽ thẳng ra màn
+  (không tone map trong vật liệu, màu tuyến tính); dịch nhầm biến thể thì giữa trận vẫn dịch lại. Vật liệu hiệu ứng mẫu không được huỷ
+  (three xoá chương trình đã dịch khi vật liệu cuối cùng dùng nó bị huỷ). Bóng đổ của vật liệu dùng chung `_depthMaterial` phụ thuộc thứ
+  tự vẽ (three không đổi chương trình khi chỉ `map` đổi) nên còn 1 biến thể dịch muộn — chấp nhận (shader bóng nhỏ, dịch nhanh).
+- **Tắt bóng đổ mà không dịch lại shader**: đổi `shadowMap.enabled` / `castShadow` buộc dịch lại mọi vật liệu (khựng vài giây trên
+  iPhone); thay vào đó vẽ bản đồ bóng một lần ở chỗ không có vật nào rồi thôi cập nhật (`autoUpdate = false`).
+- **Bộ tự chỉnh chất lượng đo trung vị và đo thử từng bậc**: trung vị bỏ qua khựng lẻ; hạ một bậc mà khung không nhanh hơn ≥ 8% thì
+  trả lại (nghẽn CPU hoặc bị khoá 30 khung/giây thì hạ độ phân giải chỉ làm mờ hình), thời gian chờ thử lại tăng gấp đôi.
+- **Tối ưu mô phỏng phải giữ kết quả từng bit**: chỉ thêm đường tắt chứng minh được tương đương (ô lưới chứa mọi đoạn tường có thể chạm
+  điểm trong ô; không đoạn nào chạm thì vòng đầy đủ cũng không đẩy gì; có đoạn chạm thì chạy vòng đầy đủ như cũ). `hypot(dx, dy) ≥ |dx|`
+  nên loại cặp lính xa theo một trục không đổi kết quả. Kiểm bằng `tools/t_determinism.mjs`.
+

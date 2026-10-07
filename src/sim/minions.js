@@ -117,10 +117,12 @@ export function updateMinions(world) {
   for (let i = 0; i < minions.length; i++) {
     const a = minions[i];
     for (let j = i + 1; j < minions.length; j++) {
-      const b = minions[j], dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y, d = Math.hypot(dx, dy), min = (a.radius + b.radius) * 0.9;
+      const b = minions[j], dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y, min = (a.radius + b.radius) * 0.9;
+      if (dx >= min || -dx >= min || dy >= min || -dy >= min) continue; // xa theo một trục thì chắc chắn d ≥ min (bỏ qua hypot đắt)
+      const d = Math.hypot(dx, dy);
       if (d < min && d > 0.01) { const p = Math.min(8, (min - d) / 2); a.pos.x -= (dx / d) * p; a.pos.y -= (dy / d) * p; b.pos.x += (dx / d) * p; b.pos.y += (dy / d) * p; }
     }
-    for (const s of solids) { const dx = a.pos.x - s.pos.x, dy = a.pos.y - s.pos.y, d = Math.hypot(dx, dy), min = a.radius + s.radius; if (d < min && d > 0.01) { a.pos.x = s.pos.x + (dx / d) * min; a.pos.y = s.pos.y + (dy / d) * min; } }
+    for (const s of solids) { const dx = a.pos.x - s.pos.x, dy = a.pos.y - s.pos.y, min = a.radius + s.radius; if (dx >= min || -dx >= min || dy >= min || -dy >= min) continue; const d = Math.hypot(dx, dy); if (d < min && d > 0.01) { a.pos.x = s.pos.x + (dx / d) * min; a.pos.y = s.pos.y + (dy / d) * min; } }
     clampToMap(world.map, a.pos, a.radius);
   }
 }
