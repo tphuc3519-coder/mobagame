@@ -1,6 +1,6 @@
 import { ICON } from './uiIcons.js';
 // Cài đặt HUD (nút bánh răng góc phải trên): vị trí cửa hàng (dưới bản đồ nhỏ bên trái / bên phải, lưu trong máy) + Đầu hàng
-// (07 §9; đấu hạng chỉ được đầu hàng từ phút 8). Chạm Đầu hàng hai lần trong 3 giây để xác nhận.
+// (07 §9; đấu hạng chỉ được đầu hàng từ phút 8). Chạm Đầu hàng hai lần trong 5 giây để xác nhận.
 const KEY = 'la.hud';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } };
 const save = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (_) { /* chế độ riêng tư */ } };
@@ -23,8 +23,8 @@ export function createHudSettings({ surrender = null, surrenderAfter = 0, now = 
   btn.onclick = () => { panel.hidden = !panel.hidden; armed = 0; if (!panel.hidden) render(); };
   panel.onclick = (e) => {
     if (e.target.closest('[data-sur]')) {
-      if (armed && performance.now() - armed < 3000) { panel.hidden = true; surrender?.(); return; }
-      armed = performance.now(); render(); setTimeout(() => { if (armed && performance.now() - armed >= 3000) { armed = 0; render(); } }, 3100); return;
+      if (armed && performance.now() - armed < 5000) { panel.hidden = true; surrender?.(); return; }
+      armed = performance.now(); render(); setTimeout(() => { if (armed && performance.now() - armed >= 5000) { armed = 0; render(); } }, 5100); return;
     }
     const b = e.target.closest('[data-shop]'); if (!b) return; st.shop = b.dataset.shop; save(st); apply(); render();
   };
