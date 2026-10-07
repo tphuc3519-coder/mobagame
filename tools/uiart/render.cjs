@@ -19,6 +19,7 @@ const jobs = [
   { name: 'keyart', q: 'mode=keyart&w=1600&h=740&ss=1.5', file: `${out}/keyart.jpg`, w: 1600, h: 740 },
   { name: 'room', q: 'mode=room&w=1600&h=740&ss=1.5', file: `${out}/room.jpg`, w: 1600, h: 740 },
   ...ALPHA.map((id) => { const [clip, t, zoom, dy, spin] = POSE[id]; return { name: 'card:' + id, q: `mode=card&id=${id}&w=420&h=600&clip=${clip}&t=${t}&zoom=${zoom}&dy=${dy}&spin=${spin}`, file: `${out}/heroes/${id}_card.jpg`, w: 420, h: 600, dpr: 2 }; }),
+  ...ALPHA.map((id) => ({ name: 'splash:' + id, q: `mode=splash&id=${id}&w=520&h=760&ss=1.5&clip=ShowIdle&t=0.4`, file: `${out}/heroes/${id}_full.webp`, w: 520, h: 760, webp: true })),
   ...ALL.map((id) => ({ name: 'face:' + id, q: `mode=face&id=${id}&size=192&w=192&h=192${FACE[id] || ''}`, file: `${out}/heroes/${id}_face.webp`, w: 192, h: 192, webp: true })),
 ];
 

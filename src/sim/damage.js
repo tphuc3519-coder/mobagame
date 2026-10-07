@@ -41,6 +41,10 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   tgt.shields = tgt.shields.filter((s) => s.amount > 0.01);
   dmg = Math.max(0, dmg);
   tgt.hp -= dmg;
+  // chỉ số cho bảng tổng kết trận (tính cả phần khiên đỡ): gây lên tướng địch, chịu từ mọi nguồn, phá công trình
+  const got = dmg + absorbed;
+  if (src?.kind === 'hero' && src.team !== tgt.team) { if (tgt.kind === 'hero') src.dmgHero = (src.dmgHero || 0) + got; else if (tgt.structure) src.dmgTower = (src.dmgTower || 0) + got; }
+  if (tgt.kind === 'hero') tgt.dmgTaken = (tgt.dmgTaken || 0) + got;
   tgt.lastDamagedTick = world.tick; if (src) tgt.lastAttacker = src.id;
   if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu (đòn đánh) và hút máu phép (kỹ năng)
     const rate = opts.basic && type === 'physical' ? src.stats.lifesteal : !opts.basic && type === 'magic' ? src.stats.spellvamp : 0;
@@ -59,6 +63,7 @@ function kill(world, src, tgt) {
   tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.deadTick = world.tick;
   tgt.dash = null; tgt.moveDir = { x: 0, y: 0 }; tgt.attacking = false; tgt.statuses = []; tgt.shields = [];
   if (src?.kind === 'hero' && tgt.kind === 'hero') src.kills++;
+  if (src?.kind === 'hero' && (tgt.kind === 'minion' || tgt.kind === 'monster')) src.cs = (src.cs || 0) + 1; // lính / quái kết liễu
   if (tgt.kind === 'hero') { // hỗ trợ: tướng địch khác đã gây sát thương trong 10 giây cuối
     for (const [id, tk] of Object.entries(tgt.hitBy || {})) { const h = world.byId(+id); if (h && h !== src && h.team !== tgt.team && world.tick - tk <= T(10)) h.assists = (h.assists || 0) + 1; }
     tgt.hitBy = {};

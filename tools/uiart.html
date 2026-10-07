@@ -87,6 +87,25 @@ async function face() {
   return cv.toDataURL('image/png');
 }
 
+/** Ảnh toàn thân nền trong suốt (màn sau trận): khung theo xương từ bàn chân tới trên đỉnh đầu/vũ khí, dáng chiến thắng hoặc đứng. */
+async function splash() {
+  const id = q.get('id'), m = await loadHero(id, { showcase: true });
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(SS); renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1; setOutlineResolution(W * SS, H * SS);
+  const sc = new THREE.Scene(), h = makeHolder(m, id, { renderer, env: null });
+  sc.add(new THREE.HemisphereLight(0xdde6ff, 0x4a3a48, 1.3)); const k = new THREE.DirectionalLight(0xfff0e0, 2.6); k.position.set(1.5, 3, 4); sc.add(k);
+  const r2 = new THREE.DirectionalLight(new THREE.Color(h.art.rim || '#fff'), 3.4); r2.position.set(-2.5, 2.5, -2.5); sc.add(r2);
+  const f2 = new THREE.DirectionalLight(0x8ab4ff, 0.8); f2.position.set(-3, 1, 2); sc.add(f2);
+  sc.add(h.g); const clip = q.get('clip') || 'ShowIdle'; h.freeze(h.acts[clip] ? clip : 'Idle', num('t', 0.3)); h.g.rotation.y = num('spin', -0.3); h.g.updateMatrixWorld(true);
+  const v = new THREE.Vector3(); let y0 = 0, y1 = 0, x0 = 1e9, x1 = -1e9; const cam = new THREE.PerspectiveCamera(26, W / H, 0.05, 50);
+  h.g.traverse((o) => { if (!o.isBone) return; o.getWorldPosition(v); y1 = Math.max(y1, v.y); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); });
+  y1 += 0.28; const cy = (y0 + y1) / 2, span = (y1 - y0) * 1.06, cx = (x0 + x1) / 2;
+  const dist = (span / 2) / Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
+  cam.position.set(cx, cy + span * 0.03, dist); cam.lookAt(cx, cy, 0);
+  renderer.setClearColor(0x000000, 0); renderer.render(sc, cam);
+  return cv.toDataURL('image/png');
+}
+
 /** Sân khấu nhiều tướng (ảnh nền): phông trời + mây xoáy splash + đèn trời + bụi sáng; trả về các hàm đặt tướng/vẽ. */
 async function stageScene({ colors = ['#ffb04a', '#ffe7b0'], fov = 34 } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
@@ -176,7 +195,7 @@ async function room() {
   return post(cv, { bloom: 0.55, thr: 0.6, vignette: 0.65, cy: 0.5 }).toDataURL('image/jpeg', 0.84);
 }
 
-const run = { card, face, keyart, room }[mode];
+const run = { card, face, splash, keyart, room }[mode];
 run().then((d) => { window.out = d; }).catch((e) => { window.err = String(e && e.stack || e); });
 </script>
 </body>
