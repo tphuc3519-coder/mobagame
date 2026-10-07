@@ -2,6 +2,7 @@
 import { createWorld } from '../src/sim/world.js';
 import { ARENA } from '../src/data/maps.js';
 import { dealDamage } from '../src/sim/damage.js';
+import { applyStatus } from '../src/sim/status.js';
 
 let fail = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ĐẠT ' : 'LỖI ') + name + (extra ? '  ' + extra : '')); if (!cond) fail++; };
@@ -53,6 +54,24 @@ ok('đồng đội nhận vàng thưởng', ally.gold >= g1 + 100, (ally.gold - 
   hs.pos.x = hs.prevPos.x = 200; hs.pos.y = hs.prevPos.y = 200; hs.spell.ready = 0;
   w.command(hs.id, { type: 'spell' }); step(1);
   ok('không có mục tiêu thì không mất hồi chiêu', hs.spell.ready === 0);
+}
+{ // mục tiêu lớn: người giữ aggro chết / tạm không chọn được → không hồi đầy, đổi sang người còn đánh; móc neo không kéo được mục tiêu lớn
+  const w2 = createWorld({ map: ARENA, seed: 3, waves: false }); let t2 = 0; const st2 = (n) => { for (let i = 0; i < n; i++) w2.update(++t2); };
+  st2(30 * 121);
+  const boss = w2.entities.find((e) => e.monsterType === 'long_ngu' && e.alive);
+  const tank = w2.spawnHero('thach_quy', 0, { x: boss.pos.x + boss.radius + 150, y: boss.pos.y }); w2.debug.level15(tank);
+  const dps = w2.spawnHero('canh_dieu', 0, { x: boss.pos.x - boss.radius - 400, y: boss.pos.y }); w2.debug.level15(dps);
+  dealDamage(w2, tank, boss, 10, 'true'); st2(2);
+  dealDamage(w2, dps, boss, boss.stats.maxHp * 0.6, 'true'); st2(1);
+  dealDamage(w2, null, tank, 1e7, 'true');
+  for (let i = 0; i < 30; i++) { w2.command(dps.id, { type: 'attack', on: true, preferTarget: boss.id }); st2(1); }
+  ok('Long Ngư: tướng đỡ đòn chết, đồng đội vẫn đánh → không hồi đầy máu', boss.hp < boss.stats.maxHp * 0.6, `${boss.hp.toFixed(0)}/${boss.stats.maxHp.toFixed(0)}`);
+  ok('Long Ngư đổi sang đánh người còn lại', boss.aggro === dps.id, String(boss.aggro));
+  const hp1 = boss.hp; applyStatus(w2, dps, { status: 'untargetable', duration: 0.5 }, dps); st2(3);
+  ok('mục tiêu tạm không chọn được (nhảy/tàng hình): không hồi đầy', boss.hp <= hp1 + 1, `${hp1.toFixed(0)} → ${boss.hp.toFixed(0)}`);
+  const mb = w2.spawnHero('thach_quy', 0, { x: boss.pos.x + boss.radius + 700, y: boss.pos.y }); w2.debug.level15(mb); w2.debug.resetCooldowns(mb);
+  w2.command(mb.id, { type: 'cast', slot: 's1', aim: { x: -1, y: 0 } }); st2(60);
+  ok('Móc Neo không kéo Long Ngư ra khỏi hang', Math.hypot(boss.pos.x - boss.home.x, boss.pos.y - boss.home.y) < 1);
 }
 
 process.exit(fail ? 1 : 0);

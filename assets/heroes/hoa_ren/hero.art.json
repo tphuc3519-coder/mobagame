@@ -29,7 +29,8 @@
     "Death",
     "Recall",
     "Victory",
-    "Showcase"
+    "Showcase",
+    "ShowIdle"
   ],
   "generator": "tools/modelgen/import_fused.mjs",
   "source": "hammer_pbr_20000.glb",

@@ -14,7 +14,8 @@ export default {
     // (bỏ deshard: trọng số đã làm mượt + tách vũ khí theo vùng nên không còn mảnh vụn; cắt tam giác chỉ tạo lỗ thủng)
     mode: 'fused', file: './imports/diver_pbr_20000.glb',
     centerX: 0.04, bodyTop: 0.66, // thân lệch x=0.04 trong file gốc; bodyTop = đỉnh mũ (bỏ cây gậy khi tính chiều cao)
-    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002 }, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+    weapon: { a: [-0.23, 0, 0.09], b: [-0.23, 0.757, -0.03], r: 0.068, hard: 0.01, cut: 0.002, // cây gậy hơi nghiêng ra sau, đi theo tay phải
+      core: ([r, g, b]) => !(0.3 * r + 0.59 * g + 0.11 * b > 170 && Math.max(r, g, b) - Math.min(r, g, b) < 45) }, // lõi = mọi màu trừ vải bộ lặn kem/trắng: khúc ống giữa các đai đồng không bị trả về thân
     rig: { HandEndR: [-0.23, 0.3, 0.07] }, // mút bàn tay: trọng số bàn tay không chạy dọc cả cây gậy
     smoothWeights: 64, merge: { Spine: 'Chest', Neck: 'Chest', Head: 'Chest' }, maxEdge: 0.1, // mũ lặn + thân là một khối vỏ cứng: chỉ gập ở thắt lưng, không bẻ cong vỏ // bỏ tam giác sợi chỉ
     joints: { wristR: [-0.23, 0.27], tipR: [-0.23, 0.75] },

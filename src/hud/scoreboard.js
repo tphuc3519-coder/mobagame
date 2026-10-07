@@ -2,6 +2,7 @@
 // tab "Thông số tướng" (vàng, K/D/A, trang bị từng tướng hai đội, tổng đội: mục tiêu lớn, trụ đã phá, tổng vàng)
 // tab "Thuộc tính tướng" (máu, công, phép, giáp, kháng phép hiện tại của từng tướng).
 import { itemIcon } from './icons.js';
+import { ICON } from './uiIcons.js';
 
 const IC = {
   clock: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
@@ -24,8 +25,8 @@ export function createScoreboard({ world, player, portraits }) {
   const heroes = () => world.entities.filter((e) => e.kind === 'hero');
   const teamKills = (t) => heroes().reduce((a, h) => a + (h.team === t ? h.kills : 0), 0);
   const top = document.createElement('button'); top.id = 'scoreTop'; top.type = 'button'; top.setAttribute('aria-label', 'Bảng tỉ số');
-  top.innerHTML = `<span class="clk">${IC.clock}<b></b></span><span class="kda"><i>${IC.kill}<b></b></i><i>${IC.death}<b></b></i><i>${IC.assist}<b></b></i></span>
-    <span class="sc"><b class="bl"></b><em>vs</em><b class="rd"></b></span><span class="mn">${IC.menu}</span>`;
+  top.innerHTML = `<span class="clk">${ICON.clock()}<b></b></span><span class="kda"><i>${ICON.kill()}<b></b></i><i>${ICON.death()}<b></b></i><i>${ICON.assist()}<b></b></i></span>
+    <span class="sc"><b class="bl"></b><em>vs</em><b class="rd"></b></span><span class="mn">${ICON.menu()}</span>`;
   const panel = document.createElement('section'); panel.id = 'scoreboard'; panel.hidden = true;
   panel.innerHTML = `<header><nav><button data-tab="info" class="on">Thông số tướng</button><button data-tab="stats">Thuộc tính tướng</button></nav><button class="x" aria-label="Đóng">✕</button></header>
     <div class="bars"><div class="tb bl"></div><div class="vs"><b class="k0"></b><em>VS</em><b class="k1"></b></div><div class="tb rd"></div></div>
@@ -49,7 +50,7 @@ export function createScoreboard({ world, player, portraits }) {
     const info = `<span class="kd">${h.kills} / ${h.deaths} / ${h.assists || 0}</span><span class="g">${IC.gold}${Math.round(h.goldEarned || 0)}</span><span class="its">${items}</span>`;
     const s = h.stats, stats = [['hp', Math.round(s.maxHp)], ['atk', Math.round(s.atk)], ['ap', Math.round(s.ap)], ['armor', Math.round(s.armor)], ['mr', Math.round(s.mr)]]
       .map(([k, v]) => `<span class="st">${IC[k]}<b>${v}</b></span>`).join('');
-    return `<div class="row ${me ? 'me' : ''} ${h.alive ? '' : 'dead'}"><canvas data-h="${h.id}" width="80" height="80"></canvas><span class="nm"><b>${h.data.name}</b><small>Cấp ${h.level}${h.alive ? '' : ' · hồi sinh ' + Math.max(0, Math.ceil((h.respawnTick - world.tick) / 30)) + 's'}</small></span>${tab === 'info' ? info : stats}</div>`;
+    return `<div class="row ${me ? 'me' : ''} ${h.alive ? '' : 'dead'}"><canvas data-h="${h.id}" width="80" height="80"></canvas><span class="nm"><b>${h.data.name}</b><small>${h.playerName ? `${h.playerName}${h === player ? '' : ' [Máy]'} · ` : ''}Cấp ${h.level}${h.alive ? '' : ' · hồi sinh ' + Math.max(0, Math.ceil((h.respawnTick - world.tick) / 30)) + 's'}</small></span>${tab === 'info' ? info : stats}</div>`;
   };
   function render() {
     $(panel, '.bars .bl').innerHTML = teamBar(my); $(panel, '.bars .rd').innerHTML = teamBar(foe);

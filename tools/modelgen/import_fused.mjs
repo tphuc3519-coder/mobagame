@@ -166,10 +166,12 @@ function weld(pos, n) {
 /** Gán nhãn vũ khí theo vùng rồi nhân đôi đỉnh ở ranh giới nhãn.
  *  vlab0: nhãn thô theo đỉnh (0 thân, >0 vũ khí). cfg: { chartMin, chartHi, chartLo, passes, island }.
  *  Trả về mảng mới (pos/nor/uv/index), nhãn từng đỉnh và chỉ số điểm hàn. */
-function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.length / 3)) {
+function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.length / 3), core = null) {
   const n = pos.length / 3, T = index.length / 3, { rep } = weld(pos, n);
   const tl = new Int16Array(T);
   for (let t = 0; t < T; t++) { const a = vlab0[index[3 * t]], b = vlab0[index[3 * t + 1]], c = vlab0[index[3 * t + 2]]; tl[t] = a && (a === b || a === c) ? a : b && b === c ? b : 0; }
+  const all3 = (arr, t) => arr && arr[index[3 * t]] && arr[index[3 * t + 1]] && arr[index[3 * t + 2]];
+  const keep = Uint8Array.from({ length: T }, (_, t) => (tl[t] && all3(core, t) ? 1 : 0)); // tam giác lõi vũ khí: giữ nhãn qua mọi bước dọn
   const before = tl.reduce((q, l) => q + (l > 0), 0);
   // 1) bỏ phiếu theo mảng uv: mảng lớn nằm phần lớn trên vũ khí thì cả mảng là vũ khí (và ngược lại)
   const par = Int32Array.from({ length: n }, (_, i) => i), f = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
@@ -180,7 +182,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
   for (let t = 0; t < T; t++) {
     const c = ch.get(f(index[3 * t])); if (c.n < chartMin) continue;
     let bl = 0, bc = 0; for (const [l, k] of c.l) if (l && k > bc) { bl = l; bc = k; }
-    if (bc / c.n >= hi) tl[t] = bl; else if (bc / c.n <= lo && tl[t]) tl[t] = 0;
+    if (bc / c.n >= hi) tl[t] = bl; else if (bc / c.n <= lo && tl[t] && !keep[t]) tl[t] = 0;
   }
   // 2) lọc đa số theo hàng xóm qua cạnh (đã hàn) để ranh giới gọn, không lởm chởm
   const ek = (a, b) => (a < b ? a * 4194304 + b : b * 4194304 + a), edges = new Map();
@@ -189,7 +191,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
   for (const l of edges.values()) for (const a of l) for (const b of l) if (a !== b) nbr[a].push(b);
   for (let pass = 0; pass < (cfg.passes ?? 4); pass++) {
     const nt = tl.slice();
-    for (let t = 0; t < T; t++) { const cnt = new Map(); for (const q of nbr[t]) cnt.set(tl[q], (cnt.get(tl[q]) || 0) + 1); for (const [l, k] of cnt) if (l !== tl[t] && k >= 2 && k > (cnt.get(tl[t]) || 0)) nt[t] = l; }
+    for (let t = 0; t < T; t++) { if (keep[t]) continue; const cnt = new Map(); for (const q of nbr[t]) cnt.set(tl[q], (cnt.get(tl[q]) || 0) + 1); for (const [l, k] of cnt) if (l !== tl[t] && k >= 2 && k > (cnt.get(tl[t]) || 0)) nt[t] = l; }
     tl.set(nt);
   }
   // 3) đảo nhỏ: cụm vũ khí lẻ loi → thân; lỗ thân nhỏ nằm giữa vũ khí → vũ khí
@@ -198,7 +200,7 @@ function splitByLabel(pos, nor, uv, index, vlab0, cfg, mat = new Uint8Array(pos.
     if (seen[t0]) continue; const L = tl[t0], comp = [t0], border = new Set(); seen[t0] = 1;
     for (let k = 0; k < comp.length; k++) for (const q of nbr[comp[k]]) { if (tl[q] !== L) { border.add(tl[q]); continue; } if (!seen[q]) { seen[q] = 1; comp.push(q); } }
     if (comp.length >= island) continue;
-    if (L && border.size) for (const t of comp) tl[t] = 0;
+    if (L && border.size) { if (comp.filter((t) => keep[t]).length * 2 < comp.length) for (const t of comp) tl[t] = 0; } // đảo vũ khí nằm hẳn trong thân vũ khí (khúc cán giữa 2 vòng đai) thì giữ
     else if (!L && border.size === 1) { const b = [...border][0]; for (const t of comp) tl[t] = b; }
   }
   // 4) nhân đôi đỉnh dùng chung bởi tam giác khác nhãn
@@ -298,6 +300,23 @@ async function buildFused(id, def, cfg, here) {
   const src = await readMesh(path.resolve(here, cfg.file));
   if (cfg.simplify) await simplifyMesh(src, cfg.simplify);
   const n = src.pos.length / 3;
+  if (cfg.morph) { // nắn hình lưới gốc trước khi gắn xương (sửa lỗi sẵn có trong file, vd tóc bị cắt đôi theo mặt phẳng ngang): toạ độ file gốc tương đối thân
+    const tx = new Map(), cX = cfg.centerX ?? 0, cZ = cfg.centerZ ?? 0;
+    const rgbAt = (i) => { const k = src.mat[i], m = src.mats[k]; if (m.refs.base == null) return [128, 128, 128]; if (!tx.has(k)) tx.set(k, jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true })); const t = tx.get(k), u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]), o = 4 * (Math.min(t.height - 1, Math.floor(v * t.height)) * t.width + Math.min(t.width - 1, Math.floor(u * t.width))); return [t.data[o], t.data[o + 1], t.data[o + 2]]; };
+    let moved = 0;
+    for (let i = 0; i < n; i++) {
+      const r = cfg.morph({ x: src.pos[3 * i] - cX, y: src.pos[3 * i + 1], z: src.pos[3 * i + 2] - cZ, mat: src.mats[src.mat[i]].name, rgb: rgbAt(i) }); if (!r) continue;
+      src.pos[3 * i] = r.x + cX; src.pos[3 * i + 1] = r.y; src.pos[3 * i + 2] = r.z + cZ; moved++;
+    }
+    console.log(`  nắn hình: ${moved} đỉnh`);
+  }
+  if (cfg.drop) { // bỏ hẳn phần thừa của lưới gốc (vd lọn tóc lởm chởm dính vào lưng áo): tam giác có cả 3 đỉnh thoả điều kiện
+    const tx = new Map(), cX = cfg.centerX ?? 0, cZ = cfg.centerZ ?? 0, dropV = new Uint8Array(n);
+    const rgbAt = (i) => { const k = src.mat[i], m = src.mats[k]; if (m.refs.base == null) return [128, 128, 128]; if (!tx.has(k)) tx.set(k, jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true })); const t = tx.get(k), u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]), o = 4 * (Math.min(t.height - 1, Math.floor(v * t.height)) * t.width + Math.min(t.width - 1, Math.floor(u * t.width))); return [t.data[o], t.data[o + 1], t.data[o + 2]]; };
+    for (let i = 0; i < n; i++) dropV[i] = cfg.drop({ x: src.pos[3 * i] - cX, y: src.pos[3 * i + 1], z: src.pos[3 * i + 2] - cZ, mat: src.mats[src.mat[i]].name, rgb: rgbAt(i) }) ? 1 : 0;
+    const keep = []; for (let t = 0; t < src.index.length; t += 3) { const a = src.index[t], b = src.index[t + 1], c = src.index[t + 2]; if (!(dropV[a] && dropV[b] && dropV[c])) keep.push(a, b, c); }
+    console.log(`  bỏ phần thừa: ${(src.index.length - keep.length) / 3} tam giác`); src.index = keep;
+  }
   // màu texture tại từng đỉnh (0..255 sRGB): để phân biệt cây búa (gỗ/kim loại tối) với da, tóc, vải sát bên khi gắn xương
   const texCache = new Map(), texOf = (k) => { if (!texCache.has(k)) { const m = src.mats[k]; texCache.set(k, m.refs.base != null ? jpeg.decode(src.imgs[src.texSource[m.refs.base]], { useTArray: true }) : null); } return texCache.get(k); };
   const rgbOf = (i) => { const tex = texOf(src.mat[i]); if (!tex) return [128, 128, 128]; const u = src.uv[2 * i] - Math.floor(src.uv[2 * i]), v = src.uv[2 * i + 1] - Math.floor(src.uv[2 * i + 1]); const x = Math.min(tex.width - 1, Math.floor(u * tex.width)), y = Math.min(tex.height - 1, Math.floor(v * tex.height)); const o = 4 * (y * tex.width + x); return [tex.data[o], tex.data[o + 1], tex.data[o + 2]]; };
@@ -346,13 +365,19 @@ async function buildFused(id, def, cfg, here) {
   // để hai bên tách ra khi vung (không xoá tam giác nào, không có tam giác nối tay–thân bị kéo thành dải).
   const wsegs = segs.filter((sg) => sg.cut != null), bsegs = segs.filter((sg) => sg.cut == null);
   const vlab0 = new Int16Array(n); // 0 = thân, b+1 = gắn cứng vào xương b
+  // core: đỉnh nằm hẳn trong thân vũ khí (≤ r) và qua phép thử màu `core` của đoạn (vd không phải da) → bước dọn ranh giới không được trả
+  // về thân. Trước đây các khúc cán búa giữa những vòng đai là "đảo vũ khí nhỏ" nên bị trả về thân → khi vung, cán đứt thành nhiều khúc.
+  const core = new Uint8Array(n), needRgb = wsegs.some((sg) => sg.test || sg.core);
   for (let i = 0; i < n; i++) {
     if (isStaff(src.pos[3 * i])) { vlab0[i] = hand + 1; continue; }
-    const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], rgb = wsegs.some((sg) => sg.test) ? rgbOf(i) : null;
-    const hs = wsegs.find((sg) => (!sg.test || sg.test(rgb)) && segDist(p, sg.a, sg.b) - sg.r <= sg.hard);
-    if (hs) vlab0[i] = idx[B(hs.bone)] + 1;
+    const p = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], rgb = needRgb ? rgbOf(i) : null;
+    for (const sg of wsegs) {
+      const d = segDist(p, sg.a, sg.b) - sg.r; if (d > sg.hard || (sg.test && !sg.test(rgb))) continue;
+      if (!vlab0[i]) vlab0[i] = idx[B(sg.bone)] + 1;
+      if (d <= 0 && (!sg.core || sg.core(rgb))) core[i] = 1;
+    }
   }
-  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {}, src.mat);
+  const split = splitByLabel(pos, src.nor, src.uv, src.index, vlab0, cfg.split || {}, src.mat, core);
   const n2 = split.n, vlab = split.vlab, rep = split.rep, index0 = split.index;
   src.pos = null; src.nor = split.nor; src.uv = split.uv; src.mat = split.mat;
   const posN = split.pos;
@@ -360,8 +385,19 @@ async function buildFused(id, def, cfg, here) {
   const NB = bones.length, R = split.reps, Wd = new Float32Array(R.length * NB);
   // cfg.allow: { tênVậtLiệu: [xương…] } — đỉnh của vật liệu đó chỉ nhận trọng số từ các xương liệt kê (vd tóc dài chỉ theo đầu/cổ/ngực, không dính tay)
   const allowOf = src.mats.map((m) => cfg.allow?.[m.name] && new Set(cfg.allow[m.name].map((b) => cfg.merge?.[b] ?? b)));
+  // cfg.hair: tóc dài không có xương riêng (thường nằm ở hai vật liệu: phần trên chung với đầu, lọn dưới chung với áo) → trọng số CHỈ theo độ cao
+  // dọc chuỗi xương thân, cùng một hàm cho mọi vật liệu: không còn đường gãy ngang giữa phần theo đầu và phần theo ngực, lọn dưới không bị
+  // tay kéo xoè ra. { chain: [[xương, y], …] từ trên xuống (đơn vị file gốc), pick({ x, y, z, mat, rgb }) → đỉnh có phải tóc (toạ độ file gốc, tương đối thân) }
+  const HC = cfg.hair, hairW = (y) => {
+    const ch = HC.chain, out = new Float32Array(NB), sm = (t) => t * t * (3 - 2 * t);
+    if (y >= ch[0][1]) { out[idx[B(ch[0][0])]] = 1; return out; }
+    for (let k = 1; k < ch.length; k++) if (y >= ch[k][1]) { const t = sm((y - ch[k][1]) / (ch[k - 1][1] - ch[k][1])); out[idx[B(ch[k - 1][0])]] += t; out[idx[B(ch[k][0])]] += 1 - t; return out; }
+    out[idx[B(ch[ch.length - 1][0])]] = 1; return out;
+  };
+  let hairN = 0;
   R.forEach((v, r) => {
     const p = [posN[3 * v], posN[3 * v + 1], posN[3 * v + 2]], al = allowOf[src.mat[v]];
+    if (HC && HC.pick({ x: p[0] / s, y: p[1] / s, z: p[2] / s, mat: src.mats[src.mat[v]].name, rgb: rgbOf(v) })) { Wd.set(hairW(p[1] / s), r * NB); hairN++; return; }
     const dd = (al ? bsegs.filter((sg) => al.has(sg.bone)) : bsegs).map((sg) => ({ b: idx[B(sg.bone)], sig, d: Math.max(0, segDist(p, sg.a, sg.b) - sg.r) }));
     const dmin = Math.min(...dd.map((c) => c.d)); // trừ khoảng cách nhỏ nhất: xương gần nhất luôn có trọng số 1, không bị underflow
     const acc = new Float32Array(NB); for (const c of dd) acc[c.b] += Math.exp(-Math.pow((c.d - dmin) / c.sig, 2));
@@ -381,6 +417,7 @@ async function buildFused(id, def, cfg, here) {
     }
     Wd.set(acc, r * NB);
   });
+  if (HC) console.log(`  tóc: ${hairN} điểm gắn theo chuỗi ${HC.chain.map((c) => c[0]).join(' → ')}`);
   { // làm mượt Laplace theo cạnh lưới (chỉ phần thân): chỗ chuyển giữa hai xương trải trên nhiều tam giác hơn → tam giác không bị kéo thành mảnh
     const nb = Array.from({ length: R.length }, () => new Set());
     for (let t = 0; t < index0.length; t += 3) { if (vlab[index0[t]]) continue; const a = rep[index0[t]], b = rep[index0[t + 1]], c = rep[index0[t + 2]]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
@@ -408,7 +445,8 @@ async function buildFused(id, def, cfg, here) {
   let index = index0;
   if (cfg.maxEdge) { // tam giác sợi chỉ nối hai chỗ xa nhau (lỗi lưới quét): bỏ
     const lim = (cfg.maxEdge * s) ** 2, e = (a, b) => (posN[3 * a] - posN[3 * b]) ** 2 + (posN[3 * a + 1] - posN[3 * b + 1]) ** 2 + (posN[3 * a + 2] - posN[3 * b + 2]) ** 2; const out = [];
-    for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; if (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim) continue; out.push(a, b, c); }
+    // trừ tam giác của vũ khí (cả 3 đỉnh gắn cứng cùng một xương): khối cứng không bị kéo giãn, mặt dài là thân cán thật — xoá đi thì cán búa thành từng khúc hở
+    for (let t = 0; t < index.length; t += 3) { const a = index[t], b = index[t + 1], c = index[t + 2]; const rigid = vlab[a] && vlab[a] === vlab[b] && vlab[a] === vlab[c]; if (!rigid && (e(a, b) > lim || e(b, c) > lim || e(a, c) > lim)) continue; out.push(a, b, c); }
     console.log(`  bỏ ${(index.length - out.length) / 3} tam giác quá dài`); index = out;
   }
   { // bỏ mảnh vụn rời (sau khi cắt, vài cụm tam giác nhỏ mất liên kết sẽ bay lơ lửng khi vung mạnh)

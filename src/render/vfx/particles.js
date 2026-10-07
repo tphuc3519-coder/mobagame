@@ -21,7 +21,7 @@ void main() {
   p = vec2(c * p.x - s * p.y, s * p.x + c * p.y) + 0.5;
   if (p.x < 0.0 || p.y < 0.0 || p.x > 1.0 || p.y > 1.0) discard;
   float tx = mod(vTile, 4.0), ty = floor(vTile / 4.0);
-  vec4 t = texture2D(uMap, vec2((tx + p.x) / 4.0, 1.0 - (ty + p.y) / 2.0));
+  vec4 t = texture2D(uMap, vec2((tx + p.x) / 4.0, 1.0 - (ty + p.y) / 4.0)); // atlas 4×4 ô
   float a = t.a * vAlpha;
   if (a < 0.003) discard;
   gl_FragColor = uAdd > 0.5 ? vec4(vColor * t.rgb * a, 1.0) : vec4(vColor * t.rgb, a);
@@ -29,7 +29,8 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-export function createParticles(scene, { max = 2000, additive = true } = {}) {
+/** floor(x, z): độ cao mặt nền phần nhìn; hạt sinh sát đất (y < 70, không bám theo vật thể) được nâng lên mặt đó (bệ trại quái…). */
+export function createParticles(scene, { max = 2000, additive = true, floor = null } = {}) {
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(max * 3), col = new Float32Array(max * 3), alpha = new Float32Array(max), size = new Float32Array(max), tile = new Float32Array(max), rot = new Float32Array(max);
   const attr = (a, n) => { const b = new THREE.BufferAttribute(a, n); b.setUsage(THREE.DynamicDrawUsage); return b; };
@@ -52,13 +53,15 @@ export function createParticles(scene, { max = 2000, additive = true } = {}) {
   function spawn(o) {
     if (P.length >= max) P.shift();
     const cs = [].concat(o.color ?? 0xffffff);
+    let y = o.y ?? 0, fy = o.floor ?? -1e9;
+    if (floor && !o.follow && y < 70) { const g = floor(o.x, o.z); if (g) { y += g; fy += g; } }
     P.push({
-      x: o.x, y: o.y ?? 0, z: o.z, vx: o.vx || 0, vy: o.vy || 0, vz: o.vz || 0, age: 0, life: o.life ?? 0.6,
+      x: o.x, y, z: o.z, vx: o.vx || 0, vy: o.vy || 0, vz: o.vz || 0, age: 0, life: o.life ?? 0.6,
       s0: o.size?.[0] ?? o.size ?? 30, s1: o.size?.[1] ?? o.size?.[0] ?? o.size ?? 30,
       c0: c0.set(cs[0]).toArray(), c1: c1.set(cs[1] ?? cs[0]).toArray(),
       a0: o.alpha?.[0] ?? o.alpha ?? 1, a1: o.alpha?.[1] ?? 0, fadeIn: o.fadeIn ?? 0.08,
       drag: o.drag ?? 0, grav: o.grav ?? 0, tile: o.tile ?? 0, rot: o.rot ?? Math.random() * 6.28, spin: o.spin ?? 0, swirl: o.swirl || null,
-      follow: o.follow || null, ox: 0, oy: 0, oz: 0, floor: o.floor ?? -1e9,
+      follow: o.follow || null, ox: 0, oy: 0, oz: 0, floor: fy,
     });
   }
 

@@ -8,11 +8,12 @@ import { alliesOf, enemiesOf } from './targeting.js';
 
 const has = (e, p) => !!e.bonus?.passives.has(p);
 
-/** Đòn đánh của chủ đồ: tính chí mạng và các sát thương cộng thêm; trả về { amount, extra:[{amount,type}] }. */
+/** Đòn đánh của chủ đồ: tính chí mạng và các sát thương cộng thêm; trả về { amount, extra:[{amount,type}], crit }. */
 export function onBasicAttack(world, e, pay) {
   const s = e.stats;
   let amount = pay.amount;
-  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0); pay.crit = true; }
+  let crit = false;
+  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0); crit = pay.crit = true; }
   const extra = [];
   if (e.flags.spellblade && world.tick >= (e.flags.sbCd || 0)) { extra.push({ amount: s.baseAtk, type: 'physical' }); e.flags.spellblade = false; e.flags.sbCd = world.tick + T(2); }
   if (has(e, 'forgehammer')) extra.push({ amount: 0.02 * pay.targetMaxHp, type: 'physical' });
@@ -21,7 +22,7 @@ export function onBasicAttack(world, e, pay) {
     const f = e.flags; f.windStacks = world.tick < (f.windUntil || 0) ? Math.min(3, (f.windStacks || 0) + 1) : 1; f.windUntil = world.tick + T(2);
     applyStatus(world, e, { status: 'haste', id: 'windbow', pct: 0.05 * f.windStacks, duration: 2 }, e);
   }
-  return { amount, extra };
+  return { amount, extra, crit };
 }
 
 /** Bên bị đánh thường: Khiên Đá, Giáp Gai. dealt = sát thương đã vào máu. */

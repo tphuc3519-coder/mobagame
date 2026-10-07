@@ -52,7 +52,7 @@ export function castSpell(world, e, aim) {
     }
     case 'hoi_phuc': {
       const near = alliesOf(world, e, sp.radius).filter((a) => a.kind === 'hero').sort((a, b) => dist(a.pos, e.pos) - dist(b.pos, e.pos))[0];
-      for (const t of [e, near]) if (t) { heal(world, t, t.stats.maxHp * sp.healPct); applyStatus(world, t, { status: 'haste', id: 'spellHaste', pct: sp.haste.pct, duration: sp.haste.duration }, e); }
+      for (const t of [e, near]) if (t) { heal(world, t, t.stats.maxHp * sp.healPct, e); applyStatus(world, t, { status: 'haste', id: 'spellHaste', pct: sp.haste.pct, duration: sp.haste.duration }, e); }
       break;
     }
     case 'tram_hon':

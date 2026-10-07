@@ -14,7 +14,7 @@ function nextRange(e) { return e.statuses.find((s) => s.kind === 'nextRange')?.v
 function resolveHit(world, owner, target, pay) {
   if (!owner || !target.alive) return;
   const it = onBasicAttack(world, owner, { amount: pay.amount, targetMaxHp: target.stats.maxHp });
-  const dealt = dealDamage(world, owner, target, it.amount, 'physical', { basic: true });
+  const dealt = dealDamage(world, owner, target, it.amount, 'physical', { basic: true, crit: it.crit });
   for (const x of it.extra) dealDamage(world, owner, target, x.amount, x.type);
   onBasicHit(world, owner, target, dealt);
   const burn = owner.statuses.find((s) => s.burn)?.burn; // Ấn Hoả: thiêu đốt + làm chậm
@@ -84,7 +84,7 @@ function whiff(world, e, range) {
 export function updateCombat(world) {
   for (const e of world.entities) {
     if (!e.alive || !e.attacking || e.data.dummy || isHardCC(e) || e.dash) continue;
-    if (world.tick < e.attackReady) continue;
+    if (world.tick < e.attackReady || world.tick < (e.castUntil || 0)) continue; // đang ra chiêu: đòn đánh chờ chiêu phát ra xong (không giật mặt sang mục tiêu khác)
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
     const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode) : nearestEnemy(world, e, range, e.preferTarget);

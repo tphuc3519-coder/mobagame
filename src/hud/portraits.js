@@ -22,6 +22,7 @@ export function createPortraits(renderer, size = 96) {
     const prevClear = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(sc, cam); renderer.setRenderTarget(null); renderer.setClearColor(prevClear, prevA);
     const px = new Uint8Array(size * size * 4); renderer.readRenderTargetPixels(rt, 0, 0, size, size, px); rt.dispose();
+    obj.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); // texture xương của bản sao dùng một lần
     const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), img = x.createImageData(size, size);
     for (let y = 0; y < size; y++) img.data.set(px.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
     x.putImageData(img, 0, 0);
@@ -41,7 +42,7 @@ export function createPortraits(renderer, size = 96) {
       const p = this.get(id);
       ctx.save(); ctx.clip();
       if (p) ctx.drawImage(p, x - r * 1.15, y - r * 1.05, r * 2.3, r * 2.3);
-      else { ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r * 1.1)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
+      else { ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r * 1.1)}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
       if (dead) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
       ctx.restore();
       ctx.lineWidth = Math.max(2, r * 0.22); ctx.strokeStyle = ring; ctx.stroke();

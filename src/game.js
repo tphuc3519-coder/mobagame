@@ -18,6 +18,7 @@ import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews } from './render/unitView.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
+import { floorAt } from './render/env/floor.js';
 import { createTowerRanges } from './render/towerRange.js';
 import { createInput } from './hud/joystick.js';
 import { createHud } from './hud/hud.js';
@@ -35,7 +36,9 @@ import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
 import { computeBonus } from './sim/inventory.js';
 /**
- * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), spellId, difficulty, seed, bot=true, onExit }
+ * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), allies/foes (5v5: id tướng), spellId, charmId, difficulty, seed,
+ * bot=true, dummies (1v1: 3 hình nộm), names: [{ heroId → tên người chơi } đội 0, đội 1], onGameOver({ world, player, winner }) }
+ * Không có onGameOver (vào thẳng bằng ?hero=): hiện bảng THẮNG/THUA đơn giản, Chơi lại = tải lại trang.
  * Tham số URL dành cho kiểm thử: ?mode=5v5, ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
  */
 export function startMatch(opts) {
@@ -60,9 +63,13 @@ if (arena) {
     for (const id of STARTER[HEROES[opts.enemyId].roles[0]] || []) world.command(enemy.id, { type: 'buy', item: id });
     world.addBot(enemy, opts.difficulty || 'normal');
   }
-  if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
+  if (opts.dummies || q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
+// tên người chơi (sảnh đặt: mình + máy) — hiện trên đầu tướng, bảng tỉ số, màn kết quả
+if (opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
 if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, ready: 0 };
+// người chơi tự cộng điểm kỹ năng: đầu trận có 1 điểm, nút + hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + (bot vẫn tự cộng)
+player.autoLevel = false; player.skillLevels = { s1: 0, s2: 0, s3: 0 }; player.skillPoints = player.level;
 if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts.charmId]; player.bonus = computeBonus(player); }
 
 let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
@@ -74,18 +81,19 @@ const { renderer } = createRenderer(document.getElementById('world'), level, {
 });
 const sun = addLights(scene, renderer, level);
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
-const views = createUnitViews(scene, 0, player.id);
-const indicators = createIndicators(scene);
+const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
+const views = createUnitViews(scene, 0, player.id, { floor });
+const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
 const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
-const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team });
+const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, me: player.id, floor });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }
 const portraits = createPortraits(renderer);
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
-createHudSettings();
+createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30 });
 const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -104,20 +112,32 @@ if (q.has('shop')) shop.open(true);
 // bảng thử (chỉ khi ?debug=1)
 const panel = document.getElementById('lab');
 panel.hidden = !debug;
-panel.innerHTML = `<button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button>`;
+panel.innerHTML = `<button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button><button id="labDmg">Số sát thương</button>`;
 document.getElementById('labGold').onclick = () => { player.gold += 3000; };
+document.getElementById('labDmg').onclick = () => hud.previewDamage(player); // xem 6 kiểu số sát thương (vật lý / phép / chuẩn, thường + chí mạng)
 document.getElementById('labCd').onclick = () => world.debug.resetCooldowns(player);
 document.getElementById('labLv').onclick = () => world.debug.level15(player);
 document.getElementById('labHeal').onclick = () => world.debug.fullHeal(player);
 for (const b of panel.querySelectorAll('button')) b.addEventListener('pointerdown', (e) => e.stopPropagation());
 
+let ended = false;
 function showResult(winner) {
-  const el = document.getElementById('result');
-  el.querySelector('h2').textContent = winner === player.team ? 'THẮNG' : 'THUA';
-  el.querySelector('p').textContent = `Thời gian ${Math.floor(world.tick / 1800)} phút ${Math.floor(world.tick / 30) % 60} giây · K/D ${player.kills}/${player.deaths}${enemy ? ` · Máy (${HEROES[enemy.heroId].name}) ${enemy.kills}/${enemy.deaths}` : ''}`;
-  el.classList.add('on');
+  if (ended) return; ended = true;
+  const win = winner === player.team;
+  if (!opts.onGameOver) {
+    const el = document.getElementById('result');
+    el.querySelector('h2').textContent = win ? 'THẮNG' : 'THUA';
+    el.querySelector('p').textContent = `Thời gian ${Math.floor(world.tick / 1800)} phút ${Math.floor(world.tick / 30) % 60} giây · K/D ${player.kills}/${player.deaths}${enemy ? ` · Máy (${HEROES[enemy.heroId].name}) ${enemy.kills}/${enemy.deaths}` : ''}`;
+    el.classList.add('on');
+    return;
+  }
+  // nhà chính nổ: chữ CHIẾN THẮNG / THẤT BẠI giữa màn ~3 giây (trận vẫn vẽ cảnh nổ), rồi dừng vòng lặp và mở các màn kết quả
+  const b = document.createElement('div'); b.id = 'gover'; b.className = win ? 'win' : 'lose';
+  b.innerHTML = `<b>${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</b><small>${win ? 'VICTORY' : 'DEFEAT'}</small>`;
+  document.body.append(b); document.body.classList.add('over');
+  setTimeout(() => { loop.pause(); b.remove(); document.body.classList.add('post'); opts.onGameOver({ world, player, winner }); }, 3200);
 }
-document.getElementById('again').onclick = () => (opts.onExit ? opts.onExit() : location.reload());
+document.getElementById('again').onclick = () => location.reload();
 
 const minFrame = 1000 / LEVELS[level].fps - 2;
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
@@ -167,6 +187,6 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
 };
 window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam }; // phục vụ kiểm thử tự động
 
-document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất
+document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;
 }

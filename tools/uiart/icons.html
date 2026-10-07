@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<base href="../../"><!-- đường dẫn như index.html (gốc repo) -->
+<title>Biểu tượng sảnh — Lantern Arena</title>
+<style>html, body { margin: 0; background: #1a1830; color: #fff; font: 12px system-ui; } .g { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; } figure { margin: 0; text-align: center; } img { width: 128px; height: 128px; background: #0d0b20; border-radius: 8px; }</style>
+<script type="importmap">{ "imports": { "three": "./lib/three/build/three.module.js", "three/addons/": "./lib/three/examples/jsm/" } }</script>
+</head>
+<body>
+<div class="g" id="g"></div>
+<script type="module">
+// Vẽ toàn bộ biểu tượng sảnh (tools/uiart/icons.js) và trả về window.out = { tên: dataURL WebP } — chạy bằng tools/uiart/icons.cjs.
+import { ICONS, paintIcon } from './tools/uiart/icons.js';
+const q = new URLSearchParams(location.search), only = q.get('only');
+const out = {};
+try {
+  for (const name of Object.keys(ICONS)) {
+    if (only && !only.split(',').includes(name)) continue;
+    const c = paintIcon(name), url = c.toDataURL('image/webp', 0.9); out[name] = url;
+    document.getElementById('g').insertAdjacentHTML('beforeend', `<figure><img src="${url}"><figcaption>${name}</figcaption></figure>`);
+  }
+  window.out = out;
+} catch (e) { window.err = String(e && e.stack || e); }
+</script>
+</body>
+</html>

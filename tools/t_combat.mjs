@@ -30,10 +30,10 @@ const lost = (d) => d.stats.maxHp - d.hp;
   ok('Moonstream K1 phép ≈61.5', near(lost(d), 61.54), lost(d).toFixed(2));
   ok('Moonstream hồi 3% mana khi trúng tướng', p.mana > p.stats.maxMana - 50 + 14);
 }
-{ // Mossback K2: (50 + 4% × 1000) = 90 phép → 69.23; làm chậm 30%
+{ // Mossback K2: (50 + 4% × 1300 máu (1000 × HERO_HP_MULT 1.3)) = 102 phép → 78.46; làm chậm 30%
   const { w, p, d, step } = setup('thach_quy', 200);
   w.command(p.id, { type: 'cast', slot: 's2' }); step(12);
-  ok('Mossback K2 ≈69.2', near(lost(d), 69.23), lost(d).toFixed(2));
+  ok('Mossback K2 ≈78.5', near(lost(d), 78.46), lost(d).toFixed(2));
 }
 { // Mossback K1 Móc Neo: trúng địch ở xa → kéo về sát trước mặt, choáng
   const { w, p, d, step } = setup('thach_quy', 700);
@@ -76,6 +76,22 @@ const lost = (d) => d.stats.maxHp - d.hp;
   w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 1, y: 0 } }); step(1);
   const m = p.mana; w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 1, y: 0 } }); step(1);
   ok('Không tung lại khi đang hồi chiêu', p.mana >= m);
+}
+{ // Ra chiêu: quay mặt về hướng chiêu, đứng yên tới lúc chiêu phát ra (+0,25s), rồi mới chạy/quay theo cần di chuyển
+  const { w, p, step } = setup('nguyet_ha', 600);
+  w.command(p.id, { type: 'move', dir: { x: 1, y: 0 } }); step(5);
+  const x0 = p.pos.x;
+  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 0, y: 1 } }); step(1);
+  w.command(p.id, { type: 'move', dir: { x: 1, y: 0 } }); step(5); // vẫn giữ cần sang phải trong lúc ra chiêu
+  ok('ra chiêu: mặt hướng chiêu', Math.abs(p.facing - Math.PI / 2) < 1e-6, p.facing.toFixed(3));
+  ok('ra chiêu: đứng yên', Math.abs(p.pos.x - x0) < 1, (p.pos.x - x0).toFixed(1));
+  step(6);
+  ok('ra chiêu xong: quay lại theo cần di chuyển', Math.abs(p.facing) < 1e-6 && p.pos.x > x0 + 30, `${p.facing.toFixed(3)} ${(p.pos.x - x0).toFixed(1)}`);
+}
+{ // Chiêu có thời gian vung (Móc Neo 0,2s): đứng ra chiêu = vung + 0,25s
+  const { w, p, step } = setup('thach_quy', 600);
+  w.command(p.id, { type: 'cast', slot: 's1', aim: { x: 0, y: -1 } }); step(1);
+  ok('Móc Neo: khoá ra chiêu 0,45s', p.castUntil - w.tick >= 12 && p.castUntil - w.tick <= 14, String(p.castUntil - w.tick));
 }
 console.log(fail ? `\n${fail} lỗi` : '\nTất cả đạt');
 process.exit(fail ? 1 : 0);

@@ -13,7 +13,7 @@ export const NEUTRAL = 2;
 
 function spawnCamp(world, camp) {
   const def = MONSTERS[camp.type], sc = monsterScale(Math.floor(world.tick / 1800));
-  camp.alive = [];
+  camp.alive = []; camp.threat = {};
   for (const m of def.members) {
     const st = def.stats[m.kind], pos = { x: camp.x + m.x, y: camp.y + m.y };
     const base = { maxHp: st.maxHp * sc.hp, maxMana: 0, atk: st.atk * sc.atk, ap: 0, armor: st.armor, mr: st.mr, atkSpeed: def.atkSpeed, moveSpeed: def.moveSpeed, range: st.range };
@@ -39,20 +39,23 @@ export function updateJungle(world) {
     if (camp.respawnAt != null) { if (world.tick >= camp.respawnAt) spawnCamp(world, camp); continue; }
     const members = camp.alive.map((id) => world.byId(id)).filter((e) => e && e.alive);
     if (!members.length) { camp.respawnAt = world.tick + T(MONSTERS[camp.type].respawn); world.emit('campCleared', { camp: camp.id, type: camp.type }); continue; }
-    // gây hấn chung: con nào bị tướng đánh thì cả trại nhắm kẻ đó
+    // gây hấn chung: con nào bị tướng đánh thì cả trại nhắm kẻ đó; nhớ mọi tướng vừa đánh trại (camp.threat) để đổi mục tiêu
+    camp.threat ||= {};
     for (const m of members) {
-      if (m.returning || m.aggro != null) continue;
-      if (m.lastAttacker != null && world.tick - m.lastDamagedTick < 2) {
-        const a = world.byId(m.lastAttacker);
-        if (a && a.kind === 'hero') for (const o of members) if (!o.returning) o.aggro = a.id;
-      }
+      if (m.lastAttacker == null || world.tick - m.lastDamagedTick >= 2) continue;
+      const a = world.byId(m.lastAttacker); if (!a || a.kind !== 'hero') continue;
+      camp.threat[a.id] = m.lastDamagedTick;
+      if (!m.returning && m.aggro == null) for (const o of members) if (!o.returning) o.aggro = a.id;
     }
-    for (const m of members) think(world, m, MONSTERS[camp.type]);
+    for (const m of members) think(world, m, MONSTERS[camp.type], camp);
   }
   world.entities = world.entities.filter((e) => !(e.kind === 'monster' && !e.alive && world.tick - e.deadTick > 60));
 }
 
-function think(world, m, def) {
+/** Mục tiêu còn đuổi được: sống, trong vòng xích quanh trại (mục tiêu lớn đứng yên: còn trong tầm đánh + 250). */
+const inLeash = (m, t) => !!t && t.alive && dist(t.pos, m.home) <= LEASH + t.radius && !(m.stats.moveSpeed === 0 && dist(t.pos, m.pos) - t.radius > m.stats.range + 250);
+
+function think(world, m, def, camp) {
   if (isHardCC(m)) { m.speed = 0; return; }
   if (m.returning) { // về trại, hồi máu, không nhận gây hấn
     const d = dist(m.pos, m.home);
@@ -61,11 +64,22 @@ function think(world, m, def) {
     move(m, norm(m.home.x - m.pos.x, m.home.y - m.pos.y), Math.min(d, m.stats.moveSpeed * 1.6 * TICK) || 0);
     return;
   }
-  const t = m.aggro != null ? world.byId(m.aggro) : null;
-  if (!t || !t.alive || !isTargetable(m, t) || dist(t.pos, m.home) > LEASH + t.radius || (m.stats.moveSpeed === 0 && dist(t.pos, m.pos) - t.radius > m.stats.range + 250)) {
-    if (m.aggro != null || dist(m.pos, m.home) > 20) { m.aggro = null; m.returning = true; } // mất mục tiêu: về trại (tới nơi hồi đầy máu)
-    else if (world.tick - m.lastDamagedTick > T(4)) m.hp = Math.min(m.stats.maxHp, m.hp + m.stats.maxHp * 0.02 * TICK);
-    m.speed = 0; return;
+  let t = m.aggro != null ? world.byId(m.aggro) : null;
+  if (!inLeash(m, t) || !isTargetable(m, t)) {
+    // mất mục tiêu (chết, ra khỏi xích, không chọn được): đổi sang tướng khác vừa đánh trại trong 3s (06 §3) thay vì bỏ về hồi đầy máu —
+    // trước đây tướng đỡ đòn chết, hay người giữ aggro nhảy Đe Trời/tàng hình, là mục tiêu lớn hồi đầy ngay dù cả đội vẫn đang đánh
+    const hold = inLeash(m, t) ? t : null; t = null;
+    for (const [id, tk] of Object.entries(camp?.threat || {})) {
+      const c = world.tick - tk <= T(3) ? world.byId(+id) : null;
+      if (inLeash(m, c) && isTargetable(m, c) && (!t || dist(c.pos, m.pos) < dist(t.pos, m.pos))) t = c;
+    }
+    if (t) m.aggro = t.id;
+    else if (hold) { m.speed = 0; return; } // chỉ tạm không chọn được (nhảy, tàng hình, bất động): đứng chờ
+    else {
+      if (m.aggro != null || dist(m.pos, m.home) > 20) { m.aggro = null; m.returning = true; } // không còn ai đánh: về trại (tới nơi hồi đầy máu)
+      else if (world.tick - m.lastDamagedTick > T(4)) m.hp = Math.min(m.stats.maxHp, m.hp + m.stats.maxHp * 0.02 * TICK);
+      m.speed = 0; return;
+    }
   }
   const d = dist(t.pos, m.pos) - t.radius;
   m.facing = Math.atan2(t.pos.y - m.pos.y, t.pos.x - m.pos.x);

@@ -13,7 +13,8 @@ const q = new URLSearchParams(location.search), game = q.has('game'), atk = +(q.
 let LIST = [['soi_da', 'alpha'], ['soi_da', 'pup'], ['coc_reu'], ['linh_thuy'], ['hoa_nham'], ['long_ngu'], ['ho_loi'], ['than_dieu'], ['ta_than']];
 if (q.has('minions')) LIST = [['m:sword', 0], ['m:archer', 0], ['m:giant', 0], ['m:siege', 0], ['m:sword', 1], ['m:archer', 1], ['m:giant', 1], ['m:siege', 1]];
 if (q.get('ids')) LIST = LIST.filter(([id]) => q.get('ids').split(',').includes(id));
-const cols = Math.min(5, LIST.length), rows = Math.ceil(LIST.length / cols), CW = LIST.length <= 3 ? 560 : 380, CH = LIST.length <= 3 ? 460 : 320, W = CW * cols, H = CH * rows;
+// ?cols=số cột, ?cw=&ch= cỡ ô (px) — để ghép ảnh so sánh gọn
+const cols = Math.min(+(q.get('cols') || 5), LIST.length), rows = Math.ceil(LIST.length / cols), CW = +(q.get('cw') || (LIST.length <= 3 ? 560 : 380)), CH = +(q.get('ch') || (LIST.length <= 3 ? 460 : 320)), W = CW * cols, H = CH * rows;
 const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.84; r.shadowMap.enabled = true; r.setScissorTest(true); document.body.append(r.domElement);
 const ENV = (() => { const s = new THREE.Scene(); s.background = new THREE.Color(0x1a2238); s.add(new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xc4c8d8, side: THREE.BackSide }))); const l = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); l.position.set(3, 3, 3); s.add(l); return new THREE.PMREMGenerator(r).fromScene(s, 0.04).texture; })(); // phản chiếu cho kim loại (trong trận có scene.environment)
 for (let i = 0; i < LIST.length; i++) {

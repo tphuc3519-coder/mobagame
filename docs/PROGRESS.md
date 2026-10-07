@@ -67,3 +67,75 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - 2026-09-30: Model v3: `tools/modelgen/sdf.mjs` (surface nets + meshoptimizer), `costume.mjs`, `humanoid.mjs` (thân SDF, `hairLocks`, mặt anime). Bản đồ: công trình mới (tháp đèn mái cong 2 tầng, nhà chính bệ sen + vòng vàng xoay, suối đèn có mặt nước), lính có nón, bloom trong trận (tắt ở mức Thấp / `?nobloom=1`).
 - 2026-09-30: Model v4: tỉ lệ anime bán thực, mặt anime vẽ texture (chớp mắt), Emberforge làm kỹ (búa bát giác viền vàng lõi lửa, tóc lửa, dải lụa bay); phông splash động ở màn chọn tướng.
 - 2026-10-06: Moonstream dùng model hoạ sĩ có texture PBR: `imports/moonstream_pbr_game.glb` trong trận (101k → 31.589 tam giác, texture 1024, 3,0 MB, không nén để không cần WebAssembly), `moonstream_pbr_hq.glb` ở sảnh/chọn tướng (454k → 113.957 tam giác, texture 2048, nén meshopt 7,8 MB, nạp sau bản trong trận rồi thay vào; không giải nén được thì giữ bản trong trận). `import_fused.mjs`: nhiều vật liệu (thân / đầu-tóc / mắt), giảm lưới và giới hạn texture theo từng vật liệu, nén meshopt (`compress`), `showcase` → `<id>_showcase.glb`; 24 xương (4 xương váy), 11 clip viết tay `heroes/nguyet_ha.anim.mjs`. `hero.art.json` thêm `shading` (`toon` mặc định / `pbr` / `unlit`), `outline`, `showcaseShading`, `showcaseOutline` (09 §3.4); so sánh trong trận và ở sảnh: Moonstream dùng `pbr` (sảnh bỏ viền đen).
+- 2026-10-06: Phản hồi chơi thử: nút X huỷ Chớp Bước (`hud/aimPad.js` dùng chung với nút kỹ năng), tướng quay mặt theo hướng chiêu tới hết lúc ra chiêu (`castUntil`/`castFacing`, `CAST_LOCK` 0,25s) rồi mới theo cần di chuyển, tướng to ×1,5, máu tướng ×1,3 (`HERO_HP_MULT`), quái yếu đi (`MONSTER_POWER`), 6 kiểu số sát thương (vật lý / phép / chuẩn × thường / chí mạng, `DMG_STYLE`), hiệu ứng kỹ năng v2 (lớp theo loại sát thương + chí mạng, đạn và hiệu ứng trúng riêng từng chiêu, dấu hiệu ra chiêu, atlas hạt 16 ô), hiệu ứng/đơn vị nổi trên bệ trại quái (`render/env/floor.js`), cảm ứng ≥ 5 ngón, người chơi tự cộng điểm kỹ năng bằng nút +, gộp font Be Vietnam Pro + bộ biểu tượng SVG.
+- 2026-10-06: Model quái rừng + lính làm lại (`tools/modelgen/monsters.mjs`, `render/monsterModels.js`: đá cắt giác, pha lê, sừng, lông vũ, vây, lửa; shader vảy cá / lông vũ; mỗi model một draw call; lính: khiên quay ra trước mang màu đội, lính đèn khoác giáp màu đội, xe đá đầu rồng). Sảnh: sửa tóc Moonstream bị cắt ngang (`morph` + `hair` trong `import_fused.mjs`), Emberforge đứng chống búa (`ShowIdle`), tướng nhỏ hơn trong khung và khung tự chứa vũ khí giơ cao.
+
+## Sảnh và luồng trước/sau trận kiểu Liên Quân + điểm trận (07/10)
+- **Màn tải game** (ảnh 1): tranh mở màn dựng sẵn (6 tướng dưới trăng), thanh vàng + "Đang tải tài nguyên game (không tốn dung lượng)"
+  + %. Phần tĩnh nằm sẵn trong `index.html` (thanh tự chạy bằng CSS lúc trình duyệt tải mã), JS tiếp quản và chạy theo việc tải thật:
+  font, chân dung, thẻ tướng, nền phòng chờ, model trưng bày của tướng đứng ở sảnh (`src/ui/boot.js`, `src/main.js`).
+- **Sảnh chính** (ảnh 2, `src/ui/home.js`): tướng 3D trên bệ giữa màn; trái trên ảnh đại diện + cấp + bậc hạng; cột bạn bè; phải trên
+  vàng / ngọc / thư (số chưa đọc) / toàn màn hình / cài đặt; cột phải: sự kiện Lễ Hội Đèn Lồng (điểm danh 7 ngày), Sổ sứ mệnh, Xếp hạng
+  bạn bè, Lịch sử đấu, thanh Điểm tích luỹ; dưới: kênh thế giới, Túi đồ / Tướng / Trang bị / N.vụ, nút thoi "Chọn chế độ", "Đấu thường",
+  nút lớn ĐẤU HẠNG (huy hiệu + bậc). Các bảng: hồ sơ (đổi tên, ảnh đại diện, thống kê), bạn bè, thư, nhiệm vụ ngày, tướng (đặt tướng đứng
+  ở sảnh), trang bị, túi đồ, cài đặt (chất lượng đồ hoạ — trận sau dùng), sự kiện, xếp hạng, lịch sử (`src/ui/panels.js`).
+- **Chọn chế độ** (`src/ui/modes.js`): Đấu thường 5v5, Đấu hạng 5v5, Đấu đơn 1v1, Luyện tập (chọn độ khó máy cho đấu đơn/luyện tập).
+- **Phòng chờ ghép trận** (ảnh 3, `src/ui/room.js`): nền 5 tướng quay lưng nhìn về nhà chính (dựng sẵn), 5 ô người chơi (mình ở giữa,
+  bậc hạng), danh sách bạn để mời (bạn trực tuyến nhận lời sau 1–2 giây, đôi khi bận), Mời nhanh / Giải tán; Bắt đầu → "Đang tìm trận
+  00:0x" (huỷ được) → "ĐÃ TÌM THẤY TRẬN": chấp nhận trong 12 giây, 10 ô sáng dần; bỏ lỡ thì về phòng.
+- **Chọn tướng** (`src/ui/pick.js`): đồng hồ 30 giây, đồng đội máy chọn dần (tướng đồng đội khoá thì mình không chọn được), phép bổ trợ
+  (hộp chọn có mô tả), bảng bùa, Khoá tướng; cả đội khoá → đếm 3 giây "VÀO TRẬN". Luyện tập: không giới hạn giờ, chọn đối thủ / hình nộm.
+- **Đội hình** (ảnh 4, `src/ui/lineup.js`) và **tải trận VS** (ảnh 5, `src/ui/loading.js`): hàng 5 thẻ đội mình trên, 5 thẻ đối thủ dưới
+  (ảnh tướng, huy hiệu hạng, tên tướng, tên người chơi "[Máy]", phép bổ trợ, thanh tiến độ riêng), mẹo, VS, % tổng — chạy theo việc tải
+  model thật của từng tướng + quái/lính. Sân khấu 3D được giải phóng trước khi vào trận (một ngữ cảnh WebGL tại một thời điểm).
+- **Hết trận**: chữ CHIẾN THẮNG / THẤT BẠI giữa màn ~3 giây (cảnh nhà chính nổ vẫn chạy), rồi 3 màn kết quả (`src/ui/postgame.js`):
+  đội (tướng mình giữa, 4 đồng đội hai bên, điểm, MVP) → cá nhân (điểm trận lớn, Hạ/Chết/Hỗ trợ/KDA, danh hiệu, 4 huy chương Vàng tổng /
+  Hạ / Chịu ST / Gây ST, các phần cộng thành điểm, vàng / kinh nghiệm / sao, điểm tích luỹ) → bảng tỉ số (Giản lược / Chi tiết, Số liệu =
+  bảng điểm từng phần của cả 10 người + cách tính, Sảnh, Đấu lại).
+- **Điểm trận + MVP** theo 08 §2 (`src/ui/score.js`); mô phỏng ghi thêm sát thương lên tướng / công trình / mục tiêu lớn, sát thương gánh
+  chịu, hồi máu + khiên cho đồng minh, lính/quái kết liễu (`src/sim/damage.js`, `skills.js`, `spells.js`, `status.js`, `ctx.js`).
+- **Bậc hạng theo 08 §1** (Đèn Dầu → … → Nguyệt Quang, Thái Dương), luật sao + Điểm tích luỹ + Bùa Giữ Sao (MVP thua) (`src/ui/profile.js`).
+- Tên người chơi trên đầu tướng và trong bảng tỉ số trong trận. `?hero=<id>` vẫn vào thẳng trận để kiểm thử.
+- Kiểm thử: `tools/` mô phỏng đều đạt; chạy trình duyệt headless trọn luồng (sảnh → … → kết quả → Đấu lại) cho cả 4 chế độ ở
+  844×390 và 640×360, không lỗi console.
+
+## Rà soát lỗi (07/10)
+- **Rò rỉ bộ nhớ GPU cả trận**: mỗi lính/quái có xương tạo một texture xương; lính chết thì view bị gỡ nhưng bộ xương không được giải
+  phóng → mỗi đợt lính rò ~30 texture (đo: 46 → 341 texture sau 3,5 phút 5v5). Nay giải phóng khi gỡ đơn vị, khi đổi tướng ở sảnh,
+  sau khi chụp chân dung bản đồ nhỏ (đo lại: texture được xoá theo lính chết, số còn lại bám theo số đơn vị đang sống).
+- **Lớp CSS trùng với HUD trong trận** (`.cd` lớp phủ hồi chiêu, `.ic`, `.q`, `.sk`): ảnh thẻ ở trang chi tiết tướng phình to che kín
+  màn, ô phép ở màn tải trận to bất thường → đổi tên lớp của giao diện sảnh.
+- Bảng Trang bị ở sảnh trống ở thẻ "Gợi ý" (thẻ ảo của cửa hàng trong trận) → hiện bộ đồ gợi ý của tướng đứng ở sảnh.
+- Mô tả kỹ năng K1–K3 trống ở màn chọn tướng / chi tiết tướng (dữ liệu tướng chưa có câu mô tả) → tự sinh từ số liệu
+  (`src/ui/skilltext.js`: kiểu thi triển, tầm, sát thương theo cấp + hệ số, khống chế, khiên/hồi máu, hồi chiêu, năng lượng).
+- Trong trận không có cách rời trận → nút **Đầu hàng** trong bảng cài đặt (bánh răng; chạm 2 lần để xác nhận; đấu hạng từ phút 8 theo 07 §9).
+- Chọn chất lượng đồ hoạ trong Cài đặt ở sảnh trước đây không có tác dụng → trận và sân khấu sảnh đọc lựa chọn này.
+- Hộp chọn phép / bảng còn mở khi hết giờ chọn tướng bị kẹt sang màn sau → đóng khi đổi màn. Mời bạn khi đang tìm trận → chặn.
+- Cảnh báo console `toNonIndexed()` (đá trang trí 1v1) → bỏ.
+- **Mục tiêu lớn hồi đầy máu giữa trận đánh**: người giữ aggro (thường là tướng đỡ đòn) chết / nhảy / tàng hình thì Long Ngư… bỏ về hồi
+  đầy dù đồng đội vẫn đang đánh → nay đổi sang tướng vừa đánh trại trong 3 giây (06 §3), mục tiêu chỉ tạm không chọn được thì đứng chờ.
+  Móc Neo / xoáy nước kéo được mục tiêu lớn (tốc chạy 0) ra khỏi hang → kẹt "đang về" mãi, hồi máu liên tục → mục tiêu lớn không bị kéo.
+- Bố cục màn nhỏ 640×360: nút ĐẤU HẠNG xuống dòng, viên thuốc phép/bùa/đối thủ đè nút ở màn chọn tướng, màn điểm cá nhân tràn,
+  cột tên tướng ở bảng tỉ số → sửa. Ô nhập tên gõ được trên iOS.
+- Đã chạy: toàn bộ `tools/t_*.mjs` + `simtest` (mới: `t_rank.mjs` luật hạng / điểm trận), trình duyệt headless trọn luồng 4 chế độ
+  (thắng và thua), mở mọi bảng ở sảnh, trận 5v5 dài theo dõi texture / hình học / đối tượng cảnh / DOM / NaN vị trí — không lỗi console.
+
+## Giao diện ngoài trận v2 (07/10)
+- **Bộ nhận diện mới** (`src/ui/css.js`): khung viền vàng kim có hoa văn góc (`.fr`, SVG nội tuyến), chữ tiêu đề Barlow Condensed nghiêng
+  phủ dải vàng kim / bạc (`.gt` / `.gs`), nút vàng bóng có vệt sáng lướt, nút lam / đỏ / kính, nút tròn viền vàng, viên tiền tệ có biểu
+  tượng tràn mép + nút "+", thanh tiến độ, ruy-băng nhãn, dải chữ CHIẾN THẮNG / THẤT BẠI trong trận.
+- **Biểu tượng vẽ sẵn** (`assets/ui/icons/*.webp`, 29 ảnh — tiền, ngọc, thư, bánh răng, cúp, bạn bè, trò chuyện, cuộn sứ mệnh, kiếm, mũ
+  tướng, trang bị, túi, sách, đồng hồ cát, rương, đèn lồng, sao, bia, cửa hàng, tia sét, 8 huy hiệu bậc hạng) dựng bằng
+  `tools/uiart/icons.cjs` (cùng kiểu vẽ canvas với biểu tượng kỹ năng `src/hud/paint.js`).
+- **Sảnh**: tướng 3D đứng trên bệ giữa quảng trường đêm dựng sẵn (`assets/ui/lobby.jpg` — đài phun đèn lồng, hàng cột, tháp, đèn
+  đường, dây đèn, trăng; canvas nền trong suốt chồng lên ảnh), thẻ người chơi (cấp, huy hiệu, thanh kinh nghiệm), cột bạn bè, tiền tệ,
+  băng sự kiện có rương, 3 ô Sứ mệnh / Xếp hạng / Lịch sử, thanh Tướng / Trang bị / Túi đồ / Bạn bè, nút pha lê Chọn chế độ / Đấu thường,
+  nút vàng ĐẤU HẠNG có huy hiệu bậc.
+- Làm lại **chọn chế độ, phòng chờ, hộp "Đã tìm thấy trận", chọn tướng** (biểu tượng kỹ năng vẽ, đồng hồ vòng đếm ngược, khung đội),
+  **đội hình** (tia sáng xoay sau tướng), **tải trận** (thẻ viền lam / đỏ / vàng, huy hiệu, chữ VS), **3 màn sau trận** (tia sáng, huy
+  chương vàng / bạc / đồng vẽ sẵn), **mọi bảng** (hồ sơ, bạn bè, thư, nhiệm vụ, tướng + kỹ năng, trang bị, túi đồ, cài đặt, sự kiện
+  điểm danh, xếp hạng, lịch sử) và **màn tải đầu game**.
+- Ảnh toàn thân sau trận tự vừa khung theo hình (trước: búa của Emberforge bị cắt ở mép).
+- Màn lớn (từ 900×560): phóng cả lớp giao diện 1,25–1,5 lần cho cân với cảnh 3D.
+- Đã chạy: `t_rank`, `t_combat`, `t_items`; trình duyệt headless trọn luồng đấu hạng (sảnh → ghép trận → chọn tướng → trận → kết quả →
+  Đấu lại), chụp mọi màn / bảng ở 844×390, 640×360, 1280×720 — không lỗi console.

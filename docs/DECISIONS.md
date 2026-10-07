@@ -412,3 +412,115 @@
   `'wasm-unsafe-eval'`) thì Moonstream thành khối giữ chỗ. Bản trong trận để không nén (3,0 MB thay vì 2,1 MB); bản sảnh vẫn nén
   (7,8 MB thay vì ~12 MB), không giải nén được thì sảnh dùng bản trong trận.
 
+## Phản hồi chơi thử 06/10: ra chiêu quay mặt, nút huỷ Chớp Bước, 6 kiểu số sát thương, máu tướng, quái yếu đi
+- **Nút huỷ cho Chớp Bước**: phép bổ trợ có hướng dùng chung vòng ngắm + ô X huỷ với nút kỹ năng (`src/hud/aimPad.js`): kéo nút
+  phép để ngắm, kéo ngón vào ô X góc phải (ô đỏ lên) rồi thả là huỷ, không mất hồi chiêu.
+- **Ra chiêu quay mặt về hướng chiêu**: chiêu có hướng/điểm làm tướng quay về hướng chiêu và đứng ra chiêu tới lúc chiêu phát ra
+  + 0,25 s (Móc Neo vung 0,2 s → 0,45 s; Đe Trời: suốt lúc bay). Trong lúc đó cần di chuyển không xoay người, đòn đánh thường chờ
+  chiêu xong. Lướt (Lướt Đốt, Lộn Diều) không khoá vì tự di chuyển. Hết mốc mà đang giữ cần thì clip ra chiêu nhường dáng chạy ngay
+  (trước đây tướng chạy đi ngay, mặt quay theo cần, rồi trượt trong tư thế ra chiêu tới hết clip 0,7 s). Đòn đánh thường cũng vậy.
+- **Tướng to hơn**: `HERO_SCALE` 1,35 → 1,5 (chỉ phần hình; bán kính va chạm giữ nguyên). Thanh máu trên đầu cao theo tỉ lệ.
+- **Máu tướng +30%** (`HERO_HP_MULT`, máu gốc + máu theo cấp; máu cộng từ đồ/bùa giữ nguyên): ít bị dồn chết trong một combo. Chiêu
+  tính theo % máu tối đa của chính tướng (Dậm Áp Suất, khiên Mai Đá của Mossback) mạnh lên tương ứng (test t_combat đã sửa số).
+- **Quái rừng yếu đi** (`MONSTER_POWER`): công ×0,7, máu ×0,85 cho mọi quái và mục tiêu lớn; mức tăng theo phút giữ nguyên.
+- **Số sát thương 6 kiểu** (`DMG_STYLE` trong `hud.js`): vật lý cam vàng, phép tím lam, chuẩn trắng có quầng sáng. Chí mạng: chữ to
+  1,5 lần, nghiêng, nảy mạnh + rung, hình nổ răng cưa phía sau và biểu tượng (vết chém / sao bốn cánh / viên kim cương). Sự kiện
+  `damage` mang cờ `crit` (`dealDamage(..., { crit: true })`). Hiện chỉ đòn đánh thường chí mạng được (vật lý); kiểu chí mạng phép
+  và chuẩn đã sẵn cho chiêu/đồ sau này, xem trước bằng nút "Số sát thương" ở bảng thử `?debug=1`. Số bay tính theo giây thật
+  (trước đây cộng 1/60 mỗi khung: máy 30 FPS thấy số lơ lửng gấp đôi).
+- **Sửa kèm**: lệnh chớp mắt (`mats.update`) bị dính vào sau dấu `//` của chú thích nên mặt anime không chớp.
+- **Hiệu ứng chìm dưới bệ trại bùa** (Moonstream tung chiêu vào hang bùa): bệ đá lãnh thổ trại quái cao 12, bệ hang mục tiêu lớn
+  ~32–40, còn hiệu ứng mặt đất vẽ ở độ cao cố định 4–8 nên bị bệ che. `src/render/env/floor.js` (`floorAt`) cho độ cao mặt nền
+  phần nhìn; vòng/vệt/xoáy/cột sáng, hạt sát đất, vòng ngắm chiêu, thanh máu, số bay và chính các đơn vị + bóng chân đặt lên
+  trên mặt đó (đơn vị bước lên/xuống bệ êm). Mô phỏng vẫn phẳng.
+- **Cảm ứng nhiều ngón (≥ 5)**: trước đây nút kỹ năng chỉ nhớ một ngón (bấm K2 lúc đang ngắm K1 thì K1 mất lượt), nút phép cũng
+  vậy; trên iPhone, ngón thứ 2–3 còn bị trình duyệt hiểu là phóng to/cuộn trang và huỷ các chạm đang giữ. Giờ mỗi nút giữ ngón
+  riêng, chặn cử chỉ trình duyệt khi có từ 2 ngón (touchstart/touchmove/gesturestart), vòng ngắm dùng chung có "chủ". Đã thử bằng
+  sự kiện chạm CDP: cần + giữ nút đánh + ngắm K1 + ngắm Chớp Bước + vuốt camera cùng lúc, thả từng ngón đều đúng.
+- **Người chơi tự cộng điểm kỹ năng**: tướng người chơi không tự cộng nữa — đầu trận 1 điểm, nút + (to 34 px, nằm trên nút kỹ
+  năng, nhấp nháy) hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + trên các chiêu cộng được (K3 từ cấp 4). Bot vẫn tự cộng.
+
+
+## Chữ và biểu tượng giao diện
+- **Font Be Vietnam Pro** (SIL OFL 1.1, tự lưu ở `assets/fonts/`, 12 tệp woff2 ~220 KB: đậm 500–800 × latin/latin-ext/vietnamese,
+  chỉ tải phần chữ cần dùng): thiết kế riêng cho tiếng Việt, dấu rõ ở cỡ nhỏ, số đều nhau (tabular) nên đồng hồ/vàng không nhảy.
+  Dùng cho toàn bộ HUD DOM lẫn chữ vẽ trên canvas (thanh máu, tên, số bay, bảng bị hạ, bản đồ nhỏ); không cần mạng ngoài.
+- **Biểu tượng** (`src/hud/uiIcons.js`): một bộ SVG nét vàng ánh kim chuyển sắc + viền tối, thay emoji ⚙/⛶ và các icon cũ:
+  bánh răng, toàn màn hình, đồng hồ, K/D/A (kiếm chéo, đầu lâu, nắm tay), menu, nút Ăn lính (mũ trụ chỏm đỏ + kiếm) và Đẩy trụ
+  (tháp mái đình + pha lê). Nút tròn nền xanh thẫm viền vàng như Liên Quân.
+- **Cụm nút giãn ra**: nút Ăn lính/Đẩy trụ lùi xa nút Đánh thêm 7px, K1 dạt trái 16px, K3 lên 14px, K2 lệch ra 6px.
+
+## Hiệu ứng kỹ năng v2 (06/10)
+- **Ba lớp cho mỗi đòn trúng**: (1) hiệu ứng trúng theo chủ đề tướng (lửa / nước / lá / gió / trăng / đèn — `hitFx`), (2) lớp
+  theo **loại sát thương** (`typeFx`): vật lý = vệt chém cam + mảnh văng, phép = ký tự phép tím lam + sao, chuẩn = mảnh kim cương
+  trắng + vòng sáng; **chí mạng** thêm vết chém chữ X lớn + vòng nổ, và rung màn hình nhẹ nếu là đòn của chính mình; (3) hiệu ứng
+  riêng từng chiêu (`SKILL_HIT[tướng][K1|K2|K3]`). Cùng một đòn vì thế đọc được cả "ai đánh", "loại gì", "có chí mạng không".
+- **Đạn chiêu riêng** (`PROJ`): lưỡi lá tre xoay (Bamboo Shade K1), trăng khuyết bạc (Moonstream K1), mũi tên gió có luồng xoắn
+  (Kitewing K1), đèn lồng giấy lắc lư (Lanternward K1); các đạn khác giữ lõi sáng + vệt hạt theo chủ đề.
+- **Dấu hiệu ra chiêu** (`castTell`): vũ khí loé + tia sáng tụ vào lúc bắt đầu, loé vòng **trước mặt tướng theo hướng chiêu** đúng
+  lúc phát (không đặt ở mũi vũ khí vì lúc vung ngược mũi vũ khí nằm sau lưng). Mỗi tướng có thêm phần riêng lúc ra chiêu (lửa ở
+  búa, vết chém chéo, trăng lớn trên đầu, vòng gió + lông vũ, đèn lồng trên tay...).
+- **Atlas hạt 4×4 = 16 ô** (thêm trăng, lông vũ, đèn lồng, vòng, vết chém, lưỡi lá, ký tự phép, kim cương).
+- **Soát bằng bảng chụp** (K1/K2/K3/chí mạng × 3 khung, cả 6 tướng). Sửa sau khi soát: vệt vũ khí bớt trắng (màu tướng đậm, lõi
+  trắng chỉ ở mép đầu), ngưỡng tốc độ hiện vệt nhân theo cỡ tướng; quầng loé to (billboard) cắm xuống đất thành mảng sáng cạnh
+  thẳng → phần dư đổ thành vầng sáng nằm trên mặt đất; khiên cầu bao đủ tướng to (bán kính × cỡ tướng) và lòng khiên gần trong
+  suốt (trước đây trắng xoá tướng bên trong); Mưa Tên của Kitewing là tên gió mảnh (lõi trắng + vệt xanh + đầu sáng, rơi rồi cắm
+  đất) với mật độ theo thời gian (~55 mũi/giây, trước đây theo khung hình nên 60 FPS dày gấp 3 thành những vạch trắng).
+
+## Sảnh: tóc Moonstream, búa Emberforge, cỡ tướng (06/10)
+- **Tóc Moonstream "bị cắt ngang"**: lỗi có sẵn trong cả hai file gốc (hq và game) — mái tóc bị cắt đôi theo một mặt phẳng ngang vai: nửa
+  trên thuộc vật liệu đầu và khép lại thành "búi" tròn, nửa dưới (các lọn trắng sau lưng) thuộc vật liệu áo với mép trên thẳng. Sửa khi
+  nhập (`import_fused.mjs`): `morph` nắn lưới gốc trước khi gắn xương — nửa dưới búi giãn dọc ×1,7 và nở ra phủ mép → một mái tóc dài
+  liền tới giữa lưng; `drop` bỏ hẳn các lọn tóc lởm chởm phía dưới (người chơi thấy như "búi tóc thừa"; lưng áo bên dưới vẫn còn lưới,
+  không thủng). Thêm `hair`: mọi đỉnh tóc (cả hai vật liệu, trừ mặt/cằm) gắn xương
+  CHỈ theo độ cao dọc chuỗi Đầu → Cổ → Ngực → Lưng (cùng một hàm), trước đây phần trên theo đầu với vùng chuyển rất hẹp còn các lọn
+  dưới bị gắn cả vào cánh tay → khi cử động gãy ngang và xoè ra.
+- **Emberforge "mất búa" ở sảnh**: dáng đứng vác búa trên vai làm đầu búa khuất sau lưng; clip trưng bày giơ búa thẳng lên thì đầu búa
+  vượt khỏi mép trên khung. Thêm clip `ShowIdle` (sảnh dùng thay `Idle` nếu có): đứng chống búa xuống đất bên phải; `Showcase` mới:
+  nhấc búa đưa ra trước khoe rồi dộng xuống chống lại — búa luôn trong khung.
+- **Khung hình sảnh**: tướng chiếm ~52% chiều cao khung (trước ~61%, người chơi thấy to quá) và khung tự lùi xa đủ chứa tầm với cao
+  nhất của bàn tay/mũi vũ khí trong clip trưng bày + dáng đứng (tính khi nạp model bằng cách lấy mẫu clip).
+
+- **Số máu quái khi giao chiến** (như Liên Quân, cả quái thường lẫn boss — số của boss to hơn, 16px): quái đang có mục tiêu hoặc vừa bị đánh trong 4 giây hiện số máu hiện tại (trắng viền
+  đen) ngay trên thanh máu; tên quái lớn đẩy lên trên số. Thanh máu quái có thêm vệt trắng phần máu vừa mất, rút dần (~45%/giây).
+
+## Vũ khí đứt khúc khi vung (06/10)
+- **Emberforge búa vỡ thành 4–5 khúc** khi giơ/bổ: lưới AI là một khối liền, cán búa đi qua vai/cổ/nắm tay nên bị chia thành nhiều
+  đoạn nhỏ giữa các vòng đai. Bước dọn ranh giới vũ khí (`splitByLabel`) coi các đoạn nhỏ đó là "đảo vũ khí lẻ loi" và trả về thân →
+  chúng gắn theo ngực/cẳng tay, khi vung thì ở lại → cán đứt khúc. Sửa: đoạn vũ khí có thêm phép thử `core` (màu, vd không phải da):
+  đỉnh nằm hẳn trong thân vũ khí (≤ r) và qua phép thử là **lõi** — không bước dọn nào được trả về thân; da vai/cổ sát cán (trượt phép
+  thử) vẫn được dọn như cũ. Thêm: bước bỏ "tam giác sợi chỉ" (`maxEdge`) không xoá tam giác vũ khí cứng (cả 3 đỉnh cùng gắn một xương).
+- **Lanternward** (model sinh bằng code): chiêu cuối và động tác chiến thắng dùng kiểu chung "giơ hai tay" xoay cánh tay ~165° nên gậy đèn
+  gắn ở tay phải bị lật ngược — đầu đèn chúc xuống hông, thân gậy xuyên qua đầu. Thêm khung riêng (`LANTERN_UP`, `LANTERN_VICTORY`):
+  tay trái giơ cao, tay phải nâng gậy trước mặt và bẻ cổ tay bù để gậy dựng đứng; `anim.mjs` cho phép `style` là mảng khung và `victory` riêng.
+- Đã soi bảng tư thế (mọi clip × 5 thời điểm) của cả 6 tướng: Mossback (pháo), Bamboo Shade (2 kiếm), Moonstream (bình), Kitewing (cung)
+  không đứt; chỗ "lỗ" ở găng tay Mossback quanh pháo là lưới gốc (găng rỗng ôm pháo), không phải đứt khúc.
+
+## Sảnh và luồng ngoài trận (07/10)
+- **Mọi người chơi khác là máy**, kể cả "bạn bè" (danh sách bạn hư cấu để sảnh có sức sống): tên luôn kèm "[Máy]" ở màn tải, bảng tỉ số,
+  kết quả. Ghép trận chỉ là hiệu ứng chờ (3–6 giây).
+- **Rời màn kết quả = tải lại trang** (`sessionStorage` `la.next` nhớ màn cần mở: sảnh hoặc phòng chờ cùng chế độ + bạn trong phòng).
+  Trận dựng nhiều thứ toàn cục (renderer, HUD, trình nghe sự kiện); dọn tay dễ rò rỉ, tải lại vừa sạch vừa nhanh (tài nguyên đã có trong
+  bộ đệm trình duyệt).
+- **Ảnh giao diện dựng sẵn từ model** (`tools/uiart.html` + `tools/uiart/render.cjs`): tranh mở màn, nền phòng chờ, thẻ tướng, chân dung
+  20 tướng, ảnh toàn thân nền trong 6 tướng — chụp chân dung bằng WebGL lúc chạy (cách cũ) tốn thời gian và bộ nhớ trên điện thoại.
+- **Một ngữ cảnh WebGL**: sân khấu 3D của sảnh / chọn tướng / đội hình dùng chung một renderer, tạm dừng khi bị che, giải phóng ở màn tải
+  trận (trận tạo renderer riêng).
+- **Đơn giản hoá so với 08**: thanh Điểm tích luỹ đầy được dùng ngay trong trận đó (thắng → +1 sao, thua → giữ sao) thay vì để người chơi
+  chọn chế độ; Bùa Giữ Sao (MVP thua) tự dùng (không hỏi); chưa có Điểm Hào Quang, Thiên Hà, mùa giải, cấm/chọn. Quà tân thủ 2 bùa;
+  nhiệm vụ "Tham gia 3 trận" thưởng thêm 1 bùa.
+- Danh hiệu sau trận: MVP, Sát Thần (hạ nhiều nhất — tránh trùng chữ "Sát thủ" của vai trò), Đao Phủ, Máy Cày Vàng, Tường Thành,
+  Ánh Sáng, Đồng Đội Vàng, Phá Thành, Bất Tử, Chiến Binh.
+
+## Giao diện ngoài trận v2 (07/10)
+- **Ảnh vẽ sẵn thay SVG phẳng** cho biểu tượng sảnh: vẽ canvas lúc chạy (như biểu tượng kỹ năng) tốn thời gian khởi động trên điện thoại;
+  29 ảnh webp 256² tổng ~800 KB, nạp trong màn tải đầu game. Các nét nhỏ (quay lại, đóng, cộng, micro, toàn màn) vẫn là SVG.
+- **Phông sảnh là ảnh dựng sẵn + canvas trong suốt** thay vì dựng cả quảng trường 3D lúc chạy: một ảnh 1600×740 rẻ hơn nhiều so với
+  đài phun + tháp + đèn trong cùng ngữ cảnh WebGL với tướng trưng bày. Canvas nền trong suốt dùng kênh alpha nhân sẵn; vật liệu cộng
+  màu (quầng sáng, tia, hạt) chỉ cộng vào RGB, giữ alpha (`keepAlpha` trong `src/showcase/showcase.js`) để ánh sáng cộng lên ảnh phông
+  thay vì phủ đục; tấm mây xoáy (đục) của phông splash tắt khi có ảnh phông.
+- **Font tiêu đề Barlow Condensed** (SIL OFL 1.1, 700 thường + 800 nghiêng, có dấu tiếng Việt) cho chữ lớn / nút / số; chữ thường vẫn
+  Be Vietnam Pro. Chữ vàng kim dùng `background-clip: text` + `drop-shadow`; chừa đệm trên cho dấu chồng (Ễ, Ồ) vì nền chỉ phủ trong hộp chữ.
+- **Màn lớn phóng bằng CSS `zoom`** (1,25 / 1,5) thay vì đặt lại mọi kích thước: bố cục được canh cho điện thoại ngang 360–430 px cao.
+- Đặt lại `#ui button` thành `:where(#ui) button` (độ ưu tiên thấp) — trước đây nó đè màu / font của lớp `.pn-tabs`, `.seg`… nên tab
+  đang chọn không đổi màu.

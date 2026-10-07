@@ -16,7 +16,7 @@ function lotusTexture() {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-function backdrop() {
+export function backdrop() {
   const m = new THREE.Mesh(new THREE.SphereGeometry(60, 32, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
     vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -27,7 +27,7 @@ function backdrop() {
   return m;
 }
 
-function pedestal() {
+export function pedestal() {
   const g = new THREE.Group();
   const stone = new THREE.MeshStandardMaterial({ color: 0x3a3450, roughness: 0.55, metalness: 0.15 });
   const trim = new THREE.MeshStandardMaterial({ color: 0xc9a25a, roughness: 0.35, metalness: 0.8 });
@@ -47,7 +47,7 @@ function pedestal() {
   return { group: g, rune, ring, beam };
 }
 
-function lanterns(n = 26) {
+export function lanterns(n = 26) {
   const g = new THREE.Group(), list = [];
   const body = new THREE.CylinderGeometry(0.07, 0.055, 0.14, 8), mat = new THREE.MeshBasicMaterial({ color: 0xffa24a });
   const halo = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff9a40, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 });
@@ -60,7 +60,7 @@ function lanterns(n = 26) {
   return { group: g, update(t, dt) { for (const l of list) { const u = l.userData; u.y += dt * u.sp; if (u.y > 7) u.y = -1; l.position.set(Math.cos(u.a + t * 0.02) * u.r, u.y, Math.sin(u.a + t * 0.02) * u.r - 3); l.rotation.y += dt * 0.3; } } };
 }
 
-function sparkles(n = 220) {
+export function sparkles(n = 220) {
   const pos = new Float32Array(n * 3), ph = new Float32Array(n);
   for (let i = 0; i < n; i++) { const a = i * 2.39996, r = 0.4 + (i % 17) / 17 * 1.6; pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = (i * 0.618 % 1) * 2.6; pos[i * 3 + 2] = Math.sin(a) * r; ph[i] = i * 1.7; }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('ph', new THREE.BufferAttribute(ph, 1));
@@ -74,22 +74,75 @@ function sparkles(n = 220) {
   return { object: pts, mat };
 }
 
-export function createShowcase(canvas, { quality = 'mid' } = {}) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, premultipliedAlpha: false, powerPreference: 'high-performance' });
+/** Một tướng trên sân khấu trưng bày: bản sao model (đơn vị mét), vật liệu, bộ trộn clip. ctx: { renderer, env } — env map PBR tạo khi cần, dùng chung. */
+export function makeHolder(m, id, ctx) {
+  const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
+  const sh = inst.art.showcaseShading || inst.art.shading; // sảnh có thể dùng kiểu khác trong trận (bản trưng bày chi tiết)
+  if (sh === 'pbr' && !ctx.env) ctx.env = makeEnvMap(ctx.renderer);
+  const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: ctx.env, outline: (inst.art.showcaseOutline ?? inst.art.outline) !== false });
+  const mixer = new THREE.AnimationMixer(obj), acts = {};
+  for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
+  const g = new THREE.Group(); g.add(obj);
+  const h = (inst.art.height || 190) / 100;
+  let base = null, shot = null;
+  const play = (name) => { const a = acts[name]; if (!a) return; shot = name; a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; a.fadeIn(0.15).play(); base?.fadeOut(0.15);
+    mixer.addEventListener('finished', function f(ev) { if (ev.action === a) { mixer.removeEventListener('finished', f); if (shot === name) shot = null; a.fadeOut(0.3); base?.reset().fadeIn(0.3).play(); } }); };
+  // tầm với: độ cao cao nhất các xương (mũi vũ khí, bàn tay, đỉnh đầu) trong clip trưng bày + dáng đứng ở sảnh → khung hình chứa trọn vũ khí
+  let reach = 0;
+  { const v = new THREE.Vector3(), tips = []; obj.traverse((o) => { if (o.isBone && /Hand(L|R)(_Tip)?$/.test(o.name)) tips.push([o, /_Tip$/.test(o.name) ? 0.3 : 0.12]); }); // mũi vũ khí: + nửa đầu vũ khí
+    for (const nm of ['Showcase', 'ShowIdle', 'Idle']) { const a = acts[nm]; if (!a) continue; const d = a.getClip().duration; a.reset().play();
+      for (let k = 0; k <= 20; k++) { mixer.setTime((d * k) / 20); obj.updateMatrixWorld(true); for (const [b, m] of tips) reach = Math.max(reach, b.getWorldPosition(v).y + m); }
+      a.stop(); }
+    mixer.setTime(0); }
+  base = acts.ShowIdle || acts.Idle; base?.play(); // ShowIdle: dáng đứng riêng cho sảnh (vd Emberforge chống búa thay vì vác búa khuất sau lưng)
+  /** Nhận trạng thái clip của holder khác (cùng bộ xương, cùng clip) để đổi sang bản trưng bày mà không giật. */
+  const syncFrom = (o) => {
+    const w = (a) => (a ? a.getEffectiveWeight() : 0);
+    if (o.shot) { play(o.shot); const a = acts[o.shot], b = o.acts[o.shot]; a.time = b.time; a.stopFading().setEffectiveWeight(w(b)); }
+    if (base && o.base) { base.time = o.base.time; base.stopFading().setEffectiveWeight(w(o.base)); }
+  };
+  /** Đứng yên ở một khung của clip (dựng ảnh, màn đội hình). */
+  const freeze = (name, time) => { const a = acts[name]; if (!a) return false; mixer.stopAllAction(); shot = null; a.reset().play(); a.paused = true; a.time = Math.min(time, a.getClip().duration); mixer.update(0); return true; };
+  return { id, g, mixer, mats, h, reach, art: inst.art, play, freeze, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
+}
+
+/** Canvas nền trong suốt (kênh alpha nhân sẵn): vật liệu cộng màu (quầng sáng, tia, hạt) chỉ cộng vào RGB, giữ nguyên alpha — điểm ảnh
+ *  alpha 0 mà có màu thì trình duyệt cộng ánh sáng đó lên ảnh phông phía sau; để mặc định (SRC_ALPHA, ONE cho cả alpha) thì chỗ có quầng
+ *  sáng thành đục, che mất phông. */
+function keepAlpha(root) {
+  root.traverse((o) => {
+    for (const m of [o.material].flat()) {
+      if (!m || m.blending !== THREE.AdditiveBlending) continue;
+      m.blending = THREE.CustomBlending; m.blendEquation = THREE.AddEquation;
+      m.blendSrc = THREE.SrcAlphaFactor; m.blendDst = THREE.OneFactor; m.blendSrcAlpha = THREE.ZeroFactor; m.blendDstAlpha = THREE.OneFactor;
+      m.needsUpdate = true;
+    }
+  });
+}
+
+/**
+ * Cảnh trưng bày một tướng (màn chọn tướng, sảnh chính, màn đội hình). o: { quality, stand (bệ đá, mặc định có), autoSpin (tự xoay chậm),
+ * preserve (giữ bộ đệm vẽ để đọc ảnh — công cụ dựng ảnh) }.
+ */
+export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin = true, preserve = false, transparent = false } = {}) {
+  // transparent: nền trong suốt (sảnh vẽ ảnh phông dựng sẵn phía sau canvas); ánh sáng cộng màu (đèn trời, bụi sáng) vẫn hiện đúng nhờ
+  // kênh alpha nhân sẵn (điểm ảnh alpha 0 mà có màu = ánh sáng cộng lên phông)
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: transparent, premultipliedAlpha: transparent, powerPreference: 'high-performance', preserveDrawingBuffer: preserve });
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
-  const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
+  if (transparent) renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene(); if (!transparent) scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 12, 60);
   const splash = createSplash(); scene.add(splash.group);
+  if (transparent) splash.clouds.visible = false; // mây xoáy là tấm nền đục — phông đã có ảnh dựng sẵn
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
   scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.65));
   const key = new THREE.DirectionalLight(0xfff6ec, 2.4); key.position.set(1.5, 3, 5); scene.add(key); // đèn chính trước mặt để tướng nổi trên phông
   const fill = new THREE.DirectionalLight(0x8ab4ff, 0.9); fill.position.set(-3, 2, 2); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xffffff, 2.0); rim.position.set(-1.5, 3, -4); scene.add(rim);
   const warm = new THREE.PointLight(0xffa050, 1.0, 5, 1.5); warm.position.set(0, 0.35, 0.9); scene.add(warm);
-  const ped = pedestal(); scene.add(ped.group);
+  const ped = pedestal(); ped.group.visible = stand; scene.add(ped.group);
   const lan = lanterns(); scene.add(lan.group);
   const sp = sparkles(); scene.add(sp.object);
   const stage = new THREE.Group(); scene.add(stage);
-  let env = null; // env map cho tướng dùng vật liệu PBR (cảnh trưng bày không đặt scene.environment để không đổi màu bệ đá)
 
   // Vẽ thẳng ra màn hình (không hậu kỳ): so sánh A/B cho thấy hậu kỳ làm nhạt màu tướng; đèn đã có quầng sáng riêng.
 
@@ -103,33 +156,23 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   };
   addEventListener('resize', resize); resize();
 
-  let cur = null, next = null, spin = -0.35, spinV = 0.12, t = 0, running = true, drag = null, lastTap = 0, req = 0;
+  const SPIN0 = -0.35; // góc 3/4 mặt trước; không tự xoay (sảnh): thả tay thì từ từ quay về góc này
+  let SPIN_V = autoSpin ? 0.12 : 0;
+  let cur = null, next = null, spin = SPIN0, spinV = SPIN_V, t = 0, running = true, drag = null, lastTap = 0, req = 0;
+  let view = { zoom: 1, dy: 0, dx: 0.25 }; // khung hình: zoom > 1 = tướng to hơn; dy dịch tâm nhìn (theo chiều cao tướng)
   const rimCol = new THREE.Color();
   canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX }; const now = performance.now(); if (now - lastTap < 300) cur?.play('Victory'); lastTap = now; });
-  addEventListener('pointermove', (e) => { if (!drag) return; spinV = 0; spin += (e.clientX - drag.x) * 0.012; drag.x = e.clientX; });
-  addEventListener('pointerup', () => { drag = null; setTimeout(() => { if (!drag) spinV = 0.12; }, 1500); });
+  const onMove = (e) => { if (!drag) return; spinV = 0; spin += (e.clientX - drag.x) * 0.012; drag.x = e.clientX; };
+  const onUp = () => { if (!drag) return; drag = null; setTimeout(() => { if (!drag) spinV = SPIN_V; }, 1500); };
+  addEventListener('pointermove', onMove); addEventListener('pointerup', onUp); addEventListener('pointercancel', onUp);
+  const frameCam = () => { // khung theo chiều cao tướng, gồm cả vũ khí giơ cao (tầm với của xương + nửa đầu vũ khí); zoom 1: tướng ~52% chiều cao khung
+    if (!cur) return; const hh = Math.max(1.6, cur.h, cur.reach || 0), z = view.zoom;
+    camera.position.set(view.dx, hh * (0.47 + view.dy), (hh * 3.15 + 1.3) / z); camera.lookAt(view.dx, hh * (0.56 + view.dy), 0);
+  };
 
-  function holder(m, id) {
-    const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
-    const sh = inst.art.showcaseShading || inst.art.shading; // sảnh có thể dùng kiểu khác trong trận (bản trưng bày chi tiết)
-    if (sh === 'pbr' && !env) env = makeEnvMap(renderer);
-    const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: env, outline: (inst.art.showcaseOutline ?? inst.art.outline) !== false });
-    const mixer = new THREE.AnimationMixer(obj), acts = {};
-    for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
-    const g = new THREE.Group(); g.add(obj);
-    const h = (inst.art.height || 190) / 100;
-    let base = null, shot = null;
-    const play = (name) => { const a = acts[name]; if (!a) return; shot = name; a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; a.fadeIn(0.15).play(); base?.fadeOut(0.15);
-      mixer.addEventListener('finished', function f(ev) { if (ev.action === a) { mixer.removeEventListener('finished', f); if (shot === name) shot = null; a.fadeOut(0.3); base?.reset().fadeIn(0.3).play(); } }); };
-    base = acts.Idle; base?.play();
-    /** Nhận trạng thái clip của holder khác (cùng bộ xương, cùng clip) để đổi sang bản trưng bày mà không giật. */
-    const syncFrom = (o) => {
-      const w = (a) => (a ? a.getEffectiveWeight() : 0);
-      if (o.shot) { play(o.shot); const a = acts[o.shot], b = o.acts[o.shot]; a.time = b.time; a.stopFading().setEffectiveWeight(w(b)); }
-      if (base && o.base) { base.time = o.base.time; base.stopFading().setEffectiveWeight(w(o.base)); }
-    };
-    return { id, g, mixer, mats, h, art: inst.art, play, life: 0, out: 0, acts, syncFrom, get shot() { return shot; }, get base() { return base; } };
-  }
+  const hctx = { renderer, env: null }; // env map PBR dùng chung cho các tướng của cảnh này
+  const drop = (g) => g.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); // tướng cũ rời sân khấu: giải phóng texture xương
+  const holder = (m, id) => makeHolder(m, id, hctx);
 
   const burst = (() => { // hạt sáng khi đổi tướng
     const n = 160, pos = new Float32Array(n * 3), vel = []; for (let i = 0; i < n; i++) vel.push(new THREE.Vector3());
@@ -146,27 +189,27 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     const m = peekHero(id, { showcase: true }) || await loadHero(id); if (!m || next !== token) return;
     if (m.art.showcase && !m.showcase) loadHero(id, { showcase: true }).then((hq) => {
       if (!hq?.showcase || next !== token || cur?.id !== id || cur.showcase) return;
-      const h2 = holder(hq, id); h2.showcase = true; h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
-      stage.remove(cur.g); stage.add(h2.g); cur = h2;
+      const h2 = holder(hq, id); h2.showcase = true; if (transparent) keepAlpha(h2.g); h2.life = cur.life; h2.g.scale.copy(cur.g.scale); h2.syncFrom(cur);
+      stage.remove(cur.g); drop(cur.g); stage.add(h2.g); cur = h2;
     });
-    const h = holder(m, id); h.showcase = !!m.showcase;
+    const h = holder(m, id); h.showcase = !!m.showcase; if (transparent) keepAlpha(h.g);
     if (cur) { cur.out = 0.001; burst.fire(cur.h); }
     const old = cur; cur = h; h.g.scale.setScalar(0.001); stage.add(h.g); h.play('Showcase');
     spin = -0.35 - Math.round((spin + 0.35) / (Math.PI * 2)) * Math.PI * 2; // quay lại góc 3/4 mặt trước
-    if (old) setTimeout(() => stage.remove(old.g), 400);
+    if (old) setTimeout(() => { stage.remove(old.g); drop(old.g); }, 400);
     rimCol.set(h.art.rim || '#ffd28a'); rim.color.copy(rimCol).lerp(new THREE.Color(0xffffff), 0.35); ped.beam.material.uniforms.uCol.value.copy(rimCol);
     sp.mat.uniforms.uCol.value.copy(rimCol).lerp(new THREE.Color(0xffe0a0), 0.5);
     const pal = h.art.palette || [], cA = new THREE.Color(pal[1] || h.art.rim || '#ff9a40'), cB = new THREE.Color(pal[2] || '#ffe0a0');
     splash.setColors(cA, cB);
-    // khung hình theo chiều cao tướng
-    const hh = Math.max(1.6, h.h); camera.position.set(0.25, hh * 0.45, hh * 2.6 + 1.2); camera.lookAt(0.25, hh * 0.58, 0);
+    frameCam();
+    return h;
   }
 
   function frame(now) {
     if (!running) return;
     req = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - (frame.last || now)) / 1000); frame.last = now; t += dt;
-    spin += spinV * dt;
+    spin += spinV * dt; if (!SPIN_V && !drag) spin += (SPIN0 - spin) * Math.min(1, dt * 2.5);
     stage.rotation.y = spin;
     for (const h of stage.children.map((g) => (cur && cur.g === g ? cur : null)).filter(Boolean)) {
       h.life += dt; const s = Math.min(1, h.life / 0.45); h.g.scale.setScalar(0.001 + (1 - Math.pow(1 - s, 3)) * 0.999);
@@ -178,6 +221,7 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
     renderer.render(scene, camera);
   }
   req = requestAnimationFrame(frame);
+  if (transparent) keepAlpha(scene);
 
   /** Ảnh chân dung (dataURL) chụp đầu tướng, dùng cho thẻ trong lưới. */
   async function portrait(id, size = 128) {
@@ -200,9 +244,25 @@ export function createShowcase(canvas, { quality = 'mid' } = {}) {
   }
 
   return {
-    show, portrait, scene, stage,
+    show, portrait, scene, stage, camera, renderer,
+    get current() { return cur; },
     /** Dời tâm cảnh sang phải (px) để chừa chỗ cho lưới tướng bên trái. */
     setOffset(px) { offX = px; resize(); },
-    dispose() { running = false; cancelAnimationFrame(req); renderer.dispose(); renderer.forceContextLoss(); removeEventListener('resize', resize); },
+    /** Đổi khung hình: { zoom, dy, dx } (sảnh: tướng to, giữa màn). */
+    frame(v) { view = { ...view, ...v }; frameCam(); },
+    /** Phát một động tác (Victory…) / đứng yên ở một khung của clip. */
+    play(name) { cur?.play(name); },
+    pose(name, time) { return cur?.freeze(name, time); },
+    /** Hiện/ẩn mây xoáy màu tướng sau lưng (sảnh có phông dựng sẵn thì để nhẹ); k: độ đậm 0..1. */
+    aura(on, k = 1) { splash.group.visible = !!on; splash.group.scale.setScalar(0.6 + 0.4 * k); },
+    /** Bật/tắt tự xoay chậm (màn chọn tướng xoay, sảnh đứng yên). */
+    autoSpin(on) { SPIN_V = on ? 0.12 : 0; spinV = SPIN_V; if (!on) spin = SPIN0 + Math.round((spin - SPIN0) / (Math.PI * 2)) * Math.PI * 2; },
+    /** Ngừng vẽ khi bị che (phòng chờ, màn tải) để đỡ tốn pin; tiếp tục khi hiện lại. */
+    pause() { running = false; cancelAnimationFrame(req); },
+    resume() { if (running) return; running = true; frame.last = performance.now(); req = requestAnimationFrame(frame); },
+    dispose() {
+      running = false; cancelAnimationFrame(req); renderer.dispose(); renderer.forceContextLoss();
+      removeEventListener('resize', resize); removeEventListener('pointermove', onMove); removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp);
+    },
   };
 }

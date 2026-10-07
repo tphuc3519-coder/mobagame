@@ -623,7 +623,8 @@ export function itemArtURL(id, tier = 1) {
 }
 export const ITEM_ART_IDS = Object.keys(ITEM);
 // bộ vẽ vật thể dùng lại cho icon kỹ năng (paint.js gọi lúc vẽ, không lúc nạp module)
-export const D = { sword, axe, hammer, boot, chest, kite, crescent, bow, spear, flames, bolt, jewel, wire, etch, bevel, across, LG, RG, P, pt, circ, MAT, stroke, fillA };
+export const D = { sword, axe, hammer, boot, chest, kite, crescent, bow, spear, flames, bolt, jewel, wire, etch, bevel, across, LG, RG, P, pt, circ, MAT, stroke, fillA,
+  book, hourglass, helmet, pouch, gem, crown, roundShield, scepter, orb, staff, ring, bell, stars }; // (book… dùng lại cho biểu tượng sảnh: tools/uiart/icons.js)
 /** Vẽ sẵn icon trang bị lúc rảnh, mỗi lượt một món (tránh khựng khi mở shop lần đầu); món nào đã vẽ thì bỏ qua. */
 export function warmItemArt(tierOf, ids = ITEM_ART_IDS) {
   if (typeof document === 'undefined') return;

@@ -1,5 +1,6 @@
 // Cụm nút phụ ở đáy màn hình, bên trái cụm kỹ năng (như Liên Quân): Biến về · Hồi Máu (cố định) · Phép bổ trợ (tự chọn) · Đồ kích hoạt.
 // Icon lớn có nhãn tên bên dưới; chạm nhanh = dùng, giữ yên ~0.35s = xem mô tả (thả ra không dùng). Phím: B/R về, H hồi máu, F phép, E đồ.
+// Phép có hướng (Chớp Bước): kéo để ngắm như nút kỹ năng — vòng ngắm quanh nút, kéo ngón vào ô X góc phải rồi thả để huỷ.
 import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
@@ -7,6 +8,7 @@ import { ECON } from '../data/economy.js';
 import { itemIcon } from './icons.js';
 import { spellArt, recallArt, restoreArt } from './art.js';
 import { showTip, hideTip } from './tip.js';
+import { DRAG_MIN, DRAG_MAX, inCancel, aimUI } from './aimPad.js';
 
 const HOLD = 350;
 
@@ -34,25 +36,30 @@ export function createSpellButtons(root, { world, player, indicators }) {
     spell: (aim) => world.command(player.id, { type: 'spell', aim }),
     itemAct: () => world.command(player.id, { type: 'useItem', slot: activeSlot() }),
   };
-  let press = null;
+  const presses = new Map(); // mỗi nút một ngón (nhiều ngón cùng lúc không cướp lượt của nhau)
   for (const k of ['recall', 'restore', 'spell', 'itemAct']) {
     const b = box(k).querySelector('button');
     b.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('down');
+      e.preventDefault(); e.stopPropagation();
+      if (presses.has(k)) return; // nút đã có ngón khác giữ
+      b.setPointerCapture?.(e.pointerId); b.classList.add('down');
       const r = b.getBoundingClientRect();
-      press = { k, id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, dir: null, tip: false };
-      press.timer = setTimeout(() => { if (press && !press.dir) { press.tip = true; showTip(info[k](), r); } }, HOLD);
+      const press = { k, id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, dir: null, tip: false, f: 1, cancel: false };
+      press.timer = setTimeout(() => { if (presses.get(k) === press && !press.dir) { press.tip = true; showTip(info[k](), r); } }, HOLD);
+      presses.set(k, press);
     });
     b.addEventListener('pointermove', (e) => {
-      if (!press || e.pointerId !== press.id || k !== 'spell' || sp().aim !== 'direction' || press.tip) return;
+      const press = presses.get(k);
+      if (!press || e.pointerId !== press.id || k !== 'spell' || sp().aim !== 'direction' || press.tip || !player.alive) return;
       const dx = e.clientX - press.cx, dy = e.clientY - press.cy, l = Math.hypot(dx, dy);
-      if (l > 15) { press.dir = { x: dx / l, y: dy / l }; clearTimeout(press.timer); }
+      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / DRAG_MAX); clearTimeout(press.timer); }
+      if (press.dir) { press.cancel = inCancel(e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }, 'spell'); }
     });
     const end = (e, cancel) => {
-      if (!press || e.pointerId !== press.id) return;
-      const p = press; press = null; clearTimeout(p.timer); b.classList.remove('down'); indicators.hide();
+      const press = presses.get(k); if (!press || e.pointerId !== press.id) return;
+      const p = press; presses.delete(k); clearTimeout(p.timer); b.classList.remove('down'); indicators.hide(); if (p.dir) aimUI(null, 'spell');
       if (p.tip) { hideTip(); return; }
-      if (!cancel) act[k](p.dir ? { x: p.dir.x, y: p.dir.y } : null);
+      if (!cancel && !p.cancel) act[k](p.dir ? { x: p.dir.x, y: p.dir.y } : null); // thả trong ô X: huỷ, không dùng phép
     };
     b.addEventListener('pointerup', (e) => end(e, false)); b.addEventListener('pointercancel', (e) => end(e, true));
   }
@@ -74,7 +81,9 @@ export function createSpellButtons(root, { world, player, indicators }) {
       }
       overlay(restoreEl, Math.max(0, ((player.restore?.ready || 0) - world.tick) / 30), RESTORE.cooldown);
       spellEl.classList.toggle('locked', !!(s.disabledIn1v1 && world.map.id === 'duel1v1'));
-      if (press?.dir && press.k === 'spell' && s.aim === 'direction') indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, false);
+      const press = presses.get('spell');
+      if (press?.dir && s.aim === 'direction') indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, press.cancel);
+      if (press?.dir && !player.alive) { indicators.hide(); aimUI(null, 'spell'); press.cancel = true; } // chết giữa lúc ngắm: bỏ ngắm, thả ra không dùng
       const r = player.recall;
       recallEl.classList.toggle('on', !!r);
       set(recallEl.querySelector('.prog').style, 'height', r ? `${Math.min(100, Math.round(((world.tick - r.start) / ((r.until - r.start) || 1)) * 1000) / 10)}%` : '0%');

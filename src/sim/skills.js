@@ -13,7 +13,7 @@ import { forceMove } from './movement.js';
 /** Sát thương + hiệu ứng lên một mục tiêu, rồi gọi hook onHit/onSkillHit của tướng. */
 export function skillHit(world, owner, target, cast) {
   const { skill, level } = cast;
-  if (skill.damage) { dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type); onSkillDamage(world, owner, target); }
+  if (skill.damage) { dealDamage(world, owner, target, amountOf(skill.damage, level, owner), skill.damage.type, { slot: cast.slot }); onSkillDamage(world, owner, target); } // slot: hiệu ứng trúng đòn riêng của chiêu
   for (const eff of skill.effects || []) applyStatus(world, target, resolveEffect(eff, level), owner);
   const hooks = owner.data.passive?.hooks;
   const ctx = makeCtx(world, owner, { target, cast, skill });
@@ -22,6 +22,9 @@ export function skillHit(world, owner, target, cast) {
   hooks?.onSkillHit?.(ctx);
   if (skill.onHitHero === 'cutS2' && target.isHero) { const left = owner.cooldowns.s2 - world.tick; if (left > 0) owner.cooldowns.s2 = world.tick + Math.floor(left / 2); }
 }
+
+/** Nhịp đứng ra chiêu (giây) của chiêu có hướng/điểm sau khi chiêu phát ra: đủ để thấy tướng quay về hướng chiêu rồi mới chạy tiếp. */
+export const CAST_LOCK = 0.25;
 
 const selfEffects = (world, e, list, level) => { for (const eff of list || []) applyStatus(world, e, resolveEffect(eff, level), e); };
 const inRadius = (world, e, pos, r) => enemiesOf(world, e).filter((t) => dist(t.pos, pos) - t.radius <= r);
@@ -68,7 +71,7 @@ const HANDLERS = {
       }
     }
     for (const a of [e, ...alliesOf(world, e, skill.radius)]) {
-      if (skill.allyShield) addShield(world, a, amountOf(skill.allyShield, level, e), skill.allyShield.duration);
+      if (skill.allyShield) addShield(world, a, amountOf(skill.allyShield, level, e), skill.allyShield.duration, null, e);
       for (const eff of skill.allyEffects || []) applyStatus(world, a, resolveEffect(eff, level), e);
     }
     selfEffects(world, e, skill.selfEffects, level);
@@ -111,8 +114,8 @@ const HANDLERS = {
     const { skill, level } = cast, d = aimDir(e, aim);
     let best = e, bs = -1;
     for (const a of alliesOf(world, e, skill.range)) { const dd = dirTo(e.pos, a.pos), s = dd.x * d.x + dd.y * d.y; if (s > 0.6 && s > bs) { bs = s; best = a; } }
-    if (skill.heal) heal(world, best, amountOf(skill.heal, level, e));
-    if (skill.shield) addShield(world, best, amountOf(skill.shield, level, e), skill.shield.duration);
+    if (skill.heal) heal(world, best, amountOf(skill.heal, level, e), e);
+    if (skill.shield) addShield(world, best, amountOf(skill.shield, level, e), skill.shield.duration, null, e);
     world.emit('aoe', { id: e.id, target: best.id, x: best.pos.x, y: best.pos.y, radius: 120, dur: 0.5, slot: cast.slot, team: e.team });
   },
 };
@@ -134,8 +137,12 @@ export function castSkill(world, e, slot, aim) {
   e.recall = null; onCastSkill(world, e);
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
   if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
+  // khoá ra chiêu: đứng yên, mặt giữ hướng chiêu tới lúc chiêu phát ra (+ một nhịp ngắn), sau đó mới đi/quay theo cần di chuyển.
+  // Lướt tự di chuyển nên không khoá; chiêu nhảy tới điểm (Đe Trời) khoá suốt lúc bay.
+  const lock = skill.type === 'dash' ? 0 : skill.untargetableDuringDelay ? (skill.delay || 0.5) : skill.aim === 'direction' || skill.aim === 'point' ? (skill.windup || 0) + CAST_LOCK : skill.windup || 0;
+  if (lock > 0) { e.castUntil = world.tick + T(lock); e.castFacing = e.facing; }
   const cast = { slot, skill, level, flags: {}, hitHero: false };
-  world.emit('cast', { id: e.id, slot, skillType: skill.type, delay: skill.windup ?? skill.delay ?? 0 }); // delay: độ trễ tới lúc chiêu trúng (animation khớp theo art.hitTime)
+  world.emit('cast', { id: e.id, slot, skillType: skill.type, delay: skill.windup ?? skill.delay ?? 0, lock }); // delay: độ trễ tới lúc chiêu trúng (animation khớp theo art.hitTime); lock: thời gian đứng ra chiêu
   // windup: chiêu phát ra sau một nhịp vung (đúng lúc ống/búa chạm đất trong animation); bị khống chế cứng hoặc chết trong lúc vung thì mất chiêu
   if (skill.windup) world.pending.push({ tick: world.tick + T(skill.windup), run: () => { if (e.alive && !isHardCC(e)) handler(world, e, cast, aim); } });
   else handler(world, e, cast, aim);

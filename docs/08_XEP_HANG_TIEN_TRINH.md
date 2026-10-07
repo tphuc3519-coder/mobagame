@@ -2,6 +2,10 @@
 
 Mọi tên bậc, tên điểm, tên vật phẩm ở đây là **tự đặt**, không dùng tên của game khác.
 
+> **Hiện trạng (07/10):** đã làm bậc 1–8 (Thiên Hà chưa), luật sao (bảo vệ Đèn Dầu/Đèn Lồng, sàn bậc dưới Hải Đăng, chuỗi thắng),
+> Điểm tích luỹ (dùng ngay khi đầy — xem DECISIONS), điểm trận + MVP §2 (`src/ui/score.js`), Bùa Giữ Sao (MVP thua) tự dùng. Code:
+> `src/ui/profile.js`. Chưa có: Điểm Hào Quang, mùa giải, vật phẩm khác ở §3.
+
 ## 1. Bậc hạng (`data/ranks.js`)
 
 | # | Bậc | Phân hạng | Sao mỗi phân hạng | Huy hiệu (ý tưởng) |
