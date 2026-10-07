@@ -119,3 +119,23 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
   cột tên tướng ở bảng tỉ số → sửa. Ô nhập tên gõ được trên iOS.
 - Đã chạy: toàn bộ `tools/t_*.mjs` + `simtest` (mới: `t_rank.mjs` luật hạng / điểm trận), trình duyệt headless trọn luồng 4 chế độ
   (thắng và thua), mở mọi bảng ở sảnh, trận 5v5 dài theo dõi texture / hình học / đối tượng cảnh / DOM / NaN vị trí — không lỗi console.
+
+## Giao diện ngoài trận v2 (07/10)
+- **Bộ nhận diện mới** (`src/ui/css.js`): khung viền vàng kim có hoa văn góc (`.fr`, SVG nội tuyến), chữ tiêu đề Barlow Condensed nghiêng
+  phủ dải vàng kim / bạc (`.gt` / `.gs`), nút vàng bóng có vệt sáng lướt, nút lam / đỏ / kính, nút tròn viền vàng, viên tiền tệ có biểu
+  tượng tràn mép + nút "+", thanh tiến độ, ruy-băng nhãn, dải chữ CHIẾN THẮNG / THẤT BẠI trong trận.
+- **Biểu tượng vẽ sẵn** (`assets/ui/icons/*.webp`, 29 ảnh — tiền, ngọc, thư, bánh răng, cúp, bạn bè, trò chuyện, cuộn sứ mệnh, kiếm, mũ
+  tướng, trang bị, túi, sách, đồng hồ cát, rương, đèn lồng, sao, bia, cửa hàng, tia sét, 8 huy hiệu bậc hạng) dựng bằng
+  `tools/uiart/icons.cjs` (cùng kiểu vẽ canvas với biểu tượng kỹ năng `src/hud/paint.js`).
+- **Sảnh**: tướng 3D đứng trên bệ giữa quảng trường đêm dựng sẵn (`assets/ui/lobby.jpg` — đài phun đèn lồng, hàng cột, tháp, đèn
+  đường, dây đèn, trăng; canvas nền trong suốt chồng lên ảnh), thẻ người chơi (cấp, huy hiệu, thanh kinh nghiệm), cột bạn bè, tiền tệ,
+  băng sự kiện có rương, 3 ô Sứ mệnh / Xếp hạng / Lịch sử, thanh Tướng / Trang bị / Túi đồ / Bạn bè, nút pha lê Chọn chế độ / Đấu thường,
+  nút vàng ĐẤU HẠNG có huy hiệu bậc.
+- Làm lại **chọn chế độ, phòng chờ, hộp "Đã tìm thấy trận", chọn tướng** (biểu tượng kỹ năng vẽ, đồng hồ vòng đếm ngược, khung đội),
+  **đội hình** (tia sáng xoay sau tướng), **tải trận** (thẻ viền lam / đỏ / vàng, huy hiệu, chữ VS), **3 màn sau trận** (tia sáng, huy
+  chương vàng / bạc / đồng vẽ sẵn), **mọi bảng** (hồ sơ, bạn bè, thư, nhiệm vụ, tướng + kỹ năng, trang bị, túi đồ, cài đặt, sự kiện
+  điểm danh, xếp hạng, lịch sử) và **màn tải đầu game**.
+- Ảnh toàn thân sau trận tự vừa khung theo hình (trước: búa của Emberforge bị cắt ở mép).
+- Màn lớn (từ 900×560): phóng cả lớp giao diện 1,25–1,5 lần cho cân với cảnh 3D.
+- Đã chạy: `t_rank`, `t_combat`, `t_items`; trình duyệt headless trọn luồng đấu hạng (sảnh → ghép trận → chọn tướng → trận → kết quả →
+  Đấu lại), chụp mọi màn / bảng ở 844×390, 640×360, 1280×720 — không lỗi console.

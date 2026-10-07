@@ -511,3 +511,16 @@
   nhiệm vụ "Tham gia 3 trận" thưởng thêm 1 bùa.
 - Danh hiệu sau trận: MVP, Sát Thần (hạ nhiều nhất — tránh trùng chữ "Sát thủ" của vai trò), Đao Phủ, Máy Cày Vàng, Tường Thành,
   Ánh Sáng, Đồng Đội Vàng, Phá Thành, Bất Tử, Chiến Binh.
+
+## Giao diện ngoài trận v2 (07/10)
+- **Ảnh vẽ sẵn thay SVG phẳng** cho biểu tượng sảnh: vẽ canvas lúc chạy (như biểu tượng kỹ năng) tốn thời gian khởi động trên điện thoại;
+  29 ảnh webp 256² tổng ~800 KB, nạp trong màn tải đầu game. Các nét nhỏ (quay lại, đóng, cộng, micro, toàn màn) vẫn là SVG.
+- **Phông sảnh là ảnh dựng sẵn + canvas trong suốt** thay vì dựng cả quảng trường 3D lúc chạy: một ảnh 1600×740 rẻ hơn nhiều so với
+  đài phun + tháp + đèn trong cùng ngữ cảnh WebGL với tướng trưng bày. Canvas nền trong suốt dùng kênh alpha nhân sẵn; vật liệu cộng
+  màu (quầng sáng, tia, hạt) chỉ cộng vào RGB, giữ alpha (`keepAlpha` trong `src/showcase/showcase.js`) để ánh sáng cộng lên ảnh phông
+  thay vì phủ đục; tấm mây xoáy (đục) của phông splash tắt khi có ảnh phông.
+- **Font tiêu đề Barlow Condensed** (SIL OFL 1.1, 700 thường + 800 nghiêng, có dấu tiếng Việt) cho chữ lớn / nút / số; chữ thường vẫn
+  Be Vietnam Pro. Chữ vàng kim dùng `background-clip: text` + `drop-shadow`; chừa đệm trên cho dấu chồng (Ễ, Ồ) vì nền chỉ phủ trong hộp chữ.
+- **Màn lớn phóng bằng CSS `zoom`** (1,25 / 1,5) thay vì đặt lại mọi kích thước: bố cục được canh cho điện thoại ngang 360–430 px cao.
+- Đặt lại `#ui button` thành `:where(#ui) button` (độ ưu tiên thấp) — trước đây nó đè màu / font của lớp `.pn-tabs`, `.seg`… nên tab
+  đang chọn không đổi màu.
