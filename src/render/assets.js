@@ -20,30 +20,67 @@ loader.register((parser) => {
   };
   return { name: 'LA_inline_images' };
 });
+// Bộ đọc dự phòng (cách giải mã ảnh mặc định của three): trình duyệt nào giải mã ảnh nhúng kiểu nhanh ở trên bị lỗi thì đọc lại bằng nó.
+const plain = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map(), ready = new Map(), arts = new Map();
 const prog = new Map(), urlOf = new Map(); // tiến độ tải từng file .glb (0..1) — màn tải trận vẽ thanh tiến độ theo model tướng của từng người
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Điện thoại (màn cảm ứng nhỏ): bỏ bản trưng bày chi tiết (texture 2048², ~8 MB) — bản trong trận đủ nét ở màn nhỏ, đỡ tốn bộ nhớ. */
+const LITE = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
+/** Báo giao diện khi một tướng tải lỗi hẳn (sau các lần thử lại) — hiện thông báo kèm lỗi; nơi gọi tự thử lại sau. */
+const fail = (id, e) => { try { dispatchEvent(new CustomEvent('la:modelfail', { detail: { id, error: e?.message || String(e) } })); } catch (_) { /* không có DOM */ } };
+
+/** Tải cả file thành ArrayBuffer, báo tiến độ; không nhận thêm byte nào trong `idle` ms thì huỷ (mạng điện thoại treo, Safari treo tải
+ *  khi chuyển tab) để nơi gọi thử lại thay vì chờ mãi. Lỗi HTTP gắn mã vào lỗi (e.http). */
+async function fetchBytes(url, onP, idle = 20000) {
+  const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  let t = 0; const arm = () => { clearTimeout(t); t = setTimeout(() => ac?.abort(), idle); };
+  arm();
+  try {
+    const r = await fetch(url, ac ? { signal: ac.signal } : {});
+    if (!r.ok) { const e = new Error(`HTTP ${r.status} ${url.split('/').pop()}`); e.http = r.status; throw e; }
+    const total = +r.headers.get('content-length') || 0;
+    if (!r.body?.getReader) { const b = await r.arrayBuffer(); onP?.(1); return b; }
+    const rd = r.body.getReader(), parts = []; let got = 0;
+    for (;;) { arm(); const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; if (total) onP?.(Math.min(1, got / total)); }
+    const all = new Uint8Array(got); let o = 0; for (const p of parts) { all.set(p, o); o += p.length; }
+    return all.buffer;
+  } catch (e) {
+    if (e?.name === 'AbortError') throw new Error(`mạng không phản hồi (${url.split('/').pop()})`);
+    throw e;
+  } finally { clearTimeout(t); }
+}
 
 const artOf = (id) => {
-  if (!arts.has(id)) arts.set(id, fetch(`./assets/heroes/${id}/hero.art.json`).then((r) => r.json()));
+  if (!arts.has(id)) {
+    const p = fetchBytes(`./assets/heroes/${id}/hero.art.json`).then((b) => JSON.parse(new TextDecoder().decode(b)));
+    p.catch(() => arts.delete(id)); // lỗi mạng: lần sau tải lại, không giữ lỗi
+    arts.set(id, p);
+  }
   return arts.get(id);
 };
 
-/** Nạp model tướng + hero.art.json. Thiếu file hoặc lỗi thì trả null để dùng model giữ chỗ (02 §13.4).
- *  showcase: bản trưng bày chi tiết cho sảnh/chọn tướng (art.showcase, 09 §3.4); tướng không có bản này hoặc nạp lỗi thì dùng bản trong trận. */
+/** Nạp model tướng + hero.art.json. Mỗi lần gọi thử tối đa 3 lần (cách nhau 1,2 s, 2,4 s); vẫn lỗi thì trả null (nơi gọi dùng model giữ
+ *  chỗ / giữ tướng cũ và gọi lại sau) — lỗi KHÔNG được ghi nhớ: trước đây một lần tải hỏng (mạng chập chờn, Safari ngắt tải khi chuyển
+ *  tab) làm tướng đó mất hẳn tới khi tải lại trang. showcase: bản trưng bày chi tiết cho sảnh/chọn tướng (art.showcase, 09 §3.4); tướng
+ *  không có bản này, điện thoại, hoặc bản này lỗi thì dùng bản trong trận. */
 export function loadHero(id, { showcase = false } = {}) {
   const key = showcase ? id + ':showcase' : id;
   if (cache.has(key)) return cache.get(key);
   const p = (async () => {
-    try {
-      const art = await artOf(id);
-      if (showcase && !art.showcase) return loadHero(id);
-      const url = `./assets/heroes/${id}/${showcase ? art.showcase : art.model}`; urlOf.set(key, url);
-      return { art, gltf: await loadGLB(url), showcase };
-    } catch (e) {
-      console.warn('Không nạp được model', id, showcase ? '(bản trưng bày)' : '', e.message);
-      return showcase ? loadHero(id) : null;
+    const art = await artOf(id);
+    if (showcase && (!art.showcase || LITE)) return loadHero(id);
+    const url = `./assets/heroes/${id}/${showcase ? art.showcase : art.model}`; urlOf.set(key, url);
+    for (let a = 0; ; a++) {
+      try { return { art, gltf: await loadGLB(url), showcase }; } catch (e) { if (a >= 2) throw e; await wait(1200 * (a + 1)); }
     }
-  })().then((m) => { ready.set(key, m); return m; });
+  })().then((m) => { if (m) ready.set(key, m); else cache.delete(key); return m; }, (e) => {
+    cache.delete(key);
+    console.warn('Không nạp được model', id, showcase ? '(bản trưng bày)' : '', e?.message);
+    if (showcase) return loadHero(id);
+    fail(id, e);
+    return null;
+  });
   cache.set(key, p);
   return p;
 }
@@ -57,26 +94,22 @@ export function heroProgress(id, { showcase = false } = {}) {
   const u = urlOf.get(key); return u ? Math.min(0.98, prog.get(u) || 0) : 0;
 }
 
-/** fetch có báo tiến độ (byte đã nhận / tổng) — dùng cho bản .glb.json khi máy chủ không phục vụ .glb. */
-async function fetchText(url, onP) {
-  const r = await fetch(url); if (!r.ok) throw new Error(r.status + ' ' + url);
-  const total = +r.headers.get('content-length') || 0;
-  if (!r.body || !total) return r.text();
-  const rd = r.body.getReader(), parts = []; let got = 0;
-  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onP(got / total); }
-  const all = new Uint8Array(got); let o = 0; for (const p of parts) { all.set(p, o); o += p.length; }
-  return new TextDecoder().decode(all);
-}
-
-/** Nạp một file .glb bất kỳ (máy chủ không phục vụ .glb thì dùng bản base64 .glb.json). */
+const b64buf = (s) => { const bin = atob(s), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); return buf.buffer; };
+/** Nạp một file .glb bất kỳ: tải (có tiến độ + hạn chờ); máy chủ không phục vụ .glb (bản chơi thử dạng artifact) thì dùng bản base64
+ *  .glb.json; giải mã lỗi thì giải mã lại bằng bộ đọc mặc định. Lỗi ném ra là lỗi gốc của file .glb. */
 export async function loadGLB(url) {
   const onP = (f) => prog.set(url, f);
-  try { const g = await loader.loadAsync(url, (e) => { if (e.lengthComputable && e.total) onP(e.loaded / e.total); }); onP(1); return g; }
-  catch (_) {
-    const j = JSON.parse(await fetchText(url + '.json', (f) => onP(f * 0.9))), bin = atob(j.b64), buf = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    const g = await loader.parseAsync(buf.buffer, url.slice(0, url.lastIndexOf('/') + 1)); onP(1); return g;
+  let buf;
+  try { buf = await fetchBytes(url, onP); } catch (e) {
+    try { buf = b64buf(JSON.parse(new TextDecoder().decode(await fetchBytes(url + '.json', (f) => onP(f * 0.9)))).b64); } catch (_) { throw e; }
   }
+  const base = url.slice(0, url.lastIndexOf('/') + 1);
+  let g;
+  try { g = await loader.parseAsync(buf, base); } catch (e) {
+    console.warn('GLB: đọc lại bằng bộ đọc mặc định', url, e?.message);
+    g = await plain.parseAsync(buf, base);
+  }
+  onP(1); return g;
 }
 
 /** Bản sao riêng xương cho mỗi entity, đổi mét → đơn vị thế giới (cm). */

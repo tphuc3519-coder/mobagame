@@ -40,14 +40,27 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
     const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: art?.outline !== false }); castShadows(obj); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
-    const useCapsule = () => { const c = createCapsule(); c.object.scale.multiplyScalar(HERO_SCALE); attach(c.object); v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} }; };
-    loadHero(e.heroId).then((m) => {
-      if (!m) return useCapsule();
+    const useCapsule = () => {
+      if (v.capsule) return;
+      const c = createCapsule(); c.object.scale.multiplyScalar(HERO_SCALE); attach(c.object); v.capsule = c.object;
+      v.animator = { update: (s, sp, dt) => c.update(s, sp, dt), trigger() {}, revive() {} };
+    };
+    const real = (m) => {
+      if (v.capsule) { root.remove(v.capsule); v.capsule = null; } // tải lại được: thay hình nhân giữ chỗ bằng model thật
       const inst = instantiate(m); inst.object.scale.multiplyScalar(HERO_SCALE); attach(inst.object, inst.art);
       // sải chân dài theo tỉ lệ → tốc độ phát clip chạy chia cho tỉ lệ để chân không trượt; chiều cao cho hiệu ứng bám đầu
       v.art = { ...inst.art, runRefSpeed: (inst.art.runRefSpeed || 320) * HERO_SCALE, height: (inst.art.height || 250) * HERO_SCALE }; v.animator = createAnimator(inst);
       v.bones = Object.fromEntries(['HandR', 'HandR_Tip', 'HandL', 'HandL_Tip', 'Head', 'Chest'].map((n) => [n, inst.object.getObjectByName('Bone_' + n)]).filter(([, b]) => b)); // cho hiệu ứng bám xương (vệt vũ khí, sao choáng)
-    }).catch(useCapsule);
+      if (!e.alive) v.animator.trigger('Death', null, true);
+    };
+    // model tải lỗi (mạng chập chờn): hiện hình nhân giữ chỗ ngay, thử tải lại dần (2 s, 4 s … tối đa 15 s) rồi thay bằng model thật
+    let tries = 0;
+    const tryLoad = () => loadHero(e.heroId).then((m) => {
+      if (views.get(e.id) !== v) return; // đơn vị đã bị gỡ
+      if (m) return real(m);
+      useCapsule(); setTimeout(tryLoad, Math.min(15000, 2000 * ++tries));
+    }).catch((err) => { console.warn('Model tướng lỗi', e.heroId, err?.message); useCapsule(); });
+    tryLoad();
     return v;
   };
   return {

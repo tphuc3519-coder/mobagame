@@ -39,6 +39,7 @@ export function openLoading(nav) {
   // việc tải thật: model trong trận của mọi tướng (trùng thì một lần) + quái rừng/lính
   const heroes = [...new Set(all.map((c) => c.hero))];
   heroes.forEach((id) => loadHero(id));
+  const kick = setInterval(() => heroes.forEach((id) => { if (heroProgress(id) < 1) loadHero(id); }), 2500); // tải lỗi giữa chừng: gọi lại (đang tải thì không tải trùng)
   let mobs = 0; preloadMonsters().catch(() => {}).then(() => { mobs = 1; });
   const t0 = performance.now(); let last = t0, raf = 0, started = false;
   const step = (now) => {
@@ -56,5 +57,5 @@ export function openLoading(nav) {
     raf = requestAnimationFrame(step);
   };
   raf = requestAnimationFrame(step);
-  return () => { cancelAnimationFrame(raf); el.remove(); };
+  return () => { cancelAnimationFrame(raf); clearInterval(kick); el.remove(); };
 }

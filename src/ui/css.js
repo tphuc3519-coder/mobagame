@@ -42,6 +42,10 @@ const CSS = `
 #showbg.rays::before { opacity: 1; }
 #showbg.off, #show.off { visibility: hidden; }
 #show { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#showload { position: absolute; left: 50%; top: 62%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 20px; background: rgba(4,6,20,.8);
+  box-shadow: inset 0 0 0 1px rgba(255,214,140,.4), 0 4px 12px rgba(0,0,0,.5); font: 700 14px/1 var(--u-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--u-gc); white-space: nowrap; opacity: 0; transition: opacity .25s; pointer-events: none; }
+#showload.on { opacity: 1; }
+#showload i { width: 16px; height: 16px; border-radius: 50%; border: 3px solid rgba(255,214,140,.25); border-top-color: #ffd36a; animation: spin .8s linear infinite; }
 .scr { position: absolute; inset: 0; pointer-events: none; animation: scrIn .3s ease-out; --t: max(8px, env(safe-area-inset-top)); --l: max(10px, env(safe-area-inset-left)); --r: max(10px, env(safe-area-inset-right)); --b: max(6px, env(safe-area-inset-bottom)); }
 .scr > * { pointer-events: auto; }
 @keyframes scrIn { from { opacity: 0; } to { opacity: 1; } }

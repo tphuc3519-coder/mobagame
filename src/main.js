@@ -1,11 +1,11 @@
 // Điểm vào: màn tải game (ảnh tranh mở màn + thanh tiến độ) → sảnh chính và các màn trước/sau trận (src/ui/flow.js).
 // ?hero=<id> vào thẳng trận 1v1/5v5 với bot (kiểm thử: ?enemy=, ?mode=5v5, ?diff=, ?nobot, ?dummies, ?debug…).
-import { ALPHA } from './data/heroes/index.js';
+import { ALPHA, HEROES } from './data/heroes/index.js';
 import { startMatch } from './game.js';
 import { loadHero, heroProgress } from './render/assets.js';
 import { injectCss } from './ui/css.js';
 import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
-import { faceSrc, cardSrc, ICONS, iconSrc } from './ui/kit.js';
+import { faceSrc, cardSrc, ICONS, iconSrc, toast } from './ui/kit.js';
 import { profile, rankOf } from './ui/profile.js';
 import { FRIENDS } from './ui/people.js';
 import { enter, takeNext } from './ui/flow.js';
@@ -22,6 +22,12 @@ document.getElementById('fs').onclick = async () => {
   try { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape'); } catch (_) { /* tuỳ thiết bị */ }
 };
 injectCss();
+// model tướng tải lỗi hẳn (sau các lần thử lại): báo kèm lỗi (để biết lý do khi chơi trên điện thoại); game tự thử lại sau
+const failShown = new Map();
+addEventListener('la:modelfail', (e) => {
+  const { id, error } = e.detail, now = Date.now(); if (now - (failShown.get(id) || 0) < 20000) return; failShown.set(id, now);
+  toast(`Chưa tải được tướng ${HEROES[id]?.name || id} (${error}) — đang thử lại…`, 4500);
+});
 
 if (q.has('hero')) {
   bootDone();

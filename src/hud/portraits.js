@@ -31,7 +31,10 @@ export function createPortraits(renderer, size = 96) {
   return {
     get(id) {
       if (done.has(id)) return done.get(id);
-      if (!pending.has(id)) { pending.add(id); shoot(id).catch((e) => console.warn('chân dung', id, e.message)); }
+      if (!pending.has(id)) { // chưa chụp được (model tải lỗi): vài giây sau thử lại
+        pending.add(id);
+        shoot(id).catch((e) => console.warn('chân dung', id, e.message)).finally(() => { if (!done.has(id)) setTimeout(() => pending.delete(id), 5000); });
+      }
       return null;
     },
     /** Vẽ chân dung tròn có viền màu đội vào ctx 2D (chữ cái đầu khi chưa có ảnh). */
