@@ -112,6 +112,9 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Chọn chất lượng đồ hoạ trong Cài đặt ở sảnh trước đây không có tác dụng → trận và sân khấu sảnh đọc lựa chọn này.
 - Hộp chọn phép / bảng còn mở khi hết giờ chọn tướng bị kẹt sang màn sau → đóng khi đổi màn. Mời bạn khi đang tìm trận → chặn.
 - Cảnh báo console `toNonIndexed()` (đá trang trí 1v1) → bỏ.
+- **Mục tiêu lớn hồi đầy máu giữa trận đánh**: người giữ aggro (thường là tướng đỡ đòn) chết / nhảy / tàng hình thì Long Ngư… bỏ về hồi
+  đầy dù đồng đội vẫn đang đánh → nay đổi sang tướng vừa đánh trại trong 3 giây (06 §3), mục tiêu chỉ tạm không chọn được thì đứng chờ.
+  Móc Neo / xoáy nước kéo được mục tiêu lớn (tốc chạy 0) ra khỏi hang → kẹt "đang về" mãi, hồi máu liên tục → mục tiêu lớn không bị kéo.
 - Bố cục màn nhỏ 640×360: nút ĐẤU HẠNG xuống dòng, viên thuốc phép/bùa/đối thủ đè nút ở màn chọn tướng, màn điểm cá nhân tràn,
   cột tên tướng ở bảng tỉ số → sửa. Ô nhập tên gõ được trên iOS.
 - Đã chạy: toàn bộ `tools/t_*.mjs` + `simtest` (mới: `t_rank.mjs` luật hạng / điểm trận), trình duyệt headless trọn luồng 4 chế độ
