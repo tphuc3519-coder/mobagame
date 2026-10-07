@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<base href="../"><!-- đường dẫn tài nguyên của game (./assets/…) tính từ gốc repo như index.html -->
+<title>Dựng ảnh giao diện — Lantern Arena</title>
+<style>html, body { margin: 0; background: #000; overflow: hidden; } canvas { display: block; }</style>
+<script type="importmap">{ "imports": { "three": "./lib/three/build/three.module.js", "three/addons/": "./lib/three/examples/jsm/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+// Dựng ảnh tĩnh cho sảnh / màn tải từ model thật của game (chạy bằng tools/uiart/render.cjs, xem ghi chú ở đó):
+//   ?mode=card&id=<tướng>&clip=&t=&zoom=&dy=&spin=   thẻ tướng dọc 3:4 (màn tải VS, phòng chờ, đội hình)
+//   ?mode=face&id=<tướng>&size=256                    chân dung đầu (nền trong suốt)
+//   ?mode=keyart                                       ảnh nền màn tải đầu game (ba tướng + cột sáng + trăng)
+//   ?mode=room                                         nền phòng chờ ghép trận (năm tướng quay lưng nhìn tế đàn xa)
+// Kết quả: window.out = dataURL (JPEG/PNG) sau khi vẽ xong; hậu kỳ (bloom, tối viền) làm bằng canvas 2D.
+import * as THREE from 'three';
+import { loadHero } from './src/render/assets.js';
+import { createShowcase, makeHolder, backdrop, lanterns, sparkles } from './src/showcase/showcase.js';
+import { createSplash } from './src/showcase/splash.js';
+import { setOutlineResolution } from './src/render/materials.js';
+import { glowTexture } from './src/render/env/textures.js';
+import { createCore } from './src/render/structures.js';
+
+const q = new URLSearchParams(location.search), mode = q.get('mode') || 'card';
+const num = (k, d) => (q.has(k) ? parseFloat(q.get(k)) : d);
+const W = num('w', 480), H = num('h', 640), SS = num('ss', 2); // kích thước ảnh ra + siêu lấy mẫu
+const cv = document.getElementById('c'); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Hậu kỳ: bloom (lọc vùng sáng, làm mờ 2 cỡ, cộng sáng), tối viền, ra canvas W×H. */
+function post(src, { bloom = 0.55, thr = 0.6, vignette = 0.6, cy = 0.45 } = {}) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, W, H);
+  const b = document.createElement('canvas'); b.width = Math.ceil(W / 4); b.height = Math.ceil(H / 4); const bx = b.getContext('2d');
+  bx.drawImage(src, 0, 0, b.width, b.height);
+  const d = bx.getImageData(0, 0, b.width, b.height), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { const l = (0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2]) / 255, k = Math.max(0, (l - thr) / (1 - thr)); p[i] *= k; p[i + 1] *= k; p[i + 2] *= k; }
+  bx.putImageData(d, 0, 0);
+  x.save(); x.globalCompositeOperation = 'screen';
+  x.globalAlpha = bloom; x.filter = `blur(${Math.round(W / 140)}px)`; x.drawImage(b, 0, 0, W, H);
+  x.globalAlpha = bloom * 0.8; x.filter = `blur(${Math.round(W / 45)}px)`; x.drawImage(b, 0, 0, W, H);
+  x.restore();
+  const g = x.createRadialGradient(W / 2, H * cy, Math.min(W, H) * 0.32, W / 2, H * cy, Math.hypot(W, H) * 0.62);
+  g.addColorStop(0, 'rgba(4,3,14,0)'); g.addColorStop(1, `rgba(4,3,14,${vignette})`); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  return c;
+}
+
+/** Khung nửa người theo xương: từ dưới hông tới trên đỉnh đầu, tâm ngang giữa đầu và hông (vũ khí vung lệch không kéo lệch khung). */
+function frameUpper(cam, root, { top = 0.42, bottom = 0.6, aspect = W / H, lift = 0 } = {}) {
+  root.updateMatrixWorld(true);
+  const pos = (n) => { let b = null; root.traverse((o) => { if (o.name === n) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
+  const hd = pos('Bone_Head') || new THREE.Vector3(0, 1.6, 0), hp = pos('Bone_Hips') || new THREE.Vector3(0, 0.95, 0);
+  const y0 = hp.y - bottom, y1 = hd.y + top, cy = (y0 + y1) / 2 + lift, span = y1 - y0;
+  const L = new THREE.Vector3(hd.x * 0.55 + hp.x * 0.45, cy, hd.z * 0.55 + hp.z * 0.45);
+  const vf = THREE.MathUtils.degToRad(cam.fov) / 2, dist = (span / 2) / Math.tan(vf) * 1.04;
+  cam.position.set(L.x, L.y + span * 0.04, L.z + dist); cam.lookAt(L); cam.aspect = aspect; cam.updateProjectionMatrix();
+}
+
+async function card() {
+  const id = q.get('id');
+  await loadHero(id, { showcase: true }); // bản trưng bày nạp sẵn → show() dùng thẳng, không đổi giữa chừng
+  const show = createShowcase(cv, { quality: 'high', stand: false, autoSpin: false, preserve: true });
+  await show.show(id);
+  await wait(2500); // vài khung cho mây/tia sáng phông chạy, texture lên đủ
+  show.pause(); const h = show.current; h.life = 9; h.g.scale.setScalar(1); h.mats.setFlash(0); // máy chậm: hiệu ứng "hiện ra" (phóng to + loé trắng) có thể chưa chạy xong
+  show.stage.rotation.y = num('spin', -0.35); show.pose(q.get('clip') || 'Showcase', num('t', 2));
+  frameUpper(show.camera, show.stage, { top: num('top', 0.42), bottom: num('bottom', 0.62), lift: num('lift', 0) });
+  show.renderer.render(show.scene, show.camera);
+  return post(cv, { bloom: 0.32, thr: 0.7, vignette: 0.5, cy: 0.4 }).toDataURL('image/jpeg', 0.86);
+}
+
+async function face() {
+  const id = q.get('id'), size = num('size', 256), m = await loadHero(id, { showcase: true });
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(size, size, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; setOutlineResolution(size, size);
+  const sc = new THREE.Scene(), h = makeHolder(m, id, { renderer, env: null });
+  sc.add(new THREE.HemisphereLight(0xe8eeff, 0x50404a, 1.5)); const k = new THREE.DirectionalLight(0xfff0e0, 2.8); k.position.set(1.2, 2, 3); sc.add(k);
+  const r2 = new THREE.DirectionalLight(new THREE.Color(h.art.rim || '#fff'), 3.2); r2.position.set(-2, 2, -2.5); sc.add(r2);
+  sc.add(h.g); h.freeze(h.acts.ShowIdle ? 'ShowIdle' : 'Idle', 0.3); h.g.rotation.y = num('spin', -0.25); h.g.updateMatrixWorld(true);
+  let hb = null; h.g.traverse((o) => { if (o.name === 'Bone_Head') hb = o; }); const hd = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(0, h.h * 0.85, 0);
+  const pf = h.art.portrait || {}, d = num('dist', 0.9) * (pf.dist ? Math.min(1.6, pf.dist / 1.3) : 1), dy = num('dy', 0.06) + (pf.dy || 0) * 0.5;
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.05, 20); cam.position.set(hd.x + 0.12, hd.y + dy + 0.05, hd.z + d); cam.lookAt(hd.x, hd.y + dy, hd.z);
+  renderer.setClearColor(0x000000, 0); renderer.render(sc, cam);
+  return cv.toDataURL('image/png');
+}
+
+/** Sân khấu nhiều tướng (ảnh nền): phông trời + mây xoáy splash + đèn trời + bụi sáng; trả về các hàm đặt tướng/vẽ. */
+async function stageScene({ colors = ['#ffb04a', '#ffe7b0'], fov = 34 } = {}) {
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(SS); renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+  setOutlineResolution(W * SS, H * SS);
+  const scene = new THREE.Scene(); scene.add(backdrop()); scene.fog = new THREE.Fog(0x14122a, 14, 70);
+  const splash = createSplash(); splash.setColors(new THREE.Color(colors[0]), new THREE.Color(colors[1])); scene.add(splash.group);
+  scene.add(new THREE.HemisphereLight(0xbcc8ff, 0x4a3040, 0.7));
+  const key = new THREE.DirectionalLight(0xfff0dc, 2.6); key.position.set(2, 4, 6); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x8ab4ff, 1.0); fill.position.set(-4, 2, 3); scene.add(fill);
+  const camera = new THREE.PerspectiveCamera(fov, W / H, 0.1, 300);
+  const lan = lanterns(40); scene.add(lan.group); const sp = sparkles(320); sp.mat.uniforms.uH.value = H * SS; scene.add(sp.object);
+  const ctx = { renderer, env: null };
+  async function hero(id, { x = 0, z = 0, rot = 0, scale = 1, clip = 'ShowIdle', t = 0, u = null, rim = null } = {}) {
+    const m = await loadHero(id, { showcase: true }); if (!m) return null;
+    const h = makeHolder(m, id, ctx); h.g.position.set(x, 0, z); h.g.rotation.y = rot; h.g.scale.setScalar(scale);
+    const a = h.acts[clip]; if (u != null && a) t = u * a.getClip().duration; // u: vị trí trong clip (0..1)
+    if (!h.freeze(clip, t)) h.freeze('Idle', 0);
+    if (rim) { const l = new THREE.PointLight(new THREE.Color(rim), 6, 6, 1.4); l.position.set(x - 0.6, 2.2, z - 1.2); scene.add(l); }
+    scene.add(h.g); return h;
+  }
+  return { renderer, scene, camera, splash, lan, sp, hero,
+    async draw(sec = 2) { for (let i = 0, t = 0; i < sec * 20; i++) { t += 0.05; lan.update(t, 0.05); splash.update(t, H * SS); sp.mat.uniforms.uT.value = t; } renderer.render(scene, camera); await wait(50); renderer.render(scene, camera); } };
+}
+
+/** Cột sáng lớn + trăng tròn sau lưng tướng giữa (kiểu tranh mở màn). */
+function beamAndMoon(scene, { x = 0, z = -9, w = 3.2, h = 26, moonY = 8.5, color = 0xd8c8ff } = {}) {
+  const beam = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uC: { value: new THREE.Color(color) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform vec3 uC; varying vec2 vUv; void main(){ float x = abs(vUv.x - 0.5) * 2.0; float core = exp(-x * x * 18.0), halo = exp(-x * x * 3.0) * 0.35;
+      float y = smoothstep(0.0, 0.25, vUv.y) * (0.75 + 0.25 * vUv.y); float a = (core * 1.3 + halo) * y; gl_FragColor = vec4(mix(uC, vec3(1.0), core * 0.6) * a, a); }` }));
+  beam.position.set(x, h / 2 - 1.5, z); scene.add(beam);
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffe2b0, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.45 }));
+  moon.scale.set(10, 10, 1); moon.position.set(x, moonY, z - 6); scene.add(moon);
+  // mặt trăng: vàng nhạt, loang lổ (nhiễu), tối dần ra mép — không phải đĩa trắng phẳng
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(2.1, 64), new THREE.ShaderMaterial({ fog: false, transparent: true, depthWrite: false,
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy / 2.1; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `varying vec2 vP; float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+      void main(){ float r = length(vP); float m = n(vP * 3.0 + 2.0) * 0.55 + n(vP * 7.0) * 0.3 + n(vP * 15.0) * 0.15;
+        vec3 c = mix(vec3(1.0, 0.93, 0.78), vec3(0.78, 0.68, 0.58), smoothstep(0.45, 0.8, m)) * (1.0 - 0.35 * r * r);
+        gl_FragColor = vec4(c * 0.92, 1.0 - smoothstep(0.97, 1.0, r)); }` }));
+  disc.position.set(x, moonY, z - 6.2); scene.add(disc);
+  return { beam, moon };
+}
+
+/** Nền đất tối có gợn sáng (cỏ đêm) để tướng đứng trên một mặt phẳng, mờ dần vào sương. */
+function ground(scene, { color = 0x1d1830, glow = 0xffc070, size = 30 } = {}) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(size, 96), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: false,
+    uniforms: { uC: { value: new THREE.Color(color) }, uG: { value: new THREE.Color(glow) } },
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform vec3 uC, uG; varying vec2 vP; void main(){ float r = length(vP); float a = 1.0 - smoothstep(6.0, ${size.toFixed(1)}, r);
+      vec3 c = uC + uG * exp(-r * r * 0.06) * 0.55; gl_FragColor = vec4(c, a * (1.0 - smoothstep(3.0, 14.0, r)) + a * 0.0); }` }));
+  m.rotation.x = -Math.PI / 2; m.renderOrder = -1; scene.add(m);
+  const mist = new THREE.SpriteMaterial({ map: glowTexture(), color: 0x9a8cff, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.16 });
+  for (let i = 0; i < 26; i++) { const s = new THREE.Sprite(mist); const a = i * 2.4, r = 2 + (i * 7 % 13); s.position.set(Math.cos(a) * r, 0.25, Math.sin(a) * r * 0.5 - 2); s.scale.set(5 + (i % 4), 1.4, 1); scene.add(s); }
+  return m;
+}
+
+async function keyart() {
+  const st = await stageScene({ colors: ['#8a5cff', '#ffd9a0'], fov: num('fov', 34) });
+  const { scene, camera } = st;
+  ground(scene, { color: 0x1c1630, glow: 0xffb070 });
+  beamAndMoon(scene, { x: num('bx', 0), z: -9, w: 2.6, h: 30, moonY: num('my', 9.5) });
+  // đủ 6 tướng: Emberforge giữa (gần, vung búa chéo), Moonstream trái, Bamboo Shade phải (hai kiếm dang ngang); Mossback, Kitewing, Lanternward phía sau
+  await st.hero('hoa_ren', { x: 0, z: 1.0, rot: num('r1', -0.3), clip: q.get('c1') || 'Ult', u: num('u1', 0.786), scale: 1.08, rim: '#ff7a1a' });
+  await st.hero('nguyet_ha', { x: -2.7, z: -0.4, rot: num('r2', -0.15), clip: q.get('c2') || 'Ult', u: num('u2', 0.643), rim: '#8fd3ff' });
+  await st.hero('bong_tre', { x: 2.8, z: -0.3, rot: num('r3', -0.35), clip: q.get('c3') || 'Cast2', u: num('u3', 0.5), rim: '#5dff8a' });
+  await st.hero('thach_quy', { x: -5.0, z: -3.6, rot: 0.5, clip: 'Victory', u: 0.5, scale: 0.95 });
+  await st.hero('canh_dieu', { x: 5.2, z: -3.4, rot: num('r5', -0.35), clip: 'Attack1', u: num('u5', 0.45), scale: 0.95 });
+  camera.position.set(0, num('cy', 1.0), num('cz', 11.5)); camera.lookAt(0, num('ly', 2.35), 0);
+  await st.draw(3);
+  return post(cv, { bloom: 0.62, thr: 0.58, vignette: 0.7, cy: 0.42 }).toDataURL('image/jpeg', 0.86);
+}
+
+async function room() {
+  const st = await stageScene({ colors: ['#4fa8ff', '#e0f0ff'], fov: 40 });
+  const { scene, camera } = st;
+  ground(scene, { color: 0x1a1f38 });
+  const core = createCore(0); core.object.scale.setScalar(0.022); core.object.position.set(0, 0, -26); scene.add(core.object); core.update(0.5, 1, false);
+  beamAndMoon(scene, { x: 0, z: -24, w: 2.2, h: 40, moonY: 13, color: 0xbfe6ff });
+  const ids = ['thach_quy', 'nguyet_ha', 'hoa_ren', 'bong_tre', 'canh_dieu'];
+  for (const [i, id] of ids.entries()) await st.hero(id, { x: (i - 2) * 1.55, z: -Math.abs(i - 2) * 0.55, rot: Math.PI + (i - 2) * 0.12, clip: 'Idle', t: 0.4 + i * 0.3 });
+  camera.position.set(0.3, 2.0, 6.4); camera.lookAt(0, 3.4, -12);
+  await st.draw(3);
+  return post(cv, { bloom: 0.55, thr: 0.6, vignette: 0.65, cy: 0.5 }).toDataURL('image/jpeg', 0.84);
+}
+
+const run = { card, face, keyart, room }[mode];
+run().then((d) => { window.out = d; }).catch((e) => { window.err = String(e && e.stack || e); });
+</script>
+</body>
+</html>
