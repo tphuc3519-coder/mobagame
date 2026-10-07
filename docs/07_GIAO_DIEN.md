@@ -56,6 +56,11 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 
 ## 2. Bản đồ màn hình (router)
 
+> **Hiện trạng (07/10):** đã có Màn tải game → Sảnh → Chọn chế độ → Phòng chờ (mời bạn, tìm trận, chấp nhận) → Chọn tướng (chọn ẩn,
+> 30 giây; luyện tập chọn tự do) → Đội hình → Tải trận → Trận → Kết quả (3 màn: đội, cá nhân, bảng tỉ số). Code `src/ui/flow.js` và các
+> màn trong `src/ui/`. Khác thiết kế: đếm ngược sau khi cả đội khoá 3 giây (thay 10), chưa có màn Mùa giải và Nhận thưởng riêng (phần
+> thưởng hiện ở màn kết quả cá nhân), chưa có cấm/chọn.
+
 ```
 Khởi động → Tạo hồ sơ (lần đầu) → SẢNH CHÍNH
 SẢNH CHÍNH

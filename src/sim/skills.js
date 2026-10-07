@@ -71,7 +71,7 @@ const HANDLERS = {
       }
     }
     for (const a of [e, ...alliesOf(world, e, skill.radius)]) {
-      if (skill.allyShield) addShield(world, a, amountOf(skill.allyShield, level, e), skill.allyShield.duration);
+      if (skill.allyShield) addShield(world, a, amountOf(skill.allyShield, level, e), skill.allyShield.duration, null, e);
       for (const eff of skill.allyEffects || []) applyStatus(world, a, resolveEffect(eff, level), e);
     }
     selfEffects(world, e, skill.selfEffects, level);
@@ -114,8 +114,8 @@ const HANDLERS = {
     const { skill, level } = cast, d = aimDir(e, aim);
     let best = e, bs = -1;
     for (const a of alliesOf(world, e, skill.range)) { const dd = dirTo(e.pos, a.pos), s = dd.x * d.x + dd.y * d.y; if (s > 0.6 && s > bs) { bs = s; best = a; } }
-    if (skill.heal) heal(world, best, amountOf(skill.heal, level, e));
-    if (skill.shield) addShield(world, best, amountOf(skill.shield, level, e), skill.shield.duration);
+    if (skill.heal) heal(world, best, amountOf(skill.heal, level, e), e);
+    if (skill.shield) addShield(world, best, amountOf(skill.shield, level, e), skill.shield.duration, null, e);
     world.emit('aoe', { id: e.id, target: best.id, x: best.pos.x, y: best.pos.y, radius: 120, dur: 0.5, slot: cast.slot, team: e.team });
   },
 };

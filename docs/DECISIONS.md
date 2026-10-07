@@ -495,3 +495,19 @@
   tay trái giơ cao, tay phải nâng gậy trước mặt và bẻ cổ tay bù để gậy dựng đứng; `anim.mjs` cho phép `style` là mảng khung và `victory` riêng.
 - Đã soi bảng tư thế (mọi clip × 5 thời điểm) của cả 6 tướng: Mossback (pháo), Bamboo Shade (2 kiếm), Moonstream (bình), Kitewing (cung)
   không đứt; chỗ "lỗ" ở găng tay Mossback quanh pháo là lưới gốc (găng rỗng ôm pháo), không phải đứt khúc.
+
+## Sảnh và luồng ngoài trận (07/10)
+- **Mọi người chơi khác là máy**, kể cả "bạn bè" (danh sách bạn hư cấu để sảnh có sức sống): tên luôn kèm "[Máy]" ở màn tải, bảng tỉ số,
+  kết quả. Ghép trận chỉ là hiệu ứng chờ (3–6 giây).
+- **Rời màn kết quả = tải lại trang** (`sessionStorage` `la.next` nhớ màn cần mở: sảnh hoặc phòng chờ cùng chế độ + bạn trong phòng).
+  Trận dựng nhiều thứ toàn cục (renderer, HUD, trình nghe sự kiện); dọn tay dễ rò rỉ, tải lại vừa sạch vừa nhanh (tài nguyên đã có trong
+  bộ đệm trình duyệt).
+- **Ảnh giao diện dựng sẵn từ model** (`tools/uiart.html` + `tools/uiart/render.cjs`): tranh mở màn, nền phòng chờ, thẻ tướng, chân dung
+  20 tướng, ảnh toàn thân nền trong 6 tướng — chụp chân dung bằng WebGL lúc chạy (cách cũ) tốn thời gian và bộ nhớ trên điện thoại.
+- **Một ngữ cảnh WebGL**: sân khấu 3D của sảnh / chọn tướng / đội hình dùng chung một renderer, tạm dừng khi bị che, giải phóng ở màn tải
+  trận (trận tạo renderer riêng).
+- **Đơn giản hoá so với 08**: thanh Điểm tích luỹ đầy được dùng ngay trong trận đó (thắng → +1 sao, thua → giữ sao) thay vì để người chơi
+  chọn chế độ; Bùa Giữ Sao (MVP thua) tự dùng (không hỏi); chưa có Điểm Hào Quang, Thiên Hà, mùa giải, cấm/chọn. Quà tân thủ 2 bùa;
+  nhiệm vụ "Tham gia 3 trận" thưởng thêm 1 bùa.
+- Danh hiệu sau trận: MVP, Sát Thần (hạ nhiều nhất — tránh trùng chữ "Sát thủ" của vai trò), Đao Phủ, Máy Cày Vàng, Tường Thành,
+  Ánh Sáng, Đồng Đội Vàng, Phá Thành, Bất Tử, Chiến Binh.

@@ -41,9 +41,13 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   tgt.shields = tgt.shields.filter((s) => s.amount > 0.01);
   dmg = Math.max(0, dmg);
   tgt.hp -= dmg;
-  // chỉ số cho bảng tổng kết trận (tính cả phần khiên đỡ): gây lên tướng địch, chịu từ mọi nguồn, phá công trình
+  // chỉ số cho bảng tổng kết trận (tính cả phần khiên đỡ): gây lên tướng địch, chịu từ mọi nguồn, phá công trình, đánh mục tiêu lớn (boss)
   const got = dmg + absorbed;
-  if (src?.kind === 'hero' && src.team !== tgt.team) { if (tgt.kind === 'hero') src.dmgHero = (src.dmgHero || 0) + got; else if (tgt.structure) src.dmgTower = (src.dmgTower || 0) + got; }
+  if (src?.kind === 'hero' && src.team !== tgt.team) {
+    if (tgt.kind === 'hero') src.dmgHero = (src.dmgHero || 0) + got;
+    else if (tgt.structure) src.dmgTower = (src.dmgTower || 0) + got;
+    else if (tgt.kind === 'monster' && tgt.boss) src.dmgBoss = (src.dmgBoss || 0) + got;
+  }
   if (tgt.kind === 'hero') tgt.dmgTaken = (tgt.dmgTaken || 0) + got;
   tgt.lastDamagedTick = world.tick; if (src) tgt.lastAttacker = src.id;
   if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu (đòn đánh) và hút máu phép (kỹ năng)
@@ -75,18 +79,20 @@ function kill(world, src, tgt) {
   world.emit('death', { id: tgt.id, killer: src?.id });
 }
 
-export function heal(world, tgt, amount) {
+/** Hồi máu nhận thêm và khiên tặng đồng minh (không tính cho chính mình) — chỉ số "hồi/khiên" của điểm trận (08 §2). */
+const supportStat = (src, tgt, a) => { if (a > 0 && src && src !== tgt && src.kind === 'hero' && src.team === tgt.team) src.healAlly = (src.healAlly || 0) + a; };
+export function heal(world, tgt, amount, src = null) {
   if (!tgt.alive) return 0;
   const ah = tgt.statuses.find((s) => s.kind === 'antiheal'); if (ah) amount *= 1 - ah.pct; // giảm hồi máu (Giáp Gai)
-  const a = Math.min(tgt.stats.maxHp - tgt.hp, amount); tgt.hp += a;
+  const a = Math.min(tgt.stats.maxHp - tgt.hp, amount); tgt.hp += a; supportStat(src, tgt, a);
   if (a > 0.5) world.emit('heal', { id: tgt.id, amount: Math.round(a) });
   return a;
 }
-export function addShield(world, tgt, amount, seconds, id = null) {
+export function addShield(world, tgt, amount, seconds, id = null, src = null) {
   if (!tgt.alive) return;
   const until = seconds >= 9000 ? Infinity : world.tick + T(seconds);
-  if (id) { const o = tgt.shields.find((s) => s.id === id); if (o) { o.amount = Math.max(o.amount, amount); o.until = until; return; } }
-  tgt.shields.push({ amount, until, id });
+  if (id) { const o = tgt.shields.find((s) => s.id === id); if (o) { supportStat(src, tgt, amount - o.amount); o.amount = Math.max(o.amount, amount); o.until = until; return; } }
+  tgt.shields.push({ amount, until, id }); supportStat(src, tgt, amount);
   world.emit('shield', { id: tgt.id, amount: Math.round(amount) });
 }
 export const hasShield = (tgt, id) => tgt.shields.some((s) => s.id === id);

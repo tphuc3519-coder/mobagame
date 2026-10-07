@@ -23,10 +23,15 @@ export function bootDone() {
   const b = el(); if (!b) return;
   bootProgress(1); setTimeout(() => { b.classList.add('done'); setTimeout(() => b.remove(), 600); }, 250);
 }
-/** Chạy các việc tải song song, mỗi việc { w (trọng số), run: () => Promise } — lỗi một việc không chặn vào game. */
+/** Chạy các việc tải song song, mỗi việc { w (trọng số), run: () => Promise, part?: () => 0..1 (tiến độ dở dang, vd. byte model đã nhận) }
+ *  — lỗi một việc không chặn vào game. */
 export async function bootRun(tasks, text) {
-  const total = tasks.reduce((a, t) => a + (t.w || 1), 0) || 1; let done = 0;
-  await Promise.all(tasks.map((t) => Promise.resolve().then(t.run).catch(() => {}).then(() => { done += t.w || 1; bootProgress(done / total, text); })));
+  const total = tasks.reduce((a, t) => a + (t.w || 1), 0) || 1;
+  const done = new Set();
+  const tick = () => bootProgress(tasks.reduce((a, t) => a + (t.w || 1) * (done.has(t) ? 1 : Math.min(0.98, t.part?.() || 0)), 0) / total, text);
+  const iv = setInterval(tick, 120);
+  await Promise.all(tasks.map((t) => Promise.resolve().then(t.run).catch(() => {}).then(() => { done.add(t); tick(); })));
+  clearInterval(iv);
 }
 /** Promise tải một ảnh (xong hoặc lỗi đều coi là xong). */
 export const loadImg = (src) => new Promise((res) => { const im = new Image(); im.onload = im.onerror = () => res(im); im.src = src; });

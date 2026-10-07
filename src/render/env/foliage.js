@@ -82,7 +82,7 @@ function rockGeo(seed) {
   const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const k = 0.72 + fbm(p.getX(i) * 2 + seed, p.getZ(i) * 2 + p.getY(i) + seed) * 0.62; p.setXYZ(i, p.getX(i) * k, Math.max(-0.35, p.getY(i)) * k * 0.72, p.getZ(i) * k); }
   g.computeVertexNormals();
-  return paint(g.toNonIndexed(), (t, ny, x, z) => {
+  return paint(g.index ? g.toNonIndexed() : g, (t, ny, x, z) => { // khối đa diện của three vốn không chỉ mục (toNonIndexed chỉ cảnh báo)
     const n = fbm(x * 4 + seed, z * 4, 3), base = C(0.09 + n * 0.03, 0.08 + n * 0.06, 0.3 + n * 0.12 + Math.max(0, ny) * 0.1); // xám ấm, vân đá
     return ny > 0.55 && n > 0.45 ? base.lerp(C(0.24, 0.4, 0.26), Math.min(1, (ny - 0.55) * 2.4)) : base;   // rêu trên mặt đá
   });

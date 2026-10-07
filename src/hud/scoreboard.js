@@ -50,7 +50,7 @@ export function createScoreboard({ world, player, portraits }) {
     const info = `<span class="kd">${h.kills} / ${h.deaths} / ${h.assists || 0}</span><span class="g">${IC.gold}${Math.round(h.goldEarned || 0)}</span><span class="its">${items}</span>`;
     const s = h.stats, stats = [['hp', Math.round(s.maxHp)], ['atk', Math.round(s.atk)], ['ap', Math.round(s.ap)], ['armor', Math.round(s.armor)], ['mr', Math.round(s.mr)]]
       .map(([k, v]) => `<span class="st">${IC[k]}<b>${v}</b></span>`).join('');
-    return `<div class="row ${me ? 'me' : ''} ${h.alive ? '' : 'dead'}"><canvas data-h="${h.id}" width="80" height="80"></canvas><span class="nm"><b>${h.data.name}</b><small>Cấp ${h.level}${h.alive ? '' : ' · hồi sinh ' + Math.max(0, Math.ceil((h.respawnTick - world.tick) / 30)) + 's'}</small></span>${tab === 'info' ? info : stats}</div>`;
+    return `<div class="row ${me ? 'me' : ''} ${h.alive ? '' : 'dead'}"><canvas data-h="${h.id}" width="80" height="80"></canvas><span class="nm"><b>${h.data.name}</b><small>${h.playerName ? `${h.playerName}${h === player ? '' : ' [Máy]'} · ` : ''}Cấp ${h.level}${h.alive ? '' : ' · hồi sinh ' + Math.max(0, Math.ceil((h.respawnTick - world.tick) / 30)) + 's'}</small></span>${tab === 'info' ? info : stats}</div>`;
   };
   function render() {
     $(panel, '.bars .bl').innerHTML = teamBar(my); $(panel, '.bars .rd').innerHTML = teamBar(foe);

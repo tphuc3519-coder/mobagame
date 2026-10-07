@@ -36,7 +36,9 @@ import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
 import { computeBonus } from './sim/inventory.js';
 /**
- * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), spellId, difficulty, seed, bot=true, onExit }
+ * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), allies/foes (5v5: id tướng), spellId, charmId, difficulty, seed,
+ * bot=true, dummies (1v1: 3 hình nộm), names: [{ heroId → tên người chơi } đội 0, đội 1], onGameOver({ world, player, winner }) }
+ * Không có onGameOver (vào thẳng bằng ?hero=): hiện bảng THẮNG/THUA đơn giản, Chơi lại = tải lại trang.
  * Tham số URL dành cho kiểm thử: ?mode=5v5, ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
  */
 export function startMatch(opts) {
@@ -61,8 +63,10 @@ if (arena) {
     for (const id of STARTER[HEROES[opts.enemyId].roles[0]] || []) world.command(enemy.id, { type: 'buy', item: id });
     world.addBot(enemy, opts.difficulty || 'normal');
   }
-  if (q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
+  if (opts.dummies || q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
+// tên người chơi (sảnh đặt: mình + máy) — hiện trên đầu tướng, bảng tỉ số, màn kết quả
+if (opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
 if (opts.spellId && SPELLS[opts.spellId]) player.spell = { id: opts.spellId, ready: 0 };
 // người chơi tự cộng điểm kỹ năng: đầu trận có 1 điểm, nút + hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + (bot vẫn tự cộng)
 player.autoLevel = false; player.skillLevels = { s1: 0, s2: 0, s3: 0 }; player.skillPoints = player.level;
@@ -116,13 +120,24 @@ document.getElementById('labLv').onclick = () => world.debug.level15(player);
 document.getElementById('labHeal').onclick = () => world.debug.fullHeal(player);
 for (const b of panel.querySelectorAll('button')) b.addEventListener('pointerdown', (e) => e.stopPropagation());
 
+let ended = false;
 function showResult(winner) {
-  const el = document.getElementById('result');
-  el.querySelector('h2').textContent = winner === player.team ? 'THẮNG' : 'THUA';
-  el.querySelector('p').textContent = `Thời gian ${Math.floor(world.tick / 1800)} phút ${Math.floor(world.tick / 30) % 60} giây · K/D ${player.kills}/${player.deaths}${enemy ? ` · Máy (${HEROES[enemy.heroId].name}) ${enemy.kills}/${enemy.deaths}` : ''}`;
-  el.classList.add('on');
+  if (ended) return; ended = true;
+  const win = winner === player.team;
+  if (!opts.onGameOver) {
+    const el = document.getElementById('result');
+    el.querySelector('h2').textContent = win ? 'THẮNG' : 'THUA';
+    el.querySelector('p').textContent = `Thời gian ${Math.floor(world.tick / 1800)} phút ${Math.floor(world.tick / 30) % 60} giây · K/D ${player.kills}/${player.deaths}${enemy ? ` · Máy (${HEROES[enemy.heroId].name}) ${enemy.kills}/${enemy.deaths}` : ''}`;
+    el.classList.add('on');
+    return;
+  }
+  // nhà chính nổ: chữ CHIẾN THẮNG / THẤT BẠI giữa màn ~3 giây (trận vẫn vẽ cảnh nổ), rồi dừng vòng lặp và mở các màn kết quả
+  const b = document.createElement('div'); b.id = 'gover'; b.className = win ? 'win' : 'lose';
+  b.innerHTML = `<b>${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</b><small>${win ? 'VICTORY' : 'DEFEAT'}</small>`;
+  document.body.append(b); document.body.classList.add('over');
+  setTimeout(() => { loop.pause(); b.remove(); document.body.classList.add('post'); opts.onGameOver({ world, player, winner }); }, 3200);
 }
-document.getElementById('again').onclick = () => (opts.onExit ? opts.onExit() : location.reload());
+document.getElementById('again').onclick = () => location.reload();
 
 const minFrame = 1000 / LEVELS[level].fps - 2;
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
@@ -172,6 +187,6 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
 };
 window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam }; // phục vụ kiểm thử tự động
 
-document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất
+document.addEventListener('visibilitychange', () => (document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume())); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;
 }

@@ -23,7 +23,7 @@ export function makeCtx(world, self, extra = {}) {
     world, self, ...extra,
     applyStatus: (t, s) => applyStatus(world, t, s, self),
     removeStatus, dealDamage: (t, a, type) => dealDamage(world, self, t, a, type),
-    heal: (t, a) => heal(world, t, a), addShield: (t, a, sec, id) => addShield(world, t, a, sec, id), hasShield,
+    heal: (t, a) => heal(world, t, a, self), addShield: (t, a, sec, id) => addShield(world, t, a, sec, id, self), hasShield,
     alliesOf: (e, r) => alliesOf(world, e, r),
     addHeat, setHeat: (e, n) => { e.heat = n; e.heatUntil = world.tick + T(4); },
   };

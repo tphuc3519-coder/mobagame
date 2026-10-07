@@ -138,7 +138,8 @@ export function createHud(canvas, input, portraits = null) {
           ctx.fillStyle = '#141830'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col; ctx.stroke();
           ctx.fillStyle = '#fff'; ctx.font = '800 10px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(String(e.level), hx, hy + 0.5);
           ctx.textBaseline = 'bottom'; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-          ctx.strokeText(e.data.name, p.x + 8, y0 - 4); ctx.fillStyle = e.team === player.team ? '#e8f4ff' : '#ffd8d0'; ctx.fillText(e.data.name, p.x + 8, y0 - 4);
+          const nm = e.playerName || e.data.name; // tên người chơi (như Liên Quân); vào thẳng trận không có tên thì hiện tên tướng
+          ctx.strokeText(nm, p.x + 8, y0 - 4); ctx.fillStyle = e.team === player.team ? '#e8f4ff' : '#ffd8d0'; ctx.fillText(nm, p.x + 8, y0 - 4);
           ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
           const buffs = e.statuses.filter((q) => q.buff); // huy hiệu bùa rừng cạnh huy hiệu cấp
           buffs.forEach((q, i) => { const bx2 = x0 - 10, by2 = y0 - 20 - i * 18, c2 = { an_thuy: '#3fa8ff', an_hoa: '#ff5a2a', uy_ho: '#b98aff' }[q.buff] || '#fff';

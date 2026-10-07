@@ -4,7 +4,9 @@ export const LEVELS = {
   mid: { pixelRatio: 1.5, fps: 60, msaa: 4, shadow: 1024 },
   high: { pixelRatio: 2.0, fps: 60, msaa: 4, shadow: 2048 },
 };
+/** Mức chất lượng: ?q= (kiểm thử) → lựa chọn trong Cài đặt ở sảnh (localStorage 'la.quality') → mặc định 'mid'. */
 export function pickLevel(search = location.search) {
-  const q = new URLSearchParams(search).get('q');
+  let q = new URLSearchParams(search).get('q');
+  if (!LEVELS[q]) { try { q = localStorage.getItem('la.quality'); } catch (_) { q = null; } }
   return LEVELS[q] ? q : 'mid';
 }

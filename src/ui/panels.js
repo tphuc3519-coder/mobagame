@@ -3,8 +3,9 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
 import { ICON, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
-import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail } from './profile.js';
+import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail, BAG_ITEMS } from './profile.js';
 import { FRIENDS, statusText } from './people.js';
+import { MODES } from './modes.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
@@ -28,6 +29,11 @@ const STYLE = `
 .pn-avs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; } .pn-avs button { width: 48px; height: 48px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid #ffffff22; background: #151332; } .pn-avs button.on { border-color: #ffd27a; } .pn-avs .face, .pn-avs .ini { width: 100%; height: 100%; }
 .pn-detail { display: grid; grid-template-columns: minmax(150px, 34%) 1fr; gap: 16px; } .pn-detail img.cd { width: 100%; border-radius: 12px; border: 2px solid #ffd27a88; } .pn-detail h3 { margin: 0 0 4px; font-size: 24px; color: #fff4dc; } .pn-detail p { margin: 6px 0; font-size: 13px; line-height: 1.5; color: #d8def4; } .pn-detail .sk b { color: #ffd28a; }
 .pn-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 10px 0; } .pn-cal div { aspect-ratio: .8; border-radius: 10px; background: #ffffff0a; border: 1px solid #ffffff18; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; } .pn-cal div svg { width: 30px; height: 30px; } .pn-cal div.got { opacity: .45; } .pn-cal div.today { border-color: #ffd27a; box-shadow: 0 0 12px #ffb84a77; }
+.pn-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 10px; } .pn-sum div { padding: 8px 10px; border-radius: 10px; background: #ffffff0a; border: 1px solid #ffd27a33; text-align: center; } .pn-sum small { display: block; font-size: 11px; color: #a8b4d8; } .pn-sum b { font-size: 19px; color: #ffe8a8; }
+.pn-row .wl { flex: none; width: 46px; text-align: center; font: italic 900 13px 'Be Vietnam Pro', system-ui; } .pn-row .wl.w { color: #ffd36a; } .pn-row .wl.l { color: #9fb0d8; }
+.pn-row .sc { flex: none; min-width: 52px; text-align: center; font: 900 18px 'Be Vietnam Pro', system-ui; color: #fff; } .pn-row .sc small { display: block; font-size: 10px; color: #ffd27a; font-weight: 800; }
+.pn-row .kd { flex: none; font: 800 14px 'Be Vietnam Pro', system-ui; color: #dfe6ff; min-width: 70px; text-align: center; }
+.pn-row.me { border-color: #ffd27a; background: #ffd27a14; } .pn-row .no { flex: none; width: 26px; text-align: center; font: 900 16px 'Be Vietnam Pro', system-ui; color: #ffd27a; } .pn-row .rkb { flex: none; }
 .pn-set .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 10px; background: #ffffff0a; margin-bottom: 8px; } .pn-set .seg { display: flex; border: 1px solid #c9b47a88; border-radius: 8px; overflow: hidden; } .pn-set .seg button { padding: 8px 12px; border: 0; background: #171b33; font: 600 13px 'Be Vietnam Pro', system-ui; } .pn-set .seg button.on { background: #c9b47a; color: #1a1200; }
 `;
 let styled = false;
@@ -62,7 +68,7 @@ export function openProfile(onChange) {
 
 export function openFriends() {
   css(); const { body } = panel({ title: 'Bạn bè' });
-  body.innerHTML = FRIENDS.map((f) => `<div class="pn-row">${face(f.avatar)}<div><b>${f.name}</b><small>${f.rank} · ${statusText(f)}</small></div><button type="button" class="go" data-f="${f.id}" ${f.status === 'online' ? '' : 'disabled'}>Nhắn</button></div>`).join('');
+  body.innerHTML = FRIENDS.map((f) => `<div class="pn-row">${face(f.avatar)}<div><b>${f.name}</b><small>${f.rank.name} · ${statusText(f)}</small></div><button type="button" class="go" data-f="${f.id}" ${f.status === 'online' ? '' : 'disabled'}>Nhắn</button></div>`).join('');
   body.onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) toast('Đã gửi lời chào tới ' + FRIENDS.find((f) => f.id === b.dataset.f).name); };
 }
 
@@ -79,7 +85,7 @@ export function openMail(onChange) {
 export function openMissions(onChange) {
   css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ hằng ngày', right: gold(p.gold) });
   const render = () => {
-    body.innerHTML = MISSIONS.map((m) => { const s = missionState(m); return `<div class="pn-row"><i style="width:40px;height:40px;flex:none">${ICON.book()}</i><div><b>${m.name}</b><small>${s.v}/${m.goal} · thưởng ${m.gold} vàng</small><div class="prog"><i style="width:${(s.v / m.goal) * 100}%"></i></div></div><button type="button" class="go" data-m="${m.id}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? 'Đã nhận' : s.done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')
+    body.innerHTML = MISSIONS.map((m) => { const s = missionState(m); return `<div class="pn-row"><i style="width:40px;height:40px;flex:none">${ICON.book()}</i><div><b>${m.name}</b><small>${s.v}/${m.goal} · thưởng ${m.gold} vàng${m.item ? ' + 1 ' + BAG_ITEMS[m.item].name : ''}</small><div class="prog"><i style="width:${(s.v / m.goal) * 100}%"></i></div></div><button type="button" class="go" data-m="${m.id}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? 'Đã nhận' : s.done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')
       + '<p style="font-size:12px;color:#a8b4d8;text-align:center">Nhiệm vụ làm mới mỗi ngày.</p>';
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
@@ -131,8 +137,8 @@ export function openItems() {
 }
 
 export function openBag() {
-  css(); const { body } = panel({ title: 'Túi đồ' });
-  body.innerHTML = `<div class="pn-row"><i style="width:44px;height:44px;flex:none">${ICON.edit()}</i><div><b>Thẻ đổi tên</b><small>Đổi tên miễn phí ở mục Hồ sơ.</small></div></div>
+  css(); const p = profile(); const { body } = panel({ title: 'Túi đồ' });
+  body.innerHTML = Object.entries(p.bag || {}).filter(([id, n]) => n > 0 && BAG_ITEMS[id]).map(([id, n]) => `<div class="pn-row"><i style="width:44px;height:44px;flex:none">${ICON.star()}</i><div><b>${BAG_ITEMS[id].name} ×${n}</b><small>${BAG_ITEMS[id].desc}</small></div></div>`).join('') + `<div class="pn-row"><i style="width:44px;height:44px;flex:none">${ICON.edit()}</i><div><b>Thẻ đổi tên</b><small>Đổi tên miễn phí ở mục Hồ sơ.</small></div></div>
     <div class="pn-row"><i style="width:44px;height:44px;flex:none">${ICON.lantern()}</i><div><b>Đèn lồng may mắn ×3</b><small>Dùng trong sự kiện Lễ Hội Đèn Lồng (sắp mở).</small></div></div>`;
 }
 
@@ -165,4 +171,27 @@ export function openEvent(onChange) {
     const got = p.checkin || 0; if (p.checkinDay === today || got >= 7) return;
     p.gold += REW[got]; p.checkin = got + 1; p.checkinDay = today; saveProfile(); toast(`+${REW[got]} vàng`); render(); onChange?.();
   };
+}
+
+/** Bảng xếp hạng bạn bè (theo sao hạng) — có cả mình. */
+export function openLeaderboard() {
+  css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng bạn bè' });
+  const rows = [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars);
+  body.innerHTML = rows.map((r, i) => { const rk = rankOf(r.stars);
+    return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
+}
+
+/** Lịch sử đấu + tổng hợp: số trận, tỉ lệ thắng, K/D/A tổng, KDA và điểm trung bình, số lần MVP; từng trận gần nhất (tối đa 20). */
+export function openHistory() {
+  css(); const p = profile(); const { body } = panel({ title: 'Lịch sử đấu' });
+  const H = p.history || [], n = H.length, sum = (k) => H.reduce((a, m) => a + (m[k] || 0), 0);
+  const kda = (k, d, a) => ((k + a) / Math.max(1, d)).toFixed(1);
+  const date = (t) => { const d = new Date(t); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  body.innerHTML = `<div class="pn-sum"><div><small>Tổng số trận</small><b>${p.games}</b></div><div><small>Tỉ lệ thắng</small><b>${p.games ? Math.round((p.wins / p.games) * 100) : 0}%</b></div>
+    <div><small>Hạ / Chết / Hỗ trợ</small><b>${p.kills}/${p.deaths}/${p.assists}</b></div><div><small>KDA trung bình</small><b>${kda(p.kills, p.deaths, p.assists)}</b></div>
+    <div><small>Điểm trung bình</small><b>${p.games ? ((p.scoreSum || 0) / p.games).toFixed(1) : '—'}</b></div><div><small>Số lần MVP</small><b>${p.mvp || 0}</b></div>
+    <div><small>${n} trận gần nhất</small><b>${n ? kda(sum('k'), sum('d'), sum('a')) : '—'}</b></div></div>
+    ${n ? H.map((m) => `<div class="pn-row">${face(m.heroId || p.avatar)}<div><b>${HEROES[m.heroId]?.name || ''}</b><small>${MODES[m.mode]?.short || ''} · ${date(m.t)}</small></div>
+      <span class="wl ${m.win ? 'w' : 'l'}">${m.win ? 'THẮNG' : 'THUA'}</span><span class="kd">${m.k}/${m.d}/${m.a}</span><span class="sc">${m.score.toFixed(1)}${m.mvp ? '<small>MVP</small>' : ''}</span></div>`).join('')
+      : '<p style="text-align:center;color:#a8b4d8">Chưa có trận nào — vào Đấu thường hoặc Đấu hạng để bắt đầu.</p>'}`;
 }
