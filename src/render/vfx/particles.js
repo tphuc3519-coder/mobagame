@@ -31,6 +31,7 @@ void main() {
 
 /** floor(x, z): độ cao mặt nền phần nhìn; hạt sinh sát đất (y < 70, không bám theo vật thể) được nâng lên mặt đó (bệ trại quái…). */
 export function createParticles(scene, { max = 2000, additive = true, floor = null } = {}) {
+  let last = 0;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(max * 3), col = new Float32Array(max * 3), alpha = new Float32Array(max), size = new Float32Array(max), tile = new Float32Array(max), rot = new Float32Array(max);
   const attr = (a, n) => { const b = new THREE.BufferAttribute(a, n); b.setUsage(THREE.DynamicDrawUsage); return b; };
@@ -70,7 +71,7 @@ export function createParticles(scene, { max = 2000, additive = true, floor = nu
     get count() { return P.length; },
     setScale(v) { mat.uniforms.uScale.value = v; },
     update(dt) {
-      let n = 0;
+      let n = 0; // last: số hạt khung trước (hết hạt thì vẫn tải một lần cho chắc)
       for (let i = 0; i < P.length; i++) {
         const p = P[i];
         p.age += dt;
@@ -94,7 +95,9 @@ export function createParticles(scene, { max = 2000, additive = true, floor = nu
       }
       P.length = n;
       geo.setDrawRange(0, n);
-      for (const k of ['position', 'aColor', 'aAlpha', 'aSize', 'aTile', 'aRot']) geo.attributes[k].needsUpdate = true;
+      // chỉ tải lên GPU phần hạt đang sống (trước đây tải cả mảng tối đa 1 600–2 600 hạt × 6 thuộc tính mỗi khung)
+      if (n || last) for (const k of ['position', 'aColor', 'aAlpha', 'aSize', 'aTile', 'aRot']) { const a = geo.attributes[k]; a.clearUpdateRanges(); a.addUpdateRange(0, Math.max(n, 1) * a.itemSize); a.needsUpdate = true; }
+      last = n;
     },
   };
 }

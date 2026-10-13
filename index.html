@@ -196,6 +196,12 @@
   #scoreboard .st { display: flex; gap: 2px; align-items: center; font-weight: 700; font-size: 13px; min-width: 40px; } #scoreboard .st svg { width: 14px; height: 14px; } #scoreboard .st:first-of-type { min-width: 54px; }
   @media (max-height: 420px) { #scoreboard .row { min-height: 40px; padding: 2px 6px; } #scoreboard .row canvas { width: 34px; height: 34px; } #scoreboard .slot { width: 19px; height: 19px; } }
   .setp { position: fixed; right: max(10px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + 44px); z-index: 7; background: #10142af4; border: 1px solid #c9b47a; border-radius: 12px; padding: 12px 14px; min-width: 240px; color: #f3e9d6; font: 14px 'Be Vietnam Pro', system-ui, sans-serif; box-shadow: 0 8px 24px #000c; }
+  .setp { touch-action: pan-y; max-height: calc(100vh - max(8px, env(safe-area-inset-top)) - 56px); max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - 56px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .setp .row.gfx { margin: 6px 0; font-size: 13px; } .setp .row.gfx small { display: block; font-size: 10.5px; color: #f3e9d688; }
+  .setp .gfx-h { margin-top: 12px; padding-top: 10px; border-top: 1px solid #c9b47a44; } .setp .note { margin: 8px 0 0; font-size: 11px; color: #f3e9d699; max-width: 300px; }
+  @media (max-height: 420px) { .setp { padding: 8px 12px; } .setp .row { margin: 5px 0; } .setp .seg button { padding: 5px 10px; font-size: 12px; } }
+  #fpsTag { position: fixed; top: max(4px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 6; padding: 2px 8px; border-radius: 9px; background: #0b0e1acc; color: #b8ffb0; font: 700 11px/1.4 'Be Vietnam Pro', system-ui, sans-serif; pointer-events: none; }
+  #fpsTag[hidden] { display: none; }
   .setp[hidden] { display: none; } .setp h4 { margin: 0 0 8px; color: #ffe08a; font-size: 15px; } .setp .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; }
   .setp .seg { display: flex; border: 1px solid #c9b47a88; border-radius: 8px; overflow: hidden; } .setp .seg button { background: #171b33; color: #f3e9d6aa; border: 0; padding: 7px 12px; font: 600 13px 'Be Vietnam Pro', system-ui; } .setp .seg button.on { background: #c9b47a; color: #1a1200; }
 </style>

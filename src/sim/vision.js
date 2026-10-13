@@ -5,7 +5,7 @@
 // Công trình luôn hiện (bản đồ đã biết). Kết quả ghi vào e.seenBy[team] (cập nhật mỗi 3 tick); nơi nào cần "thấy được" thì hỏi canSee/canTarget.
 // Chỉ bật khi map.vision có khai báo (bản 5v5); bản 1v1 hiện mọi thứ như cũ.
 import { bushRects, inBush } from '../data/maps.js';
-import { dist } from './util.js';
+import { dist, wallsNear } from './util.js';
 import { isTargetable } from './targeting.js';
 
 export const SIGHT = { hero: 1300, minion: 900, tower: 1100, core: 1300, fountain: 900 };
@@ -18,16 +18,17 @@ function bushesOf(map) {
 }
 export const bushAt = (map, p) => bushesOf(map).find((b) => inBush(b, p)) || null;
 
-/** Đoạn a→b có cắt tường (capsule) không — dò thô theo từng 150 đơn vị. */
+/** Đoạn a→b có cắt tường (capsule) không — dò thô theo từng 150 đơn vị. Mỗi điểm dò chỉ xét các đoạn tường ở ô lưới của nó
+ *  (util.js wallsNear — đoạn ngoài ô chắc chắn xa hơn nửa bề dày, kết quả y hệt duyệt hết; trước đây mỗi lần dò duyệt hàng trăm đoạn). */
 function blocked(map, a, b) {
   const segs = map.walls?.segs; if (!segs) return false;
-  const n = Math.max(1, Math.ceil(dist(a, b) / 150));
+  const n = Math.max(1, Math.ceil(dist(a, b) / 150)), th = map.walls.thickness;
+  const hit = (w, x, y) => { const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (y - w.y1) * dy) / L2));
+    return Math.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < (w.w ?? th) / 2; };
   for (let i = 1; i < n; i++) {
-    const x = a.x + (b.x - a.x) * (i / n), y = a.y + (b.y - a.y) * (i / n);
-    for (const w of segs) {
-      const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (y - w.y1) * dy) / L2));
-      if (Math.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < (w.w ?? map.walls.thickness) / 2) return true;
-    }
+    const x = a.x + (b.x - a.x) * (i / n), y = a.y + (b.y - a.y) * (i / n), near = wallsNear(map, x, y);
+    if (near) { for (let k = 0; k < near.length; k++) if (hit(segs[near[k]], x, y)) return true; }
+    else for (let k = 0; k < segs.length; k++) if (hit(segs[k], x, y)) return true;
   }
   return false;
 }
@@ -44,7 +45,7 @@ export function updateVision(world) {
   for (const e of ents) if (e.alive && !e.noTarget && sightOf(e) && (e.team === 0 || e.team === 1)) viewers[e.team].push(e);
   for (const e of ents) {
     if (!e.seenBy) e.seenBy = [true, true];
-    if (e.structure || !e.alive) { e.seenBy = [true, true]; continue; }
+    if (e.structure || !e.alive) { e.seenBy[0] = e.seenBy[1] = true; continue; } // (không tạo mảng mới mỗi lượt: đỡ rác bộ nhớ)
     const bush = bushOf.get(e.id), revealed = (e.revealUntil || 0) > world.tick;
     for (const team of [0, 1]) {
       if (e.team === team || revealed) { e.seenBy[team] = true; continue; }

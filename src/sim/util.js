@@ -19,6 +19,12 @@ function wallGrid(map, segs) {
   });
   g = { nx, ny, cells }; GRIDS.set(segs, g); return g;
 }
+/** Chỉ số các đoạn tường có thể chạm điểm (x, y) với bán kính ≤ RMAX (tầm nhìn dùng để dò tường chắn), null = không có lưới / ngoài lưới. */
+export function wallsNear(map, x, y) {
+  const segs = map.walls?.segs; if (!segs) return null;
+  const g = wallGrid(map, segs), cx = Math.floor(x / CELL), cy = Math.floor(y / CELL);
+  return cx >= 0 && cy >= 0 && cx < g.nx && cy < g.ny ? g.cells[cy * g.nx + cx] : null;
+}
 /** Giữ điểm trong bản đồ: bản 1v1 giữ trong đường; bản 5v5 giữ trong viền và đẩy ra khỏi tường (capsule dày). */
 export function clampToMap(map, p, r = 0) {
   if (map.road) {

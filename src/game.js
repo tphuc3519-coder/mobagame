@@ -6,7 +6,7 @@ import { HEROES } from './data/heroes/index.js';
 import { createWorld } from './sim/world.js';
 import { createRenderer } from './render/renderer.js';
 import { createPost } from './render/post.js';
-import { pickLevel, LEVELS } from './render/quality.js';
+import { loadGfx, shadowSize } from './render/quality.js';
 import { createAutoQuality } from './render/autoQuality.js';
 import { addLights } from './render/lights.js';
 import { createCamera, CAM_DISTANCE } from './render/camera.js';
@@ -49,7 +49,7 @@ export function startMatch(opts) {
 const q = new URLSearchParams(location.search);
 const debug = q.has('debug');
 const seed = opts.seed ?? parseInt(q.get('seed') || '1', 10);
-const level = pickLevel();
+const gfx = loadGfx(), level = gfx.detail; // cài đặt đồ hoạ (render/quality.js); level = chi tiết cảnh (mật độ cây cỏ, shader nền/sông)
 const heroId = opts.heroId;
 
 const arena = (opts.mode || q.get('mode')) === '5v5';
@@ -79,15 +79,16 @@ if (opts.charmId && CHARM_PAGES[opts.charmId]) { player.charm = CHARM_PAGES[opts
 let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(FOG_COLOR, 4200, 9500); // xa hơn vì camera đã lùi (2400)
-const rend = createRenderer(document.getElementById('world'), level, {
+const rend = createRenderer(document.getElementById('world'), gfx, {
   onLost: () => { ctxLost = true; loop.pause(); document.getElementById('lost').classList.add('on'); },
   onRestored: () => { ctxLost = false; document.getElementById('lost').classList.remove('on'); if (!document.hidden) loop.resume(); },
 });
 const { renderer } = rend;
-const sun = addLights(scene, renderer, level);
+const sun = addLights(scene, renderer, { shadow: shadowSize(gfx), on: gfx.shadows });
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
+env.group.traverse((o) => { if (o.isMesh) o.castShadow = false; }); // bóng cây/đá/tường đã nướng sẵn trên nền (ground.js): lượt bóng thời gian thực chỉ vẽ nhân vật
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
-const views = createUnitViews(scene, 0, player.id, { floor });
+const views = createUnitViews(scene, 0, player.id, { floor, outlines: gfx.detail !== 'low' });
 const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
@@ -98,8 +99,8 @@ const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }
 const portraits = createPortraits(renderer);
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
-createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30 });
-const post = level === 'low' || q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, level);
+createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30, gfx, onGfx: (k) => applyGfx(k) });
+const post = q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, { bloom: gfx.bloom, aa: gfx.aa, strength: gfx.detail === 'high' ? 0.55 : 0.45 }); // luôn vẽ qua hậu kỳ (tắt ánh sáng rực chỉ bỏ lượt bloom) → đổi cài đặt không phải dịch lại shader
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
@@ -144,16 +145,31 @@ function showResult(winner) {
 }
 document.getElementById('again').onclick = () => location.reload();
 
-const minFrame = 1000 / LEVELS[level].fps - 2;
-// tự hạ chất lượng khi máy không giữ nổi FPS mục tiêu (autoQuality.js): độ phân giải ×0,84 → ×0,7 → tắt bóng đổ thời gian thực → ×0,6
-const auto = (() => {
-  const pr0 = rend.basePixelRatio(), steps = [];
-  for (const k of [1, 0.84, 0.7]) { const v = Math.max(0.75, Math.round(pr0 * k * 100) / 100); if (!steps.length || v < steps[steps.length - 1].pr - 0.05) steps.push({ pr: v, shadow: true }); }
-  const last = steps[steps.length - 1].pr;
-  if (LEVELS[level].shadow) steps.push({ pr: last, shadow: false });
-  if (last * 0.86 >= 0.75) steps.push({ pr: Math.round(last * 0.86 * 100) / 100, shadow: false });
-  return q.has('noauto') ? null : createAutoQuality({ target: LEVELS[level].fps, steps, apply: (st) => { rend.setPixelRatio(st.pr); post?.resize(); sun.setShadows(st.shadow); } });
-})();
+let minFrame = 1000 / gfx.fps - 2;
+// tự hạ chất lượng khi máy không giữ nổi FPS mục tiêu (autoQuality.js), bắt đầu từ cài đặt người chơi chọn:
+// tắt khử răng cưa → độ phân giải ×0,84 → ×0,7 → tắt bóng đổ thời gian thực → ×0,6
+const makeAuto = () => {
+  if (q.has('noauto') || !gfx.auto) return null;
+  const pr0 = rend.basePixelRatio(), steps = [{ pr: pr0, shadow: gfx.shadows, aa: gfx.aa }], push = (o) => steps.push({ ...steps[steps.length - 1], ...o });
+  if (gfx.aa) push({ aa: 0 });
+  for (const k of [0.84, 0.7]) { const v = Math.max(0.75, Math.round(pr0 * k * 100) / 100); if (v < steps[steps.length - 1].pr - 0.05) push({ pr: v }); }
+  if (gfx.shadows) push({ shadow: false });
+  const last = steps[steps.length - 1].pr; if (last * 0.86 >= 0.75) push({ pr: Math.round(last * 0.86 * 100) / 100 });
+  return steps.length < 2 ? null : createAutoQuality({ target: gfx.fps, steps, apply: (st) => { rend.setPixelRatio(st.pr); post?.resize(); post?.set?.({ bloom: gfx.bloom, aa: st.aa }); sun.setShadows(st.shadow); } });
+};
+let auto = makeAuto();
+// FPS góc trên (Cài đặt → Hiện FPS): số khung/giây thực + bậc tự giảm đang dùng
+const fpsTag = document.createElement('div'); fpsTag.id = 'fpsTag'; fpsTag.hidden = !gfx.showFps; document.body.append(fpsTag);
+/** Áp cài đặt đồ hoạ vừa đổi trong trận (bảng cài đặt hud/settings.js). Chi tiết cảnh áp dụng từ trận sau. */
+function applyGfx(k) {
+  if (k === 'detail') return;
+  rend.setScale(gfx.scale); post?.resize();
+  post?.set?.({ bloom: gfx.bloom, aa: gfx.aa });
+  sun.setShadowSize?.(shadowSize(gfx)); sun.setShadows(gfx.shadows);
+  minFrame = 1000 / gfx.fps - 2;
+  auto = makeAuto();
+  fpsTag.hidden = !gfx.showFps;
+}
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
 const fxSlow = parseFloat(q.get('fxslow') || '1'); // kiểm thử: quay chậm hiệu ứng
 let lastDraw = 0, lastMini = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false;
@@ -188,11 +204,11 @@ const loopCfg = {
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
     if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
-    if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
+    if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; if (!fpsTag.hidden) fpsTag.textContent = `${fps} FPS${auto?.step ? ` · tự giảm ${auto.step}` : ''}`; }
     const i = renderer.info.render;
     fogOfWar?.update(world, dt);
     if (force || now - lastMini > 45) { lastMini = now; minimap.draw(); } // bản đồ nhỏ ~20 lần/giây là đủ
-    if (!OVERVIEW) hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  mức ${level}  bậc ${auto?.step ?? '-'}  px ${renderer.getPixelRatio()}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
+    if (!OVERVIEW) hud.draw(world, cam.camera, player, enemy, debug ? [`FPS ${fps}  ${gfx.preset}  bậc ${auto?.step ?? '-'}  px ${renderer.getPixelRatio()}`, `draw ${i.calls}  tam giác ${i.triangles}`, `tick ${loop.tick}  seed ${seed}`, `pos ${player.pos.x | 0}, ${player.pos.y | 0}  đạn ${world.projectiles.length}`] : null);
   },
 };
 const loop = createLoop(loopCfg);
@@ -215,7 +231,7 @@ async function warmUp() {
     tmp.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     const undo = fx.warm?.();
     // dịch đúng biến thể sẽ dùng: có hậu kỳ thì cảnh vẽ vào render target của composer (không tone map trong vật liệu, màu tuyến tính)
-    if (post) renderer.setRenderTarget(post.composer.readBuffer);
+    if (post) renderer.setRenderTarget(post.target || post.composer.readBuffer);
     const ready = renderer.extensions.has('KHR_parallel_shader_compile') ? renderer.compileAsync(scene, cam.camera) : (renderer.compile(scene, cam.camera), null); // phần tạo chương trình chạy đồng bộ ngay trong lời gọi
     renderer.setRenderTarget(null);
     if (ready) await within(ready, 6000); // không có dịch song song: lượt vẽ thử dưới đây chờ dịch xong (vẫn sau màn che)
@@ -233,7 +249,7 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, auto, sun, post }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, get auto() { return auto; }, sun, post, gfx }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;
