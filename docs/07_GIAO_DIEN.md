@@ -225,7 +225,7 @@ Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nú
 - **Góc quay theo định vị** `camAim`: đang ngắm kỹ năng / Chớp Bước có tầm > 700 thì camera trượt dần về nửa đường tới chỗ ngắm; thả ra về tướng.
 - Nút kỹ năng (Cài đặt → Giao diện): **Thời gian hồi số thập phân** `cdDecimal` — số lẻ khi dưới 10s (như cũ), tắt thì làm tròn lên giây (cả
   nút phép); **Miêu tả chiêu trong trận** `skillTips` — giữ yên nút kỹ năng ≥ 0,35s hiện mô tả (tên, cấp, `ui/skilltext.js`), thả ra không dùng
-  chiêu, kéo tiếp thì vẫn ngắm như thường (**mới**, mặc định bật; tắt = như cũ); **Miêu tả nút chiêu** `skillNames` — tên chiêu dưới K1–K3.
+  chiêu, kéo tiếp thì vẫn ngắm như thường (**mới**, mặc định tắt như Liên Quân — bật thì giữ lâu rồi thả không còn tự tung chiêu); **Miêu tả nút chiêu** `skillNames` — tên chiêu dưới K1–K3.
 
 ## 10. Kết quả trận
 - **Bước 1 – Chiến thắng / Thất bại**: chữ lớn đổ bóng + hiệu ứng (thắng: đèn trời bay lên, vàng; thua: mưa, xanh xám).
