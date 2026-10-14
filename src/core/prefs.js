@@ -28,7 +28,7 @@ export const PREF_DEFAULTS = Object.freeze({
   cdDecimal: true,     // Thời gian hồi số thập phân (dưới 10 giây)
   ultSplash: false,    // Hiển thị ảnh tướng khi tung chiêu cuối
   edgeFoes: true,      // Vị trí tướng địch ở rìa màn hình
-  skillTips: true,     // Miêu tả chiêu trong trận (giữ nút chiêu để xem)
+  skillTips: false,    // Miêu tả chiêu trong trận (giữ yên nút chiêu ≥ 0,35s để xem, thả ra không tung) — tắt như mặc định Liên Quân
   skillNames: false,   // Miêu tả nút chiêu (tên chiêu dưới nút)
   // —— Thiết lập ——
   camDist: 'far',      // Góc camera: 'near' gần | 'far' xa

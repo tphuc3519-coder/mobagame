@@ -62,7 +62,7 @@ function schema({ g, gfxSet, inMatch, onReset }) {
       tog('ultSplash', 'Hiển thị ảnh tướng tung chiêu', 'Ảnh tướng lướt qua khi tung chiêu cuối'),
       tog('edgeFoes', 'Vị trí tướng địch rìa màn hình', 'Mũi tên + chân dung địch ngoài màn hình (đang thấy trên bản đồ)'),
       { t: 'toggle', label: 'FPS', desc: 'Số khung hình mỗi giây ở góc màn hình', get: () => !!g.showFps, set: (v) => gfxSet({ showFps: v }) },
-      tog('skillTips', 'Miêu tả chiêu trong trận', 'Giữ nút chiêu để xem mô tả'),
+      tog('skillTips', 'Miêu tả chiêu trong trận', 'Giữ yên nút chiêu để xem mô tả (thả ra không tung chiêu)'),
       tog('skillNames', 'Miêu tả nút chiêu', 'Tên chiêu dưới nút'),
     ],
     gen: [
