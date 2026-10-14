@@ -13,9 +13,11 @@ export { FOG_COLOR };
 const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
 
 /** Dựng bản đồ 1v1: địa hình có bờ dốc, đường lát đá, sông chảy, cầu đá, tường rêu, cây/đá/cỏ/hoa, đèn lồng, đom đóm, trời.
- *  Trả về { group, update(time, dt, camera, viewH) }. Toàn bộ vẽ bằng code, không có file ảnh (assets/LICENSES.md). */
-export function buildMap(scene, map, level = 'mid') {
+ *  Trả về { group, update(time, dt, camera, viewH) }. Toàn bộ vẽ bằng code, không có file ảnh (assets/LICENSES.md).
+ *  opts.detail: 'low' | 'mid' | 'high' — mức chi tiết shader nền + sông (mặc định theo level). */
+export function buildMap(scene, map, level = 'mid', opts = {}) {
   const dens = DENSITY[level] ?? 1, g = new THREE.Group();
+  const detail = opts.detail || (DENSITY[level] ? level : 'high');
   const lane = map.road, rw = lane.width;
   const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
 
@@ -56,7 +58,7 @@ export function buildMap(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
+    const mesh = new THREE.Mesh(geo, groundMaterial(baked, null, null, { detail })); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
   }
   const stone = (w, h, d, x, y, z, k = 1.6, color = 0xe8e0d0) => { // khối đá xếp: cả chiều cao một ảnh, chiều dài lặp theo tỉ lệ
     const geo = new THREE.BoxGeometry(w, h, d), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.max(w, d) / (h * k), uv.getY(i));
@@ -64,7 +66,7 @@ export function buildMap(scene, map, level = 'mid') {
   };
 
   // sông + cầu đá có lan can
-  const river = buildRiver(map); g.add(river.mesh);
+  const river = buildRiver(map, { detail }); g.add(river.mesh);
   const bw = map.river.width + 90;
   stone(bw, 22, rw + 30, map.river.x, 6, lane.y, 0.5);
   const deckTex = flagstoneSurface().clone(); deckTex.repeat.set(bw / 340, rw / 340); deckTex.needsUpdate = true;

@@ -181,3 +181,37 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
   nhân giữ chỗ rồi tự thay bằng model thật; chân dung bản đồ nhỏ chụp lại; màn tải trận gọi tải lại tướng còn thiếu. Tải lỗi hẳn thì hiện
   thông báo kèm lý do (để biết nguyên nhân khi chơi trên điện thoại).
 - Đã chạy: giả lập 4–6 lần tải hỏng ở màn chọn tướng và trong trận (tự hồi phục), trọn luồng đấu đơn với Moonstream — không lỗi console.
+
+## Cài đặt đồ hoạ + mượt hơn trên điện thoại (13/10)
+- Báo lỗi: "Trên điện thoại còn lag FPS lắm — cần tuỳ chỉnh đồ hoạ, đồ hoạ cao nhất cũng không được lag". Nguyên nhân tìm được:
+  - **Bộ tự giảm kẹt ở 30 FPS**: nó đo trung vị khoảng cách khung, mà màn 60 Hz chỉ cho 16,7 / 33,3 ms. Máy vẽ mất 20–22 ms/khung thì
+    khung nào cũng chờ 33,3 ms; bậc đầu (tắt khử răng cưa) không đủ vượt nhịp màn hình → bị coi là "hạ không giúp", trả lại và không bao
+    giờ thử hạ độ phân giải → 30 FPS cả trận. Máy trễ nhịp ~40% số khung (~43 FPS, giật rõ) có trung vị 16,7 nên không bị phát hiện.
+  - **Hậu kỳ ~15 lượt vẽ toàn màn** (EffectComposer + UnrealBloomPass 5 tầng + OutputPass + chỉnh màu) — nặng băng thông trên GPU iPhone.
+  - **Shader nền ~28 lần lấy mẫu texture mọi điểm ảnh** (kể cả lớp không góp gì: đá lát nhân 0, pháp tuyến đá nhân 0, phát sáng 0) và
+    lấy mẫu bóng PCF hai lần; **shader sông 26 mẫu** + tia sáng đáy (caustics) tính ở mọi điểm.
+  - Cây / đá / tường vẫn vẽ vào bản đồ bóng mỗi khung dù bóng của chúng đã nướng sẵn trên nền.
+- Sửa:
+  - **Cài đặt đồ hoạ** (Cài đặt ở sảnh + nút bánh răng trong trận, `src/ui/gfxSettings.js`): mức Thấp / Vừa / Cao + chỉnh từng mục — độ
+    nét, khung hình 30/60, bóng đổ, ánh sáng rực, khử răng cưa, chi tiết cảnh, tự giảm khi giật, hiện FPS. Đổi trong trận áp dụng ngay,
+    không khựng (không dịch lại shader); chi tiết cảnh áp dụng từ trận sau. Lưu trong máy. Mặc định: điện thoại Vừa, máy tính Cao.
+  - **Hậu kỳ mới** (`src/render/post.js`): tối đa 7 lượt — cảnh → lọc sáng thu 1/4 → làm mờ ở 1/4 và 1/8 (MRT: một lượt ngang ra hai
+    bán kính) → một lượt cuối: cộng bloom, tone map, làm nét, chỉnh màu, vignette. Dáng và độ sáng quầng giữ như cũ (đo phần bloom cộng
+    thêm ở sân nhà: năng lượng tương đương, phân bố trùng).
+  - **Shader nền / sông theo chi tiết cảnh** (`env/ground.js`, `env/water.js`): mức Cao ra ảnh như cũ nhưng bỏ qua lớp không góp gì
+    (nhánh động: đường, lòng sông, mặt đá hoạ tiết chỉ tính nơi có), bóng nắng lấy lại từ vòng đèn thay vì lấy mẫu lần hai; sóng nước
+    tính sẵn sai phân (1 mẫu/tầng thay vì 3), tia sáng đáy chỉ nơi nước cạn. Vừa / Thấp bớt tầng. Nền chia 3–4 phần theo biến thể
+    (`splitGround`): phần lớn sân không `discard` (GPU iPhone loại sẵn điểm ảnh bị che), không mang khối hoạ tiết sân nhà.
+  - **Chỉ nhân vật đổ bóng thời gian thực**: ~225 → ~140 lệnh vẽ mỗi khung ở mức Vừa, ảnh không đổi.
+  - **Bộ tự giảm mới** (`src/render/autoQuality.js`): trung bình 90% khung nhanh nhất thay trung vị; bậc nào không giúp (VD tắt MSAA trên
+    GPU xếp ô) thì thử luôn bậc dưới; thêm bậc tắt ánh sáng rực. Mô phỏng màn 60 Hz: máy 20–22 ms/khung từ kẹt 30 FPS → ~58 FPS (hạ độ
+    nét 1–2 bậc); máy nghẽn CPU / Nguồn điện thấp: giữ nguyên chất lượng, thỉnh thoảng thử lại (thưa dần).
+  - CPU: tầm nhìn tra tường bằng lưới ô; bớt cấp phát mỗi khung (danh sách đơn vị, cập nhật hạt từng đoạn).
+  - Sông: dải mép đã trong suốt hẳn (~1/5 tấm nước) thoát sớm khỏi shader — điểm ảnh trùng khớp, sông nhẹ hơn ~30%.
+- Kết quả đo (GPU giả lập SwiftShader — chỉ so tương đối; khung 844×390 ×3 như iPhone, cùng cảnh giao tranh phút 1:15, kể cả bóng +
+  hậu kỳ), mỗi khung: bản đang chạy (07/10) Vừa **1 879 ms** / 173 lệnh vẽ, Cao **3 354 ms** / 180 → bản mới Thấp **350 ms** / 116, Vừa
+  **788 ms** / 131 (nhanh gấp ~2,4), Cao **2 136 ms** / 134 (nhanh gấp ~1,6, cùng độ nét 2 + MSAA 4x + bóng + bloom). Ảnh so với bản
+  trước ở sân nhà, mép vực, rừng, sông, toàn bản đồ: trùng (khác do thời điểm hiệu ứng / vị trí tướng); phần bloom cộng thêm tương đương.
+- Đã chạy: `tools/t_*.mjs` + `simtest` + `t_determinism` (băm trùng bản trước), mô phỏng bộ tự giảm (màn 60 Hz, 7 tình huống), bộ tự
+  giảm trong trình duyệt (hạ đủ 5 bậc, không lỗi), bảng cài đặt sảnh + trong trận (lưu, áp ngay, đổi mức), trọn luồng đấu thường
+  (sảnh → phòng → chọn tướng → trận → kết quả → đấu lại) — không lỗi console. Chưa đo được FPS thật trên iPhone ở đây.

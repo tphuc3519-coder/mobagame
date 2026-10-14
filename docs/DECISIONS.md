@@ -548,3 +548,22 @@
   điểm trong ô; không đoạn nào chạm thì vòng đầy đủ cũng không đẩy gì; có đoạn chạm thì chạy vòng đầy đủ như cũ). `hypot(dx, dy) ≥ |dx|`
   nên loại cặp lính xa theo một trục không đổi kết quả. Kiểm bằng `tools/t_determinism.mjs`.
 
+
+## Cài đặt đồ hoạ + hiệu năng điện thoại (13/10)
+- **Luôn vẽ qua hậu kỳ, kể cả khi tắt ánh sáng rực / khử răng cưa**: vật liệu vẽ vào render target (màu tuyến tính, không tone map)
+  và vẽ thẳng ra màn là hai biến thể shader khác nhau — chuyển qua lại giữa trận buộc dịch lại cả cảnh (khựng vài giây trên iPhone).
+  Tắt bloom chỉ bỏ 5 lượt nhỏ; đổi MSAA chỉ tạo lại render target cảnh. Đổi độ nét = đổi pixel ratio + cỡ render target.
+- **Bloom tự viết thay UnrealBloomPass**: 5 tầng mip × (ngang + dọc) + ghép + cộng = 12 lượt; GPU xếp ô trả giá theo số lượt (mỗi lượt
+  ghi / đọc cả khung qua bộ nhớ chung) hơn là theo số phép tính. Bốn bán kính σ khớp đường suy giảm của 5 tầng cũ (4 / 14 / 40 / 104 /
+  257 điểm ảnh), cùng tổng cường độ (3 × strength × 0,6 mỗi tầng); một lượt ngang ghi hai bán kính vào hai texture (MRT).
+- **Nhánh động trong shader nền chỉ đặt nơi kết quả nhân ~0 ở biên nhánh**: đạo hàm ngầm (chọn mip) của `texture2D` trong nhánh không
+  đều giữa 4 điểm ảnh một quad là không xác định; các nhánh (đường, lòng sông, mặt đá hoạ tiết) có điều kiện rộng hơn vùng góp màu, nên ở
+  biên nhánh phần tính trong nhánh bị nhân với 0 — sai mip (nếu có) không thấy được. Mẫu sắc + mẫu mờ của hoạ tiết lấy ngoài nhánh.
+- **Chia nền theo biến thể shader thay vì một shader cho cả sân**: GPU Apple chỉ loại sẵn điểm ảnh bị che (HSR) với shader không
+  `discard`; vực chỉ chạm vài phần trăm sân. Biên an toàn theo cạnh tam giác dài nhất (vực) và ~200 texel (hoạ tiết: tầm bóng đổ / AO
+  mờ kể cả khi nhìn toàn bản đồ) để biến thể rút gọn luôn cho đúng kết quả của bản đủ; các phần dùng chung đỉnh, chỉ khác chỉ mục.
+- **Bộ tự giảm đo trung bình cắt 10% chậm nhất, không đo trung vị; bậc không giúp thì thử bậc dưới**: khoảng cách khung bị lượng tử
+  theo nhịp màn hình nên cải thiện từng phần không thấy được tới khi vượt nhịp — hạ thử liên tiếp tới khi nhanh hơn ≥ 8%, không bậc nào
+  giúp (nghẽn CPU, khoá 30 FPS) thì trả lại và chờ lâu dần. Trả giá: máy nghẽn CPU thỉnh thoảng thấy hình mờ đi ~10 giây khi thử.
+- **Chỉ nhân vật đổ bóng thời gian thực**: bóng cây / đá / tường đã nướng sẵn trên nền (ground.js, kênh B bản đồ trộn); vẽ thêm vào bản
+  đồ bóng chỉ nhân đôi bóng và tốn ~40% lệnh vẽ.

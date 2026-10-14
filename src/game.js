@@ -100,7 +100,7 @@ if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.nea
 const portraits = createPortraits(renderer);
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
 createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30, gfx, onGfx: (k) => applyGfx(k) });
-const post = q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, { bloom: gfx.bloom, aa: gfx.aa, strength: gfx.detail === 'high' ? 0.55 : 0.45 }); // luôn vẽ qua hậu kỳ (tắt ánh sáng rực chỉ bỏ lượt bloom) → đổi cài đặt không phải dịch lại shader
+const post = q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, { bloom: gfx.bloom, aa: gfx.aa, strength: gfx.detail === 'high' ? 0.55 : 0.45, sharp: gfx.detail === 'high' ? 0.4 : 0.32 }); // luôn vẽ qua hậu kỳ (render/post.js; tắt ánh sáng rực chỉ bỏ lượt bloom) → đổi cài đặt không phải dịch lại shader
 addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
@@ -147,15 +147,16 @@ document.getElementById('again').onclick = () => location.reload();
 
 let minFrame = 1000 / gfx.fps - 2;
 // tự hạ chất lượng khi máy không giữ nổi FPS mục tiêu (autoQuality.js), bắt đầu từ cài đặt người chơi chọn:
-// tắt khử răng cưa → độ phân giải ×0,84 → ×0,7 → tắt bóng đổ thời gian thực → ×0,6
+// tắt khử răng cưa → độ phân giải ×0,84 → ×0,7 → tắt bóng đổ thời gian thực → tắt ánh sáng rực → ×0,86
 const makeAuto = () => {
   if (q.has('noauto') || !gfx.auto) return null;
-  const pr0 = rend.basePixelRatio(), steps = [{ pr: pr0, shadow: gfx.shadows, aa: gfx.aa }], push = (o) => steps.push({ ...steps[steps.length - 1], ...o });
+  const pr0 = rend.basePixelRatio(), steps = [{ pr: pr0, shadow: gfx.shadows, aa: gfx.aa, bloom: gfx.bloom }], push = (o) => steps.push({ ...steps[steps.length - 1], ...o });
   if (gfx.aa) push({ aa: 0 });
   for (const k of [0.84, 0.7]) { const v = Math.max(0.75, Math.round(pr0 * k * 100) / 100); if (v < steps[steps.length - 1].pr - 0.05) push({ pr: v }); }
   if (gfx.shadows) push({ shadow: false });
+  if (gfx.bloom && post) push({ bloom: false });
   const last = steps[steps.length - 1].pr; if (last * 0.86 >= 0.75) push({ pr: Math.round(last * 0.86 * 100) / 100 });
-  return steps.length < 2 ? null : createAutoQuality({ target: gfx.fps, steps, apply: (st) => { rend.setPixelRatio(st.pr); post?.resize(); post?.set?.({ bloom: gfx.bloom, aa: st.aa }); sun.setShadows(st.shadow); } });
+  return steps.length < 2 ? null : createAutoQuality({ target: gfx.fps, steps, apply: (st) => { rend.setPixelRatio(st.pr); post?.resize(); post?.set?.({ bloom: st.bloom, aa: st.aa }); sun.setShadows(st.shadow); } });
 };
 let auto = makeAuto();
 // FPS góc trên (Cài đặt → Hiện FPS): số khung/giây thực + bậc tự giảm đang dùng
@@ -230,8 +231,8 @@ async function warmUp() {
     for (const [type, d] of Object.entries(MONSTERS)) for (const m of Object.keys(d.stats || { x: 1 })) tmp.add(createMonster(type, m).object);
     tmp.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     const undo = fx.warm?.();
-    // dịch đúng biến thể sẽ dùng: có hậu kỳ thì cảnh vẽ vào render target của composer (không tone map trong vật liệu, màu tuyến tính)
-    if (post) renderer.setRenderTarget(post.target || post.composer.readBuffer);
+    // dịch đúng biến thể sẽ dùng: có hậu kỳ thì cảnh vẽ vào render target của hậu kỳ (không tone map trong vật liệu, màu tuyến tính)
+    if (post) renderer.setRenderTarget(post.target);
     const ready = renderer.extensions.has('KHR_parallel_shader_compile') ? renderer.compileAsync(scene, cam.camera) : (renderer.compile(scene, cam.camera), null); // phần tạo chương trình chạy đồng bộ ngay trong lời gọi
     renderer.setRenderTarget(null);
     if (ready) await within(ready, 6000); // không có dịch song song: lượt vẽ thử dưới đây chờ dịch xong (vẫn sau màn che)

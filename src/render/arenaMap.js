@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { wallStoneSurface, cutStoneSurface } from './env/surfaces.js';
-import { bakeGroundMap, groundMaterial } from './env/ground.js';
+import { bakeGroundMap, groundMaterial, splitGround } from './env/ground.js';
 import { structuresOf, bushRects } from '../data/maps.js';
 import { buildRiver } from './env/water.js';
 import { buildBushes } from './env/bushes.js';
@@ -22,9 +22,11 @@ const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
 const sstep = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 /** Dựng bản đồ 5v5: đất có vách núi ngoài viền, ba đường lát đá bo góc, sông chéo, tường rêu, bụi cỏ, đèn lồng, cây đá.
- *  Cùng giao diện với buildMap (1v1): trả về { group, update(time, dt, camera, viewH) }. Địa hình chỉ để nhìn, mô phỏng phẳng. */
-export function buildArena(scene, map, level = 'mid') {
+ *  Cùng giao diện với buildMap (1v1): trả về { group, update(time, dt, camera, viewH) }. Địa hình chỉ để nhìn, mô phỏng phẳng.
+ *  opts.detail: 'low' | 'mid' | 'high' — mức chi tiết shader nền + sông (mặc định theo level). */
+export function buildArena(scene, map, level = 'mid', opts = {}) {
   const dens = DENSITY[level] ?? 1, g = new THREE.Group(), M = map.margin || 0;
+  const detail = opts.detail || (DENSITY[level] ? level : 'high');
   const paths = map.lanes.map((_, i) => lanePath(map, i, 0));
   const laneDist = (x, z) => { let d = Infinity; for (const p of paths) d = Math.min(d, project(p, { x, y: z }).d); return d; };
   const riverDist = (x, z) => Math.abs(x - z) / Math.SQRT2;
@@ -41,7 +43,7 @@ export function buildArena(scene, map, level = 'mid') {
   let groundMap = null;
 
   // —— sông chéo ——
-  const river = buildRiver(map); g.add(river.mesh);
+  const river = buildRiver(map, { detail }); g.add(river.mesh);
 
   // —— bệ đá: cụm tảng đá rêu tự nhiên; lãnh thổ trại quái (env/jungleDecor.js) ——
   g.add(buildRockWalls(map, dens), buildCampSites(map));
@@ -195,7 +197,11 @@ export function buildArena(scene, map, level = 'mid') {
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, groundMaterial(baked, pattern, map)); mesh.position.y = -1; mesh.receiveShadow = true; g.add(mesh);
+    // mỗi vùng một biến thể shader: phần lớn sân không discard, không khối hoạ tiết (env/ground.js splitGround)
+    for (const part of splitGround(geo, { abyss: (x, z, p) => isAbyss(map, x, z, p), pad0: ABYSS_PAD, pattern })) {
+      const mesh = new THREE.Mesh(part.geometry, groundMaterial(baked, part.pattern ? pattern : null, part.abyss ? map : null, { detail }));
+      mesh.position.y = -1; mesh.receiveShadow = true; mesh.userData.noChunk = true; g.add(mesh); // đỉnh dùng chung giữa các phần: không chia ô
+    }
     groundMap = baked; river.setMask?.(baked);
   }
 

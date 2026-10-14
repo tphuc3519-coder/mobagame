@@ -14,7 +14,7 @@
 - Âm thanh: Web Audio (tổng hợp ở Alpha, thay bằng file âm thanh ở 1.0).
 - Màn ngang. Khi xoay dọc hiện lớp phủ "Xoay ngang thiết bị". Thử `screen.orientation.lock('landscape')` sau khi vào toàn màn hình.
 - CSS: `touch-action: none; user-select: none; overscroll-behavior: none;` trên body khi ở trong trận.
-- Độ phân giải: `renderer.setPixelRatio(min(devicePixelRatio, 1.5))` ở mức Cao, 1.0 ở mức Thấp. Có 3 mức chất lượng (xem §13.8).
+- Độ phân giải: `renderer.setPixelRatio(min(devicePixelRatio, độ nét))` — độ nét 1 / 1,5 / 2 theo cài đặt đồ hoạ (xem §13.8), tự hạ khi máy không giữ nổi FPS.
 
 ## 2. Hiệu năng mục tiêu
 - 60fps trên điện thoại tầm trung (Snapdragon 6-series / Helio G9x) ở mức chất lượng Trung bình; tối thiểu 30fps ổn định ở mức Thấp trên máy yếu. Tình huống nặng nhất: giao tranh 5v5 với 10 tướng, ~60 lính, ~40 đạn, ~200 hạt.
@@ -225,17 +225,27 @@ Tên clip bắt buộc trong mọi GLB tướng (xem 11 §6):
 - Chỉ báo ngắm, vòng tầm, vùng AoE: vẽ **trong cảnh 3D** bằng mesh phẳng sát mặt đất (`indicators.js`) để đúng phối cảnh.
 - Sương mù: texture tầm nhìn cập nhật mỗi 3 tick, phủ lên mặt đất bằng shader, và ẩn object của địch ngoài tầm nhìn.
 
-### 13.8 Mức chất lượng (`quality.js`)
-| Mục | Thấp | Trung bình | Cao |
-|---|---|---|---|
-| Pixel ratio | 1.0 | 1.25 | 1.5 |
-| Khử răng cưa | tắt | tắt | MSAA 4x |
-| Texture nhân vật | 512 | 1024 | 1024 (sảnh 2048) |
-| Hạt | 40% | 70% | 100% |
-| Bloom (hậu kỳ) | tắt | tắt | bật nhẹ |
-| FPS | 30 | 60 | 60 |
+### 13.8 Cài đặt đồ hoạ (`quality.js`, `ui/gfxSettings.js`)
+Ba mức đặt sẵn + chỉnh từng mục (Cài đặt ở sảnh và nút bánh răng trong trận), lưu trong máy (`localStorage['la.gfx']`). Mặc định:
+điện thoại **Vừa**, máy tính **Cao**. Chọn từng mục khác mức đặt sẵn → hiện "Tuỳ chỉnh".
 
-Lần chạy đầu: đo 3s FPS ở màn tải, tự chọn mức phù hợp; người chơi đổi lại được trong Cài đặt.
+| Mục | Thấp | Vừa | Cao | Đổi giữa trận |
+|---|---|---|---|---|
+| Độ nét (pixel ratio tối đa, ≤ devicePixelRatio) | 1 | 1,5 | 2 | ngay |
+| Khung hình | 60 | 60 | 60 (chọn được 30) | ngay |
+| Bóng đổ thời gian thực (chỉ nhân vật; bóng cây / đá / tường nướng sẵn trên nền) | tắt | bật | bật | ngay, không dịch lại shader |
+| Ánh sáng rực (bloom) | tắt | bật | bật | ngay |
+| Khử răng cưa (MSAA 4x trên render target cảnh) | tắt | tắt | bật | ngay |
+| Chi tiết cảnh (mật độ cây cỏ, shader nền / sông) | thấp | vừa | cao | trận sau |
+| Tự giảm khi giật (`autoQuality.js`) | bật | bật | bật | ngay |
+
+- Luôn vẽ qua hậu kỳ (`post.js`): cảnh → render target HalfFloat tuyến tính → (bloom: lọc sáng 1/4, làm mờ 1/4 và 1/8, MRT) → một
+  lượt cuối ra màn: cộng bloom, tone map + sRGB, làm nét, chỉnh màu, vignette. Tối đa 7 lượt toàn màn (trước: ~15). Tắt bloom / MSAA chỉ
+  bỏ lượt / đổi render target — vật liệu cảnh không dịch lại shader.
+- Tự giảm khi giật: bậc 0 là cài đặt người chơi; xuống dần tắt MSAA → độ nét ×0,84 → ×0,7 → tắt bóng đổ → ×0,86; mỗi bậc đo thử, nâng lại
+  khi chạy đủ nhanh lâu.
+- Hiện FPS: góc trên màn hình trận, kèm bậc tự giảm đang dùng.
+- `?q=low|mid|high` (kiểm thử) đè mức đặt sẵn cho lần chạy đó, không lưu.
 
 ### 13.9 Cảnh trưng bày (`showcase/`)
 - Một `WebGLRenderer` riêng (hoặc dùng lại renderer chính khi không ở trong trận) vẽ phía sau DOM UI ở sảnh, chọn tướng, xếp hạng.
