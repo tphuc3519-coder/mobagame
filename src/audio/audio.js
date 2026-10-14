@@ -54,6 +54,7 @@ function context() {
   sfxBus = ctx.createGain(); musBus = ctx.createGain();
   sfxBus.connect(comp); comp.connect(ctx.destination); musBus.connect(ctx.destination);
   volumes(true);
+  ctx.onstatechange = () => { if (ctx.state === 'running' && want && !musSrc) startMusic(); }; // resume() xong thì mới bật được nhạc
   return ctx;
 }
 function volumes(now = false) {
@@ -64,8 +65,10 @@ function volumes(now = false) {
 /** Mở khoá âm thanh trong lúc người chơi chạm (bắt buộc trên iPhone). */
 function unlock() {
   const c = context(); if (!c) return;
-  if (c.state !== 'running') c.resume?.().catch(() => {});
-  if (!unlock.done) { unlock.done = true; try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (_) { /* bỏ qua */ } }
+  if (c.state !== 'running') { // chưa chạy: tiếp tục + phát một mẫu im lặng (iOS cũ chỉ mở khoá khi có tiếng phát ngay trong cử chỉ) — lặp lại tới khi chạy
+    c.resume?.().catch(() => {});
+    try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (_) { /* bỏ qua */ }
+  }
   if (want && !musSrc) startMusic();
 }
 if (typeof window !== 'undefined') {
