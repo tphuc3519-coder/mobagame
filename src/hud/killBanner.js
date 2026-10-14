@@ -45,7 +45,11 @@ export function createKillBanner(portraits) {
     ctx.lineWidth = Math.max(2, r * 0.2); ctx.strokeStyle = ring; ctx.stroke();
     ctx.translate(x, y); ctx.scale(r / 20, r / 20); ctx.fillStyle = '#f3e3b8'; ctx.strokeStyle = '#f3e3b8'; ctx.lineWidth = 2.2; ctx.lineJoin = ctx.lineCap = 'round';
     ctx.beginPath();
-    if (kind === 'tower') { ctx.moveTo(-7, 11); ctx.lineTo(-5, -4); ctx.lineTo(-9, -6); ctx.lineTo(0, -13); ctx.lineTo(9, -6); ctx.lineTo(5, -4); ctx.lineTo(7, 11); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#7ad8ff'; ctx.fillRect(-2, -3, 4, 5); }
+    if (kind === 'tower') { // tháp răng cưa (kiểu quân xe) + cửa vòm sáng — tránh dáng đầu nhọn thân loe (trông như cái chuông)
+      ctx.fillRect(-10, 8, 20, 4); ctx.fillRect(-6.5, -5, 13, 13); ctx.fillRect(-9, -9, 18, 4.5);
+      for (const x of [-9, -2, 5]) ctx.fillRect(x, -14, 4, 5.5);
+      ctx.fillStyle = '#7ad8ff'; ctx.beginPath(); ctx.moveTo(-2.2, 6); ctx.lineTo(-2.2, -0.5); ctx.arc(0, -0.5, 2.2, Math.PI, 0); ctx.lineTo(2.2, 6); ctx.closePath(); ctx.fill();
+    }
     else if (kind === 'minion') { ctx.moveTo(-9, 9); ctx.lineTo(8, -8); ctx.moveTo(4, -9); ctx.lineTo(9, -4); ctx.moveTo(-9, 3); ctx.lineTo(-3, 9); ctx.stroke(); }
     else if (kind === 'monster') { for (const dx of [-6, 0, 6]) { ctx.moveTo(dx - 2, -10); ctx.quadraticCurveTo(dx + 4, -2, dx - 1, 10); } ctx.stroke(); }
     else { ctx.font = `800 20px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, 1); }
