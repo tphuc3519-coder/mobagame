@@ -28,8 +28,8 @@ export function gainXp(world, e, amount) {
 
 export const respawnSeconds = (e) => ECON.respawn(e.level);
 
-/** Gọi khi một đơn vị chết (damage.js). src có thể là tướng, lính, trụ hoặc null. */
-export function onKill(world, src, tgt) {
+/** Gọi khi một đơn vị chết (damage.js). src có thể là tướng, lính, trụ hoặc null; assists: tướng được tính hỗ trợ (hạ tướng). */
+export function onKill(world, src, tgt, assists = []) {
   const killer = src?.kind === 'hero' ? src : null;
   const near = (team, pos, r) => heroes(world, team).filter((h) => h.alive && dist(h.pos, pos) <= r);
   if (tgt.kind === 'minion') {
@@ -51,6 +51,7 @@ export function onKill(world, src, tgt) {
       let g = ECON.killGold(streak);
       if (tgt.deathStreak >= 3) g = Math.max(ECON.killGoldFloor, g * (1 - 0.2 * (tgt.deathStreak - 2)));
       addGold(world, killer, g); gainXp(world, killer, ECON.killXp(tgt.level));
+      if (assists.length) { const each = Math.min(ECON.assistGoldMax, (g * ECON.assistGoldShare) / assists.length); for (const h of assists) addGold(world, h, each); } // hỗ trợ chia 50% (03 §A10)
     }
   }
 }

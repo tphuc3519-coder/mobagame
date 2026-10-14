@@ -174,9 +174,14 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Cụm nút phải**: ĐÁNH (lớn, 150), K1/K2/K3 (100) theo vòng cung, Phép bổ trợ (80), nút đồ kích hoạt (70, chỉ hiện khi có). Nút "+" nâng kỹ năng xuất hiện trên góc nút khi có điểm.
 - Mỗi nút kỹ năng: icon, lớp phủ hồi chiêu quét tròn + số giây, mờ khi thiếu mana, ổ khoá khi chưa học.
 - **Chỉ báo ngắm** vẽ trong cảnh 3D, sát mặt đất (02 §13.7): mũi tên (skillshot/dash), vòng tròn + điểm (aoeCircle/zone/blink), hình nón (cone), vòng tầm bắn quanh tướng. Màu ngọc lam; chuyển đỏ khi kéo vào vùng Huỷ.
-- **Nút phụ dưới trái**: Về nhà, (tuỳ chọn) Hồi máu nhanh nếu sau này có thuốc.
+- **Nút phụ**: Biến về, Hồi Máu (hồi 15% HP trong 3s, hồi chiêu 60s, tướng địch đánh trúng thì mất hiệu ứng — hiện "Mất hồi máu"), phép bổ trợ.
 - **Ping và chat nhanh**: nút ping mở vòng tròn 4 lệnh: Tấn công / Rút lui / Tập hợp / Cẩn thận. Chat nhanh: danh sách câu soạn sẵn.
-- **Thông báo giữa màn**: hạ gục đầu tiên, chuỗi hạ gục (2, 3, 4, 5 liên tiếp), trụ bị phá, mục tiêu lớn. Tên chuỗi tự đặt: "Song Sát", "Tam Hùng", "Tứ Tuyệt", "Ngũ Long" — hiển thị kèm avatar người hạ → người bị hạ.
+- **Thông báo hạ gục giữa phía trên** (`hud/killBanner.js`, như Liên Quân): mọi lần tướng chết — đội ta hạ (dải xanh) hay đội địch hạ
+  (dải đỏ). Vệt sáng quét ngang mở màn → dải: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),
+  người hỗ trợ là chân dung nhỏ dưới người hạ. Tiêu đề: Chiến công đầu; Double / Triple / Quadra / Penta Kill (chữ lớn vàng, tia sáng —
+  người chơi yêu cầu dùng tên tiếng Anh thay cho "Song Sát…"); chuỗi hạ gục Liên tục hạ gục → Hủy diệt → Không thể cản phá → Thần thánh →
+  Truyền thuyết; Chặn đứng; "Bị hạ gục" kèm biểu tượng trụ / lính / quái khi không ai được mạng; hạ mục tiêu lớn. Hàng đợi ~2,4 giây mỗi
+  thông báo, dồn thì rút ngắn. Vàng nhận được hiện "+N" kèm đồng vàng trên đầu tướng mình.
 - **Thanh máu trên đầu**: tướng (máu có vạch mỗi 100 HP, khiên màu trắng, mana xanh dương mảnh, cấp trong ô tròn, tên người chơi); lính/quái (thanh nhỏ); công trình (thanh dày).
 - **Màu**: bản thân viền vàng; đồng minh xanh ngọc; địch đỏ.
 - **Khi chết**: màn xám nhẹ, đồng hồ hồi sinh lớn ở giữa, vẫn mở được cửa hàng.

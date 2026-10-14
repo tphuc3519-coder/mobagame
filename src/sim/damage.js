@@ -56,27 +56,46 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   }
   if (type === 'magic' && tgt.kind === 'hero') onMagicTaken(world, tgt);
   if (isStealthed(tgt)) removeStatus(tgt, 'stealth');
-  if (src?.kind === 'hero' && tgt.kind === 'hero') { world.onHeroDamaged?.(src, tgt); (tgt.hitBy ||= {})[src.id] = world.tick; } // ghi ai đánh tướng (tính hỗ trợ)
+  if (src?.kind === 'hero' && tgt.kind === 'hero') { world.onHeroDamaged?.(src, tgt); (tgt.hitBy ||= {})[src.id] = world.tick; } // ghi ai đánh tướng (tính mạng hạ / hỗ trợ)
+  if (src?.kind === 'hero' && tgt.kind === 'hero' && src.team !== tgt.team && got > 0 && tgt.statuses.some((s) => s.id === 'hoiMau')) { removeStatus(tgt, 'hoiMau'); world.emit('restoreBreak', { id: tgt.id }); } // Hồi Máu: tướng địch đánh trúng là mất hồi
   world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, crit: !!opts.crit, slot: opts.slot, shield: absorbed > 0 && dmg <= 0 }); // crit: số bay kiểu chí mạng (hud.js)
   if (tgt.hp <= 0 && !tryRevive(world, tgt)) kill(world, src, tgt);
   return dmg;
 }
 
+/** Luật tính mạng hạ (như Liên Quân): người hạ là tướng địch gây sát thương CUỐI CÙNG trong KILL_WINDOW giây — kể cả khi lính / trụ /
+ *  quái kết liễu; mọi tướng địch khác đã gây sát thương trong khoảng đó được tính hỗ trợ. Không tướng địch nào đánh: bị trụ / lính hạ
+ *  (không ai được mạng). Hạ liên tiếp cách nhau ≤ MULTI_WINDOW giây: Double → Penta Kill. */
+export const KILL_WINDOW = 10, MULTI_WINDOW = 10;
+
 function kill(world, src, tgt) {
   if (tgt.kind === 'dummy') { tgt.hp = tgt.stats.maxHp; world.emit('reset', { id: tgt.id }); return; } // hình nộm hồi đầy
   tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.deadTick = world.tick;
   tgt.dash = null; tgt.moveDir = { x: 0, y: 0 }; tgt.attacking = false; tgt.statuses = []; tgt.shields = [];
-  if (src?.kind === 'hero' && tgt.kind === 'hero') src.kills++;
   if (src?.kind === 'hero' && (tgt.kind === 'minion' || tgt.kind === 'monster')) src.cs = (src.cs || 0) + 1; // lính / quái kết liễu
-  if (tgt.kind === 'hero') { // hỗ trợ: tướng địch khác đã gây sát thương trong 10 giây cuối
-    for (const [id, tk] of Object.entries(tgt.hitBy || {})) { const h = world.byId(+id); if (h && h !== src && h.team !== tgt.team && world.tick - tk <= T(10)) h.assists = (h.assists || 0) + 1; }
-    tgt.hitBy = {};
-  }
   if (tgt.structure && src && tgt.kind === 'tower') { const tm = 1 - tgt.team; (world.teamStats ||= [{}, {}])[tm].towers = ((world.teamStats[tm].towers) || 0) + 1; }
-  onKill(world, src, tgt);
-  if (tgt.structure) { world.emit('structureDown', { id: tgt.id, sid: tgt.sid, team: tgt.team, kind: tgt.kind }); return; }
-  if (tgt.kind === 'hero') tgt.respawnTick = world.tick + T(respawnSeconds(tgt));
-  world.emit('death', { id: tgt.id, killer: src?.id });
+  if (tgt.kind !== 'hero') {
+    onKill(world, src, tgt);
+    if (tgt.structure) { world.emit('structureDown', { id: tgt.id, sid: tgt.sid, team: tgt.team, kind: tgt.kind }); return; }
+    world.emit('death', { id: tgt.id, killer: src?.id });
+    return;
+  }
+  const hit = Object.entries(tgt.hitBy || {}).map(([id, tk]) => ({ h: world.byId(+id), tk })).filter((o) => o.h && o.h.team !== tgt.team && world.tick - o.tk <= T(KILL_WINDOW));
+  const killer = src?.kind === 'hero' && src.team !== tgt.team ? src : hit.reduce((b, o) => (!b || o.tk > b.tk ? o : b), null)?.h || null;
+  const assists = hit.filter((o) => o.h !== killer).map((o) => o.h).sort((a, b) => a.id - b.id);
+  for (const h of assists) h.assists = (h.assists || 0) + 1;
+  tgt.hitBy = {};
+  const victimStreak = tgt.killStreak || 0; tgt.multi = null;
+  onKill(world, killer, tgt, killer ? assists : []); // vàng / KN cho người được tính mạng (+ phần chia hỗ trợ); chuỗi hạ gục của người hạ tăng, của nạn nhân về 0
+  tgt.respawnTick = world.tick + T(respawnSeconds(tgt));
+  const ev = { id: tgt.id, killer: killer ? killer.id : src?.id, by: src?.id, assists: assists.map((h) => h.id) };
+  if (killer) {
+    killer.kills++;
+    const m = killer.multi; killer.multi = { n: m && world.tick - m.tick <= T(MULTI_WINDOW) ? m.n + 1 : 1, tick: world.tick };
+    ev.multi = killer.multi.n; ev.streak = killer.killStreak; ev.shutdown = victimStreak >= 3 ? victimStreak : 0;
+    if (!world.firstBlood) { world.firstBlood = { tick: world.tick, killer: killer.id, victim: tgt.id }; ev.first = true; }
+  }
+  world.emit('death', ev);
 }
 
 /** Hồi máu nhận thêm và khiên tặng đồng minh (không tính cho chính mình) — chỉ số "hồi/khiên" của điểm trận (08 §2). */

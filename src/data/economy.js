@@ -9,6 +9,7 @@ export const ECON = {
   killGold: (streak) => 200 + 20 * Math.min(5, streak),
   killGoldFloor: 80,
   killXp: (victimLevel) => 100 + 30 * victimLevel,
+  assistGoldShare: 0.5, assistGoldMax: 150,    // người hỗ trợ chia nhau 50% vàng mạng hạ, tối đa 150 mỗi người (03 §A10)
   towerGold: { team: 100, killer: 100 }, towerXp: 120, towerXpRadius: 1200,
   respawn: (level) => 4 + 1.5 * level,
   recall: { channel: 6, haste: { pct: 0.4, duration: 4 } },

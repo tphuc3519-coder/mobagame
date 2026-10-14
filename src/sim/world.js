@@ -22,6 +22,7 @@ import { createBot, updateBots } from '../ai/heroBot.js';
 import { createLaneBot } from '../ai/laneBot.js';
 import { DIFFICULTY } from '../data/ai.js';
 import { initJungle, updateJungle } from './jungle.js';
+import { initOrbs, updateOrbs } from './orbs.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
@@ -29,7 +30,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.surrender = (team) => surrender(world, team);
-  world.emit = (type, data) => world.events.push({ type, tick: world.tick, ...data });
+  world.emit = (type, data) => world.events.push({ ...data, type, tick: world.tick }); // loại sự kiện không bị trường cùng tên trong data đè
   world.drainEvents = () => { const ev = world.events; world.events = []; return ev; };
   world.onHeroDamaged = (src, tgt) => onHeroDamaged(world, src, tgt);
 
@@ -68,6 +69,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   };
   if (structures) spawnStructures(world);
   if (structures) initJungle(world);
+  if (structures) initOrbs(world); else world.orbs = [];
 
   world.update = (tick) => {
     if (world.over) return;
@@ -95,6 +97,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     if (due.length) { world.pending = world.pending.filter((p) => p.tick > world.tick); for (const p of due) p.run(); }
     updateProjectiles(world); updateZones(world);
     updateMovement(world);
+    updateOrbs(world);
     updateCombat(world);
     // dọn lính đã chết sau 1 giây (để hiệu ứng ngã kịp chạy)
     world.entities = world.entities.filter((e) => !(e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30));

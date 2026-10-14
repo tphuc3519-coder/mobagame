@@ -64,7 +64,7 @@ export function survival(bot, foe) {
   const sp = e.spell && SPELLS[e.spell.id], spReady = sp && world.tick >= e.spell.ready;
   const slot = e.items.findIndex((i) => i && ITEMS[i].active);
   if (slot >= 0 && h < bot.cfg.itemHp && near && world.tick >= (e.itemCd?.[e.items[slot]] || 0)) { world.command(e.id, { type: 'useItem', slot }); return true; }
-  if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall) { world.command(e.id, { type: 'restore' }); return true; }
+  if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall && !(foe && foe.alive && dist(foe.pos, e.pos) < 900)) { world.command(e.id, { type: 'restore' }); return true; } // tướng địch đánh trúng là mất hồi: chỉ dùng khi đã thoát
   if (spReady && sp.id === 'thu_hoach') { // đi rừng: Trừng Trị kết liễu quái (cướp mục tiêu lớn/bùa) khi máu quái ≤ sát thương sét
     const t = smiteTarget(world, e, sp);
     if (t && t.kind === 'monster' && t.hp <= smiteDamage(e, sp) + (t.boss ? 60 : 0)) { world.command(e.id, { type: 'spell' }); return true; }

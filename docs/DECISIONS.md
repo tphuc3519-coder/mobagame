@@ -567,3 +567,19 @@
   giúp (nghẽn CPU, khoá 30 FPS) thì trả lại và chờ lâu dần. Trả giá: máy nghẽn CPU thỉnh thoảng thấy hình mờ đi ~10 giây khi thử.
 - **Chỉ nhân vật đổ bóng thời gian thực**: bóng cây / đá / tường đã nướng sẵn trên nền (ground.js, kênh B bản đồ trộn); vẽ thêm vào bản
   đồ bóng chỉ nhân đôi bóng và tốn ~40% lệnh vẽ.
+
+## Thông báo hạ gục, tính mạng, cục máu (14/10)
+- **Mạng thuộc người gây sát thương cuối trong 10 giây** (như tài liệu 02 §7, trước đây chưa làm đúng): lính / trụ / quái kết liễu vẫn
+  tính cho tướng địch đánh gần nhất; hỗ trợ là mọi tướng địch khác đã đánh trong 10 giây (chỉ tính sát thương — người chơi nêu đúng
+  luật này). Vàng mạng + chuỗi + chiến công đầu đi theo người được tính mạng. Không ai đánh trong 10 giây: không ai được mạng, chiến công
+  đầu vẫn để dành.
+- **Tên hạ liên tiếp tiếng Anh (Double … Penta Kill)** theo đúng lời người chơi, thay cho tên tự đặt "Song Sát / Tam Hùng…" trong tài liệu
+  07; chuỗi hạ gục dùng tiếng Việt, mức cao nhất "Truyền thuyết" theo lời người chơi. Cửa sổ hạ liên tiếp 10 giây cho mọi bậc.
+- **Thông báo vẽ trên canvas HUD, thời gian theo giờ thật** (không theo số khung: bảng cũ cộng 1/60 mỗi khung nên máy 30 FPS hiện lâu
+  gấp đôi). Một hàng đợi duy nhất cho hạ tướng + hạ mục tiêu lớn; cái mới tới thì cái đang hiện rút gọn (hạ liên tiếp chen sau ~0,9 giây).
+- **Cục máu chỉ phe mình lấy, đầy máu/năng lượng đi qua không mất**: đặt trên đường lùi sau trụ ngoài (tầm trụ che), địch lấy được thì
+  thành mồi lặn sâu; đi đường lúc đầy mà mất cục máu thì khó chịu. Hồi ngay (không theo thời gian) cho cảm giác "ăn" rõ ràng.
+- **Hồi Máu bị cắt bởi mọi sát thương của tướng địch (kể cả bị khiên đỡ, kể cả sát thương theo thời gian)**; lính / trụ / quái không cắt —
+  để vẫn hồi được khi lùi dưới trụ.
+- **`world.emit` không cho dữ liệu đè loại sự kiện**: `{ ...data, type, tick }`. Lỗi cũ: `monsterKill` mang `type: 'long_ngu'` nên HUD
+  không bao giờ nhận ra.

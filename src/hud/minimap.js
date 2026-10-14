@@ -92,6 +92,8 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
         if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
       }
+      // cục máu sau trụ ngoài của đội mình: chấm xanh lá (mờ khi đang chờ mọc lại)
+      for (const o of world.orbs || []) { if (o.team !== player.team) continue; const up = world.tick >= o.readyAt; ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = '#5aff8a'; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(wx(o.x), wy(o.y), 3, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1; }
       // lính
       for (const e of ents) if (e.kind === 'minion' && e.alive) { ctx.fillStyle = col(e); ctx.fillRect(wx(e.pos.x) - 1, wy(e.pos.y) - 1, 2, 2); }
       // khung nhìn camera
