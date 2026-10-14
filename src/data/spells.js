@@ -9,5 +9,5 @@ export const SPELLS = {
 };
 for (const [id, v] of Object.entries(SPELLS)) v.id = id;
 // Nút cố định mọi tướng đều có (như Biến về): không chiếm ô phép bổ trợ tự chọn.
-export const RESTORE = { id: 'hoi_mau', name: 'Hồi Máu', cooldown: 120, healPct: 0.15, duration: 3, desc: 'Hồi 15% HP tối đa trong 3 giây. Nút cố định, không chiếm ô phép bổ trợ. Dùng sẽ huỷ Biến về.' };
+export const RESTORE = { id: 'hoi_mau', name: 'Hồi Máu', cooldown: 60, healPct: 0.15, duration: 3, desc: 'Hồi 15% HP tối đa trong 3 giây; bị tướng địch gây sát thương thì mất hiệu ứng hồi. Nút cố định, không chiếm ô phép bổ trợ. Dùng sẽ huỷ Biến về.' };
 export const SPELL_LIST_1V1 = Object.keys(SPELLS).filter((k) => !SPELLS[k].disabledIn1v1);

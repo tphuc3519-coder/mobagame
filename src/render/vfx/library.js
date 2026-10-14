@@ -429,6 +429,9 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
         break;
       }
       case 'restore': { const r = e?.pos; if (!r || !visible(e)) break; sh.ring(r.x, r.y, 20, 170, { color: 0xff5a74, width: 0.12, life: 0.6 }); sh.pillar(r.x, r.y, 60, 260, { color: 0xff6a80, top: 0xffffff, life: 0.6 }); burst(A, r.x, 40, r.y, { n: 22, r: 70, speed: [5, 25], up: [140, 320], life: [0.8, 1.3], size: [24, 6], color: [0xffe0e6, 0xff4a64], tile: TILE.star, drag: 1 }); break; }
+      case 'restoreBreak': { const r = e?.pos; if (!r || !visible(e)) break; burst(A, r.x, 120, r.y, { n: 12, r: 40, speed: [120, 300], up: [40, 220], life: [0.3, 0.55], size: [22, 5], color: [0xffd0d8, 0xff3a5a], tile: TILE.shard, grav: 900, drag: 2, spinR: 8 }); break; } // Hồi Máu bị cắt: mảnh đỏ vỡ ra
+      case 'orbTaken': { const o = world?.orbs?.[ev.orb]; if (!o) break; sh.ring(o.x, o.y, 20, 190, { color: 0x6aff9a, width: 0.12, life: 0.55 }); flash(o.x, 90, o.y, 160, 0xb8ffc8, 0.2); burst(A, o.x, 90, o.y, { n: 20, r: 40, speed: [60, 200], up: [120, 320], life: [0.6, 1.1], size: [24, 6], color: [0xf0fff0, 0x3aff7a], tile: TILE.star, drag: 1.5 }); break; } // nhặt cục máu
+      case 'orbUp': { const o = world?.orbs?.[ev.orb]; if (!o) break; burst(A, o.x, 40, o.y, { n: 10, r: 60, speed: [5, 25], up: [80, 200], life: [0.6, 1], size: [18, 5], color: [0xf0fff0, 0x5aff8a], tile: TILE.star, drag: 1 }); break; } // cục máu mọc lại
       case 'recalled': { const r = e?.pos; if (r && visible(e)) sh.pillar(r.x, r.y, 90, 500, { color: 0x4fa8ff, top: 0xffffff, life: 0.5 }); break; }
       case 'towerShot': break;
       default: break;

@@ -62,6 +62,11 @@ Mỗi đội: **9 trụ + 1 nhà chính**.
 6. Khi trụ bị phá: đội phá nhận 100 vàng mỗi người; tướng kết liễu nhận thêm 100. Tướng trong bán kính 1200 nhận 120 KN.
 7. Trụ có chỉ báo tầm bắn (vòng tròn mờ) khi tướng địch lại gần 900; vòng đỏ khi đang nhắm vào người chơi.
 
+**Cục máu sau trụ ngoài** (`sim/orbs.js`, `ARENA.orbs`; tạo hình `render/orbs.js`): mỗi đội 3 cục, cách trụ ngoài mỗi đường 560 về phía
+nhà, trên đường lùi. Tướng phe đó chạm vào (bán kính 120) khi thiếu máu hoặc năng lượng → hồi ngay 15% HP + 15% năng lượng tối đa; mọc
+lại sau 60s (vòng sáng trên đất chạy đếm ngược). Tướng địch không lấy được; đi ngang lúc đầy máu/năng lượng thì không mất. Bản đồ nhỏ:
+chấm xanh lá (mờ khi đang chờ).
+
 ### A5. Lính
 
 | Loại | HP | Công | Giáp/KP | Tầm | Tốc đánh | Tốc chạy | Vàng | KN |
@@ -135,7 +140,7 @@ Mỗi đội: **9 trụ + 1 nhà chính**.
 
 ### A10. Kinh tế và kinh nghiệm (5v5)
 - Cấp tối đa **15**. KN cần lên cấp tiếp theo: `120 + 90 × (cấp − 1)`.
-- Hạ gục tướng: `200 + 20 × (chuỗi hạ gục của nạn nhân, tối đa 5)` vàng; chuỗi chết của nạn nhân từ 3 trở lên giảm 20% mỗi lần, tối thiểu 80 vàng. Hỗ trợ chia 50% giá trị cho những người hỗ trợ (tối đa 150 mỗi người).
+- Hạ gục tướng: `200 + 20 × (chuỗi hạ gục của nạn nhân, tối đa 5)` vàng; chuỗi chết của nạn nhân từ 3 trở lên giảm 20% mỗi lần, tối thiểu 80 vàng. Hỗ trợ chia 50% giá trị cho những người hỗ trợ (tối đa 150 mỗi người) — đã làm (`ECON.assistGoldShare`).
 - KN hạ gục: `100 + 30 × cấp nạn nhân`, chia cho người hạ và người hỗ trợ trong bán kính 1200.
 - Thời gian hồi sinh: `6 + 2.5 × cấp` giây, sau phút 15 cộng thêm 5s.
 - Về nhà: 6s, bị trúng sát thương thì huỷ. Tốc chạy +40% trong 4s sau khi rời Suối.

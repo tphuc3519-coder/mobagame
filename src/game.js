@@ -15,6 +15,7 @@ import { createMinimap } from './hud/minimap.js';
 import { createPortraits } from './hud/portraits.js';
 import { createHudSettings } from './hud/settings.js';
 import { createFog } from './render/fog.js';
+import { createOrbViews } from './render/orbs.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews, releaseSkeletons } from './render/unitView.js';
 import { createFx } from './render/fx.js';
@@ -89,6 +90,7 @@ const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, leve
 env.group.traverse((o) => { if (o.isMesh) o.castShadow = false; }); // bóng cây/đá/tường đã nướng sẵn trên nền (ground.js): lượt bóng thời gian thực chỉ vẽ nhân vật
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
 const views = createUnitViews(scene, 0, player.id, { floor, outlines: gfx.detail !== 'low' });
+const orbViews = createOrbViews(scene, world, { floor }); // cục máu sau trụ ngoài (sim/orbs.js)
 const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
@@ -203,6 +205,7 @@ const loopCfg = {
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
+    orbViews.update(world, dt, performance.now() / 1000);
     if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
     if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; if (!fpsTag.hidden) fpsTag.textContent = `${fps} FPS${auto?.step ? ` · tự giảm ${auto.step}` : ''}`; }

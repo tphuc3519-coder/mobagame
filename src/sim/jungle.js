@@ -25,7 +25,7 @@ function spawnCamp(world, camp) {
     camp.alive.push(e.id);
   }
   camp.respawnAt = null;
-  world.emit('campSpawn', { camp: camp.id, type: camp.type });
+  world.emit('campSpawn', { camp: camp.id, monster: camp.type });
 }
 
 export function initJungle(world) {
@@ -38,7 +38,7 @@ export function updateJungle(world) {
   for (const camp of world.camps) {
     if (camp.respawnAt != null) { if (world.tick >= camp.respawnAt) spawnCamp(world, camp); continue; }
     const members = camp.alive.map((id) => world.byId(id)).filter((e) => e && e.alive);
-    if (!members.length) { camp.respawnAt = world.tick + T(MONSTERS[camp.type].respawn); world.emit('campCleared', { camp: camp.id, type: camp.type }); continue; }
+    if (!members.length) { camp.respawnAt = world.tick + T(MONSTERS[camp.type].respawn); world.emit('campCleared', { camp: camp.id, monster: camp.type }); continue; }
     // gây hấn chung: con nào bị tướng đánh thì cả trại nhắm kẻ đó; nhớ mọi tướng vừa đánh trại (camp.threat) để đổi mục tiêu
     camp.threat ||= {};
     for (const m of members) {
@@ -119,6 +119,6 @@ export function onMonsterKilled(world, killer, m, { addGold, gainXp }) {
       world.emit('buff', { id: h.id, buff: b.id, name: b.name, duration: b.duration });
     }
     if (def.boss) { const ts = (world.teamStats ||= [{}, {}])[killer.team]; ts[m.monsterType] = (ts[m.monsterType] || 0) + 1; ts.boss = (ts.boss || 0) + 1; } // bảng tỉ số
-    world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, type: m.monsterType, boss: !!def.boss, name: def.name });
+    world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, monster: m.monsterType, boss: !!def.boss, name: def.name });
   }
 }

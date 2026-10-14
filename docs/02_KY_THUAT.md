@@ -132,9 +132,14 @@ Chỉ số: `maxHp, hpRegen (/5s), maxMana, manaRegen (/5s), atk, ap, armor, mr,
 - Hồi máu nhận = `heal × (1 + healPower của người hồi) × (1 − giảm hồi máu của mục tiêu)`.
 - Sát thương từ trụ và nhà chính là vật lý.
 
-### Tính hạ gục và hỗ trợ
-- Hạ gục thuộc về tướng gây đòn kết liễu. Nếu lính/trụ/quái kết liễu: thuộc tướng địch gây sát thương gần nhất trong 10s, nếu không có thì "Hạ gục bởi trụ/lính".
-- Hỗ trợ: tướng gây sát thương, hoặc dùng hiệu ứng khống chế lên nạn nhân, hoặc hồi máu/khiên cho người hạ gục trong 10s trước đó.
+### Tính hạ gục và hỗ trợ (`sim/damage.js`, `KILL_WINDOW`)
+- Hạ gục thuộc về tướng gây sát thương **cuối cùng**: đòn kết liễu của tướng → tướng đó; lính / trụ / quái kết liễu → tướng địch gây sát
+  thương gần nhất trong 10s; không có ai → "Bị hạ gục" (không ai được mạng, không tính chiến công đầu).
+- Hỗ trợ: mọi tướng địch khác đã gây sát thương lên nạn nhân trong 10s (kể cả sát thương bị khiên đỡ). Chưa tính khống chế / hồi máu /
+  khiên cho người hạ.
+- Hạ liên tiếp: hai mạng cách nhau ≤ 10s (`MULTI_WINDOW`) → Double / Triple / Quadra / Penta Kill. Chuỗi hạ gục (không chết): 3 Liên tục
+  hạ gục, 4 Hủy diệt, 5 Không thể cản phá, 6 Thần thánh, 7+ Truyền thuyết; hạ người có chuỗi ≥ 3 là Chặn đứng. Sự kiện `death` mang
+  `killer` (người được mạng), `by` (nguồn kết liễu thật), `assists`, `multi`, `streak`, `shutdown`, `first`.
 
 ## 8. Tìm đường
 - **Nav grid** ô 80 đơn vị, tạo từ vật cản trong file bản đồ lúc tải.

@@ -290,6 +290,8 @@ export const ARENA = {
     ...BOSSES.map((b) => ({ ...b, x: b.x * K, y: b.y * K, side: null })),
   ],
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
+  // cục máu sau trụ ngoài mỗi đường (sim/orbs.js): cách trụ `behind` về phía nhà, tướng phe đó chạm vào → hồi máu + năng lượng, mọc lại sau `respawn` giây
+  orbs: { behind: 560, radius: 120, respawn: 60, hpPct: 0.15, manaPct: 0.15 },
   waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, gap: 14, spawnDist: 900 },
   laneMult: 1,
   mirror: swap,

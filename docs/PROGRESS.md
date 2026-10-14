@@ -215,3 +215,27 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Đã chạy: `tools/t_*.mjs` + `simtest` + `t_determinism` (băm trùng bản trước), mô phỏng bộ tự giảm (màn 60 Hz, 7 tình huống), bộ tự
   giảm trong trình duyệt (hạ đủ 5 bậc, không lỗi), bảng cài đặt sảnh + trong trận (lưu, áp ngay, đổi mức), trọn luồng đấu thường
   (sảnh → phòng → chọn tướng → trận → kết quả → đấu lại) — không lỗi console. Chưa đo được FPS thật trên iPhone ở đây.
+
+## Thông báo hạ gục kiểu Liên Quân, luật tính mạng / hỗ trợ, cục máu sau trụ, Hồi Máu 60s (14/10)
+- Theo video người chơi gửi (dải "Chiến công đầu" ở giữa phía trên, "+225v" trên đầu tướng) và yêu cầu:
+  - **Thông báo hạ gục** (`src/hud/killBanner.js`): mọi lần tướng chết, cả đội ta hạ (dải xanh) lẫn đội địch hạ (dải đỏ). Vệt sáng quét
+    ngang mở màn → dải: chân dung người hạ — tiêu đề — chân dung bị hạ có vạch chéo đỏ quẹt qua; người hỗ trợ là chân dung nhỏ.
+    Chiến công đầu; **Double / Triple / Quadra / Penta Kill** (hai mạng cách nhau ≤ 10s; chữ lớn vàng, tia sáng toả); chuỗi hạ gục khi chưa
+    chết: Liên tục hạ gục (3) → Hủy diệt → Không thể cản phá → Thần thánh → **Truyền thuyết** (7+); Chặn đứng (hạ người có chuỗi ≥ 3);
+    "Bị hạ gục" + biểu tượng trụ / lính / quái khi không tướng nào được mạng; hạ mục tiêu lớn. Hàng đợi, dồn thì rút ngắn.
+  - **Vàng "+N"** kèm đồng vàng nảy lên trên đầu tướng mình mỗi khi nhận vàng (hạ tướng, hỗ trợ, kết liễu lính / quái, phá trụ).
+  - **Luật tính mạng** (`src/sim/damage.js`): mạng thuộc tướng địch gây sát thương **cuối cùng** trong 10 giây — kể cả khi lính / trụ /
+    quái kết liễu; mọi tướng địch khác đã đánh trong 10 giây là **hỗ trợ** và chia 50% vàng mạng (tối đa 150 mỗi người — như tài liệu
+    03 §A10, trước đây chưa làm). Trước đây trụ / lính kết liễu thì không ai được mạng.
+  - **Cục máu sau trụ ngoài** cả 3 đường, hai đội (`src/sim/orbs.js`, `src/render/orbs.js`): đài sen + quả cầu sinh lực xanh lơ lửng có
+    đốm sáng bay quanh; chạm vào hồi 15% HP + 15% năng lượng, mọc lại sau **60 giây** (vòng sáng trên đất chạy đếm ngược); chỉ phe mình
+    lấy, đầy máu đi qua không mất; chấm xanh trên bản đồ nhỏ.
+  - **Hồi Máu**: hồi chiêu 120 → **60 giây**; tướng địch gây sát thương lên thì **mất hiệu ứng hồi** (hiện "Mất hồi máu", mảnh đỏ vỡ).
+    Lính / trụ đánh không cắt. Bot chỉ dùng khi không có tướng địch trong 900.
+- Sửa lỗi có sẵn: thông báo hạ mục tiêu lớn chưa bao giờ hiện — dữ liệu sự kiện có trường `type` (loại quái) đè lên loại sự kiện
+  `monsterKill`. `world.emit` nay luôn giữ loại sự kiện; trường đổi tên `monster`.
+- Trận 10 bot 20 phút (seed 1): 40 lần tướng chết, 11 lần trụ / lính kết liễu được tính cho tướng đánh cuối, 4 lần bị trụ hạ, chiến công
+  đầu lúc 70s, 2 Double Kill, chuỗi tới 6, 3 lần chặn đứng; bot tự nhặt cục máu ~21 lần mỗi đội (đường lùi đi qua).
+- Đã chạy: `tools/t_kills.mjs` (mới, 23 kiểm tra: tính mạng khi trụ kết liễu, hỗ trợ + chia vàng, quá 10 giây, Double → Penta, chuỗi,
+  chặn đứng, Hồi Máu bị cắt / không bị lính trụ cắt, cục máu), toàn bộ `tools/t_*.mjs` + `simtest`, `t_determinism` (hai lần chạy trùng
+  nhau), ảnh chụp từng loại thông báo + cục máu trên trình duyệt, trọn luồng chơi.

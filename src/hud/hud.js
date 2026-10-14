@@ -2,6 +2,7 @@ import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
 import { floorAt } from '../render/env/floor.js';
+import { createKillBanner } from './killBanner.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -16,7 +17,8 @@ const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu
 export function createHud(canvas, input, portraits = null) {
   const ctx = canvas.getContext('2d');
   let w = 0, h = 0, dpr = 1;
-  const floats = [], banners = [], now = () => performance.now() / 1000;
+  const floats = [], golds = [], now = () => performance.now() / 1000;
+  const kills = createKillBanner(portraits); // thông báo hạ gục / hạ mục tiêu lớn (killBanner.js)
   const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
@@ -108,7 +110,10 @@ export function createHud(canvas, input, portraits = null) {
           const k = ev.killer != null ? world.byId(ev.killer) : null;
           death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
         }
-        if (ev.type === 'monsterKill' && ev.boss) banners.push({ t: 0, ally: ev.team === world.__localTeam, text: `${ev.team === world.__localTeam ? 'Đội ta' : 'Đội địch'} đã hạ ${ev.name}!` });
+        if (ev.type === 'monsterKill' && ev.boss) kills.boss(ev, world, world.__localId, world.__localTeam);
+        if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
+        if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
+        if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });
         if (ev.type === 'damage' && e.kind === 'monster') monHit.set(e.id, now());
         if (ev.type === 'death') { monHit.delete(ev.id); monTrail.delete(ev.id); }
         if (ev.type === 'damage') floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
@@ -185,14 +190,22 @@ export function createHud(canvas, input, portraits = null) {
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 6);
       // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
       if (!player.alive && player.respawnTick) drawDeath(world, player);
-      // thông báo hạ mục tiêu lớn
-      for (let i = banners.length - 1; i >= 0; i--) {
-        const b = banners[i]; b.t += 1 / 60; if (b.t > 3.2) { banners.splice(i, 1); continue; }
-        const a = Math.min(1, b.t * 4, (3.2 - b.t) * 2), cy = h * 0.22;
-        ctx.globalAlpha = a; ctx.fillStyle = b.ally ? 'rgba(20,60,110,0.85)' : 'rgba(110,20,20,0.85)';
-        ctx.beginPath(); ctx.roundRect(w / 2 - 190, cy - 22, 380, 44, 22); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffd86a'; ctx.stroke();
-        ctx.fillStyle = '#fff4d0'; ctx.font = '800 18px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.text, w / 2, cy + 1); ctx.globalAlpha = 1;
+      // vàng nhận được: trên đầu tướng mình, nảy lên rồi mờ dần (giết tướng: chữ to)
+      for (let i = golds.length - 1; i >= 0; i--) {
+        const g = golds[i], t = now() - g.born, life = g.amount >= 150 ? 1.6 : 1.1; if (t > life) { golds.splice(i, 1); continue; }
+        if (!player.alive) continue;
+        const p = project(cam, player.pos.x, HERO_BAR_Y + 70 + floorAt(world.map, player.pos.x, player.pos.y) + Math.sqrt(t / life) * 110, player.pos.y, w, h); if (!p.visible) continue;
+        const big = g.amount >= 150, sz = (big ? 21 : 14) * (1 + 0.35 * Math.max(0, 1 - t / 0.12)), txt = '+' + g.amount;
+        ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+        const tw = ctx.measureText(txt).width, cr = sz * 0.42, x0 = p.x - (tw + cr * 2 + 3) / 2, cyy = p.y - (i % 3) * 6;
+        const cg = ctx.createRadialGradient(x0 + cr - cr * 0.3, cyy - cr * 0.3, cr * 0.1, x0 + cr, cyy, cr); cg.addColorStop(0, '#fff6c0'); cg.addColorStop(0.6, '#ffc83a'); cg.addColorStop(1, '#c47a00');
+        ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = cg; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#5a3200'; ctx.stroke();
+        ctx.lineWidth = big ? 4 : 3; ctx.strokeStyle = '#3a2000'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
+        const tg = ctx.createLinearGradient(0, cyy - sz / 2, 0, cyy + sz / 2); tg.addColorStop(0, '#fffbe0'); tg.addColorStop(1, '#ffc23a'); ctx.fillStyle = tg; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
+        ctx.restore();
       }
+      // thông báo hạ gục / hạ mục tiêu lớn (giữa phía trên)
+      kills.draw(ctx, w, h);
       // joystick
       const { js, R } = input;
       { // cần di chuyển: luôn hiện (mờ khi nghỉ ở góc trái dưới), chạm ở đâu thì dời tới đó
