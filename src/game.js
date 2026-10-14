@@ -118,7 +118,7 @@ const applyPrefs = () => { const p = prefs(); renderer.toneMappingExposure = EXP
 applyPrefs(); onPref((k) => { if (k === 'bright' || k === 'fogFx' || k === 'camDist') applyPrefs(); });
 const camLook = createCamLook({ minimap, map });
 const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
-const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
+const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators, camera: cam.camera, input, views }); // camera/input/views: chạm chọn địch + dấu mục tiêu (Cài đặt điều khiển)
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
 warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng

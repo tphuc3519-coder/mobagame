@@ -1,6 +1,8 @@
 // Cụm nút phụ ở đáy màn hình, bên trái cụm kỹ năng (như Liên Quân): Biến về · Hồi Máu (cố định) · Phép bổ trợ (tự chọn) · Đồ kích hoạt.
 // Icon lớn có nhãn tên bên dưới; chạm nhanh = dùng, giữ yên ~0.35s = xem mô tả (thả ra không dùng). Phím: B/R về, H hồi máu, F phép, E đồ.
-// Phép có hướng (Chớp Bước): kéo để ngắm như nút kỹ năng — vòng ngắm quanh nút, kéo ngón vào ô X góc phải rồi thả để huỷ.
+// Phép có hướng (Chớp Bước): kéo để ngắm như nút kỹ năng — vòng ngắm quanh nút, kéo ngón vào ô X góc phải rồi thả để huỷ (độ nhạy / tâm vòng /
+// cách huỷ theo Cài đặt, aimPad.js). Chạm nhanh không kéo: hướng theo Cài đặt "Hướng tốc biến" (flashDir, tapDir dưới đây).
+// Số giây hồi: số lẻ dưới 10s khi bật cdDecimal (như cũ), tắt thì làm tròn lên giây.
 import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
@@ -8,9 +10,12 @@ import { ECON } from '../data/economy.js';
 import { itemIcon } from './icons.js';
 import { spellArt, recallArt, restoreArt } from './art.js';
 import { showTip, hideTip } from './tip.js';
-import { DRAG_MIN, DRAG_MAX, inCancel, aimUI } from './aimPad.js';
+import { DRAG_MIN, dragMax, aimOrigin, isCancel, aimUI, setAimFocus, lastAim } from './aimPad.js';
+import { pref } from '../core/prefs.js';
+import { canTarget } from '../sim/vision.js';
 
 const HOLD = 350;
+const TAP = { move: 'hướng đang chạy (đứng yên: hướng nhìn)', skill: 'hướng chiêu vừa ngắm', enemy: 'về phía tướng địch gần nhất' }; // chạm nhanh phép có hướng (flashDir)
 
 export function createSpellButtons(root, { world, player, indicators }) {
   const sp = () => SPELLS[player.spell.id];
@@ -23,17 +28,33 @@ export function createSpellButtons(root, { world, player, indicators }) {
   const spellEl = box('spell'), recallEl = box('recall'), itemEl = box('itemAct'), restoreEl = box('restore');
   spellEl.querySelector('.ico').innerHTML = spellArt(player.spell.id); spellEl.querySelector('label').textContent = sp().name;
   const activeSlot = () => player.items.findIndex((i) => i && ITEMS[i].active);
+  /** Hướng phép có hướng khi chạm nhanh (không kéo), theo flashDir: 'move' → null (mô phỏng tự lấy hướng đang chạy, đứng yên thì hướng
+   *  đang nhìn — như cũ); 'skill' → hướng lần ngắm kỹ năng / Chớp Bước gần nhất; 'enemy' → về phía tướng địch thấy được gần nhất trong 1200.
+   *  Không có thì như 'move'. */
+  function tapDir() {
+    const m = pref('flashDir');
+    if (m === 'skill' && lastAim.dir) return { ...lastAim.dir };
+    if (m === 'enemy') {
+      let best = null, bd = 1200;
+      for (const t of world.entities) {
+        if (!t.isHero || t.team === player.team || !canTarget(player, t)) continue;
+        const d = Math.hypot(t.pos.x - player.pos.x, t.pos.y - player.pos.y); if (d > 1 && d < bd) { bd = d; best = t; }
+      }
+      if (best) return { x: (best.pos.x - player.pos.x) / bd, y: (best.pos.y - player.pos.y) / bd };
+    }
+    return null;
+  }
 
   const info = {
     recall: () => ({ title: 'Biến về', sub: `Niệm ${ECON.recall?.channel ?? 6}s`, body: 'Về Suối Đèn của đội. Bị trúng đòn, di chuyển hay ra đòn sẽ huỷ. Về tới nơi được tăng tốc chạy trong chốc lát.' }),
     restore: () => ({ title: RESTORE.name, sub: `Hồi chiêu ${RESTORE.cooldown}s · có sẵn`, body: RESTORE.desc }),
-    spell: () => ({ title: sp().name, sub: `Hồi chiêu ${sp().cooldown}s`, body: sp().desc }),
+    spell: () => ({ title: sp().name, sub: `Hồi chiêu ${sp().cooldown}s${sp().aim === 'direction' ? ` · chạm nhanh: ${TAP[pref('flashDir')]}` : ''}`, body: sp().desc }),
     itemAct: () => { const id = player.items[activeSlot()], it = ITEMS[id]; return it ? { title: `${it.active.name || it.name}`, sub: `${it.name} · hồi ${it.active.cooldown}s`, body: it.note || it.active.desc || '' } : null; },
   };
   const act = {
     recall: () => world.command(player.id, { type: 'recall' }),
     restore: () => world.command(player.id, { type: 'restore' }),
-    spell: (aim) => world.command(player.id, { type: 'spell', aim }),
+    spell: (aim) => world.command(player.id, { type: 'spell', aim: aim ?? (sp().aim === 'direction' ? tapDir() : null) }),
     itemAct: () => world.command(player.id, { type: 'useItem', slot: activeSlot() }),
   };
   const presses = new Map(); // mỗi nút một ngón (nhiều ngón cùng lúc không cướp lượt của nhau)
@@ -44,7 +65,7 @@ export function createSpellButtons(root, { world, player, indicators }) {
       if (presses.has(k)) return; // nút đã có ngón khác giữ
       b.setPointerCapture?.(e.pointerId); b.classList.add('down');
       const r = b.getBoundingClientRect();
-      const press = { k, id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, dir: null, tip: false, f: 1, cancel: false };
+      const press = { k, id: e.pointerId, ...aimOrigin(e, r), dir: null, tip: false, f: 1, cancel: false };
       press.timer = setTimeout(() => { if (presses.get(k) === press && !press.dir) { press.tip = true; showTip(info[k](), r); } }, HOLD);
       presses.set(k, press);
     });
@@ -52,14 +73,16 @@ export function createSpellButtons(root, { world, player, indicators }) {
       const press = presses.get(k);
       if (!press || e.pointerId !== press.id || k !== 'spell' || sp().aim !== 'direction' || press.tip || !player.alive) return;
       const dx = e.clientX - press.cx, dy = e.clientY - press.cy, l = Math.hypot(dx, dy);
-      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / DRAG_MAX); clearTimeout(press.timer); }
-      if (press.dir) { press.cancel = inCancel(e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }, 'spell'); }
+      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / dragMax()); clearTimeout(press.timer); }
+      if (press.dir) { press.cancel = isCancel(press, e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }, 'spell'); }
     });
     const end = (e, cancel) => {
       const press = presses.get(k); if (!press || e.pointerId !== press.id) return;
       const p = press; presses.delete(k); clearTimeout(p.timer); b.classList.remove('down'); indicators.hide(); if (p.dir) aimUI(null, 'spell');
       if (p.tip) { hideTip(); return; }
-      if (!cancel && !p.cancel) act[k](p.dir ? { x: p.dir.x, y: p.dir.y } : null); // thả trong ô X: huỷ, không dùng phép
+      if (cancel || p.cancel) return; // thả trong ô X / kéo ra quá xa: huỷ, không dùng phép
+      if (p.dir) lastAim.dir = { x: p.dir.x, y: p.dir.y };
+      act[k](p.dir ? { x: p.dir.x, y: p.dir.y } : null);
     };
     b.addEventListener('pointerup', (e) => end(e, false)); b.addEventListener('pointercancel', (e) => end(e, true));
   }
@@ -69,7 +92,7 @@ export function createSpellButtons(root, { world, player, indicators }) {
   });
 
   const set = (o, k, v) => { if (o[k] !== v) o[k] = v; }; // chỉ ghi DOM khi đổi (đỡ tính lại bố cục mỗi khung)
-  const overlay = (el, left, total) => { const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt') }; set(c.cd.style, 'height', `${Math.min(100, Math.round((left / total) * 1000) / 10)}%`); set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 ? Math.ceil(left) : left.toFixed(1)) : ''); };
+  const overlay = (el, left, total) => { const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt') }; set(c.cd.style, 'height', `${Math.min(100, Math.round((left / total) * 1000) / 10)}%`); set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 || !pref('cdDecimal') ? Math.ceil(left) : left.toFixed(1)) : ''); };
   let lastItem = '';
   return {
     update() {
@@ -82,7 +105,7 @@ export function createSpellButtons(root, { world, player, indicators }) {
       overlay(restoreEl, Math.max(0, ((player.restore?.ready || 0) - world.tick) / 30), RESTORE.cooldown);
       spellEl.classList.toggle('locked', !!(s.disabledIn1v1 && world.map.id === 'duel1v1'));
       const press = presses.get('spell');
-      if (press?.dir && s.aim === 'direction') indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, press.cancel);
+      if (press?.dir && s.aim === 'direction') { indicators.show({ type: 'dash', aim: 'direction', range: s.range, width: 60 }, player.pos, press.dir, player.pos, press.cancel); setAimFocus('spell', { x: player.pos.x + press.dir.x * s.range, y: player.pos.y + press.dir.y * s.range }, s.range); }
       if (press?.dir && !player.alive) { indicators.hide(); aimUI(null, 'spell'); press.cancel = true; } // chết giữa lúc ngắm: bỏ ngắm, thả ra không dùng
       const r = player.recall;
       recallEl.classList.toggle('on', !!r);

@@ -5,7 +5,11 @@ import * as THREE from 'three';
 // - chiêu bắn thẳng (skillshot/line): dải rộng đúng bề ngang đạn, sáng dần về đầu, mũi tên nhọn, viền sáng
 // - chiêu lướt/nhảy (dash, targetedDash, Chớp Bước): thân mảnh → lưỡi rộng có ô kim cương (chỗ đáp) + mũi nhọn
 // - chiêu vùng tại điểm (aoeCircle/zone): vòng mục tiêu có tâm ngắm 4 mũi chụm vào; quạt (cone): hình quạt sáng dần ra mép
+// Dấu mục tiêu đánh thường (mark, hud/atkTarget.js): vòng sát đất dưới đơn vị — khoá (đỏ, 3 mũi chụm vào, nhịp đập) kèm mũi chữ V lơ lửng
+// trên đầu, đang chọn khi kéo nút Đánh (vàng, như khoá), đang bị đánh (vòng cam đứt nét xoay). Nằm ngoài nhóm chỉ báo ngắm nên hide() không tắt.
 const OK = new THREE.Color(0x6fd6ff), BAD = new THREE.Color(0xff5a4a);
+const MARK_C = { lock: new THREE.Color(0xff3030), pick: new THREE.Color(0xffd24d), atk: new THREE.Color(0xff8a3d) }, MARK_K = { lock: 0, pick: 1, atk: 2 };
+const CAM_PITCH = 55 * Math.PI / 180; // render/camera.js: mũi chữ V quay mặt về camera (camera không xoay ngang)
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 const HEAD = `varying vec2 vUv; uniform vec3 uC; uniform float uA; uniform vec2 uSize;
 float edge(float d, float w){ return 1.0 - smoothstep(0.0, w, abs(d)); }`;
@@ -54,6 +58,19 @@ const SECTOR = mk(`uniform float uHalf; void main(){ vec2 p = (vUv - 0.5) * 2.0;
   if (r > 1.0 || abs(a) > uHalf) discard; float px = 2.0 / uSize.x;
   float rim = edge(r - 1.0 + 6.0 * px, 6.0 * px) + edge((uHalf - abs(a)) * r, 5.0 * px) * 0.8;
   gl_FragColor = vec4(uC * (1.0 + rim * 0.5), (0.2 + 0.3 * r * r + rim * 0.9) * uA); }`, { uHalf: { value: 0.78 } });
+// dấu mục tiêu: vòng ở 0.66 bán kính + loang nhẹ vào trong; uKind 0 khoá / 1 đang chọn: vòng dày + 3 mũi tam giác ngoài vòng chụm vào tâm
+// (xoay chậm); 2 đang đánh: vòng mảnh hơn, đứt nét, xoay
+const MARK = `uniform float uKind, uT; void main(){ vec2 p = (vUv - 0.5) * 2.0; float r = length(p); if (r > 1.0) discard;
+  float px = 2.0 / uSize.x, a = atan(p.y, p.x + 1e-5) + uT * 0.8, thin = step(1.5, uKind);
+  float ring = edge(r - 0.66, mix(14.0, 9.0, thin) * px) * mix(1.0, step(0.4, fract(a * 1.9099)), thin);
+  float k = abs(mod(a, 2.0944) - 1.0472), arrows = (1.0 - thin) * step(0.74, r) * step(k * r, (r - 0.74) * 0.75);
+  float fill = smoothstep(0.2, 0.66, r) * step(r, 0.66) * mix(0.3, 0.12, thin);
+  gl_FragColor = vec4(uC * (1.0 + (ring + arrows) * 0.45), min(1.0, ring + arrows * 0.95 + fill) * uA); }`;
+// mũi chữ V chĩa xuống (tam giác ngoài khoét tam giác trong): viền tối cho nổi trên nền cỏ sáng, lõi sáng dần lên trên
+const CHEV = `void main(){ vec2 p = vUv; float x = abs(p.x - 0.5), o = (p.y - 0.04) * 0.55 - x, i = (p.y - 0.52) * 0.55 - x;
+  if (o < 0.0 || p.y > 0.96 || i > 0.0) discard;
+  float d = min(min(o, -i), 0.96 - p.y), rim = 1.0 - smoothstep(0.015, 0.045, d);
+  gl_FragColor = vec4(mix(uC * (0.85 + 0.35 * p.y), vec3(0.12, 0.0, 0.0), rim), uA); }`;
 
 export function createIndicators(scene, { floor = null } = {}) { // floor: độ cao mặt nền (bệ trại quái) để chỉ báo không chìm dưới bệ
   const g = new THREE.Group(); g.visible = false; scene.add(g);
@@ -62,8 +79,21 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
   self.material.uniforms.uSize = { value: new THREE.Vector2(1, 1) };
   const all = [range, ret, arrow, sector, self];
   const put = (o, x, z, sx, sz, ang = 0) => { o.visible = true; o.position.set(x, 6 + (floor ? floor(x, z, Math.max(sx, sz) / 2) : 0), z); o.scale.set(sx, 1, sz); o.rotation.y = -ang; o.material.uniforms.uSize.value.set(sx, sz); };
+  const marks = [0, 1].map(() => { const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2); const o = new THREE.Mesh(geo, mk(MARK, { uKind: { value: 0 }, uT: { value: 0 } })); o.renderOrder = 3; o.frustumCulled = false; o.visible = false; scene.add(o); return o; });
+  const chev = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mk(CHEV)); // chỉ dấu số 0 (khoá / đang chọn)
+  chev.material.depthTest = false; chev.rotation.x = -CAM_PITCH; chev.scale.set(120, 100, 1); chev.renderOrder = 5; chev.frustumCulled = false; chev.visible = false; scene.add(chev);
   return {
     hide() { g.visible = false; },
+    /** Dấu mục tiêu số k (0: khoá / đang chọn — vòng + mũi chữ V trên đầu, 1: đang bị đánh — vòng). p = { x, z, y (độ cao nền), r (bán kính
+     *  vòng), h (độ cao mũi chữ V trên nền) } hoặc null để ẩn; kind 'lock' | 'pick' | 'atk'. */
+    mark(k, p, kind = 'lock') {
+      const o = marks[k], c = k === 0 ? chev : null;
+      if (!p) { o.visible = false; if (c) c.visible = false; return; }
+      const U = o.material.uniforms, t = performance.now() / 1000, d = p.r * 2, col = MARK_C[kind] || MARK_C.lock;
+      o.visible = true; o.position.set(p.x, (p.y || 0) + 7, p.z); o.scale.set(d, 1, d); U.uSize.value.set(d, d);
+      U.uKind.value = MARK_K[kind] ?? 0; U.uC.value.copy(col); U.uT.value = t % (2.5 * Math.PI); /* đúng một vòng xoay ×0,8: không giật */ U.uA.value = kind === 'lock' ? 0.8 + 0.2 * Math.sin(t * 6) : 0.95;
+      if (c) { c.visible = true; c.position.set(p.x, (p.y || 0) + (p.h || 420) + Math.sin(t * 5) * 14, p.z); c.material.uniforms.uC.value.copy(col); c.material.uniforms.uA.value = 0.95; } // nhấp nhô
+    },
     /** spec: { type, aim, range, width, radius, angle }; dir: {x,y} chuẩn hoá; point: {x,y} thế giới; cancel: bool */
     show(spec, origin, dir, point, cancel) {
       g.visible = true;

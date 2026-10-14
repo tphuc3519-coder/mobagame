@@ -8,8 +8,8 @@ import { startRecall, cancelRecall } from './economy.js';
 
 export function applyCommand(world, e, cmd) {
   if (!e) return;
-  // lúc chết vẫn được mua/bán đồ và nâng kỹ năng (như Liên Quân); các lệnh khác bỏ qua
-  if (!e.alive && !['buy', 'sell', 'levelSkill'].includes(cmd.type)) return;
+  // lúc chết vẫn được mua/bán đồ, nâng kỹ năng (như Liên Quân) và đổi cài đặt chọn mục tiêu; các lệnh khác bỏ qua
+  if (!e.alive && !['buy', 'sell', 'levelSkill', 'targetBy'].includes(cmd.type)) return;
   switch (cmd.type) {
     case 'move': e.moveDir.x = cmd.dir.x; e.moveDir.y = cmd.dir.y; break;
     case 'attack': e.attacking = cmd.on !== false; e.preferTarget = cmd.preferTarget ?? null; e.attackMode = cmd.mode || null; break; // mode: 'minion' (ăn lính) | 'tower' (đẩy trụ)
@@ -21,6 +21,7 @@ export function applyCommand(world, e, cmd) {
     case 'useItem': { const r = useItem(world, e, cmd.slot); if (!r.ok) world.emit('castFail', { id: e.id, slot: 'item', reason: r.reason }); break; }
     case 'recall': if (e.recall) cancelRecall(world, e); else startRecall(world, e); break;
     case 'levelSkill': levelSkill(e, cmd.slot); break;
+    case 'targetBy': e.targetBy = ['pct', 'hp', 'near'].includes(cmd.value) ? cmd.value : null; break; // Cài đặt "Lựa chọn mục tiêu" của người chơi (combat.js → pickByRule); bot không gửi
     default: break;
   }
 }

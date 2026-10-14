@@ -44,6 +44,7 @@
   .aimpad i::before, .aimpad i::after { content: ''; position: absolute; left: 50%; top: 50%; background: #ffffffcc; transform: translate(-50%, -50%); }
   .aimpad i::before { width: 18px; height: 2px; } .aimpad i::after { width: 2px; height: 18px; }
   .aimpad.bad { border-color: #ff5a4acc; background: radial-gradient(circle, #ff5a4a10 55%, #ff5a4a38); box-shadow: 0 0 18px #ff5a4a55; } .aimpad.bad i { border-color: #ffc8c0; background: radial-gradient(circle at 40% 35%, #ffc8c0cc, #b0302aaa); }
+  .aimpad b { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); padding: 5px 12px; border-radius: 6px; background: #ff5a4acc; color: #fff; font: 700 13px 'Be Vietnam Pro', system-ui, sans-serif; white-space: nowrap; } .aimpad b[hidden] { display: none; } /* huỷ theo khoảng cách (Cài đặt) */
   .cancelZone { position: fixed; z-index: 5; right: calc(max(12px, env(safe-area-inset-right)) + 24px); top: max(64px, 15vh); width: clamp(76px, 20vh, 104px); height: clamp(76px, 20vh, 104px); border-radius: 50%; pointer-events: none;
     display: grid; place-items: center; background: radial-gradient(circle, #1a2a4ad0 55%, #2a4a7ad0); border: 3px solid #8fb8e8aa; box-shadow: 0 0 0 4px #0006, 0 4px 14px #000a; transition: transform .12s, background .12s; }
   .cancelZone svg { width: 46%; height: 46%; } .cancelZone.hot { transform: scale(1.12); background: radial-gradient(circle, #a8242ae0 55%, #e0443ae0); border-color: #ffd0c8; }
@@ -134,6 +135,8 @@
   .amode[data-k="minion"] { right: calc(var(--a) * 0.5 + var(--d) * 0.94 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 - var(--d) * 0.342 - var(--m) * 0.5); }
   .amode[data-k="tower"] { right: calc(var(--a) * 0.5 - var(--d) * 0.469 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 + var(--d) * 0.883 - var(--m) * 0.5); }
   .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 0 4px #000, 0 0 2px #000; } .sk .nm { display: none; }
+  .sk .sknm { display: none; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); z-index: 6; padding: 1px 7px; border-radius: 8px; background: #0b0e1ed9; color: #fff; font: 700 11px/1.3 'Be Vietnam Pro', system-ui, sans-serif; white-space: nowrap; text-shadow: 0 1px 2px #000; pointer-events: none; }
+  #skills.names .sk .sknm { display: block; } /* Cài đặt: tên chiêu dưới nút */
   .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
   .lvring path { fill: none; stroke-width: 8; stroke-linecap: round; } .lvring .off { stroke: #0b0e1e; opacity: 0.8; }
   .lvring .on { stroke: url(#lvg); filter: drop-shadow(0 0 2px #ffcf6a) drop-shadow(0 0 4px #ff9a2a88); }
