@@ -160,7 +160,7 @@ function footGlow(w, list) {
 export function buildRockWalls(map, dens = 1) {
   const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassFoot = [], flowers = [], glow = { P: [], C: [], I: [] }, pebbles = [], topGrass = [];
   map.walls.segs.forEach((w, si) => {
-    if (w.border || w.baseWall != null || w.lair) return; // tường biên / bệ nhà / vách hang dựng riêng
+    if (w.border || w.baseWall != null || w.lair || w.pillar) return; // tường biên / bệ nhà / vách hang / cột đá đèn dựng riêng
     const W = w.w ?? map.walls.thickness, H = w.bushRock ? 95 : w.ledge ? 110 : Math.min(230, 110 + W * 0.33);
     const rg = roundRockGeo(w, H, si * 1.37); geos.push(rg); footGlow(w, glow);
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L, nx = -uz, nz = ux;
@@ -177,7 +177,7 @@ export function buildRockWalls(map, dens = 1) {
       const t = (i + r.range(0.1, 0.9)) / nb, sd = r.next() < 0.5 ? -1 : 1, off = W * r.range(0.36, 0.42), sc = W * r.range(0.07, 0.1);
       boulders[r.int(3)].push({ x: w.x1 + ux * L * t + nx * sd * off, y: -6, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.2), sy: H * r.range(0.2, 0.32), sz: sc });
     }
-    if (!(w.rock || w.ledge)) return; // tường dọc đường: chân gọn
+    if (!(w.rock || w.ledge) || w.field) return; // tường dọc đường: chân gọn; đá bờ ruộng: cỏ cao ở chân trông như bụi núp riêng → bỏ
     // cụm cỏ cao ở chân đá: 1–2 cụm mỗi đoạn, mỗi cụm nhiều khóm dày (như Liên Quân), ưu tiên hai đầu bệ
     const nCl = L > 500 ? 2 : 1;
     for (let k = 0; k < nCl; k++) {
@@ -191,7 +191,7 @@ export function buildRockWalls(map, dens = 1) {
   g.add(new THREE.Mesh(mergeGeometries(geos), ROCK_FACET()));
   const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(glow.P, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(glow.C, 4)); gg.setIndex(glow.I);
   const gm = new THREE.Mesh(gg, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false })); gm.renderOrder = 1; g.add(gm);
-  g.add(buildBorderWall(map), buildBaseWalls(map));
+  g.add(buildBorderWall(map), buildBaseWalls(map), buildPillars(map));
   boulders.forEach((l, i) => l.length && g.add(scatter(new THREE.InstancedMesh(boulderGeo(i * 7 + 3), mat, l.length), l, true)));
   g.add(buildGrass(grassFoot, 'bush', 16), buildGrass(flowers, 'blue', 8));
   if (topGrass.length) g.add(buildGrass(topGrass, 'wild', 12));
@@ -273,14 +273,41 @@ function baseWallMat(hw) {
   };
   return (_bw = { wall: mk(true), plain: mk(false), gold: new THREE.MeshStandardMaterial({ color: 0xb8823a, metalness: 0.75, roughness: 0.38 }) });
 }
-/** Cột vuông: phần đá (đế, thân, mũ) + phần vàng (hai đai, viền mũ, chóp tháp, hai vòng nhỏ). Có thuộc tính wuv/bwseg (= 0). */
-function pillarGeo(hw) {
+/** Cột vuông: phần đá (đế, thân, mũ) + phần vàng (hai đai, viền mũ, chóp tháp, hai vòng nhỏ). Có thuộc tính wuv/bwseg (= 0).
+ *  lamp: thay chóp tháp bằng cổ đá + đèn lồng bát giác (vành, sườn, nón, núm vàng) và trả thêm `core` — thân đèn sáng. Nón không rộng hơn
+ *  thân đèn: camera nhìn chếch từ trên vẫn thấy cả vòng thân sáng (mái rộng kiểu lồng đèn đá che mất lõi). */
+function pillarGeo(hw, lamp = false) {
   const box = (w, h, y) => { const b = new THREE.BoxGeometry(w * hw, h, w * hw); b.translate(0, y, 0); return b; };
   const fin = (parts) => { const g = mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; })); const n = g.attributes.position.count;
     g.setAttribute('wuv', new THREE.Float32BufferAttribute(new Float32Array(n * 2), 2)); g.setAttribute('bwseg', new THREE.Float32BufferAttribute(new Float32Array(n), 1)); return g; };
+  const body = [box(2.1, 30, 15), box(1.6, 236, 148), box(1.95, 22, 271)], bands = [box(1.66, 8, 34), box(1.66, 8, 120), box(1.66, 8, 214), box(1.99, 4, 259)];
+  if (lamp) { // mặt mũ cột lộ ra (không có chóp tháp che): đai vàng đỉnh mũ chỉ là viền khung, giữa vẫn là đá
+    const oct = (r0, r1, h, y) => { const c = new THREE.CylinderGeometry(r0 * hw, r1 * hw, h, 8, 1); c.rotateY(Math.PI / 8); c.translate(0, y, 0); return c; };
+    const ribs = [0, 1, 2, 3].map((k) => { const b = new THREE.BoxGeometry(0.08 * hw, 70, 0.08 * hw); b.translate(0.5 * hw, 334, 0); b.rotateY(k * Math.PI / 2 + Math.PI / 4); return b; });
+    const rim = [0, 1, 2, 3].map((k) => { const b = new THREE.BoxGeometry(1.99 * hw, 4, 0.12 * hw); b.translate(0, 283, 0.935 * hw); b.rotateY(k * Math.PI / 2); return b; });
+    const knob = new THREE.SphereGeometry(0.13 * hw, 10, 8); knob.translate(0, 404, 0);
+    return { stone: fin([...body, box(1.1, 14, 289)]), gold: fin([...bands, ...rim, oct(0.56, 0.56, 7, 300), oct(0.56, 0.56, 7, 368), ...ribs, oct(0.08, 0.56, 28, 385), knob]), core: oct(0.48, 0.52, 64, 334) };
+  }
   const tip = new THREE.CylinderGeometry(0.12 * hw, 1.0 * hw, 66, 4, 1); tip.rotateY(Math.PI / 4); tip.translate(0, 315, 0);
   const knob = new THREE.SphereGeometry(0.2 * hw, 10, 8); knob.translate(0, 352, 0);
-  return { stone: fin([box(2.1, 30, 15), box(1.6, 236, 148), box(1.95, 22, 271), tip]), gold: fin([box(1.66, 8, 34), box(1.66, 8, 120), box(1.66, 8, 214), box(1.99, 4, 259), box(1.99, 4, 283), knob]) };
+  return { stone: fin([...body, tip]), gold: fin([...bands, box(1.99, 4, 283), knob]) };
+}
+/** Cột đá đèn lồng (đoạn tường `pillar`: dài 0 = va chạm tròn; cột ở khe mép đường của hai ruộng cạnh bụi bờ, data/maps.js): cột vuông chạm
+ *  đai vàng như cột tường nhà (cùng vật liệu baseWallMat), thân vừa trong vòng va chạm; trên đỉnh đèn lồng sáng ấm vượt ngưỡng bloom +
+ *  quầng sáng và vũng sáng ấm dưới chân (không dùng đèn điểm). */
+function buildPillars(map) {
+  const g = new THREE.Group(), list = map.walls.segs.filter((w) => w.pillar); if (!list.length) return g;
+  const hw = (list[0].w ?? map.walls.thickness) * 0.42, pg = pillarGeo(hw, true), mats = baseWallMat(hw), at = list.map((w) => ({ x: w.x1, y: 0, z: w.y1, ry: 0, sx: 1 }));
+  for (const [geo, mat] of [[pg.stone, mats.plain], [pg.gold, mats.gold]]) { const m = scatter(new THREE.InstancedMesh(geo, mat, at.length), at, false); m.castShadow = m.receiveShadow = true; g.add(m); }
+  const warm = new THREE.Color(0xffb45c);
+  g.add(scatter(new THREE.InstancedMesh(pg.core, new THREE.MeshBasicMaterial({ color: warm.clone().multiplyScalar(2.6) }), at.length), at, false));
+  const halo = new THREE.SpriteMaterial({ map: glowTex(), color: warm, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 });
+  const pool = new THREE.MeshBasicMaterial({ map: glowTex(), color: 0xff9a44, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
+  for (const p of at) {
+    const h = new THREE.Sprite(halo); h.position.set(p.x, 334, p.z); h.scale.setScalar(300); g.add(h);
+    const c = new THREE.Mesh(new THREE.CircleGeometry(340, 24), pool); c.rotation.x = -Math.PI / 2; c.position.set(p.x, 5, p.z); c.renderOrder = 2; g.add(c);
+  }
+  return g;
 }
 function buildBaseWalls(map) {
   const g = new THREE.Group(), groups = new Map();
