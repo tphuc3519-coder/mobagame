@@ -230,13 +230,15 @@ Tên clip bắt buộc trong mọi GLB tướng (xem 11 §6):
 - Chỉ báo ngắm, vòng tầm, vùng AoE: vẽ **trong cảnh 3D** bằng mesh phẳng sát mặt đất (`indicators.js`) để đúng phối cảnh.
 - Sương mù: texture tầm nhìn cập nhật mỗi 3 tick, phủ lên mặt đất bằng shader, và ẩn object của địch ngoài tầm nhìn.
 
-### 13.8 Cài đặt đồ hoạ (`quality.js`, `ui/gfxSettings.js`)
-Ba mức đặt sẵn + chỉnh từng mục (Cài đặt ở sảnh và nút bánh răng trong trận), lưu trong máy (`localStorage['la.gfx']`). Mặc định:
-điện thoại **Vừa**, máy tính **Cao**. Chọn từng mục khác mức đặt sẵn → hiện "Tuỳ chỉnh".
+### 13.8 Cài đặt đồ hoạ (`quality.js`, thẻ "Thiết lập đồ hoạ" của `ui/settingsModal.js`)
+Ba mức đặt sẵn (thẻ Ưu tiên độ mượt / Cân bằng / Ưu tiên chất lượng) + chỉnh từng mục (Cài đặt ở sảnh và nút bánh răng trong trận), lưu
+trong máy (`localStorage['la.gfx']`). Mặc định: điện thoại **Cân bằng**, máy tính **Ưu tiên chất lượng**. Chọn từng mục khác mức đặt sẵn → thẻ
+"Tuỳ chỉnh". Thanh "Chất lượng hình ảnh" 5 nấc như Liên Quân gộp độ nét + bóng đổ + ánh sáng rực + khử răng cưa: Mượt (1 / tắt / tắt / tắt),
+Tầm trung (1,25 / tắt / bật / tắt), Cao (1,5 / bật / bật / tắt), Siêu cao (2 / bật / bật / tắt), Tối cao (2 / bật / bật / bật).
 
 | Mục | Thấp | Vừa | Cao | Đổi giữa trận |
 |---|---|---|---|---|
-| Độ nét (pixel ratio tối đa, ≤ devicePixelRatio) | 1 | 1,5 | 2 | ngay |
+| Độ nét / Độ phân giải (pixel ratio tối đa, ≤ devicePixelRatio; chọn được 1 / 1,25 / 1,5 / 2) | 1 | 1,5 | 2 | ngay |
 | Khung hình | 60 | 60 | 60 (chọn được 30) | ngay |
 | Bóng đổ thời gian thực (chỉ nhân vật; bóng cây / đá / tường nướng sẵn trên nền) | tắt | bật | bật | ngay, không dịch lại shader |
 | Ánh sáng rực (bloom) | tắt | bật | bật | ngay |
@@ -251,6 +253,33 @@ Ba mức đặt sẵn + chỉnh từng mục (Cài đặt ở sảnh và nút b�
   khi chạy đủ nhanh lâu.
 - Hiện FPS: góc trên màn hình trận, kèm bậc tự giảm đang dùng.
 - `?q=low|mid|high` (kiểm thử) đè mức đặt sẵn cho lần chạy đó, không lưu.
+
+### 13.11 Âm thanh (`src/audio/`, `tools/sfx/`)
+- **Mọi tiếng tổng hợp bằng code** (`tools/sfx/dsp.mjs` + `bank.mjs`: dao động polyBLEP, nhiễu trắng/hồng/nâu, lọc biquad đổi tham số theo
+  thời gian, FM, dây gảy Karplus-Strong, cộng hưởng nhiều mode, vang Freeverb, bão hoà) — không dùng file ghi âm ngoài. `node
+  tools/sfx/build.mjs` (cần ffmpeg + libmp3lame) dựng `assets/audio/sfx.mp3` + `sfx.json` (79 tiếng ghép một file — "audio sprite": một lần
+  tải, một lần giải mã) và `lobby.mp3` (nhạc sảnh ngũ cung Rê, 80 BPM, 48 giây lặp liền mạch). `--preview` ghi ảnh phổ từng tiếng để soát.
+- Độ to chuẩn hoá theo nhóm (ui, minor, combat, skill, econ, sting) bằng RMS ngắn hạn lớn nhất (cửa sổ 50 ms), đo **trung bình nhân giữa
+  toàn dải và dải loa điện thoại** (bỏ dưới 220 Hz): loa iPhone gần như không phát dưới ~200 Hz nên tiếng nặng phần trầm (đánh vào người,
+  sập trụ) phải có thân ở dải 250–1000 Hz (`punch` trong bank) chứ không chỉ "thịch" trầm. Cắt dưới 55 Hz (tiếng nặng: 100 Hz), giới hạn
+  đỉnh nhìn trước ≤ 0,88 (không xén méo; MP3 vượt đỉnh còn < 1).
+- Đầu mỗi file có **vạch đồng bộ 5 ms**: sau giải mã đo vị trí thật để bù độ trễ bộ mã MP3 (Safari / Chrome cắt khác nhau); nhạc sảnh có
+  thêm 1 giây đầu/cuối bài quấn quanh vùng lặp để điểm lặp không có tiếng "bụp".
+- Chạy (`audio.js`): giải mã sớm bằng `OfflineAudioContext` (không cần chạm); `AudioContext` thật tạo ở lần chạm đầu (iPhone chỉ cho phát
+  sau cử chỉ), mỗi lần chạm sau đó tiếp tục nếu bị treo; ẩn trang thì treo. Tiếng có vị trí: đủ to trong 700 quanh tâm camera, nhỏ dần tới
+  im ở 3000, lệch trái/phải theo màn hình. Chống rè: cùng tiếng cách nhau ≥ 35 ms, tối đa 3–4 bản mỗi tiếng, tổng ≤ 24 tiếng (bỏ tiếng ưu
+  tiên thấp trước), bộ nén cuối đường hiệu ứng, cao độ lệch nhẹ ngẫu nhiên. Nhạc nền giải mã khi cần, vào trận thì trả bộ nhớ.
+- Nối tiếng: `uiSounds.js` (một bộ nghe chung ở `#ui` cho mọi nút + nhạc theo màn), `gameSounds.js` (sự kiện mô phỏng → tiếng; mỗi tướng
+  một bộ vũ khí / tiếng trúng / nguyên tố chiêu; chỉ phát thứ đội mình thấy), `hud/killBanner.js` (nhạc báo phát lúc thông báo hiện ra).
+- Âm lượng: Cài đặt → Âm thanh (`core/prefs.js`: `music/musicVol`, `sfx/sfxVol`, `announcer`). iPhone gạt nút im lặng thì Safari không phát
+  Web Audio (chủ ý không ép phiên "playback" — sẽ ngắt nhạc của ứng dụng khác đang mở).
+
+### 13.12 Cài đặt người chơi (`core/prefs.js`, `ui/settingsModal.js`)
+- Bảng Cài đặt kiểu Liên Quân dùng chung ở sảnh và trong trận: 6 thẻ — Thiết lập đồ hoạ, Điều khiển, Thiết lập giao diện, Thiết lập,
+  Âm thanh, Dữ liệu. Đồ hoạ lưu `la.gfx` (13.8); mọi mục khác lưu `la.prefs` — đọc `prefs()`, đổi `setPref(k, v)` (giá trị sai kiểu / ngoài
+  lựa chọn bị bỏ), nghe `onPref(fn)` để áp dụng ngay giữa trận. Danh sách mục + giá trị mặc định: `PREF_DEFAULTS` trong `prefs.js`.
+- Những mục ảnh hưởng mô phỏng (cách chọn mục tiêu đánh thường, khoá mục tiêu) đi qua `world.command` như mọi thao tác khác — mô phỏng
+  không tự đọc cài đặt, nên kiểm thử tất định không đổi.
 
 ### 13.9 Cảnh trưng bày (`showcase/`)
 - Một `WebGLRenderer` riêng (hoặc dùng lại renderer chính khi không ở trong trận) vẽ phía sau DOM UI ở sảnh, chọn tướng, xếp hạng.

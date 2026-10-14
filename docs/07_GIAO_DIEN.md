@@ -208,7 +208,29 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Nhiệm vụ**: tab Ngày / Tuần / Mùa, thanh tiến độ, nút Nhận.
 - **Kho đồ**: lưới vật phẩm theo loại, chạm xem chi tiết/dùng.
 - **Lịch sử**: 20 trận gần nhất, chạm xem bảng thống kê.
-- **Cài đặt**: Âm thanh (nhạc, hiệu ứng), Đồ hoạ (chất lượng, FPS 30/60, hạt), Điều khiển (kích thước nút, độ trong suốt, vị trí nút có thể kéo đổi, độ nhạy joystick, tự nâng kỹ năng, tự mua đồ, ưu tiên mục tiêu: máu thấp nhất / gần nhất), Ngôn ngữ, Xuất/Nhập mã lưu, Xoá dữ liệu.
+- **Cài đặt** (`ui/settingsModal.js`, kiểu Liên Quân, ở sảnh và nút bánh răng trong trận): hộp lớn tiêu đề vàng + nút X, cột thẻ bên trái:
+  - *Thiết lập đồ hoạ*: thẻ Ưu tiên độ mượt / Cân bằng / Ưu tiên chất lượng / Tuỳ chỉnh; thanh Chất lượng hình ảnh (Mượt → Tối cao),
+    Chất lượng chi tiết (Mượt / Cao / Tối cao), FPS (Tiết kiệm pin / Cao), Độ phân giải; bóng đổ, ánh sáng rực, khử răng cưa, tự giảm khi giật.
+  - *Điều khiển*: đánh thường chính xác, độ nhạy xoay chiêu, camera (Tắt / Giữ / Trượt) + tốc độ, chế độ công chỉ định (Tự đánh / Ăn
+    lính + Đẩy trụ / Tự chọn mục tiêu), lựa chọn mục tiêu (% máu / máu / gần nhất), hướng tốc biến mặc định, hiển thị mục tiêu chỉ định,
+    phương pháp tung chiêu (hỗ trợ xoay / tự nhắm), vị trí xoay chiêu (nút / ngón tay), huỷ chiêu (vùng / cự ly), góc quay theo định vị,
+    lệnh di chuyển (cần đi theo / cố định).
+  - *Thiết lập giao diện*: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, thời gian hồi số
+    thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, FPS, miêu tả chiêu (giữ nút), tên chiêu dưới nút.
+  - *Thiết lập*: góc camera Gần / Xa, độ sáng 5 nấc, viền nhân vật, hiệu ứng thông báo (bảng hạ gục), hiệu ứng sương mù; ở sảnh: xoá dữ liệu.
+  - *Âm thanh*: nhạc nền (bật/tắt + âm lượng), hiệu ứng âm thanh (bật/tắt + âm lượng), tiếng thông báo trong trận.
+  - *Dữ liệu*: tiết kiệm dữ liệu (không tải trước model mọi tướng khi ở sảnh).
+  - Trong trận: nút **Đầu hàng** ở chân hộp (đấu hạng từ phút 8; chạm hai lần để xác nhận).
+  - Không làm (chưa có chơi trực tuyến): trò chuyện, mic, ping nhanh, like / nhận lỗi trong trận, tự từ chối đầu hàng, mạng WIFI + 3G/4G.
 
-## 13. Âm thanh giao diện
-- Chạm nút: tick ngắn. Nút chính: âm "đồng" nhẹ. Tìm thấy trận: tiếng chiêng. Chọn tướng: câu thoại ngắn tự viết (text + âm hiệu ứng, lồng tiếng sau).
+## 13. Âm thanh (kỹ thuật: 02 §13.11)
+- **Sảnh**: nhạc nền ngũ cung (đàn tranh, sáo trúc, trống) ở sảnh / phòng chờ / chọn tướng / đội hình, tắt dần ở màn tải trận. Chạm nút:
+  tiếng gỗ ngắn; nút chính (Bắt đầu, Chấp nhận, Đấu lại): chuông ba nốt; mở bảng: lướt + chuông; quay lại: nốt đi xuống; đổi thẻ: chuông nhỏ;
+  chọn tướng: lướt + chuông; chuyển màn: tiếng lướt gió. **Tìm thấy trận**: trống + kèn đồng + chuông; **khoá tướng**: tiếng đập kim loại +
+  hợp xướng; đồng đội khoá: chuông nhỏ; 5 giây cuối chưa khoá: tích tắc; màn đội hình: **VS** (vút lên + đập + kèn); kết quả: lướt giữa
+  các màn, tiếng phần thưởng (đồng xu + lấp lánh).
+- **Trận**: vào trận (tù và + trống), đợt lính đầu tiên (tù và), đánh thường theo vũ khí từng tướng (vung nặng/nhẹ, bắn cung, bắn phép),
+  tiếng trúng (thịt, chém, giáp, phép, chuẩn, chí mạng), chiêu theo nguyên tố (lửa, nước, lá, gió, ánh sáng, huyền bí, đất) + chiêu cuối,
+  lướt, choáng, hất tung, khiên, hồi máu / Hồi Máu bị cắt, phép bổ trợ, Trừng Trị, trụ bắn / trúng, lính, quái, chết, phá trụ, boss gầm,
+  vàng, mua đồ, lên cấp, về thành, hồi sinh, nhặt cục máu; nhạc báo hạ gục / chiến công đầu / hạ liên tiếp (cao dần theo số mạng) /
+  chặn đứng / bị trụ hạ; chiến thắng / thất bại.

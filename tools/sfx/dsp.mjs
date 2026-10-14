@@ -122,10 +122,12 @@ export const bp = (x, f, q) => biquad(x, 'bandpass', f, q);
 export function formant(x, peaks) { const out = new Float32Array(x.length); for (const [f, q, g] of peaks) { const y = bp(x, f, q); for (let i = 0; i < x.length; i++) out[i] += y[i] * g; } return out; }
 
 // ——— bao hình / tiện ích ———
-/** Bao hình ADSR-ish: lên tuyến tính a giây, tắt dần mũ hằng số d giây (e⁻¹). */
-export function envAD(sec, a, d, { hold = 0, sustain = 0 } = {}) {
-  const b = buf(sec);
+/** Bao hình ADSR-ish: lên tuyến tính a giây, tắt dần mũ hằng số d giây (e⁻¹) về mức sustain; có sustain thì nhả mềm (cos) ở đoạn cuối
+ *  `rel` giây — không để tiếng kèn / hợp xướng bị cắt cụt ở cuối lớp. */
+export function envAD(sec, a, d, { hold = 0, sustain = 0, rel = Math.min(0.3, sec * 0.25) } = {}) {
+  const b = buf(sec), R = sustain > 0 ? N(rel) : 0;
   for (let i = 0; i < b.length; i++) { const t = i / SR; b[i] = t < a ? t / a : t < a + hold ? 1 : sustain + (1 - sustain) * Math.exp(-(t - a - hold) / d); }
+  for (let i = 0; i < R && i < b.length; i++) b[b.length - 1 - i] *= 0.5 - 0.5 * Math.cos(Math.PI * i / R);
   return b;
 }
 /** Bao hình từng điểm [[t, v], …] (nội suy tuyến tính; mũ nếu curve > 0). */

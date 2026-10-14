@@ -11,11 +11,11 @@ import { cardSrc } from '../ui/kit.js';
 const STYLE = `
 body.no-rec #qb { display: none !important; }
 body.no-idesc .shop .note, body.no-idesc #qb .qn small { display: none !important; }
-.ultsplash { position: fixed; left: 0; top: 18%; z-index: 4; height: 34%; aspect-ratio: 16 / 10; pointer-events: none; overflow: hidden; opacity: 0;
+.ultsplash { position: fixed; left: 0; top: 40%; z-index: 4; height: 30%; aspect-ratio: 16 / 10; pointer-events: none; overflow: hidden; opacity: 0;
   -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent); mask-image: linear-gradient(90deg, #000 55%, transparent); }
 .ultsplash img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: saturate(1.15) contrast(1.05); }
 .ultsplash::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(255,214,120,0) 30%, rgba(255,236,190,.55) 45%, rgba(255,214,120,0) 60%); transform: translateX(-100%); }
-.ultsplash.on { animation: ultIn 1.25s ease-out forwards; } .ultsplash.on::after { animation: ultShine .7s .1s ease-out forwards; }
+.ultsplash.on { animation: ultIn 1.5s ease-out forwards; } .ultsplash.on::after { animation: ultShine .7s .1s ease-out forwards; }
 @keyframes ultIn { 0% { opacity: 0; transform: translateX(-30%) skewX(-8deg); } 14% { opacity: 1; transform: translateX(0) skewX(-8deg); } 78% { opacity: 1; transform: translateX(3%) skewX(-8deg); } 100% { opacity: 0; transform: translateX(8%) skewX(-8deg); } }
 @keyframes ultShine { to { transform: translateX(100%); } }
 `;

@@ -109,7 +109,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
   }
   function lock() {
     if (st.locked || taken().includes(st.sel)) return;
-    st.locked = true; show.play('Victory'); sfx('ui_lock', { announce: true });
+    st.locked = true; show.play('Victory'); sfx('ui_lock');
     if (training) { finish(); return; }
     for (const t of team) if (!t.locked) t.at = Math.min(t.at, PICK_SEC - st.left + 0.6 + Math.random() * 2); // mình khoá rồi thì máy nhanh tay hơn
     refresh(); checkAll();

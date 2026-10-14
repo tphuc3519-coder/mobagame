@@ -17,7 +17,7 @@ export function openLineup(nav) {
   place(); addEventListener('resize', place);
   show.show(P.heroId);
   const pose = setTimeout(() => show.play('Victory'), 450);
-  sfx('ui_vs', { announce: true });
+  sfx('ui_vs');
 
   const card = (heroId, name, me = false, i = 0) => `<div class="lu ${me ? 'me' : ''}" style="animation-delay:${0.08 * i}s"><div class="ring">${face(heroId)}</div><b>${HEROES[heroId].name}</b><small>${name}</small></div>`;
   let row;
