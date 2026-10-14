@@ -223,6 +223,7 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
     Chiến công đầu; **Double / Triple / Quadra / Penta Kill** (hai mạng cách nhau ≤ 10s; chữ lớn vàng, tia sáng toả); chuỗi hạ gục khi chưa
     chết: Liên tục hạ gục (3) → Hủy diệt → Không thể cản phá → Thần thánh → **Truyền thuyết** (7+); Chặn đứng (hạ người có chuỗi ≥ 3);
     "Bị hạ gục" + biểu tượng trụ / lính / quái khi không tướng nào được mạng; hạ mục tiêu lớn. Hàng đợi, dồn thì rút ngắn.
+    Biểu tượng trụ vẽ dạng tháp răng cưa có cửa vòm sáng (bản đầu đầu nhọn thân loe trông như cái chuông của iPhone — người chơi báo).
   - **Vàng "+N"** kèm đồng vàng nảy lên trên đầu tướng mình mỗi khi nhận vàng (hạ tướng, hỗ trợ, kết liễu lính / quái, phá trụ).
   - **Luật tính mạng** (`src/sim/damage.js`): mạng thuộc tướng địch gây sát thương **cuối cùng** trong 10 giây — kể cả khi lính / trụ /
     quái kết liễu; mọi tướng địch khác đã đánh trong 10 giây là **hỗ trợ** và chia 50% vàng mạng (tối đa 150 mỗi người — như tài liệu
