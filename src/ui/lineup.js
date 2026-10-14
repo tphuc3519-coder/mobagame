@@ -6,6 +6,7 @@ import { profile } from './profile.js';
 import { botLabel } from './people.js';
 import { MODES, S } from './modes.js';
 import { stage, stageOn, backdrop } from './stage.js';
+import { sfx } from '../audio/audio.js';
 
 export function openLineup(nav) {
   const p = profile(), M = MODES[S.mode], P = S.pick, A = S.match, h = HEROES[P.heroId];
@@ -16,6 +17,7 @@ export function openLineup(nav) {
   place(); addEventListener('resize', place);
   show.show(P.heroId);
   const pose = setTimeout(() => show.play('Victory'), 450);
+  sfx('ui_vs', { announce: true });
 
   const card = (heroId, name, me = false, i = 0) => `<div class="lu ${me ? 'me' : ''}" style="animation-delay:${0.08 * i}s"><div class="ring">${face(heroId)}</div><b>${HEROES[heroId].name}</b><small>${name}</small></div>`;
   let row;

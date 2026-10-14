@@ -33,6 +33,7 @@ export const PREF_DEFAULTS = Object.freeze({
   // —— Thiết lập ——
   camDist: 'far',      // Góc camera: 'near' gần | 'far' xa
   bright: 3,           // Độ sáng 1..5 (3 = đề cử)
+  outline: true,       // Viền nhân vật (áp dụng từ trận sau; mức chi tiết cảnh Mượt luôn tắt)
   killFx: true,        // Dùng hiệu ứng thông báo (bảng hạ gục giữa màn hình)
   fogFx: true,         // Hiệu ứng sương mù (vùng chưa có tầm nhìn tối đi)
   // —— Âm thanh ——

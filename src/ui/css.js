@@ -403,8 +403,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #gover.lose b { background-image: linear-gradient(180deg, #ffffff 0%, #e8eeff 34%, #a8b4d4 62%, #6e7aa0 86%, #c4cce8 100%); filter: drop-shadow(0 4px 0 #121a36) drop-shadow(0 0 22px rgba(110,140,230,.6)); }
 #gover small { position: relative; margin-top: 6px; font: 700 clamp(13px, 4vh, 20px)/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .7em; color: #fff; opacity: .85; animation: scrIn .6s .3s backwards; }
 @keyframes goIn { from { opacity: 0; transform: scale(1.6); } }
-.setp .seg button[disabled] { opacity: .45; } .setp [data-sur] { background: #5a1a1a !important; border-color: #ff8a7a !important; color: #ffd8d0 !important; } .setp [data-sur].on { background: #c8402f !important; color: #fff !important; }
-body.over #skills, body.over #extras, body.over #camBtn, body.over #scoreboard, body.over .setp { visibility: hidden; }
+body.over #skills, body.over #extras, body.over #camBtn, body.over #scoreboard, body.over .lqs-wrap { visibility: hidden; }
 body.post #hud, body.post #skills, body.post #extras, body.post #shopRoot, body.post #scoreTop, body.post #scoreboard, body.post #fs, body.post #hudSet, body.post #lab, body.post #camBtn { display: none !important; }
 `;
 

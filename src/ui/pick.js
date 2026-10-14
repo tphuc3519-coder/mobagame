@@ -14,6 +14,7 @@ import { MODES, S } from './modes.js';
 import { stage, stageOn, backdrop } from './stage.js';
 import { ROLE_VI } from './panels.js';
 import { skillDesc } from './skilltext.js';
+import { sfx } from '../audio/audio.js';
 
 const PICK_SEC = 30, READY_SEC = 3;
 const ROLE_ICO = { fighter: '⚔', tank: '⛨', assassin: '✦', mage: '✺', marksman: '➶', support: '✚' };
@@ -102,13 +103,13 @@ export function openPick(nav, { mode = S.mode } = {}) {
     const tk = [...taken(), ...(st.locked ? [st.sel] : [])];
     let opts = ALPHA.filter((h) => !tk.includes(h));
     if (opts.length > 1) opts = opts.filter((h) => h !== st.sel);
-    t.hero = opts[Math.floor(Math.random() * opts.length)] || ALPHA[0]; t.locked = true;
+    t.hero = opts[Math.floor(Math.random() * opts.length)] || ALPHA[0]; t.locked = true; sfx('ui_select', { vol: 0.45 });
     if (!st.locked && t.hero === st.sel) { const alt = ALPHA.find((h) => !taken().includes(h)); if (alt) { st.sel = alt; show.show(alt); toast(`${HEROES[t.hero].name} đã được đồng đội chọn`); } }
     refresh(); checkAll();
   }
   function lock() {
     if (st.locked || taken().includes(st.sel)) return;
-    st.locked = true; show.play('Victory');
+    st.locked = true; show.play('Victory'); sfx('ui_lock', { announce: true });
     if (training) { finish(); return; }
     for (const t of team) if (!t.locked) t.at = Math.min(t.at, PICK_SEC - st.left + 0.6 + Math.random() * 2); // mình khoá rồi thì máy nhanh tay hơn
     refresh(); checkAll();
@@ -118,8 +119,9 @@ export function openPick(nav, { mode = S.mode } = {}) {
   const tick = setInterval(() => {
     const now = performance.now(), dt = (now - last) / 1000; last = now;
     if (training || done) return;
-    if (st.ready >= 0) { st.ready -= dt; renderTimer(); if (st.ready <= 0) finish(); return; }
-    st.left -= dt; const el2 = PICK_SEC - st.left;
+    if (st.ready >= 0) { const r0 = Math.ceil(st.ready); st.ready -= dt; if (Math.ceil(st.ready) < r0 && st.ready > 0) sfx('ui_tick', { rate: 1.3 }); renderTimer(); if (st.ready <= 0) finish(); return; }
+    const l0 = Math.ceil(st.left); st.left -= dt; const el2 = PICK_SEC - st.left;
+    if (Math.ceil(st.left) < l0 && l0 <= 6 && st.left > 0 && !st.locked) sfx('ui_tick'); // 5 giây cuối chưa khoá: tích tắc
     for (const t of team) if (!t.locked && el2 >= t.at) botPick(t);
     if (st.left <= 0) {
       for (const t of team) if (!t.locked) botPick(t);

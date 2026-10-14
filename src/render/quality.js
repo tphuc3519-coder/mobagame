@@ -1,7 +1,7 @@
 // Cài đặt đồ hoạ (02 §13.8; phản hồi 13/10 "trên điện thoại còn lag, cần tuỳ chỉnh đồ hoạ"): 3 mức đặt sẵn + tuỳ chỉnh từng mục,
 // lưu trong máy (localStorage 'la.gfx'). Trong trận đổi được ngay: độ nét, khung hình, bóng đổ, ánh sáng rực, khử răng cưa, tự giảm khi
 // giật, hiện FPS. Chi tiết cảnh (mật độ cây cỏ + độ chi tiết shader nền / sông) áp dụng từ trận sau (phải dựng lại cảnh).
-//   scale   — tỉ lệ điểm ảnh tối đa khi vẽ (≤ devicePixelRatio): 1 / 1,5 / 2
+//   scale   — tỉ lệ điểm ảnh tối đa khi vẽ (≤ devicePixelRatio): 1 / 1,25 / 1,5 / 2
 //   fps     — giới hạn khung hình: 30 (mát máy, đều) / 60
 //   shadows — bóng đổ thời gian thực của nhân vật (bóng cảnh tĩnh luôn nướng sẵn trên nền)
 //   bloom   — quầng sáng đèn lồng / lõi trụ / hiệu ứng chiêu (hậu kỳ)
@@ -13,7 +13,7 @@ export const PRESETS = {
   mid: { scale: 1.5, fps: 60, shadows: true, bloom: true, aa: 0, detail: 'mid' },
   high: { scale: 2, fps: 60, shadows: true, bloom: true, aa: 4, detail: 'high' },
 };
-const OPTS = { scale: [1, 1.5, 2], fps: [30, 60], shadows: [false, true], bloom: [false, true], aa: [0, 4], detail: ['low', 'mid', 'high'] };
+const OPTS = { scale: [1, 1.25, 1.5, 2], fps: [30, 60], shadows: [false, true], bloom: [false, true], aa: [0, 4], detail: ['low', 'mid', 'high'] };
 const KEY = 'la.gfx';
 const phone = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 

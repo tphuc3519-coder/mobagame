@@ -4,6 +4,8 @@
 // (3: Liên tục hạ gục … 7+: Truyền thuyết) → Hạ gục. Không tướng nào được mạng: biểu tượng trụ / lính / quái + "Bị hạ gục".
 // Hàng đợi: mỗi thông báo ~2,4 giây, dồn nhiều thì rút ngắn. Thời gian theo giờ thật (không phụ thuộc FPS).
 import { HEROES } from '../data/heroes/index.js';
+import { play } from '../audio/audio.js';
+import { prefs } from '../core/prefs.js';
 
 export const MULTI = { 2: 'Double Kill', 3: 'Triple Kill', 4: 'Quadra Kill', 5: 'Penta Kill' };
 const STREAK = { 3: 'Liên tục hạ gục', 4: 'Hủy diệt', 5: 'Không thể cản phá', 6: 'Thần thánh' };
@@ -28,11 +30,24 @@ export function titleOf(ev) {
   return { title: 'Hạ gục', sub: '', tier: 0 };
 }
 
+/** Nhạc báo đi cùng thông báo (phát lúc thông báo hiện ra, khớp hình): hạ liên tiếp cao dần theo số mạng. */
+function announce(it) {
+  const s = it.snd; if (!s || document.body.classList.contains('over')) return; // trận đã kết thúc: chỉ còn nhạc thắng/thua
+  const o = { announce: true };
+  if (s.k === 'multi') play('ann_multi', { ...o, rate: 1 + 0.06 * (s.n - 2) });
+  else if (s.k === 'first') play('ann_first', o);
+  else if (s.k === 'shutdown') play('ann_shutdown', o);
+  else if (s.k === 'streak') play('ann_streak', o);
+  else if (s.k === 'executed') play('ann_executed', o);
+  else play(s.ally ? 'ann_ally' : 'ann_enemy', o);
+}
+
 export function createKillBanner(portraits) {
   const queue = [];
   let cur = null;
-  const start = (it) => { cur = it; it.t0 = now(); it.life = queue.length ? 1.8 : it.tier >= 2 ? 2.8 : 2.4; };
+  const start = (it) => { cur = it; it.t0 = now(); it.life = queue.length ? 1.8 : it.tier >= 2 ? 2.8 : 2.4; announce(it); };
   const push = (it) => {
+    if (!prefs().killFx) { announce(it); return; } // Cài đặt → Thiết lập → tắt hiệu ứng thông báo: chỉ còn nhạc báo
     if (queue.length >= 4) { const i = queue.findIndex((q) => q.tier < 2); queue.splice(i >= 0 ? i : 0, 1); } // dồn quá nhiều: bỏ bớt cái thường
     queue.push(it);
     if (cur) { const t = now() - cur.t0; cur.life = Math.min(cur.life, Math.max(t + 0.3, it.tier >= 2 ? 0.9 : 1.4)); } // có cái mới: cái đang hiện rút gọn (hạ liên tiếp chen nhanh hơn)
@@ -139,14 +154,15 @@ export function createKillBanner(portraits) {
       const v = world.byId(ev.id); if (!v || v.kind !== 'hero') return;
       const k = ev.killer != null ? world.byId(ev.killer) : null, hero = k?.kind === 'hero' && k.team !== v.team;
       const by = hero ? k : ev.by != null ? world.byId(ev.by) : k;
-      const tt = hero ? titleOf(ev) : { title: 'Bị hạ gục', sub: '', tier: 0 };
-      push({ ...tt, theme: (hero ? k.team : 1 - v.team) === team ? 'ally' : 'foe', killer: who(hero ? k : by, me), victim: who(v, me),
+      const tt = hero ? titleOf(ev) : { title: 'Bị hạ gục', sub: '', tier: 0 }, ally = (hero ? k.team : 1 - v.team) === team;
+      const snd = { ally, n: Math.min(5, ev.multi || 0), k: !hero ? 'executed' : (ev.multi || 0) >= 2 ? 'multi' : ev.first ? 'first' : ev.shutdown ? 'shutdown' : (ev.streak || 0) >= 3 ? 'streak' : 'kill' };
+      push({ ...tt, snd, theme: ally ? 'ally' : 'foe', killer: who(hero ? k : by, me), victim: who(v, me),
         assists: (ev.assists || []).map((id) => world.byId(id)).filter(Boolean).map((e) => who(e, me)) });
     },
     /** Hạ mục tiêu lớn (boss). */
     boss(ev, world, me, team) {
       const k = world.byId(ev.killer);
-      push({ title: `Hạ ${ev.name}`, sub: ev.team === team ? 'Cả đội nhận thưởng' : 'Đội địch nhận thưởng', tier: 1, theme: ev.team === team ? 'ally' : 'foe', killer: who(k, me), victim: { kind: 'monster' } });
+      push({ title: `Hạ ${ev.name}`, sub: ev.team === team ? 'Cả đội nhận thưởng' : 'Đội địch nhận thưởng', tier: 1, snd: { k: 'boss', ally: ev.team === team }, theme: ev.team === team ? 'ally' : 'foe', killer: who(k, me), victim: { kind: 'monster' } });
     },
     draw,
     get busy() { return !!cur || queue.length > 0; },

@@ -7,6 +7,7 @@ import { profile, rankOf, missionState, MISSIONS } from './profile.js';
 import { FRIENDS, statusText, chatLine, botNames, nearStars } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
 import { stageOn } from './stage.js';
+import { sfx } from '../audio/audio.js';
 
 const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -97,7 +98,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   }
   function stopSearch() { if (!mm) return; clearInterval(mm.t); clearInterval(mm.tick); mm.pill.remove(); mm = null; foundEl?.remove(); foundEl = null; render(); }
   function found() {
-    clearInterval(mm.t); mm.pill.querySelector('span').textContent = 'Đã tìm thấy trận';
+    clearInterval(mm.t); mm.pill.querySelector('span').textContent = 'Đã tìm thấy trận'; sfx('ui_found', { announce: true });
     const n = M.size * 2, acc = new Array(n).fill(false);
     foundEl = document.createElement('div'); foundEl.className = 'ui-dlg';
     foundEl.innerHTML = `<div class="box fr found"><h3><span class="gt">Đã tìm thấy trận</span></h3><div class="txt">${M.name} · ${M.mapName}</div><div class="dots">${'<i></i>'.repeat(n)}</div><div class="tm">12</div>

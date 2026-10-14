@@ -214,3 +214,17 @@ export function wav(chans) {
   for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) b.writeInt16LE(Math.max(-32767, Math.min(32767, Math.round(ch[c][i] * 32767))), 44 + (i * nc + c) * 2);
   return b;
 }
+
+/** Giới hạn đỉnh có nhìn trước (hạ khuếch đại ~2 ms trước đỉnh rồi nhả dần, không xén méo dạng sóng): mọi mẫu ≤ ceil. */
+export function limit(x, ceil = 0.88, look = 0.002, rel = 0.06) {
+  const n = x.length, L = N(look), g = new Float32Array(n), m = new Float32Array(n), s = new Float32Array(n);
+  let need = false;
+  for (let i = 0; i < n; i++) { const a = Math.abs(x[i]); g[i] = a > ceil ? ceil / a : 1; if (a > ceil) need = true; }
+  if (!need) return Float32Array.from(x);
+  for (let i = 0; i < n; i++) { let v = 1; for (let k = Math.max(0, i - L); k <= Math.min(n - 1, i + L); k++) if (g[k] < v) v = g[k]; m[i] = v; } // nhỏ nhất quanh ±L
+  const P = new Float64Array(n + 1); for (let i = 0; i < n; i++) P[i + 1] = P[i] + m[i];
+  for (let i = 0; i < n; i++) { const a = Math.max(0, i - L), b = Math.min(n - 1, i + L); s[i] = (P[b + 1] - P[a]) / (b - a + 1); } // trung bình trượt ±L: dốc mượt, tại đỉnh vẫn ≤ mức cần
+  const rc = Math.exp(-1 / (rel * SR)), y = new Float32Array(n); let env = 1;
+  for (let i = 0; i < n; i++) { const t = Math.min(1, s[i]); env = t < env ? t : t + (env - t) * rc; y[i] = x[i] * env; }
+  return y;
+}

@@ -1,11 +1,14 @@
 // Ngân hàng hiệu ứng âm thanh của Lantern Arena — tổng hợp hoàn toàn bằng code (dsp.mjs), không dùng file ghi âm của ai.
-// Mỗi tiếng: { cat, build(r) → Float32Array }. cat quyết định độ to chuẩn hoá (build.mjs) và nhóm âm lượng khi chơi (src/audio/audio.js).
+// Mỗi tiếng: { cat, low? (Hz cắt trầm, mặc định 55), build(r) → Float32Array }. cat quyết định độ to chuẩn hoá (build.mjs) và nhóm âm lượng khi chơi (src/audio/audio.js).
 // Nguyên tắc cho tiếng "chuyên nghiệp": nhiều lớp (tiếng nứt đầu + thân trầm + đuôi), cao độ trượt, nhiễu lọc quét, bão hoà nhẹ, vang ngắn.
 import { SR, N, buf, rng, midi, white, pink, brown, osc, ensemble, fm, modal, pluck, biquad, lp, hp, bp, formant, envAD, envPts, envBell, mul, gain, mix, sat, fade, reverb, echo, grains, click, reverse, dcBlock } from './dsp.mjs';
 
 // ——— khối dựng ———
 /** Tiếng thịch: sin trượt cao độ f0 → f1, tắt dần. */
 const thump = (f0, f1, dur, tau = 0.18) => mul(osc(dur, (t) => f1 + (f0 - f1) * Math.exp(-t / (dur * tau))), envAD(dur, 0.0015, dur * 0.28));
+/** Thịch nghe được cả trên loa điện thoại (loa nhỏ gần như không phát dưới ~200 Hz): thân trượt từ f0 (≥ 250 Hz) xuống f1 + hoạ âm do
+ *  bão hoà + tiếng "bộp" nhiễu dải giữa quanh `mid` + nứt cao. Dùng chồng lên thịch trầm (thump) ở các tiếng va đập nặng. */
+const punch = (r, f0, f1, dur, mid = 520) => sat(mix(dur, [thump(f0, f1, dur, 0.2), 1], [mul(bp(white(dur, r), mid, 0.8), envAD(dur, 0.0006, Math.min(0.05, dur * 0.2))), 0.7], [crack(r, mid * 3.2, Math.min(0.05, dur * 0.4), 1), 0.35]), 2.2);
 /** Tiếng nứt / vỗ: nhiễu trắng lọc dải, tắt rất nhanh. */
 const crack = (r, f = 2600, dur = 0.07, q = 0.9) => mul(bp(white(dur, r), f, q), envAD(dur, 0.0004, dur * 0.18));
 /** Tiếng vút: nhiễu lọc dải tâm quét f0 → f1 (đỉnh lúc pk) → f2, bao hình chuông. */
@@ -25,10 +28,11 @@ const metal = (base, dur, dk = 1, r = rng(13)) => modal(dur, [[base, 0.6, 0.25 *
 const wood = (base, dur, r = rng(14)) => modal(dur, [[base, 1, 0.05], [base * 2.57, 0.5, 0.03], [base * 4.1, 0.3, 0.018], [base * 6.2, 0.15, 0.01]], { r });
 /** Bong bóng nước: sin cao độ đi lên nhanh, tắt nhanh. */
 const bubble = (r, f, d = 0.05) => mul(osc(d, (t) => f * (1 + 2.2 * t / d)), envAD(d, 0.001, d * 0.25));
-/** Trống taiko: màng trống (thịch trầm) + tiếng đập (nhiễu trầm) + vành. */
+/** Trống taiko: màng trống (thịch trầm) + tiếng đập (nhiễu trầm) + vành + cộng hưởng mặt trống (250–600 Hz: loa điện thoại vẫn phát). */
 function taiko(r, f = 62, dur = 1.1, hard = 1) {
   const skin = thump(f * 2.6, f, dur, 0.06), body = mul(lp(white(dur, r), 380, 0.8), envAD(dur, 0.001, 0.07)), slap = crack(r, 1200, 0.05, 0.7);
-  return sat(mix(dur, [skin, 1], [body, 0.6 * hard], [slap, 0.25 * hard]), 1.6);
+  const head = modal(Math.min(dur, 0.5), [[f * 4.1, 0.6, 0.12], [f * 6.3, 0.4, 0.08], [f * 8.7, 0.25, 0.05]], { r });
+  return sat(mix(dur, [skin, 1], [body, 0.6 * hard], [slap, 0.45 * hard], [head, 0.5]), 1.8);
 }
 /** Kèn đồng (dàn saw lệch tông, lọc thông thấp có bao hình độ sáng). notes: MIDI; bright: Hz đỉnh. */
 function brass(notes, dur, { a = 0.03, bright = 2600, d = 0.6, sustain = 0.55, r = rng(21) } = {}) {
@@ -78,10 +82,14 @@ export const BANK = {
   ui_reward: { cat: 'ui', build: (r) => hall(mix(1.1, ...[0, 1, 2, 3, 4, 5].map((i) => [coinTone(r, 2600 + i * 180), 0.35, i * 0.06]), [sparkle(r, 1.0, 26, 3000, 2), 0.6], [chime(2093, 0.8, 0.8, r), 0.3, 0.32]), 0.22, 0.7, 0.8) },
   ui_found: { cat: 'sting', build: (r) => hall(mix(1.9, [taiko(r, 58, 1.2), 0.9], [taiko(r, 66, 1.0, 0.7), 0.6, 0.18], [brass([62, 66, 69, 74], 1.6, { a: 0.04, bright: 3200, d: 0.5, r }), 0.55, 0.18], [bell(587, 1.6, 1, r), 0.3, 0.18], [cymbal(r, 1.4), 0.25, 0.18], [sparkle(r, 1.2, 18, 2600, 2), 0.5, 0.25]), 0.28, 0.85, 1.2) },
   ui_lock: { cat: 'sting', build: (r) => hall(mix(1.6, [thump(160, 38, 0.9, 0.12), 1], [crack(r, 1800, 0.08, 0.8), 0.5], [metal(1450, 1.2, 1.4, r), 0.35, 0.01], [whoosh(r, 0.25, 4000, 1500, 600, { air: 0.5 }), 0.3], [choir([62, 69, 74], 1.4, { a: 0.08, r }), 0.25, 0.05], [sparkle(r, 1.1, 22, 2200, 2.5), 0.5, 0.08]), 0.25, 0.8, 1.0) },
-  ui_vs: { cat: 'sting', build: (r) => hall(mix(2.4, [riser(r, 0.9, 400, 7000), 0.55], [thump(120, 34, 1.4, 0.1), 1, 0.9], [crack(r, 1500, 0.12, 0.7), 0.7, 0.9], [cymbal(r, 1.5), 0.35, 0.9], [brass([50, 57, 62, 65], 1.3, { a: 0.02, bright: 2400, d: 0.4, r }), 0.5, 0.9], [debris(r, 0.8, 120), 0.4, 0.95]), 0.3, 0.88, 1.4) },
+  ui_vs: { cat: 'sting', build: (r) => hall(mix(2.4, [riser(r, 0.9, 400, 7000), 0.55], [thump(120, 34, 1.4, 0.1), 0.55, 0.9], [punch(r, 280, 70, 0.8, 420), 0.8, 0.9], [crack(r, 1500, 0.12, 0.7), 0.7, 0.9], [cymbal(r, 1.5), 0.35, 0.9], [brass([50, 57, 62, 65], 1.3, { a: 0.02, bright: 2400, d: 0.4, r }), 0.5, 0.9], [debris(r, 0.8, 120), 0.4, 0.95]), 0.3, 0.88, 1.4) },
   match_start: { cat: 'sting', build: (r) => {
-    const horn = mul(lp(ensemble(2.6, (t) => midi(45) * (1 + 0.006 * Math.sin(t * 31)) * (t < 0.25 ? 0.94 + 0.06 * t / 0.25 : 1), { type: 'saw', voices: 6, detune: 7, r }), (t) => 500 + 900 * Math.min(1, t / 0.5) * Math.exp(-Math.max(0, t - 1.6) * 3), 0.8), envPts(2.6, [[0, 0], [0.25, 0.9], [1.7, 1], [2.5, 0]]));
-    return hall(mix(3.2, [horn, 0.75], [taiko(r, 55, 1.2), 0.9, 0.05], [taiko(r, 55, 1.2), 0.7, 0.62], [taiko(r, 70, 1.0, 0.8), 0.6, 1.0], [taiko(r, 50, 1.6, 1.2), 1, 1.9], [cymbal(r, 1.6), 0.3, 1.9]), 0.32, 0.9, 1.6);
+    const horn = mul(lp(ensemble(2.6, (t) => midi(50) * (1 + 0.006 * Math.sin(t * 31)) * (t < 0.25 ? 0.94 + 0.06 * t / 0.25 : 1), { type: 'saw', voices: 6, detune: 7, r }), (t) => 500 + 900 * Math.min(1, t / 0.5) * Math.exp(-Math.max(0, t - 1.6) * 3), 0.8), envPts(2.6, [[0, 0], [0.25, 0.9], [1.7, 1], [2.5, 0]]));
+    return hall(mix(3.2, [horn, 0.85], [taiko(r, 55, 1.2), 0.65, 0.05], [taiko(r, 55, 1.2), 0.5, 0.62], [taiko(r, 70, 1.0, 0.8), 0.5, 1.0], [taiko(r, 50, 1.6, 1.2), 0.75, 1.9], [cymbal(r, 1.6), 0.35, 1.9]), 0.32, 0.9, 1.6);
+  } },
+  horn: { cat: 'sting', build: (r) => { // tù và báo lính ra trận (đợt lính đầu tiên)
+    const tone = (m, d) => mul(lp(ensemble(d, (t) => midi(m) * (1 + 0.005 * Math.sin(t * 29)) * (t < 0.3 ? 0.95 + 0.05 * t / 0.3 : 1), { type: 'saw', voices: 5, detune: 6, r }), (t) => 420 + 1300 * Math.min(1, t / 0.6) * Math.exp(-Math.max(0, t - 1.3) * 2.5), 0.8), envPts(d, [[0, 0], [0.3, 0.85], [1.4, 1], [d, 0]]));
+    return hall(mix(2.8, [formant(tone(50, 2.3), [[520, 3, 1], [1150, 4, 0.7], [2500, 5, 0.25]]), 0.9], [tone(57, 2.1), 0.3, 0.12], [taiko(r, 62, 1.3, 0.8), 0.6, 0.05]), 0.34, 0.9, 1.4);
   } },
   victory: { cat: 'sting', build: (r) => {
     const ch = [[60, 64, 67, 72], [65, 69, 72, 77], [67, 71, 74, 79], [72, 76, 79, 84]], t = [0, 0.32, 0.64, 1.0];
@@ -90,7 +98,7 @@ export const BANK = {
   } },
   defeat: { cat: 'sting', build: (r) => {
     const pad = (n, d) => mul(lp(ensemble(d, midi(n), { type: 'saw', voices: 5, detune: 10, r }), 700, 0.7), envAD(d, 0.35, d * 0.5, { sustain: 0.5 }));
-    return hall(mix(4.0, [pad(45, 3.4), 0.5], [pad(48, 3.4), 0.35], [pad(52, 3.4), 0.3], [pad(41, 2.2), 0.4, 1.3], [taiko(r, 46, 1.8, 0.8), 0.9], [taiko(r, 42, 2.0, 0.7), 0.7, 1.3], [bell(220, 3.0, 1.4, r), 0.25, 0.05]), 0.36, 0.92, 2.0);
+    return hall(mix(4.0, [pad(57, 3.4), 0.45], [pad(60, 3.4), 0.32], [pad(64, 3.4), 0.28], [pad(45, 3.4), 0.3], [pad(53, 2.2), 0.4, 1.3], [taiko(r, 46, 1.8, 0.8), 0.6], [taiko(r, 42, 2.0, 0.7), 0.5, 1.3], [bell(440, 3.0, 1.4, r), 0.3, 0.05]), 0.36, 0.92, 2.0);
   } },
 
   // ——— vung / bắn (đánh thường) ———
@@ -102,13 +110,13 @@ export const BANK = {
   tower_shot: { cat: 'combat', build: (r) => room(mix(0.55, [mul(fm(0.45, (t) => 180 * 1.9 ** (t / 0.12), 2.01, (t) => 2.5 * Math.exp(-t * 6)), envPts(0.45, [[0, 0], [0.08, 1], [0.45, 0]])), 0.5], [whoosh(r, 0.4, 700, 3600, 1800, { q: 1.8, pk: 0.3, air: 0.5 }), 0.55], [crack(r, 2200, 0.05, 1), 0.3]), 0.2, 0.6) },
 
   // ——— trúng đòn ———
-  hit_flesh: { cat: 'combat', build: (r) => room(sat(mix(0.2, [thump(150, 58, 0.16, 0.25), 1], [crack(r, 1800, 0.06, 0.9), 0.65], [mul(lp(white(0.12, r), 700, 0.8), envAD(0.12, 0.001, 0.03)), 0.45], [click(r, 6000, 1, 0.0015, 0.01), 0.3]), 1.8), 0.12) },
+  hit_flesh: { cat: 'combat', build: (r) => room(sat(mix(0.22, [thump(160, 60, 0.16, 0.25), 0.55], [thump(420, 140, 0.09, 0.3), 0.6], [mul(bp(white(0.14, r), 620, 0.75), envAD(0.14, 0.0006, 0.024)), 0.9], [crack(r, 1900, 0.06, 0.9), 0.55], [click(r, 5200, 1, 0.0015, 0.01), 0.3]), 2.1), 0.12) },
   hit_slash: { cat: 'combat', build: (r) => room(mix(0.32, [sat(mix(0.16, [thump(160, 62, 0.14, 0.22), 0.8], [crack(r, 2400, 0.05, 1), 0.6]), 1.6), 1], [metal(2350, 0.3, 0.8, r), 0.28, 0.004], [whoosh(r, 0.1, 5000, 2600, 1200, { q: 1.5, pk: 0.15, noise: 'white' }), 0.35]), 0.12) },
   hit_armor: { cat: 'combat', build: (r) => room(mix(0.45, [metal(820, 0.45, 1, r), 0.6], [crack(r, 3200, 0.04, 1.2), 0.6], [thump(120, 70, 0.12, 0.3), 0.5], [debris(r, 0.25, 70), 0.35, 0.01]), 0.15) },
   hit_magic: { cat: 'combat', build: (r) => room(mix(0.32, [mul(fm(0.18, (t) => 1600 * 0.22 ** (t / 0.18), 2.7, (t) => 4 * Math.exp(-t * 18)), envAD(0.18, 0.001, 0.05)), 0.45], [mul(hp(white(0.25, r), 3500, 0.7), mul(envAD(0.25, 0.001, 0.06), osc(0.25, 43, 'sqr').map((v) => 0.6 + 0.4 * v))), 0.35], [thump(130, 55, 0.14, 0.25), 0.6], [sparkle(r, 0.2, 60, 3200, 2), 0.4]), 0.16) },
   hit_true: { cat: 'combat', build: (r) => room(mix(0.4, [modal(0.4, [[1760, 0.6, 0.18], [2637, 0.45, 0.14], [3520, 0.3, 0.1], [4699, 0.22, 0.07], [6271, 0.12, 0.05]], { r }), 0.55], [crack(r, 5200, 0.03, 1.5), 0.55], [thump(140, 60, 0.12, 0.25), 0.45]), 0.16) },
   hit_crit: { cat: 'combat', build: (r) => hall(mix(0.6, [sat(mix(0.35, [thump(180, 42, 0.32, 0.15), 1], [crack(r, 1600, 0.09, 0.7), 0.7], [mul(lp(white(0.2, r), 900), envAD(0.2, 0.001, 0.05)), 0.5]), 2.2), 1], [metal(1900, 0.5, 1.2, r), 0.35, 0.005], [whoosh(r, 0.14, 6000, 3000, 1000, { q: 1.4, pk: 0.1, noise: 'white' }), 0.4], [sparkle(r, 0.35, 50, 2800, 2.2), 0.45, 0.02]), 0.14, 0.6, 0.5) },
-  hit_minion: { cat: 'minor', build: (r) => mix(0.1, [thump(180, 90, 0.08, 0.3), 0.7], [crack(r, 2600, 0.04, 1.1), 0.5]) },
+  hit_minion: { cat: 'minor', build: (r) => mix(0.12, [thump(380, 150, 0.08, 0.3), 0.6], [mul(bp(white(0.08, r), 800, 0.9), envAD(0.08, 0.0005, 0.015)), 0.5], [crack(r, 2600, 0.04, 1.1), 0.5]) },
   tower_hit: { cat: 'combat', build: (r) => room(sat(mix(0.6, [thump(130, 40, 0.45, 0.14), 1], [crack(r, 1400, 0.1, 0.7), 0.6], [mul(fm(0.35, (t) => 900 * 0.3 ** (t / 0.35), 1.41, 3), envAD(0.35, 0.002, 0.08)), 0.3], [sparkle(r, 0.4, 40, 2400, 2), 0.4]), 1.5), 0.2, 0.65) },
 
   // ——— chiêu theo nguyên tố (tung chiêu / trúng) ———
@@ -124,10 +132,11 @@ export const BANK = {
   light_hit: { cat: 'skill', build: (r) => hall(mix(0.9, [bell(880, 0.8, 0.8, r), 0.45], [thump(140, 55, 0.25, 0.2), 0.6], [crack(r, 3800, 0.04, 1.2), 0.4], [sparkle(r, 0.6, 70, 2800, 2.4), 0.7, 0.01]), 0.22, 0.75, 0.7) },
   arcane_cast: { cat: 'skill', build: (r) => room(mix(0.6, [mul(fm(0.5, (t) => 300 * 2.6 ** (t / 0.5), 1.5, (t) => 2 + 3 * Math.sin(Math.PI * t / 0.5)), envBell(0.5, 0.3)), 0.4], [whoosh(r, 0.45, 600, 3000, 1400, { q: 1.6, air: 0.4 }), 0.6], [sparkle(r, 0.5, 30, 2200, 2.2), 0.45]), 0.18) },
   arcane_hit: { cat: 'skill', build: (r) => room(mix(0.55, [mul(fm(0.35, (t) => 1200 * 0.25 ** (t / 0.35), 2.4, (t) => 5 * Math.exp(-t * 9)), envAD(0.35, 0.001, 0.08)), 0.45], [thump(130, 48, 0.25, 0.18), 0.7], [mul(hp(white(0.3, r), 2600), envAD(0.3, 0.001, 0.06)), 0.3], [sparkle(r, 0.35, 50, 2600, 2.2), 0.4]), 0.18) },
-  earth_hit: { cat: 'skill', build: (r) => hall(mix(1.1, [sat(thump(95, 30, 0.7, 0.1), 2), 1], [mul(lp(brown(0.6, r), 600, 0.8), envAD(0.6, 0.002, 0.15)), 0.8], [debris(r, 1.0, (t) => 200 * Math.exp(-t * 3)), 0.6, 0.02], [crack(r, 900, 0.1, 0.6), 0.5]), 0.18, 0.75, 0.7) },
-  ult_cast: { cat: 'skill', build: (r) => hall(mix(1.6, [thump(70, 26, 1.2, 0.14), 0.9], [mul(lp(brown(1.4, r), (t) => 200 + 900 * Math.exp(-t * 2), 0.8), envAD(1.4, 0.005, 0.35)), 0.6], [riser(r, 0.35, 800, 6000), 0.25], [choir([50, 57, 62], 1.4, { a: 0.05, r }), 0.25], [cymbal(r, 1.2), 0.18, 0.02]), 0.3, 0.88, 1.2) },
+  earth_hit: { cat: 'skill', low: 100, build: (r) => hall(mix(1.1, [punch(r, 260, 60, 0.6, 380), 1], [sat(thump(95, 30, 0.7, 0.1), 2), 0.3], [mul(bp(brown(0.6, r), 500, 0.6), envAD(0.6, 0.002, 0.15)), 0.7], [debris(r, 1.0, (t) => 200 * Math.exp(-t * 3)), 0.7, 0.02], [crack(r, 900, 0.1, 0.6), 0.5]), 0.18, 0.75, 0.7) },
+  earth_cast: { cat: 'skill', low: 100, build: (r) => room(mix(0.8, [mul(bp(brown(0.75, r), (t) => 220 + 600 * Math.sin(Math.PI * Math.min(1, t / 0.6)), 0.8), envBell(0.75, 0.45)), 1], [debris(r, 0.7, (t) => 60 + 140 * Math.sin(Math.PI * t / 0.7)), 0.6], [whoosh(r, 0.4, 250, 1100, 350, { q: 1.2, pk: 0.6, air: 0.2 }), 0.5, 0.25], [punch(r, 300, 90, 0.3, 420), 0.6, 0.5]), 0.18) },
+  ult_cast: { cat: 'skill', low: 100, build: (r) => hall(mix(1.6, [thump(70, 26, 1.2, 0.14), 0.3], [punch(r, 240, 70, 0.7, 360), 0.9], [mul(bp(brown(1.4, r), (t) => 300 + 900 * Math.exp(-t * 2), 0.7), envAD(1.4, 0.005, 0.35)), 0.6], [riser(r, 0.35, 800, 6000), 0.3], [choir([57, 62, 69], 1.4, { a: 0.05, r }), 0.4], [cymbal(r, 1.2), 0.2, 0.02]), 0.3, 0.88, 1.2) },
   dash: { cat: 'skill', build: (r) => whoosh(r, 0.24, 600, 3200, 900, { q: 1.4, pk: 0.35, air: 0.5 }) },
-  slam: { cat: 'skill', build: (r) => hall(mix(1.0, [sat(thump(100, 28, 0.7, 0.1), 2.2), 1], [crack(r, 1100, 0.1, 0.6), 0.6], [debris(r, 0.9, (t) => 220 * Math.exp(-t * 3.5)), 0.6, 0.02], [mul(lp(white(0.5, r), 500), envAD(0.5, 0.002, 0.1)), 0.5]), 0.2, 0.75, 0.7) },
+  slam: { cat: 'skill', low: 100, build: (r) => hall(mix(1.0, [punch(r, 300, 70, 0.55, 420), 0.9], [sat(thump(100, 28, 0.7, 0.1), 2.2), 0.45], [crack(r, 1100, 0.1, 0.6), 0.6], [debris(r, 0.9, (t) => 220 * Math.exp(-t * 3.5)), 0.7, 0.02], [mul(bp(white(0.5, r), 450, 0.7), envAD(0.5, 0.002, 0.1)), 0.5]), 0.2, 0.75, 0.7) },
 
   // ——— phép bổ trợ / trạng thái ———
   blink: { cat: 'skill', build: (r) => room(mix(0.5, [mul(fm(0.35, (t) => 2400 * 0.18 ** (t / 0.35), 1.5, 2.5), envAD(0.35, 0.002, 0.08)), 0.4], [whoosh(r, 0.3, 4000, 2000, 600, { q: 1.8, pk: 0.15, air: 0.5, noise: 'white' }), 0.6], [sparkle(r, 0.4, 50, 3000, 2), 0.5, 0.05]), 0.2) },
@@ -153,20 +162,20 @@ export const BANK = {
   orb: { cat: 'econ', build: (r) => hall(mix(0.8, [grains(0.4, (t) => 90 * Math.exp(-t * 6), (rr) => gain(bubble(rr, 600 + rr() * 900), 0.3), r), 0.6], [chime(1047, 0.7, 0.9, r), 0.3, 0.05], [chime(1568, 0.6, 0.8, r), 0.25, 0.12], [sparkle(r, 0.6, 24, 2200, 2.4), 0.45, 0.05]), 0.24, 0.78, 0.7) },
 
   // ——— chết / mục tiêu ———
-  death_hero: { cat: 'combat', build: (r) => hall(mix(1.2, [thump(110, 35, 0.6, 0.15), 0.9], [mul(lp(brown(0.9, r), 500), envAD(0.9, 0.005, 0.2)), 0.5], [mul(osc(1.0, (t) => 330 * 0.5 ** (t / 0.9), 'tri'), envAD(1.0, 0.01, 0.3)), 0.15], [choir([45, 52], 1.0, { a: 0.03, r }), 0.15]), 0.28, 0.85, 1.0) },
-  death_minion: { cat: 'minor', build: (r) => mix(0.3, [thump(130, 60, 0.18, 0.25), 0.7], [debris(r, 0.25, 90), 0.35]) },
+  death_hero: { cat: 'combat', low: 100, build: (r) => hall(mix(1.3, [punch(r, 280, 70, 0.5, 420), 0.85], [thump(110, 38, 0.6, 0.15), 0.4], [mul(lp(brown(0.9, r), 900), envAD(0.9, 0.005, 0.22)), 0.35], [mul(osc(1.1, (t) => 660 * 0.5 ** (t / 0.9) * (1 + 0.012 * Math.sin(t * 31)), 'tri'), envAD(1.1, 0.01, 0.35)), 0.2], [choir([57, 64], 1.1, { a: 0.04, r }), 0.22], [whoosh(r, 0.6, 2400, 900, 300, { q: 1.2, pk: 0.15, air: 0.3 }), 0.22, 0.04]), 0.28, 0.85, 1.0) },
+  death_minion: { cat: 'minor', build: (r) => mix(0.34, [punch(r, 320, 110, 0.2, 480), 0.7], [debris(r, 0.3, 90), 0.4, 0.02], [crack(r, 1500, 0.05, 0.8), 0.25]) },
   death_monster: { cat: 'combat', build: (r) => hall(mix(1.0, [mul(lp(sat(mix(0.9, [osc(0.9, (t) => 95 * 0.6 ** (t / 0.9), 'saw'), 0.8], [brown(0.9, r), 0.5]), 2), (t) => 900 * Math.exp(-t * 2.5) + 150, 1.2), envAD(0.9, 0.04, 0.3)), 1], [thump(90, 34, 0.5, 0.15), 0.6, 0.15]), 0.24, 0.8, 0.8) },
   boss_roar: { cat: 'sting', build: (r) => hall(mix(1.8, [mul(formant(sat(mix(1.6, [osc(1.6, (t) => 70 + 25 * Math.sin(Math.PI * t / 1.6) + 6 * Math.sin(t * 40), 'saw'), 1], [brown(1.6, r), 0.8]), 2.5), [[400, 4, 1], [900, 5, 0.8], [2400, 6, 0.4]]), envPts(1.6, [[0, 0], [0.15, 1], [1.1, 0.8], [1.6, 0]])), 1], [thump(80, 28, 0.9, 0.12), 0.7]), 0.32, 0.9, 1.3) },
-  tower_down: { cat: 'sting', build: (r) => hall(mix(2.6, [sat(thump(85, 24, 1.2, 0.1), 2.4), 1], [mul(lp(brown(2.2, r), (t) => 1200 * Math.exp(-t * 1.5) + 150, 0.8), envAD(2.2, 0.005, 0.5)), 0.9], [debris(r, 2.4, (t) => 300 * Math.exp(-t * 1.4)), 0.7, 0.05], [crack(r, 900, 0.15, 0.6), 0.6], [metal(410, 1.6, 2, r), 0.2, 0.02]), 0.3, 0.88, 1.5) },
+  tower_down: { cat: 'sting', low: 100, build: (r) => hall(mix(2.6, [sat(thump(85, 24, 1.2, 0.1), 2.4), 0.4], [punch(r, 240, 60, 1.0, 330), 1], [mul(bp(brown(2.2, r), (t) => 1400 * Math.exp(-t * 1.5) + 250, 0.6), envAD(2.2, 0.005, 0.5)), 0.9], [debris(r, 2.4, (t) => 300 * Math.exp(-t * 1.4)), 0.85, 0.05], [crack(r, 900, 0.15, 0.6), 0.6], [metal(410, 1.6, 2, r), 0.25, 0.02]), 0.3, 0.88, 1.5) },
 
   // ——— thông báo hạ gục (nhạc ngắn) ———
   ann_ally: { cat: 'sting', build: (r) => hall(mix(1.2, [taiko(r, 70, 0.9), 0.8], [crack(r, 2000, 0.06, 0.8), 0.3], [chime(1175, 0.9, 0.9, r), 0.3, 0.04], [chime(1760, 0.8, 0.9, r), 0.25, 0.1], [sparkle(r, 0.8, 22, 2400, 2.3), 0.45, 0.05]), 0.25, 0.8, 0.9) },
-  ann_enemy: { cat: 'sting', build: (r) => hall(mix(1.3, [taiko(r, 52, 1.1), 0.9], [brass([46, 49, 53], 1.0, { a: 0.03, bright: 1600, d: 0.4, r }), 0.45, 0.02], [bell(233, 1.1, 1, r), 0.18, 0.02]), 0.28, 0.85, 1.0) },
-  ann_first: { cat: 'sting', build: (r) => hall(mix(1.8, [taiko(r, 62, 1.0), 0.8], [taiko(r, 54, 1.3, 1.2), 1, 0.16], [brass([55, 62, 67, 71], 1.4, { a: 0.02, bright: 3000, d: 0.5, r }), 0.55, 0.16], [cymbal(r, 1.3), 0.3, 0.16], [sparkle(r, 1.2, 22, 2400, 2.3), 0.5, 0.2]), 0.3, 0.87, 1.2) },
-  ann_multi: { cat: 'sting', build: (r) => hall(mix(2.0, [taiko(r, 66, 0.8, 0.8), 0.7], [taiko(r, 66, 0.8, 0.8), 0.7, 0.11], [taiko(r, 52, 1.4, 1.3), 1, 0.22], [brass([57, 64, 69, 73, 76], 1.6, { a: 0.02, bright: 3600, d: 0.55, r }), 0.6, 0.22], [cymbal(r, 1.5), 0.35, 0.22], [choir([69, 73, 76], 1.6, { a: 0.1, r }), 0.25, 0.25], [sparkle(r, 1.4, 30, 2400, 2.4), 0.55, 0.25]), 0.32, 0.88, 1.4) },
+  ann_enemy: { cat: 'sting', build: (r) => hall(mix(1.3, [taiko(r, 66, 1.1), 0.85], [brass([58, 61, 65], 1.0, { a: 0.03, bright: 2000, d: 0.4, r }), 0.55, 0.02], [bell(466, 1.1, 1, r), 0.2, 0.02]), 0.28, 0.85, 1.0) },
+  ann_first: { cat: 'sting', build: (r) => hall(mix(1.8, [taiko(r, 62, 1.0), 0.55], [taiko(r, 54, 1.3, 1.2), 0.7, 0.16], [brass([55, 62, 67, 71], 1.4, { a: 0.02, bright: 3200, d: 0.5, r }), 0.8, 0.16], [cymbal(r, 1.3), 0.3, 0.16], [sparkle(r, 1.2, 22, 2400, 2.3), 0.5, 0.2]), 0.3, 0.87, 1.2) },
+  ann_multi: { cat: 'sting', build: (r) => hall(mix(2.0, [taiko(r, 66, 0.8, 0.8), 0.55], [taiko(r, 66, 0.8, 0.8), 0.55, 0.11], [taiko(r, 52, 1.4, 1.3), 0.75, 0.22], [brass([57, 64, 69, 73, 76], 1.6, { a: 0.02, bright: 3600, d: 0.55, r }), 0.8, 0.22], [cymbal(r, 1.5), 0.35, 0.22], [choir([69, 73, 76], 1.6, { a: 0.1, r }), 0.25, 0.25], [sparkle(r, 1.4, 30, 2400, 2.4), 0.55, 0.25]), 0.32, 0.88, 1.4) },
   ann_streak: { cat: 'sting', build: (r) => hall(mix(2.0, [riser(r, 0.4, 500, 6000), 0.3], [taiko(r, 48, 1.6, 1.3), 1, 0.38], [choir([50, 57, 62, 66], 1.6, { a: 0.06, r }), 0.4, 0.36], [brass([50, 57, 62], 1.4, { a: 0.03, bright: 2600, d: 0.6, r }), 0.45, 0.38], [cymbal(r, 1.4), 0.3, 0.38], [bell(587, 1.4, 1, r), 0.2, 0.38]), 0.34, 0.9, 1.5) },
-  ann_shutdown: { cat: 'sting', build: (r) => hall(mix(1.5, [whoosh(r, 0.2, 6000, 2500, 700, { q: 1.4, pk: 0.1, noise: 'white' }), 0.6], [sat(thump(110, 30, 0.9, 0.1), 2), 1, 0.08], [crack(r, 1300, 0.1, 0.6), 0.6, 0.08], [brass([45, 48, 52], 1.0, { a: 0.02, bright: 2000, d: 0.35, r }), 0.4, 0.08]), 0.3, 0.86, 1.1) },
-  ann_executed: { cat: 'sting', build: (r) => hall(mix(0.9, [taiko(r, 58, 0.8, 0.7), 0.7], [metal(620, 0.7, 1.2, r), 0.15]), 0.25, 0.8, 0.8) },
+  ann_shutdown: { cat: 'sting', build: (r) => hall(mix(1.5, [whoosh(r, 0.2, 6000, 2500, 700, { q: 1.4, pk: 0.1, noise: 'white' }), 0.6], [punch(r, 260, 60, 0.7, 400), 0.9, 0.08], [crack(r, 1300, 0.1, 0.6), 0.6, 0.08], [brass([57, 60, 64], 1.0, { a: 0.02, bright: 2400, d: 0.35, r }), 0.5, 0.08]), 0.3, 0.86, 1.1) },
+  ann_executed: { cat: 'sting', build: (r) => hall(mix(0.9, [taiko(r, 66, 0.8, 0.7), 0.7], [metal(620, 0.7, 1.2, r), 0.22], [brass([57, 60], 0.6, { a: 0.03, bright: 1600, d: 0.3, r }), 0.3]), 0.25, 0.8, 0.8) },
 };
 
 /** Một tiếng đồng xu: partial kim loại nhỏ, tần số cao, ngân ngắn. */

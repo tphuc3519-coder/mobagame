@@ -2,7 +2,7 @@
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
-import { gfxRows, gfxClick } from './gfxSettings.js';
+import { openSettings as openSettingsModal } from './settingsModal.js';
 import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
@@ -182,20 +182,9 @@ export function openBag() {
     <div class="pn-row">${icon('lantern')}<div><b>Đèn lồng may mắn ×3</b><small>Dùng trong sự kiện Lễ Hội Đèn Lồng (sắp mở).</small></div></div>`;
 }
 
+/** Cài đặt (sảnh): bảng Cài đặt kiểu Liên Quân dùng chung với trong trận (ui/settingsModal.js) — đổi là lưu, áp dụng khi vào trận. */
 export function openSettings() {
-  css(); const { body } = panel({ title: 'Cài đặt' });
-  const g = loadGfx('');
-  const draw = () => {
-    body.innerHTML = `<div class="pn-set"><h3 class="pn-sub">Đồ hoạ</h3>${gfxRows(g)}
-      <p class="pn-note">Điện thoại còn giật: chọn mức Thấp hoặc Vừa, Khung hình 30, hoặc bật Tự giảm khi giật. Trong trận đổi ở nút bánh răng góc phải (áp dụng ngay).</p>
-      <h3 class="pn-sub">Khác</h3><div class="row"><span>Dữ liệu người chơi</span><button type="button" class="btn-ghost" data-a="reset">Xoá & bắt đầu lại</button></div>
-      <p class="pn-note">Vị trí cửa hàng trong trận: nút bánh răng góc phải khi đang chơi.</p></div>`;
-  };
-  draw();
-  body.onclick = (e) => {
-    if (gfxClick(e, g)) { draw(); toast('Đã lưu — áp dụng khi vào trận'); return; }
-    if (e.target.closest('[data-a="reset"]')) dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] });
-  };
+  const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); } });
 }
 
 /** Sự kiện Lễ Hội Đèn Lồng: điểm danh 7 ngày, mỗi ngày nhận một phần quà vàng. */
