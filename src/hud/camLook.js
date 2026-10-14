@@ -1,7 +1,12 @@
 // Điều khiển góc nhìn (như Liên Quân):
-// - Giữ/rê ngón trên bản đồ nhỏ: camera nhảy tới chỗ đó, thả tay thì trượt về tướng.
+// - Giữ/rê ngón trên bản đồ nhỏ: camera nhảy tới chỗ đó, thả tay thì trượt về tướng (luôn có).
 // - Nút mắt bên phải (trên cụm kỹ năng) hoặc vuốt vùng trống nửa phải màn hình: kéo về hướng nào thì camera lệch về hướng đó
 //   (kéo càng xa nhìn càng xa, tối đa ~1 màn hình), thả tay thì về tướng. Vẫn chạy/ra chiêu bằng ngón khác được.
+// Cài đặt → Điều khiển (core/prefs.js, đổi giữa trận áp dụng ngay): camMode 'off' ẩn nút mắt + tắt vuốt (còn bản đồ nhỏ) | 'hold' chỉ nút mắt |
+// 'slide' nút mắt + vuốt (như cũ); camSpeed: kéo nhìn xa / trượt nhanh tới đâu (0,5 = như cũ); camAim (Góc quay theo định vị): đang ngắm
+// chiêu tầm xa (> 700) thì camera lệch dần về nửa đường tới chỗ ngắm (aimPad.js aimFocus), thả ra thì về tướng.
+import { pref, onPref } from '../core/prefs.js';
+import { aimFocus } from './aimPad.js';
 const EYE = '<svg viewBox="0 0 32 32"><path d="M3 16c3.5-5.5 8-8.5 13-8.5S25.5 10.5 29 16c-3.5 5.5-8 8.5-13 8.5S6.5 21.5 3 16z" fill="none" stroke="#f3e9d6" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="4.6" fill="#ffd27a"/><circle cx="16" cy="16" r="1.9" fill="#1a1200"/></svg>';
 const MAX_X = 1700, MAX_Z = 1300; // độ lệch tối đa (đơn vị thế giới) — đủ thấy "đoạn sau" ngoài mép màn hình
 
@@ -30,15 +35,18 @@ export function createCamLook({ minimap, map }) {
   };
   btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (start(e, btn, 90)) btn.classList.add('on'); });
   const world3d = document.getElementById('world');
-  // vùng trống nửa phải (chạm trúng nền 3D, không trúng nút nào): vuốt để nhìn
-  document.body.addEventListener('pointerdown', (e) => { if (e.target === world3d && e.clientX > innerWidth * 0.5) start(e, document.body, 170); });
+  // vùng trống nửa phải (chạm trúng nền 3D, không trúng nút nào): vuốt để nhìn — chỉ khi camMode = 'slide'
+  document.body.addEventListener('pointerdown', (e) => { if (e.target === world3d && e.clientX > innerWidth * 0.5 && pref('camMode') === 'slide') start(e, document.body, 170); });
   const move = (e) => { if (e.pointerId !== drag.id) return; drag.x = e.clientX; drag.y = e.clientY; };
-  const up = (e) => { if (e.pointerId !== drag.id) return; drag.id = null; btn.classList.remove('on'); knob.style.transform = ''; };
+  const stop = () => { drag.id = null; btn.classList.remove('on'); knob.style.transform = ''; };
+  const up = (e) => { if (e.pointerId === drag.id) stop(); };
   for (const el of [btn, document.body]) { el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); }
   for (const t of ['pointerup', 'pointermove']) btn.addEventListener(t, (e) => e.stopPropagation());
-  const reset = () => { drag.id = null; mmId = null; peek = null; btn.classList.remove('on'); knob.style.transform = ''; };
+  const reset = () => { stop(); mmId = null; peek = null; };
   addEventListener('blur', reset);
   document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
+  const applyMode = () => { const m = pref('camMode'); btn.hidden = m === 'off'; if (drag.id !== null && (m === 'off' || (m === 'hold' && drag.src !== btn))) stop(); }; // đổi giữa lúc đang kéo: thôi kéo
+  applyMode(); onPref((k) => { if (k === 'camMode') applyMode(); });
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   return {
@@ -47,12 +55,15 @@ export function createCamLook({ minimap, map }) {
     /** Mục tiêu camera thay cho tướng, hoặc null. px/py: vị trí tướng (đã nội suy). */
     look(px, py) {
       if (peek) return { x: peek.x, z: peek.z, rate: 22 };
-      if (drag.id === null) return null;
+      if (drag.id === null) { // góc quay theo định vị: nhìn về nửa đường tới chỗ đang ngắm chiêu tầm xa (trượt chậm cho êm)
+        const f = pref('camAim') ? aimFocus() : null;
+        return f && f.range > 700 ? { x: clamp(px + (f.pt.x - px) * 0.5, 0, map.w), z: clamp(py + (f.pt.y - py) * 0.5, 0, map.h), rate: 5 } : null;
+      }
       let dx = drag.x - drag.ox, dy = drag.y - drag.oy; const l = Math.hypot(dx, dy);
       if (l > drag.R) { dx *= drag.R / l; dy *= drag.R / l; }
       if (drag.src === btn) knob.style.transform = `translate(${dx * 0.5}px, ${dy * 0.5}px)`;
-      const k = 1 / drag.R; // hướng màn hình: phải = +x, xuống = +z (camera nhìn từ phía nam)
-      return { x: clamp(px + dx * k * MAX_X, 0, map.w), z: clamp(py + dy * k * MAX_Z, 0, map.h), rate: 10 };
+      const s = 0.5 + pref('camSpeed'), k = s / drag.R; // hướng màn hình: phải = +x, xuống = +z (camera nhìn từ phía nam); tốc độ 0 → ×0,5 … 1 → ×1,5
+      return { x: clamp(px + dx * k * MAX_X, 0, map.w), z: clamp(py + dy * k * MAX_Z, 0, map.h), rate: 10 * s };
     },
   };
 }

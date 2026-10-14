@@ -2,7 +2,7 @@
 import { T, dist } from './util.js';
 import { isHardCC, removeStatus, tauntSource, applyStatus } from './status.js';
 import { dealDamage } from './damage.js';
-import { nearestEnemy, isTargetable } from './targeting.js';
+import { nearestEnemy, isTargetable, pickByRule } from './targeting.js';
 import { canSee } from './vision.js';
 import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
@@ -87,7 +87,8 @@ export function updateCombat(world) {
     if (world.tick < e.attackReady || world.tick < (e.castUntil || 0)) continue; // đang ra chiêu: đòn đánh chờ chiêu phát ra xong (không giật mặt sang mục tiêu khác)
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
-    const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode) : nearestEnemy(world, e, range, e.preferTarget);
+    const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode)
+      : e.targetBy ? pickByRule(world, e, range, e.targetBy, e.preferTarget) : nearestEnemy(world, e, range, e.preferTarget); // targetBy: chỉ tướng người chơi (Cài đặt)
     if (!target) { // không có mục tiêu: tướng người chơi vẫn vung đòn vào khoảng không theo hướng đang nhìn (như Liên Quân)
       if (e.kind !== 'hero' || e.bot || forced || e.attackMode) continue; // nút ăn lính/đẩy trụ: không có mục tiêu đúng loại thì không vung
       const iv = 1 / e.stats.atkSpeed, delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);

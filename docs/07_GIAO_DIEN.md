@@ -187,6 +187,46 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Khi chết**: màn xám nhẹ, đồng hồ hồi sinh lớn ở giữa, vẫn mở được cửa hàng.
 - **Tạm dừng** (offline): nút ≡ → Tiếp tục / Cài đặt / Đầu hàng (5v5 sau 8:00) / Thoát.
 
+### 9.1 Cài đặt điều khiển trong trận
+Kho cài đặt `src/core/prefs.js` (bảng Cài đặt kiểu Liên Quân). Mọi mục đọc lúc dùng hoặc nghe `onPref` → đổi giữa trận áp dụng ngay.
+Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nút / ngón giữ lượt riêng: 5 ngón cùng lúc (cần + Đánh + kỹ năng + phép + camera) vẫn chạy.
+- **Lệnh di chuyển** `stick` (`hud/joystick.js`, vẽ ở `hud/hud.js`): `follow` — chạm bất kỳ ở 45% trái là cần dời tới chỗ chạm;
+  **mới**: kéo quá bán kính 90 px thì đế cần trượt theo ngón (đổi hướng không phải kéo ngược cả đoạn). `fixed` — đế đứng yên ở vị trí nghỉ
+  góc trái dưới, hướng = ngón − tâm đế (chạm chỗ nào trong 45% trái cũng được).
+- **Độ nhạy xoay chiêu** `aimSens` 0..1 (`hud/aimPad.js`): kéo hết tầm = 150 − 80 × độ nhạy px (0 → 150, 0,5 → 110 như cũ, 1 → 70); vòng
+  ngắm to/nhỏ theo. Dùng cho kỹ năng, phép có hướng và kéo nút Đánh.
+- **Vị trí xoay chiêu** `aimAt`: `button` vòng ngắm quanh tâm nút (như cũ) | `finger` tâm vòng ngắm ở chỗ ngón vừa chạm.
+- **Huỷ chiêu** `cancelBy`: `zone` kéo vào ô X góc phải (như cũ) | `distance` kéo ngón xa tâm vòng ngắm quá 1,6 × độ kéo hết tầm → vòng đỏ,
+  chỉ báo đỏ, chữ "Thả để huỷ" trên vòng; ô X ẩn.
+- **Phương pháp tung chiêu** `castMode`: `aim` kéo để ngắm, chạm nhanh tự ngắm (như cũ) | `auto` (Tân thủ) chạm xuống là ra chiêu tự ngắm,
+  không vòng ngắm. Không áp dụng cho phép bổ trợ.
+- **Hướng tốc biến** `flashDir` — Chớp Bước (và phép có hướng) chạm nhanh không kéo, kể cả phím F: `move` hướng đang chạy, đứng yên thì hướng
+  đang nhìn (gửi `aim: null`, mô phỏng tự chọn như cũ) | `skill` hướng của lần kéo ngắm kỹ năng / Chớp Bước gần nhất | `enemy` về phía tướng
+  địch thấy được gần nhất trong 1200. Không có thì như `move`. Mô tả khi giữ nút phép ghi cách đang dùng.
+- **Chế độ công chỉ định** `atkMode` (`hud/skillButtons.js`, `hud/atkTarget.js`): `farm` nút Đánh + Ăn lính + Đẩy trụ (như cũ) | `auto` chỉ
+  một nút Đánh (phím K/L vẫn dùng được) | `manual` (Tự chọn mục tiêu) chỉ nút Đánh; **chạm nhanh vào một địch trong cảnh 3D** để khoá: không
+  tính ngón đang là cần di chuyển (45% trái khi cần đang rảnh), chạm phải ngắn (< 0,45s, xê dịch < 14 px — kéo vẫn là vuốt camera nếu
+  `camMode` cho phép); chọn đơn vị địch thấy được có hình chiếu (đoạn chân → đỉnh) gần chỗ chạm nhất trong 60 px, theo camera lúc chạm xuống.
+  Chạm đất trống = bỏ khoá. Mục tiêu khoá đi kèm mọi lệnh đánh (`preferTarget`): mô phỏng đánh nó trước khi nó còn trong tầm. Tự bỏ khoá khi
+  mục tiêu chết / khuất / xa quá 1800, khi đổi `atkMode` hay tắt `preciseAtk`.
+- **Lựa chọn mục tiêu** `targetBy` — chỉ đòn đánh thường của tướng người chơi, tính trong mô phỏng: có tướng địch trong tầm đánh thì chọn
+  `pct` % máu thấp nhất | `hp` máu thấp nhất | `near` gần nhất (bằng nhau thì gần hơn); không có tướng nào thì như cũ (`nearestEnemy`: lính /
+  trụ / quái gần nhất). Mục tiêu khoá trong tầm luôn trước; nút Ăn lính / Đẩy trụ và khiêu khích không đổi. Gửi bằng lệnh
+  `{ type: 'targetBy', value }` lúc vào trận và mỗi lần đổi (`sim/commands.js` → `e.targetBy` → `sim/targeting.js pickByRule`); bot không
+  gửi nên trận toàn bot / băm tất định không đổi (`tools/t_target.mjs`). Mặc định `pct` = **mới**: trước đây không ưu tiên tướng.
+- **Đánh thường chính xác** `preciseAtk`: kéo nút Đánh → vòng ngắm như kỹ năng + vùng tầm đánh + 200 trên đất; địch gần hướng kéo nhất (lệch
+  ≤ 60°, trong tầm + 200) có dấu vàng, đang giữ thì đánh luôn nó khi nó trong tầm. Thả: khoá nó (như `manual`), nó trong tầm thì còn đánh tới
+  khi ra một đòn (tối đa một nhịp đánh); kéo về phía không có địch rồi thả = bỏ khoá; huỷ (ô X / kéo xa) như kỹ năng. Chạm / giữ không kéo như cũ.
+- **Hiển thị mục tiêu chỉ định** `targetMark` (`render/indicators.js mark`): vòng cam đứt nét xoay dưới mục tiêu đang bị đánh thường
+  (`swingTarget`, lúc giữ đánh / vừa vung). Mục tiêu khoá luôn có vòng đỏ 3 mũi chụm vào + mũi chữ V lơ lửng trên tên (phản hồi của việc chọn,
+  không phụ thuộc mục này); địch đang chọn khi kéo nút Đánh: cùng dấu, màu vàng.
+- **Camera** `camMode` (`hud/camLook.js`): `off` ẩn nút mắt + tắt vuốt (còn giữ bản đồ nhỏ) | `hold` chỉ nút mắt | `slide` nút mắt + vuốt vùng
+  trống nửa phải (như cũ). **Tốc độ camera** `camSpeed` 0..1: độ lệch tối đa và tốc độ trượt khi kéo × (0,5 + tốc độ) (0,5 = như cũ).
+- **Góc quay theo định vị** `camAim`: đang ngắm kỹ năng / Chớp Bước có tầm > 700 thì camera trượt dần về nửa đường tới chỗ ngắm; thả ra về tướng.
+- Nút kỹ năng (Cài đặt → Giao diện): **Thời gian hồi số thập phân** `cdDecimal` — số lẻ khi dưới 10s (như cũ), tắt thì làm tròn lên giây (cả
+  nút phép); **Miêu tả chiêu trong trận** `skillTips` — giữ yên nút kỹ năng ≥ 0,35s hiện mô tả (tên, cấp, `ui/skilltext.js`), thả ra không dùng
+  chiêu, kéo tiếp thì vẫn ngắm như thường (**mới**, mặc định bật; tắt = như cũ); **Miêu tả nút chiêu** `skillNames` — tên chiêu dưới K1–K3.
+
 ## 10. Kết quả trận
 - **Bước 1 – Chiến thắng / Thất bại**: chữ lớn đổ bóng + hiệu ứng (thắng: đèn trời bay lên, vàng; thua: mưa, xanh xám).
 - **Bước 2 – Bảng thống kê**: 2 đội, mỗi dòng: tướng, tên, K/D/A, sát thương gây ra, sát thương nhận, vàng, 6 ô đồ, **điểm trận** (0–16, xem `08`). Người MVP có nhãn "MVP" vàng; MVP đội thua có nhãn "MVP" bạc.
