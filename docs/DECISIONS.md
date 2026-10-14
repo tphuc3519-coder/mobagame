@@ -601,3 +601,9 @@
   trượt…), trừ "Lựa chọn mục tiêu" mặc định **% máu thấp nhất** như Liên Quân.
 - **Cài đặt đồ hoạ để riêng (`la.gfx`), cài đặt khác chung một kho (`la.prefs`)**: đồ hoạ có mức đặt sẵn + tự giảm khi giật đã ổn định;
   kho mới chỉ cần đọc / ghi / nghe thay đổi. Mô phỏng không đọc cài đặt — mục ảnh hưởng luật chơi đi qua lệnh như thao tác.
+- **Bụi bờ sông theo cặp đối xứng tâm (x, y) → (6400 − x, 6400 − y)**, không lấy ảnh x↔y như phần lớn bản đồ: bờ đối diện mỗi bụi là
+  một hang (Long Ngư / Hổ Lôi) và hai hang đối xứng tâm, nên bụi cũng phải vậy mới công bằng cho hai đội.
+- **Cột đá là đoạn tường dài 0** (va chạm tròn, cờ `pillar`): dùng lại va chạm / tầm nhìn / lưới tìm đường của tường, chỉ khác phần dựng
+  hình — không thêm loại vật cản mới vào mô phỏng.
+- **Bot chỉ tìm đường khi bị kẹt**, không tìm đường cho mọi bước đi: đi thẳng + lách công trình vẫn đúng ở gần như mọi chỗ và rẻ; A* chỉ
+  chạy khi muốn đi mà đứng yên ~0,5 giây và tường chắn thật (lưới `world.nav`).

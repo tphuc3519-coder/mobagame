@@ -143,9 +143,10 @@ chấm xanh lá (mờ khi đang chờ).
     ruộng — phía Xanh cung đá trại bùa đỏ chạm mép đường ngay cạnh ảnh cột nên cột lùi về tây, bệ mép đường ngắn hơn dự kiến.
   - Phía Xanh, bệ chắn đường Sông y = 5220 cắt còn x 3879 → 3994 (= 6400 − 2406, ảnh đầu bệ chắn đường Đền phía Đỏ) để không đè ảnh cột.
   - Không trồng cây trên/sát các bệ này (ruộng và các lối giữ thoáng).
-  - Lưu ý: tướng máy 5v5 (`ai/laneBot.js`) đi thẳng tới đích, chỉ lách công trình, không né tường — từ trong ruộng quay về chỗ đứng
-    trên đường ở phía tây có thể đứng ì sau bệ mép đường (như sau các bệ chắn đường cũ); muốn hết hẳn cần cho bot tìm đường theo
-    `world.nav` khi bị chặn.
+  - Tướng máy 5v5 (`ai/laneBot.js`) đi thẳng tới đích, chỉ lách công trình; **kẹt** (muốn đi mà gần như đứng yên ~0,5 giây) mà đường
+    thẳng tới đích bị tường chắn thì tìm đường vòng trên lưới `world.nav` (`sim/pathfind.js`) và đi theo tới khi thấy thẳng tới đích (bỏ
+    khi đích dời xa > 350 hoặc sau 8 giây). Trước đây bot có thể đứng ì sau bệ mép đường, bệ chắn đường cũ, vách hang, tường nhà chính:
+    4 trận 20 phút kẹt lâu nhất 287 giây → nay 11 giây.
 
 ### A9. Nhịp trận mục tiêu
 | Mốc | Sự kiện |

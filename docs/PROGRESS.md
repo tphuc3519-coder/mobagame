@@ -259,3 +259,18 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
   Thiết lập đồ hoạ · Điều khiển · Thiết lập giao diện · Thiết lập · Âm thanh · Dữ liệu; dùng chung sảnh và trong trận (trận: nút Đầu hàng
   ở chân bảng); đổi là lưu + áp dụng ngay. Danh sách đầy đủ: 07 §12. Các mục chỉ có ý nghĩa khi chơi trực tuyến (trò chuyện, mic, ping,
   like, nhận/đáp lỗi, tự từ chối đầu hàng, mạng WIFI + 3G/4G) không làm — game đang đấu với máy ngay trên điện thoại.
+- **Điều khiển theo cài đặt** (07 §9.1): cần di chuyển đi theo ngón (đế trượt theo khi kéo xa) / cố định, độ nhạy xoay chiêu, vòng ngắm quanh
+  nút / tại chỗ ngón chạm, huỷ chiêu bằng ô X / kéo xa, tung chiêu tự nhắm, hướng Chớp Bước (hướng chạy / hướng chiêu / về phía địch), chế
+  độ công chỉ định (một nút Đánh / thêm Ăn lính + Đẩy trụ / chạm vào địch để khoá), đánh thường chính xác, dấu mục tiêu, chế độ + tốc độ
+  camera, luật chọn mục tiêu (mặc định % máu thấp nhất — trước đây không ưu tiên tướng; tính trong mô phỏng qua lệnh `targetBy`, bot không
+  gửi nên trận toàn bot vẫn tất định như cũ).
+- **Giao diện / thiết lập theo cài đặt**: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, hồi
+  chiêu số thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, miêu tả chiêu (mặc định tắt), tên chiêu dưới nút; góc
+  camera gần / xa, độ sáng 5 mức, viền nhân vật, bảng hạ gục, sương mù.
+- **Bản đồ** (người chơi khoanh ô vàng / vùng xanh trên ảnh; "thêm bụi đối xứng cho cả map từ chỗ gần trụ 1"): bụi bờ sông đủ bốn cửa sông
+  cạnh trụ ngoài, đi theo cặp đối xứng tâm như hai hang; ruộng cạnh bụi bờ có dải bệ đá dọc mép bụi + bệ mép đường và **cột đá đèn lồng**
+  ở khe mép đường (03 — "Bản đang chạy").
+- **Tướng máy 5v5 tự gỡ kẹt** (`ai/laneBot.js`): muốn đi mà đứng yên ~0,5 giây và đường thẳng tới đích bị tường chắn → tìm đường vòng trên
+  lưới và đi theo tới khi thấy thẳng tới đích. 4 trận 20 phút (seed 1–4): kẹt lâu nhất 287 giây → 11 giây, tổng thời gian kẹt > 3 giây
+  809 → 98 giây. Bộ kiểm tra Node đều đạt (t_arena, t_bot, t_combat, t_determinism, t_items, t_jungle, t_kills, t_map, t_rank, t_restore,
+  t_target, simtest).
