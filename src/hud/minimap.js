@@ -2,6 +2,7 @@
 // Chưa có sương mù chiến trường nên hiện mọi đơn vị; sau này chỉ cần lọc theo tầm nhìn tại đây.
 import * as THREE from 'three';
 import { canSee } from '../sim/vision.js';
+import { prefs } from '../core/prefs.js';
 
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
@@ -97,7 +98,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
       // lính
       for (const e of ents) if (e.kind === 'minion' && e.alive) { ctx.fillStyle = col(e); ctx.fillRect(wx(e.pos.x) - 1, wy(e.pos.y) - 1, 2, 2); }
       // khung nhìn camera
-      const vp = viewPoly();
+      const vp = prefs().camFrame ? viewPoly() : null; // Cài đặt → Thiết lập giao diện → Khung camera
       if (vp) { ctx.strokeStyle = '#ffffffcc'; ctx.lineWidth = 1.2; ctx.beginPath(); vp.forEach(([x, y], i) => (i ? ctx.lineTo(wx(x), wy(y)) : ctx.moveTo(wx(x), wy(y)))); ctx.closePath(); ctx.stroke(); }
       // tướng: chân dung tròn viền màu đội (xanh mình, đỏ địch); người chơi vẽ sau cùng, viền trắng
       const heroes = ents.filter((e) => e.kind === 'hero' && e.alive).sort((a, b) => (a.id === player.id) - (b.id === player.id));

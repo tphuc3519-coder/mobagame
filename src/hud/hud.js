@@ -3,6 +3,7 @@ import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
 import { floorAt } from '../render/env/floor.js';
 import { createKillBanner } from './killBanner.js';
+import { createHudExtras } from './hudExtras.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -19,6 +20,7 @@ export function createHud(canvas, input, portraits = null) {
   let w = 0, h = 0, dpr = 1;
   const floats = [], golds = [], now = () => performance.now() / 1000;
   const kills = createKillBanner(portraits); // thông báo hạ gục / hạ mục tiêu lớn (killBanner.js)
+  const extras = createHudExtras({ portraits }); // tướng địch rìa màn hình, thông số mục tiêu, ảnh tung chiêu cuối (hudExtras.js — bật/tắt trong Cài đặt)
   const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; };
@@ -110,6 +112,7 @@ export function createHud(canvas, input, portraits = null) {
           const k = ev.killer != null ? world.byId(ev.killer) : null;
           death = { name: k?.data?.name || 'Bị hạ gục', heroId: k?.kind === 'hero' ? k.heroId : null, kind: k?.kind || null, team: k?.team, total: Math.max(1, (e.respawnTick - world.tick) / 30), self: k === e };
         }
+        extras.handle(ev, world, world.__localId);
         if (ev.type === 'monsterKill' && ev.boss) kills.boss(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
@@ -204,6 +207,7 @@ export function createHud(canvas, input, portraits = null) {
         const tg = ctx.createLinearGradient(0, cyy - sz / 2, 0, cyy + sz / 2); tg.addColorStop(0, '#fffbe0'); tg.addColorStop(1, '#ffc23a'); ctx.fillStyle = tg; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
         ctx.restore();
       }
+      extras.draw(ctx, w, h, world, cam, player);
       // thông báo hạ gục / hạ mục tiêu lớn (giữa phía trên)
       kills.draw(ctx, w, h);
       // joystick

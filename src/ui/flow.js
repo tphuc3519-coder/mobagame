@@ -15,6 +15,7 @@ import { openPick } from './pick.js';
 import { openLineup } from './lineup.js';
 import { openLoading } from './loading.js';
 import { openPostgame } from './postgame.js';
+import { screenSound } from '../audio/uiSounds.js';
 
 const SCREENS = { home: openHome, room: openRoom, pick: openPick, lineup: openLineup, loading: openLoading };
 const NEXT = 'la.next';
@@ -27,7 +28,7 @@ export const nav = {
     const prev = cur; cur = null;
     try { prev?.close?.(); } catch (e) { console.warn(e); }
     ui().querySelectorAll(':scope > .ui-dlg, :scope > .ui-panel').forEach((x) => x.remove()); // hộp thoại / bảng còn mở của màn cũ (vd. hết giờ chọn tướng khi đang chọn phép)
-    ui().hidden = false;
+    ui().hidden = false; screenSound(name);
     cur = { name, close: SCREENS[name](nav, args) };
     window.__flow.seen.push(name); // kiểm thử tự động: các màn đã qua
   },

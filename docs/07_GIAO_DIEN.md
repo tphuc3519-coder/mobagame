@@ -187,6 +187,46 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Khi chết**: màn xám nhẹ, đồng hồ hồi sinh lớn ở giữa, vẫn mở được cửa hàng.
 - **Tạm dừng** (offline): nút ≡ → Tiếp tục / Cài đặt / Đầu hàng (5v5 sau 8:00) / Thoát.
 
+### 9.1 Cài đặt điều khiển trong trận
+Kho cài đặt `src/core/prefs.js` (bảng Cài đặt kiểu Liên Quân). Mọi mục đọc lúc dùng hoặc nghe `onPref` → đổi giữa trận áp dụng ngay.
+Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nút / ngón giữ lượt riêng: 5 ngón cùng lúc (cần + Đánh + kỹ năng + phép + camera) vẫn chạy.
+- **Lệnh di chuyển** `stick` (`hud/joystick.js`, vẽ ở `hud/hud.js`): `follow` — chạm bất kỳ ở 45% trái là cần dời tới chỗ chạm;
+  **mới**: kéo quá bán kính 90 px thì đế cần trượt theo ngón (đổi hướng không phải kéo ngược cả đoạn). `fixed` — đế đứng yên ở vị trí nghỉ
+  góc trái dưới, hướng = ngón − tâm đế (chạm chỗ nào trong 45% trái cũng được).
+- **Độ nhạy xoay chiêu** `aimSens` 0..1 (`hud/aimPad.js`): kéo hết tầm = 150 − 80 × độ nhạy px (0 → 150, 0,5 → 110 như cũ, 1 → 70); vòng
+  ngắm to/nhỏ theo. Dùng cho kỹ năng, phép có hướng và kéo nút Đánh.
+- **Vị trí xoay chiêu** `aimAt`: `button` vòng ngắm quanh tâm nút (như cũ) | `finger` tâm vòng ngắm ở chỗ ngón vừa chạm.
+- **Huỷ chiêu** `cancelBy`: `zone` kéo vào ô X góc phải (như cũ) | `distance` kéo ngón xa tâm vòng ngắm quá 1,6 × độ kéo hết tầm → vòng đỏ,
+  chỉ báo đỏ, chữ "Thả để huỷ" trên vòng; ô X ẩn.
+- **Phương pháp tung chiêu** `castMode`: `aim` kéo để ngắm, chạm nhanh tự ngắm (như cũ) | `auto` (Tân thủ) chạm xuống là ra chiêu tự ngắm,
+  không vòng ngắm. Không áp dụng cho phép bổ trợ.
+- **Hướng tốc biến** `flashDir` — Chớp Bước (và phép có hướng) chạm nhanh không kéo, kể cả phím F: `move` hướng đang chạy, đứng yên thì hướng
+  đang nhìn (gửi `aim: null`, mô phỏng tự chọn như cũ) | `skill` hướng của lần kéo ngắm kỹ năng / Chớp Bước gần nhất | `enemy` về phía tướng
+  địch thấy được gần nhất trong 1200. Không có thì như `move`. Mô tả khi giữ nút phép ghi cách đang dùng.
+- **Chế độ công chỉ định** `atkMode` (`hud/skillButtons.js`, `hud/atkTarget.js`): `farm` nút Đánh + Ăn lính + Đẩy trụ (như cũ) | `auto` chỉ
+  một nút Đánh (phím K/L vẫn dùng được) | `manual` (Tự chọn mục tiêu) chỉ nút Đánh; **chạm nhanh vào một địch trong cảnh 3D** để khoá: không
+  tính ngón đang là cần di chuyển (45% trái khi cần đang rảnh), chạm phải ngắn (< 0,45s, xê dịch < 14 px — kéo vẫn là vuốt camera nếu
+  `camMode` cho phép); chọn đơn vị địch thấy được có hình chiếu (đoạn chân → đỉnh) gần chỗ chạm nhất trong 60 px, theo camera lúc chạm xuống.
+  Chạm đất trống = bỏ khoá. Mục tiêu khoá đi kèm mọi lệnh đánh (`preferTarget`): mô phỏng đánh nó trước khi nó còn trong tầm. Tự bỏ khoá khi
+  mục tiêu chết / khuất / xa quá 1800, khi đổi `atkMode` hay tắt `preciseAtk`.
+- **Lựa chọn mục tiêu** `targetBy` — chỉ đòn đánh thường của tướng người chơi, tính trong mô phỏng: có tướng địch trong tầm đánh thì chọn
+  `pct` % máu thấp nhất | `hp` máu thấp nhất | `near` gần nhất (bằng nhau thì gần hơn); không có tướng nào thì như cũ (`nearestEnemy`: lính /
+  trụ / quái gần nhất). Mục tiêu khoá trong tầm luôn trước; nút Ăn lính / Đẩy trụ và khiêu khích không đổi. Gửi bằng lệnh
+  `{ type: 'targetBy', value }` lúc vào trận và mỗi lần đổi (`sim/commands.js` → `e.targetBy` → `sim/targeting.js pickByRule`); bot không
+  gửi nên trận toàn bot / băm tất định không đổi (`tools/t_target.mjs`). Mặc định `pct` = **mới**: trước đây không ưu tiên tướng.
+- **Đánh thường chính xác** `preciseAtk`: kéo nút Đánh → vòng ngắm như kỹ năng + vùng tầm đánh + 200 trên đất; địch gần hướng kéo nhất (lệch
+  ≤ 60°, trong tầm + 200) có dấu vàng, đang giữ thì đánh luôn nó khi nó trong tầm. Thả: khoá nó (như `manual`), nó trong tầm thì còn đánh tới
+  khi ra một đòn (tối đa một nhịp đánh); kéo về phía không có địch rồi thả = bỏ khoá; huỷ (ô X / kéo xa) như kỹ năng. Chạm / giữ không kéo như cũ.
+- **Hiển thị mục tiêu chỉ định** `targetMark` (`render/indicators.js mark`): vòng cam đứt nét xoay dưới mục tiêu đang bị đánh thường
+  (`swingTarget`, lúc giữ đánh / vừa vung). Mục tiêu khoá luôn có vòng đỏ 3 mũi chụm vào + mũi chữ V lơ lửng trên tên (phản hồi của việc chọn,
+  không phụ thuộc mục này); địch đang chọn khi kéo nút Đánh: cùng dấu, màu vàng.
+- **Camera** `camMode` (`hud/camLook.js`): `off` ẩn nút mắt + tắt vuốt (còn giữ bản đồ nhỏ) | `hold` chỉ nút mắt | `slide` nút mắt + vuốt vùng
+  trống nửa phải (như cũ). **Tốc độ camera** `camSpeed` 0..1: độ lệch tối đa và tốc độ trượt khi kéo × (0,5 + tốc độ) (0,5 = như cũ).
+- **Góc quay theo định vị** `camAim`: đang ngắm kỹ năng / Chớp Bước có tầm > 700 thì camera trượt dần về nửa đường tới chỗ ngắm; thả ra về tướng.
+- Nút kỹ năng (Cài đặt → Giao diện): **Thời gian hồi số thập phân** `cdDecimal` — số lẻ khi dưới 10s (như cũ), tắt thì làm tròn lên giây (cả
+  nút phép); **Miêu tả chiêu trong trận** `skillTips` — giữ yên nút kỹ năng ≥ 0,35s hiện mô tả (tên, cấp, `ui/skilltext.js`), thả ra không dùng
+  chiêu, kéo tiếp thì vẫn ngắm như thường (**mới**, mặc định tắt như Liên Quân — bật thì giữ lâu rồi thả không còn tự tung chiêu); **Miêu tả nút chiêu** `skillNames` — tên chiêu dưới K1–K3.
+
 ## 10. Kết quả trận
 - **Bước 1 – Chiến thắng / Thất bại**: chữ lớn đổ bóng + hiệu ứng (thắng: đèn trời bay lên, vàng; thua: mưa, xanh xám).
 - **Bước 2 – Bảng thống kê**: 2 đội, mỗi dòng: tướng, tên, K/D/A, sát thương gây ra, sát thương nhận, vàng, 6 ô đồ, **điểm trận** (0–16, xem `08`). Người MVP có nhãn "MVP" vàng; MVP đội thua có nhãn "MVP" bạc.
@@ -208,7 +248,29 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Nhiệm vụ**: tab Ngày / Tuần / Mùa, thanh tiến độ, nút Nhận.
 - **Kho đồ**: lưới vật phẩm theo loại, chạm xem chi tiết/dùng.
 - **Lịch sử**: 20 trận gần nhất, chạm xem bảng thống kê.
-- **Cài đặt**: Âm thanh (nhạc, hiệu ứng), Đồ hoạ (chất lượng, FPS 30/60, hạt), Điều khiển (kích thước nút, độ trong suốt, vị trí nút có thể kéo đổi, độ nhạy joystick, tự nâng kỹ năng, tự mua đồ, ưu tiên mục tiêu: máu thấp nhất / gần nhất), Ngôn ngữ, Xuất/Nhập mã lưu, Xoá dữ liệu.
+- **Cài đặt** (`ui/settingsModal.js`, kiểu Liên Quân, ở sảnh và nút bánh răng trong trận): hộp lớn tiêu đề vàng + nút X, cột thẻ bên trái:
+  - *Thiết lập đồ hoạ*: thẻ Ưu tiên độ mượt / Cân bằng / Ưu tiên chất lượng / Tuỳ chỉnh; thanh Chất lượng hình ảnh (Mượt → Tối cao),
+    Chất lượng chi tiết (Mượt / Cao / Tối cao), FPS (Tiết kiệm pin / Cao), Độ phân giải; bóng đổ, ánh sáng rực, khử răng cưa, tự giảm khi giật.
+  - *Điều khiển*: đánh thường chính xác, độ nhạy xoay chiêu, camera (Tắt / Giữ / Trượt) + tốc độ, chế độ công chỉ định (Tự đánh / Ăn
+    lính + Đẩy trụ / Tự chọn mục tiêu), lựa chọn mục tiêu (% máu / máu / gần nhất), hướng tốc biến mặc định, hiển thị mục tiêu chỉ định,
+    phương pháp tung chiêu (hỗ trợ xoay / tự nhắm), vị trí xoay chiêu (nút / ngón tay), huỷ chiêu (vùng / cự ly), góc quay theo định vị,
+    lệnh di chuyển (cần đi theo / cố định).
+  - *Thiết lập giao diện*: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, thời gian hồi số
+    thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, FPS, miêu tả chiêu (giữ nút), tên chiêu dưới nút.
+  - *Thiết lập*: góc camera Gần / Xa, độ sáng 5 nấc, viền nhân vật, hiệu ứng thông báo (bảng hạ gục), hiệu ứng sương mù; ở sảnh: xoá dữ liệu.
+  - *Âm thanh*: âm thanh nền — nhạc sảnh + âm nền trận (bật/tắt + âm lượng), hiệu ứng âm thanh (bật/tắt + âm lượng), tiếng thông báo trong trận.
+  - *Dữ liệu*: tiết kiệm dữ liệu (không tải trước model mọi tướng khi ở sảnh).
+  - Trong trận: nút **Đầu hàng** ở chân hộp (đấu hạng từ phút 8; chạm hai lần để xác nhận).
+  - Không làm (chưa có chơi trực tuyến): trò chuyện, mic, ping nhanh, like / nhận lỗi trong trận, tự từ chối đầu hàng, mạng WIFI + 3G/4G.
 
-## 13. Âm thanh giao diện
-- Chạm nút: tick ngắn. Nút chính: âm "đồng" nhẹ. Tìm thấy trận: tiếng chiêng. Chọn tướng: câu thoại ngắn tự viết (text + âm hiệu ứng, lồng tiếng sau).
+## 13. Âm thanh (kỹ thuật: 02 §13.11)
+- **Sảnh**: nhạc nền ngũ cung (đàn tranh, sáo trúc, trống) ở sảnh / phòng chờ / chọn tướng / đội hình, tắt dần ở màn tải trận. Chạm nút:
+  tiếng gỗ ngắn; nút chính (Bắt đầu, Chấp nhận, Đấu lại): chuông ba nốt; mở bảng: lướt + chuông; quay lại: nốt đi xuống; đổi thẻ: chuông nhỏ;
+  chọn tướng: lướt + chuông; chuyển màn: tiếng lướt gió. **Tìm thấy trận**: trống + kèn đồng + chuông; **khoá tướng**: tiếng đập kim loại +
+  hợp xướng; đồng đội khoá: chuông nhỏ; 5 giây cuối chưa khoá: tích tắc; màn đội hình: **VS** (vút lên + đập + kèn); kết quả: lướt giữa
+  các màn, tiếng phần thưởng (đồng xu + lấp lánh).
+- **Trận**: âm nền nhỏ (gió đồng, lá xào xạc, chim hót thưa, suối xa — theo công tắc Âm thanh), vào trận (tù và + trống), đợt lính đầu tiên (tù và), đánh thường theo vũ khí từng tướng (vung nặng/nhẹ, bắn cung, bắn phép),
+  tiếng trúng (thịt, chém, giáp, phép, chuẩn, chí mạng), chiêu theo nguyên tố (lửa, nước, lá, gió, ánh sáng, huyền bí, đất) + chiêu cuối,
+  lướt, choáng, hất tung, khiên, hồi máu / Hồi Máu bị cắt, phép bổ trợ, Trừng Trị, trụ bắn / trúng, lính, quái, chết, phá trụ, boss gầm,
+  vàng, mua đồ, lên cấp, về thành, hồi sinh, nhặt cục máu; nhạc báo hạ gục / chiến công đầu / hạ liên tiếp (cao dần theo số mạng) /
+  chặn đứng / bị trụ hạ; chiến thắng / thất bại.

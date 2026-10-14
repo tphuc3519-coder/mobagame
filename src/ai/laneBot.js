@@ -8,6 +8,7 @@ import { isTargetable } from '../sim/targeting.js';
 import { canSee } from '../sim/vision.js';
 import { quickBuys } from '../sim/inventory.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
+import { findPath, lineClear } from '../sim/pathfind.js';
 import { minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
 import { combo, survival } from './botSkills.js';
 
@@ -35,9 +36,23 @@ function steer(bot, p) {
   }
   return p;
 }
+/** Đi tới p0. Bot đi thẳng (không né tường); kẹt ~0,5 giây mà đường thẳng tới đích bị tường chắn (góc bệ đá, sau bệ chắn đường) thì tìm
+ *  đường vòng trên lưới (sim/pathfind.js) và đi theo các điểm tới khi thấy thẳng tới đích, đích đổi xa hoặc hết 8 giây. */
 const move = (bot, p0, tol = 30) => {
-  const { e } = bot, p = steer(bot, p0), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = Math.hypot(dx, dy);
-  bot.world.command(e.id, { type: 'move', dir: l > tol ? { x: dx / l, y: dy / l } : { x: 0, y: 0 } });
+  const { e, world } = bot, nav = world.nav;
+  if (bot.route && (world.tick > bot.route.until || dist(bot.route.dest, p0) > 350)) bot.route = null;
+  if (!bot.route && nav && bot.stuck >= T(0.5) && !lineClear(nav, e.pos, p0)) {
+    const pts = findPath(nav, e.pos, p0); bot.stuck = 0;
+    if (pts?.length) bot.route = { pts, i: 0, dest: { x: p0.x, y: p0.y }, until: world.tick + T(8) };
+  }
+  let tgt = p0;
+  if (bot.route) {
+    const r = bot.route;
+    while (r.i < r.pts.length - 1 && dist(e.pos, r.pts[r.i]) < 90) r.i++;
+    if (lineClear(nav, e.pos, p0)) bot.route = null; else tgt = r.pts[r.i];
+  }
+  const p = steer(bot, tgt), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = Math.hypot(dx, dy);
+  world.command(e.id, { type: 'move', dir: l > tol ? { x: dx / l, y: dy / l } : { x: 0, y: 0 } });
   return l;
 };
 const attack = (bot, target) => bot.world.command(bot.e.id, { type: 'attack', on: !!target, preferTarget: target?.id ?? null });
@@ -148,5 +163,7 @@ export function updateLaneBot(world, e) {
   const bot = e.bot;
   if (world.tick < bot.next) return;
   bot.next = world.tick + Math.max(3, T(bot.diff.react));
+  const moved = dist(e.pos, bot.lastPos), wants = Math.hypot(e.moveDir.x, e.moveDir.y) > 0.1; bot.lastPos = { ...e.pos }; // kẹt: muốn đi mà gần như đứng yên
+  bot.stuck = e.alive && wants && moved < 3 && !e.recall && !e.dash ? bot.stuck + (bot.next - world.tick) : 0;
   think(bot);
 }

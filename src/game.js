@@ -9,7 +9,7 @@ import { createPost } from './render/post.js';
 import { loadGfx, shadowSize } from './render/quality.js';
 import { createAutoQuality } from './render/autoQuality.js';
 import { addLights } from './render/lights.js';
-import { createCamera, CAM_DISTANCE } from './render/camera.js';
+import { createCamera, CAM_DISTANCE, CAM_NEAR } from './render/camera.js';
 import { buildArena } from './render/arenaMap.js';
 import { createMinimap } from './hud/minimap.js';
 import { createPortraits } from './hud/portraits.js';
@@ -36,6 +36,9 @@ import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
 import { createScoreboard } from './hud/scoreboard.js';
 import { STARTER, ITEMS } from './data/items.js';
+import { createGameSounds } from './audio/gameSounds.js';
+import { sfx, music } from './audio/audio.js';
+import { prefs, onPref } from './core/prefs.js';
 
 import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
@@ -89,12 +92,13 @@ const sun = addLights(scene, renderer, { shadow: shadowSize(gfx), on: gfx.shadow
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 env.group.traverse((o) => { if (o.isMesh) o.castShadow = false; }); // bóng cây/đá/tường đã nướng sẵn trên nền (ground.js): lượt bóng thời gian thực chỉ vẽ nhân vật
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
-const views = createUnitViews(scene, 0, player.id, { floor, outlines: gfx.detail !== 'low' });
+const views = createUnitViews(scene, 0, player.id, { floor, outlines: gfx.detail !== 'low' && prefs().outline }); // viền nhân vật (Cài đặt → Thiết lập → Viền)
 const orbViews = createOrbViews(scene, world, { floor }); // cục máu sau trụ ngoài (sim/orbs.js)
 const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
-const cam = createCamera({ distance: parseFloat(q.get('camdist') || String(CAM_DISTANCE)) });
+const camDist = () => parseFloat(q.get('camdist') || String(prefs().camDist === 'near' ? CAM_NEAR : CAM_DISTANCE)); // Cài đặt → Thiết lập → Góc camera
+const cam = createCamera({ distance: camDist() });
 const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, me: player.id, floor });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
@@ -107,9 +111,14 @@ addEventListener('resize', () => cam.resize(innerWidth, innerHeight));
 
 const input = createInput(document.body);
 const hud = createHud(document.getElementById('hud'), input, portraits);
+const sounds = createGameSounds({ team: player.team, me: player.id }); // tiếng trận theo sự kiện mô phỏng (audio/gameSounds.js)
+// cài đặt chung đổi được ngay trong trận (bảng Cài đặt → Thiết lập): góc camera gần/xa, độ sáng (độ phơi sáng tone map), hiệu ứng sương mù
+const BRIGHT = [0.85, 0.93, 1, 1.09, 1.19], EXPO = renderer.toneMappingExposure;
+const applyPrefs = () => { const p = prefs(); renderer.toneMappingExposure = EXPO * BRIGHT[p.bright - 1]; if (fogOfWar?.mesh && !OVERVIEW) fogOfWar.mesh.visible = p.fogFx; cam.setDistance(camDist()); };
+applyPrefs(); onPref((k) => { if (k === 'bright' || k === 'fogFx' || k === 'camDist') applyPrefs(); });
 const camLook = createCamLook({ minimap, map });
 const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
-const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators });
+const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators, camera: cam.camera, input, views }); // camera/input/views: chạm chọn địch + dấu mục tiêu (Cài đặt điều khiển)
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
 warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
@@ -195,12 +204,13 @@ const loopCfg = {
     lastDraw = now;
     const events = world.drainEvents();
     for (const ev of events) if (ev.type === 'gameover') showResult(ev.winner);
-    views.handle(events); fx.handle(events, world); hud.handle(events, world);
+    views.handle(events); fx.handle(events, world); hud.handle(events, world); sounds.handle(events, world);
     views.update(world, alpha, dt, cam.camera); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
     buttons.update(); spells.update(); shop.update(); score.update();
     const px = player.prevPos.x + (player.pos.x - player.prevPos.x) * alpha, py = player.prevPos.y + (player.pos.y - player.prevPos.y) * alpha;
     const d = input.dir();
     cam.follow(px, py, d.x, d.y, dt, camLook.look(px, py)); sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn
+    sounds.update(world, cam.target, cam.camera); // tâm nghe theo camera
     if (dead !== !player.alive) { dead = !player.alive; document.body.classList.toggle('dead', dead); } // chết: màn hình xám, nút cửa hàng nhấp nháy
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
@@ -247,7 +257,7 @@ async function warmUp() {
   } catch (e) { console.warn('Dịch sẵn shader lỗi', e); }
   cover.remove();
 }
-warmUp().then(() => loop.start());
+warmUp().then(() => { loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();

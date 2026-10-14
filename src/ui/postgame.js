@@ -9,6 +9,7 @@ import { itemIcon } from '../hud/icons.js';
 import { icon, face, cardSrc, fullSrc, panel, rankBadge, stars } from './kit.js';
 import { titleOf, medalOf, kfmt, PARTS } from './score.js';
 import { COURAGE_MAX } from './profile.js';
+import { sfx } from '../audio/audio.js';
 
 const STYLE = `
 #pg { position: absolute; inset: 0; z-index: 25; pointer-events: auto; overflow: hidden; background: #070b1e; }
@@ -180,7 +181,7 @@ export function openPostgame(o) {
   const SCREENS = [screenA, screenB, screenC];
   SCREENS[0]();
   el.onclick = (e) => {
-    if (step < 2) { step++; SCREENS[step](); return; }
+    if (step < 2) { step++; SCREENS[step](); sfx('ui_whoosh'); if (step === 1) sfx('ui_reward', { delay: 0.35 }); return; }
     const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; screenC(); return; }
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'stats') stats(); else if (a === 'home') o.onHome(); else if (a === 'again') o.onAgain();

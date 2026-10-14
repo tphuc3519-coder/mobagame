@@ -125,6 +125,29 @@ chấm xanh lá (mờ khi đang chờ).
 - **Bụi cỏ** (phía Xanh, Đỏ = swap): cạnh Đường Đền (1250, 1600), (650, 3100); cạnh Đường Giữa (2050, 3600), (2900, 4050); cạnh Đường Sông (3300, 5150), (4800, 5750); cửa sông (2150, 2750), (3650, 4350). Ngoài ra 2 bụi trung lập giữa sông: (3000, 3450), (3450, 3000). Kích thước bụi 350×220 xoay theo hướng đường gần nhất.
 - Tường phải được khai báo sao cho **không chặn** bất kỳ đường nào của lính.
 
+**Bản đang chạy** (`src/data/maps.js`, toạ độ gốc 6400 × 6400, nhân K = 3 ra đơn vị thế giới):
+- **Bụi bờ sông ở cả bốn cửa sông** (`bank: true`, bụi con nhộng mọc mép nước, đường tâm |x − y| = 310): bờ đối diện mỗi bụi là một hang
+  lớn nên các bụi đi theo cặp **đối xứng tâm** (x, y) → (6400 − x, 6400 − y) như hai hang, không lấy ảnh x↔y.
+  - Cạnh trụ ngoài đường Đền phía Đỏ (1560,1250)→(1870,1560) r 95 ↔ cạnh trụ ngoài đường Sông phía Xanh (4530,4840)→(4840,5150).
+  - Cạnh trụ ngoài đường Đền phía Xanh, sát hang Long Ngư (1235,1545)→(1345,1655) r 85 ↔ cạnh trụ ngoài đường Sông phía Đỏ, sát hang Hổ Lôi
+    (5055,4745)→(5165,4855) r 85. Ngắn hơn cặp kia: mép bụi phải ngoài tầm trụ như cặp kia (≥ 1050 + bán kính tướng, tức ≈ 364 gốc) và
+    dừng trước mũi vách hang (vách Hổ Lôi to hơn nên quyết định độ dài cả cặp).
+- **Ruộng cạnh bụi bờ** (theo góp ý người chơi; các đoạn `walls.segs` có cờ `field`, khai phía Đỏ, ruộng phía Xanh là ảnh đối xứng tâm):
+  ruộng cỏ phía rừng của bụi bờ cạnh trụ ngoài đường Đền phía Đỏ ↔ ruộng cạnh bụi bờ đường Sông phía Xanh.
+  - Dải đá dọc mép bụi phía ruộng: đường tâm x − y = 454, hai tảng theo s = (x + y)/2 ∈ [1395, 1505] và [1615, 1725], dày 240; khe giữa
+    ~75 gốc để từ ruộng vào bụi.
+  - Bệ mép đường y = 1180, x 1630 → 1940 (dày 300, cùng kiểu bệ chắn đường): đầu tây gần trùng đầu bắc dải đá nên góc khép liền, không
+    có khe lõm phía đường; lối từ đường xuống sông vòng mũi bắc bụi vẫn mở.
+  - **Cột đá đèn lồng** ở khe mép đường (2135, 1176): đoạn dài 0 (va chạm tròn bán kính 120 thế giới, cờ `pillar`), dựng riêng trong
+    `render/env/jungleDecor.js` (cột chạm đai vàng như cột tường nhà + đèn lồng sáng). Hai lối hai bên cột đều ≥ 300 thế giới ở cả hai
+    ruộng — phía Xanh cung đá trại bùa đỏ chạm mép đường ngay cạnh ảnh cột nên cột lùi về tây, bệ mép đường ngắn hơn dự kiến.
+  - Phía Xanh, bệ chắn đường Sông y = 5220 cắt còn x 3879 → 3994 (= 6400 − 2406, ảnh đầu bệ chắn đường Đền phía Đỏ) để không đè ảnh cột.
+  - Không trồng cây trên/sát các bệ này (ruộng và các lối giữ thoáng).
+  - Tướng máy 5v5 (`ai/laneBot.js`) đi thẳng tới đích, chỉ lách công trình; **kẹt** (muốn đi mà gần như đứng yên ~0,5 giây) mà đường
+    thẳng tới đích bị tường chắn thì tìm đường vòng trên lưới `world.nav` (`sim/pathfind.js`) và đi theo tới khi thấy thẳng tới đích (bỏ
+    khi đích dời xa > 350 hoặc sau 8 giây). Trước đây bot có thể đứng ì sau bệ mép đường, bệ chắn đường cũ, vách hang, tường nhà chính:
+    4 trận 20 phút kẹt lâu nhất 287 giây → nay 11 giây.
+
 ### A9. Nhịp trận mục tiêu
 | Mốc | Sự kiện |
 |---|---|

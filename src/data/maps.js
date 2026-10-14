@@ -256,6 +256,26 @@ function outOfBounds(x, y, pad = 0) {
   return test(x, y) || test(A - y, A - x);
 }
 const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
+/** Ảnh đối xứng tâm (x, y) → (A − x, A − y) của một đoạn tường (toạ độ thế giới) — như hai hang lớn và các bụi bờ. */
+const flipSeg = (w) => ({ ...w, x1: A - w.x1, y1: A - w.y1, x2: A - w.x2, y2: A - w.y2 });
+// Ruộng cỏ trống phía rừng của bụi bờ sông cạnh trụ ngoài đường Đền phía Đỏ (góp ý người chơi): bệ đá ôm ruộng — dải đá dọc mép bụi phía
+// ruộng (hai tảng, khe giữa ~75 để vào bụi), bệ dọc mép đường phía bắc ruộng (cùng hàng y = 1180, cùng kiểu bệ chắn đường; đầu tây khép góc
+// với đầu bắc dải đá, lối từ đường xuống sông vòng mũi bụi phía tây vẫn mở) và một CỘT ĐÁ đèn lồng ở khe mép đường phía đông (pillar: đoạn
+// dài 0 = va chạm tròn; dựng riêng ở render/env/jungleDecor.js). Hai lối hai bên cột ≥ 300 ở cả hai ruộng: phía Xanh cung đá trại bùa đỏ
+// chạm mép đường ngay cạnh ảnh cột nên cột lùi về tây, bệ mép đường ngắn lại. field: không trồng cây trên/sát (ruộng và các lối giữ thoáng).
+// Khai phía Đỏ (toạ độ gốc); ruộng cạnh bụi bờ phía Xanh (đường Sông) là ảnh đối xứng tâm như hai bụi bờ.
+const bankPt = (s, d = 454) => [(s + d / 2) * K, (s - d / 2) * K]; // s = (x + y) / 2 dọc bờ sông, d = x − y (đường tâm bụi bờ: 310)
+const FIELD_RED = [
+  ...[[1395, 1505], [1615, 1725]].map(([a, b]) => { const [x1, y1] = bankPt(a), [x2, y2] = bankPt(b); return { x1, y1, x2, y2, rock: true, field: true, w: 240 }; }),
+  { x1: 1630 * K, y1: 1180 * K, x2: 1940 * K, y2: 1180 * K, w: 300, field: true }, // đầu tây gần trùng đầu bắc dải đá: góc liền, không khe lõm phía đường (tướng máy kẹt)
+  { x1: 2135 * K, y1: 1176 * K, x2: 2135 * K, y2: 1176 * K, w: 240, pillar: true, field: true },
+];
+// Ruộng phía Xanh: bệ chắn đường Sông y = 5220 (x 3879→4244) chạy qua đúng chỗ ảnh cột (bệ chắn hai đường cánh sinh lệch pha nhau) → cắt
+// tới x = 6400 − 2406, ảnh đầu tây bệ chắn đường Đền phía Đỏ cạnh cột, cho hai ruộng cùng cấu trúc: bệ mép đường · lối · cột · lối · bệ chắn.
+// Chỉ cắt bản phía Xanh (ảnh x↔y của nó cạnh hang Hổ Lôi giữ nguyên).
+const GUARD_CUT = { y: 5220 * K, x: (6400 - 2406) * K };
+const cutGuard = (w) => (w.baseWall == null && !w.rock && !w.ledge && !w.border && Math.abs(w.y1 - GUARD_CUT.y) < 1 && Math.abs(w.y2 - GUARD_CUT.y) < 1
+  && Math.min(w.x1, w.x2) < GUARD_CUT.x && Math.max(w.x1, w.x2) > GUARD_CUT.x ? { ...w, x1: Math.min(w.x1, w.x2), x2: GUARD_CUT.x } : w);
 
 export const ARENA = {
   id: 'arena5v5', w: A, h: A,
@@ -270,15 +290,20 @@ export const ARENA = {
     ...['temple', 'mid', 'river'].flatMap((l) => [tower(l + '_outer', 'outer', ...TOWER_POS[l + '_outer'], null), tower(l + '_inner', 'inner', ...TOWER_POS[l + '_inner'], l + '_outer'), tower(l + '_home', 'home', ...TOWER_POS[l + '_home'], l + '_inner')]),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
-  // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng
-  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
+  // tường: danh sách đoạn dày (capsule); phía Đỏ là ảnh đối xứng; bệ đá + cột ở hai ruộng cạnh bụi bờ là ảnh đối xứng tâm
+  walls: { thickness: 110, segs: [...W_BLUE_T.map(cutGuard), ...W_BLUE_T.map(mirrorSeg), ...FIELD_RED, ...FIELD_RED.map(flipSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
   // bụi cỏ: hình chữ nhật xoay theo trục (x, y, w, h) quanh tâm
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
-    // bụi cỏ dài mọc mép nước dọc bờ sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân; phía Đỏ đối xứng
-    // (không đối xứng: mỗi bờ đặt riêng vì hai hang boss nằm lệch về hai phía)
-    ...[[1560, 1250, 1870, 1560], [4530, 4840, 4840, 5150]].map(([a, b, c, d]) => ({ cap: [a * K, b * K, c * K, d * K], r: 95 * K, bank: true, noMirror: true })), // đối xứng tâm (như hai hang): mỗi đường cánh một bụi bờ đối diện hang
+    // bụi cỏ dài mọc mép nước dọc bờ sông ở cả bốn cửa sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân. Không lấy ảnh x↔y
+    // (bờ đối diện mỗi bụi là một hang lớn) mà ĐỐI XỨNG TÂM (x, y) → (6400 − x, 6400 − y) như hai hang: khai [x1, y1, x2, y2, r] gốc một
+    // bụi, bụi kia là ảnh. Cặp 1: bụi bờ phía Đỏ cạnh trụ ngoài đường Đền (ảnh: phía Xanh cạnh trụ ngoài đường Sông). Cặp 2: bụi bờ phía
+    // Xanh cạnh trụ ngoài đường Đền, sát hang Long Ngư (ảnh: phía Đỏ cạnh trụ ngoài đường Sông, sát hang Hổ Lôi) — cùng đường tâm bờ
+    // (|x − y| = 310) nhưng ngắn và mảnh hơn: đầu gần trụ giữ mép bụi ngoài tầm trụ như cặp 1 (≥ 350 + bán kính tướng), đầu kia dừng
+    // trước mũi vách hang (cách ≥ 10; vách Hổ Lôi to hơn nên quyết định độ dài cho cả cặp).
+    ...[[1560, 1250, 1870, 1560, 95], [1235, 1545, 1345, 1655, 85]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [6400 - c, 6400 - d, 6400 - a, 6400 - b]]
+      .map((q) => ({ cap: q.map((v) => v * K), r: r * K, bank: true, noMirror: true }))),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
     ...[-470, 470].map((d) => { const c = 3200 + d, h = 250; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 190 * K, big: true, river: true }; }),

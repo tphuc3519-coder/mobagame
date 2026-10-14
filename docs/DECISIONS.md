@@ -583,3 +583,27 @@
   để vẫn hồi được khi lùi dưới trụ.
 - **`world.emit` không cho dữ liệu đè loại sự kiện**: `{ ...data, type, tick }`. Lỗi cũ: `monsterKill` mang `type: 'long_ngu'` nên HUD
   không bao giờ nhận ra.
+
+## Âm thanh + bảng Cài đặt kiểu Liên Quân (14/10)
+- **Tự tổng hợp mọi tiếng bằng code thay vì gói âm thanh có sẵn**: môi trường làm việc không tải được kho asset ngoài, và tiếng tự làm thì
+  không vướng giấy phép, chỉnh được theo từng tướng (vũ khí, nguyên tố) và độ dài khớp hoạt ảnh. Không có giọng đọc thông báo ("Linh bảo")
+  — tổng hợp giọng nói bằng code nghe rất giả; thay bằng nhạc báo ngắn (trống, kèn, chuông) đi cùng bảng thông báo.
+- **Một file sprite + vạch đồng bộ** thay vì 79 file: một lần tải / giải mã; độ trễ đầu file của bộ mã MP3 khác nhau giữa trình duyệt
+  nên đo vạch 5 ms sau giải mã để bù (lệch 25 ms là tiếng đánh trễ hình rõ rệt).
+- **Giải mã bằng OfflineAudioContext, tạo AudioContext ở lần chạm đầu**: có tiếng ngay từ cú chạm đầu tiên mà không cần ngữ cảnh chạy sớm
+  (Chrome cảnh báo, iPhone kích hoạt phiên âm thanh khi chưa cần).
+- **Không ép phiên âm thanh "playback" trên iPhone** (`navigator.audioSession`): ép thì vẫn kêu khi gạt im lặng nhưng tắt nhạc ứng dụng
+  khác đang nghe; giữ mặc định như đa số game (gạt im lặng = không tiếng) và ghi chú trong thẻ Âm thanh.
+- **Độ to chuẩn hoá đo trung bình nhân toàn dải × dải loa điện thoại**: chỉ đo toàn dải thì tiếng nhiều trầm bị chỉnh nhỏ trên loa iPhone
+  (~−20 dB so với tiếng phép); chỉ đo dải loa thì đeo tai nghe tiếng trầm lại quá to. Kèm làm lại các tiếng va đập có thân 250–1000 Hz.
+- **Bảng Cài đặt chỉ có mục chạy thật**: thẻ "Th.lập mạng" của Liên Quân thành "Dữ liệu" (Tiết kiệm dữ liệu: không tải trước model mọi
+  tướng ở sảnh); bỏ các mục chỉ có khi chơi mạng. Mặc định giữ đúng cách chơi cũ (Ăn lính + Đẩy trụ hiện sẵn, cần đi theo ngón, camera
+  trượt…), trừ "Lựa chọn mục tiêu" mặc định **% máu thấp nhất** như Liên Quân.
+- **Cài đặt đồ hoạ để riêng (`la.gfx`), cài đặt khác chung một kho (`la.prefs`)**: đồ hoạ có mức đặt sẵn + tự giảm khi giật đã ổn định;
+  kho mới chỉ cần đọc / ghi / nghe thay đổi. Mô phỏng không đọc cài đặt — mục ảnh hưởng luật chơi đi qua lệnh như thao tác.
+- **Bụi bờ sông theo cặp đối xứng tâm (x, y) → (6400 − x, 6400 − y)**, không lấy ảnh x↔y như phần lớn bản đồ: bờ đối diện mỗi bụi là
+  một hang (Long Ngư / Hổ Lôi) và hai hang đối xứng tâm, nên bụi cũng phải vậy mới công bằng cho hai đội.
+- **Cột đá là đoạn tường dài 0** (va chạm tròn, cờ `pillar`): dùng lại va chạm / tầm nhìn / lưới tìm đường của tường, chỉ khác phần dựng
+  hình — không thêm loại vật cản mới vào mô phỏng.
+- **Bot chỉ tìm đường khi bị kẹt**, không tìm đường cho mọi bước đi: đi thẳng + lách công trình vẫn đúng ở gần như mọi chỗ và rẻ; A* chỉ
+  chạy khi muốn đi mà đứng yên ~0,5 giây và tường chắn thật (lưới `world.nav`).

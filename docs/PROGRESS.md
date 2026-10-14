@@ -240,3 +240,37 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
 - Đã chạy: `tools/t_kills.mjs` (mới, 23 kiểm tra: tính mạng khi trụ kết liễu, hỗ trợ + chia vàng, quá 10 giây, Double → Penta, chuỗi,
   chặn đứng, Hồi Máu bị cắt / không bị lính trụ cắt, cục máu), toàn bộ `tools/t_*.mjs` + `simtest`, `t_determinism` (hai lần chạy trùng
   nhau), ảnh chụp từng loại thông báo + cục máu trên trình duyệt, trọn luồng chơi.
+
+## Âm thanh kiểu MOBA + bảng Cài đặt kiểu Liên Quân + bản đồ (14/10)
+- **Âm thanh** (người chơi: "thêm hiệu ứng âm thanh cho sảnh và tướng… thật chuyên nghiệp, đánh vào người…"): 79 hiệu ứng + nhạc sảnh +
+  âm nền trận, **tổng hợp hoàn toàn bằng code** (`tools/sfx`, không dùng file ghi âm ngoài), một file sprite MP3 ~1,2 MB + nhạc 0,7 MB +
+  âm nền 0,27 MB.
+  - Sảnh: nhạc ngũ cung (đàn tranh, sáo trúc, trống) lặp liền mạch; tiếng cho mọi nút (một bộ nghe chung), chuyển màn, tìm thấy trận,
+    khoá tướng, đồng đội khoá, tích tắc 5 giây cuối, VS, phần thưởng; nhạc tắt dần ở màn tải trận.
+  - Trận: mỗi tướng một bộ tiếng — đánh thường theo vũ khí (búa / chảo / roi sắt: vung nặng; kiếm / song đao / quạt: vung nhẹ; cung, nỏ,
+    ná, cầu đá: bắn; pháp sư: bắn phép), tiếng trúng (thịt, chém, giáp, phép, chuẩn, **chí mạng**), chiêu theo nguyên tố (lửa, nước, lá,
+    gió, ánh sáng, huyền bí, đất) + gầm trầm khi tung chiêu cuối; trụ bắn / trúng, lính, quái, boss gầm, phá trụ, choáng, hất tung, khiên,
+    Hồi Máu (+ bị cắt), phép bổ trợ, Trừng Trị, lướt, Chớp Bước, vàng, mua đồ, lên cấp, về thành, hồi sinh, cục máu; tù và khi vào trận và
+    đợt lính đầu; nhạc báo theo thông báo hạ gục (chiến công đầu, Double → Penta cao dần, chuỗi, chặn đứng, bị trụ hạ, hạ boss); thắng/thua;
+    âm nền gió – lá – chim – suối rất nhỏ. Tiếng theo vị trí (xa nhỏ dần, lệch trái/phải), chỉ phát thứ đội mình thấy, giới hạn số tiếng.
+  - Cân độ to theo loa điện thoại: bản đầu tiếng đánh vào người / tướng chết gần như chỉ có phần trầm mà loa iPhone không phát — làm lại
+    thân tiếng ở dải 250–1000 Hz, đo độ to cả dải loa: tiếng đánh vào người to hơn ~12 dB trên loa điện thoại.
+- **Bảng Cài đặt kiểu Liên Quân** (theo 14 ảnh người chơi gửi; `src/ui/settingsModal.js`, kho cài đặt `src/core/prefs.js`): 6 thẻ
+  Thiết lập đồ hoạ · Điều khiển · Thiết lập giao diện · Thiết lập · Âm thanh · Dữ liệu; dùng chung sảnh và trong trận (trận: nút Đầu hàng
+  ở chân bảng); đổi là lưu + áp dụng ngay. Danh sách đầy đủ: 07 §12. Các mục chỉ có ý nghĩa khi chơi trực tuyến (trò chuyện, mic, ping,
+  like, nhận/đáp lỗi, tự từ chối đầu hàng, mạng WIFI + 3G/4G) không làm — game đang đấu với máy ngay trên điện thoại.
+- **Điều khiển theo cài đặt** (07 §9.1): cần di chuyển đi theo ngón (đế trượt theo khi kéo xa) / cố định, độ nhạy xoay chiêu, vòng ngắm quanh
+  nút / tại chỗ ngón chạm, huỷ chiêu bằng ô X / kéo xa, tung chiêu tự nhắm, hướng Chớp Bước (hướng chạy / hướng chiêu / về phía địch), chế
+  độ công chỉ định (một nút Đánh / thêm Ăn lính + Đẩy trụ / chạm vào địch để khoá), đánh thường chính xác, dấu mục tiêu, chế độ + tốc độ
+  camera, luật chọn mục tiêu (mặc định % máu thấp nhất — trước đây không ưu tiên tướng; tính trong mô phỏng qua lệnh `targetBy`, bot không
+  gửi nên trận toàn bot vẫn tất định như cũ).
+- **Giao diện / thiết lập theo cài đặt**: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, hồi
+  chiêu số thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, miêu tả chiêu (mặc định tắt), tên chiêu dưới nút; góc
+  camera gần / xa, độ sáng 5 mức, viền nhân vật, bảng hạ gục, sương mù.
+- **Bản đồ** (người chơi khoanh ô vàng / vùng xanh trên ảnh; "thêm bụi đối xứng cho cả map từ chỗ gần trụ 1"): bụi bờ sông đủ bốn cửa sông
+  cạnh trụ ngoài, đi theo cặp đối xứng tâm như hai hang; ruộng cạnh bụi bờ có dải bệ đá dọc mép bụi + bệ mép đường và **cột đá đèn lồng**
+  ở khe mép đường (03 — "Bản đang chạy").
+- **Tướng máy 5v5 tự gỡ kẹt** (`ai/laneBot.js`): muốn đi mà đứng yên ~0,5 giây và đường thẳng tới đích bị tường chắn → tìm đường vòng trên
+  lưới và đi theo tới khi thấy thẳng tới đích. 4 trận 20 phút (seed 1–4): kẹt lâu nhất 287 giây → 11 giây, tổng thời gian kẹt > 3 giây
+  809 → 98 giây. Bộ kiểm tra Node đều đạt (t_arena, t_bot, t_combat, t_determinism, t_items, t_jungle, t_kills, t_map, t_rank, t_restore,
+  t_target, simtest).
