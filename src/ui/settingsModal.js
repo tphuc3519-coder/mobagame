@@ -74,7 +74,7 @@ function schema({ g, gfxSet, inMatch, onReset }) {
       ...(inMatch ? [] : [{ t: 'button', label: 'Dữ liệu người chơi', text: 'Xoá & bắt đầu lại', danger: true, act: 'reset' }]),
     ],
     snd: [
-      { t: 'sound', label: 'Âm thanh', sub: 'Nhạc nền sảnh', k: 'music', kv: 'musicVol' },
+      { t: 'sound', label: 'Âm thanh', sub: 'Nhạc sảnh, âm nền trong trận', k: 'music', kv: 'musicVol' },
       { t: 'sound', label: 'Hiệu ứng âm thanh', sub: 'Đánh, chiêu, giao diện', k: 'sfx', kv: 'sfxVol' },
       tog('announcer', 'Tiếng thông báo trong trận', 'Nhạc báo hạ gục, chuỗi, phá trụ, vào trận'),
       { t: 'note', html: 'iPhone đang gạt nút <b>im lặng</b> (bên hông máy) thì Safari không phát tiếng. Chạm vào màn hình một lần để bật âm thanh.' },

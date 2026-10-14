@@ -123,30 +123,36 @@ export const sfx = (name, o) => play(name, o);
 /** Tâm nghe = tâm camera (x, y thế giới) + hướng "sang phải" của màn hình trên mặt đất (rx, ry) để lệch trái/phải. */
 export function setListener(x, y, rx = 1, ry = 0) { listener.x = x; listener.y = y; const l = Math.hypot(rx, ry) || 1; listener.rx = rx / l; listener.ry = ry / l; }
 
-// —— nhạc nền (sảnh): giải mã khi cần, lặp liền mạch theo điểm lặp; vào trận thì tắt dần và trả bộ nhớ ——
-let want = null, musSrc = null, musGain = null, musBuf = null, musBytes = null, musLoad = null;
+// —— nền: nhạc sảnh ('lobby') / âm nền trong trận ('field' — gió, lá, chim, suối): giải mã khi cần, lặp liền mạch theo điểm lặp;
+//    đổi bài thì tắt dần bài cũ và trả bộ nhớ đã giải mã của nó (nhạc sảnh ~15 MB) ——
+const BG_GAIN = { lobby: 1, field: 0.55 };
+let want = null, musSrc = null, musGain = null, musBuf = null, musLoad = null;
+const musBytes = {};
 function startMusic() {
   if (!want || !ctx || ctx.state !== 'running' || !meta?.music?.[want] || !prefs().music) return;
-  const info = meta.music[want];
-  if (!musBuf) {
-    if (musLoad) return;
-    musLoad = (musBytes ? Promise.resolve(musBytes) : fetchBytes(info.file).then((b) => (musBytes = b)))
-      .then((b) => decode(b.slice(0), 2)).then((buf) => { musBuf = buf; musBuf.d = syncDelay(buf, info.sync); musLoad = null; startMusic(); })
-      .catch((e) => { musLoad = null; console.warn('nhạc:', e?.message || e); });
+  const name = want, info = meta.music[name];
+  if (musBuf?.name !== name) {
+    if (musLoad === name) return;
+    musLoad = name;
+    (musBytes[name] ? Promise.resolve(musBytes[name]) : fetchBytes(info.file).then((b) => (musBytes[name] = b)))
+      .then((b) => decode(b.slice(0), info.ch || 2)).then((buf) => { if (musLoad === name) musLoad = null; if (want !== name) return; musBuf = { name, buf, d: syncDelay(buf, info.sync) }; startMusic(); })
+      .catch((e) => { if (musLoad === name) musLoad = null; console.warn('nhạc:', e?.message || e); });
     return;
   }
   if (musSrc) return;
-  const d = musBuf.d || 0, t = ctx.currentTime;
-  musSrc = ctx.createBufferSource(); musSrc.buffer = musBuf; musSrc.loop = true; musSrc.loopStart = info.start + d; musSrc.loopEnd = info.end + d;
-  musGain = ctx.createGain(); musGain.gain.setValueAtTime(0, t); musGain.gain.linearRampToValueAtTime(1, t + 1.6);
+  const d = musBuf.d, t = ctx.currentTime;
+  musSrc = ctx.createBufferSource(); musSrc.buffer = musBuf.buf; musSrc.loop = true; musSrc.loopStart = info.start + d; musSrc.loopEnd = info.end + d;
+  musGain = ctx.createGain(); musGain.gain.setValueAtTime(0, t); musGain.gain.linearRampToValueAtTime(BG_GAIN[name] ?? 1, t + 1.6);
   musSrc.connect(musGain); musGain.connect(musBus); musSrc.start(t, info.start + d);
 }
-/** Bật nhạc nền 'lobby' (bắt đầu ngay khi được phép phát), hoặc music(null) để tắt dần. */
+/** Bật nền 'lobby' | 'field' (bắt đầu ngay khi được phép phát), hoặc music(null) để tắt dần. */
 export function music(name, fade = 1.2) {
-  if (name === want && (name ? musSrc || musLoad : !musSrc)) return;
-  want = name || null;
+  name = name || null;
+  if (name === want && (name ? musSrc || musLoad === name : !musSrc)) return;
+  want = name;
   if (musSrc && ctx) { const s = musSrc, g = musGain, t = ctx.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + fade); s.stop(t + fade + 0.05); musSrc = null; }
-  if (want) startMusic(); else setTimeout(() => { if (!want) musBuf = null; }, (fade + 0.2) * 1000); // trong trận không giữ ~15 MB nhạc đã giải mã
+  if (musBuf && musBuf.name !== want) setTimeout(() => { if (musBuf && musBuf.name !== want) musBuf = null; }, (fade + 0.2) * 1000);
+  if (want) startMusic();
 }
 export const audioReady = () => !!(sprite && ctx && ctx.state === 'running');
-if (typeof window !== 'undefined') window.__audio = { play, music, get state() { return ctx?.state || 'none'; }, get voices() { return voices.length; }, get music() { return musSrc ? want : null; }, delay: 0, get loaded() { return !!sprite; }, played: [] }; // kiểm thử tự động
+if (typeof window !== 'undefined') window.__audio = { play, music, get state() { return ctx?.state || 'none'; }, get voices() { return voices.length; }, get music() { return musSrc ? want : null; }, get bg() { return { want, load: musLoad, buf: musBuf?.name || null, src: !!musSrc }; }, delay: 0, get loaded() { return !!sprite; }, played: [] }; // kiểm thử tự động

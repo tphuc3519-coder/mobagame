@@ -37,7 +37,7 @@ export const PREF_DEFAULTS = Object.freeze({
   killFx: true,        // Dùng hiệu ứng thông báo (bảng hạ gục giữa màn hình)
   fogFx: true,         // Hiệu ứng sương mù (vùng chưa có tầm nhìn tối đi)
   // —— Âm thanh ——
-  music: true, musicVol: 0.6,   // Nhạc nền (sảnh)
+  music: true, musicVol: 0.6,   // Âm thanh nền: nhạc sảnh + âm nền trong trận (gió, lá, chim, suối)
   sfx: true, sfxVol: 0.85,      // Hiệu ứng âm thanh
   announcer: true,              // Tiếng thông báo trong trận (hạ gục, chuỗi, trụ…)
   // —— Dữ liệu ——

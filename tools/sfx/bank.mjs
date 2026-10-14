@@ -228,3 +228,33 @@ export function lobbyMusic() {
   for (let i = N(len); i < wl.length; i++) { const k = i - N(len); if (k < outL.length) { outL[k] += wl[i]; outR[k] += wr[i]; } }
   return [dcBlock(outL), dcBlock(outR)];
 }
+
+// ——— âm nền trong trận: gió đồng, lá xào xạc, chim hót thưa, suối xa — 32 giây lặp liền mạch (rất nhỏ, nằm dưới tiếng giao tranh) ———
+export function fieldAmbience() {
+  const r = rng(77), len = 32, tail = 2, out = buf(len + tail), n = out.length;
+  const add = (x, g, at) => { const o = Math.round(at * SR); for (let i = 0; i < x.length && o + i < n; i++) out[o + i] += x[i] * g; };
+  // gió: nhiễu hồng lọc thông thấp, tần cắt + độ to trôi chậm (cơn gió) — chu kỳ chia hết 32 s để nối vòng không lệch
+  const gust = (t) => 0.55 + 0.25 * Math.sin(2 * Math.PI * t / 16 + 0.7) + 0.2 * Math.sin(2 * Math.PI * t / 8 + 2.1) * Math.sin(2 * Math.PI * t / 32);
+  const w = lp(pink(len + tail, r), (t) => 380 + 520 * gust(t), 0.7); for (let i = 0; i < w.length; i++) w[i] *= gust(i / SR);
+  add(w, 0.5, 0);
+  // lá xào xạc theo cơn gió
+  add(grains(len + tail, (t) => 18 * Math.max(0, gust(t) - 0.45), (rr) => mul(bp(white(0.03, rr), 3500 + rr() * 2500, 1.8), envAD(0.03, 0.002, 0.008)), r), 0.18, 0);
+  // suối xa: nhiễu nâu lọc dải + bọt nước thưa
+  add(bp(brown(len + tail, r), 650, 0.9), 0.35, 0);
+  add(grains(len + tail, 9, (rr) => gain(mul(osc(0.04, (t) => (700 + rr() * 900) * (1 + 1.8 * t / 0.04)), envAD(0.04, 0.001, 0.01)), 0.5), r), 0.12, 0);
+  // chim: vài loài, mỗi câu 2–6 tiếng, cách nhau 2–5 giây
+  const chirp = (f0, f1, d, vib = 0) => mul(osc(d, (t) => (f0 + (f1 - f0) * (t / d)) * (1 + vib * Math.sin(2 * Math.PI * 38 * t))), envAD(d, 0.004, d * 0.35));
+  const species = [
+    () => { const k = 3 + Math.floor(r() * 4), f = 3800 + r() * 900; return Array.from({ length: k }, (_, i) => [chirp(f, f * 1.25, 0.045), i * 0.075]); }, // ríu rít lên
+    () => [[chirp(3300, 3250, 0.18, 0.004), 0], [chirp(2700, 2650, 0.22, 0.004), 0.24]], // huýt hai nốt "fee-bee"
+    () => { const k = 5 + Math.floor(r() * 4); return Array.from({ length: k }, (_, i) => [chirp(4600 - i * 120, 4200 - i * 120, 0.03), i * 0.05]); }, // láy xuống nhanh
+    () => [[chirp(2400, 3600, 0.12, 0.02), 0], [chirp(3600, 2800, 0.1, 0.02), 0.14], [chirp(2600, 3900, 0.12, 0.02), 0.3]], // hót uốn
+  ];
+  for (let t = 0.8; t < len - 1; t += 2 + r() * 3.2) {
+    const notes = species[Math.floor(r() * species.length)](), g = 0.05 + r() * 0.06;
+    for (const [x, dt] of notes) add(x, g, t + dt);
+  }
+  const y = reverb(out, { size: 0.7, damp: 0.5, wet: 0.25, dry: 0.9, tail: 0.1 });
+  const L = N(len), o = y.slice(0, L); for (let i = L; i < y.length; i++) if (i - L < L) o[i - L] += y[i]; // nối vòng
+  return dcBlock(o);
+}

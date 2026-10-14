@@ -257,7 +257,7 @@ async function warmUp() {
   } catch (e) { console.warn('Dịch sẵn shader lỗi', e); }
   cover.remove();
 }
-warmUp().then(() => { loop.start(); music(null); sfx('match_start', { announce: true }); });
+warmUp().then(() => { loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();

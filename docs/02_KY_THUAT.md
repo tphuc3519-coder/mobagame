@@ -258,7 +258,7 @@ Tầm trung (1,25 / tắt / bật / tắt), Cao (1,5 / bật / bật / tắt), S
 - **Mọi tiếng tổng hợp bằng code** (`tools/sfx/dsp.mjs` + `bank.mjs`: dao động polyBLEP, nhiễu trắng/hồng/nâu, lọc biquad đổi tham số theo
   thời gian, FM, dây gảy Karplus-Strong, cộng hưởng nhiều mode, vang Freeverb, bão hoà) — không dùng file ghi âm ngoài. `node
   tools/sfx/build.mjs` (cần ffmpeg + libmp3lame) dựng `assets/audio/sfx.mp3` + `sfx.json` (79 tiếng ghép một file — "audio sprite": một lần
-  tải, một lần giải mã) và `lobby.mp3` (nhạc sảnh ngũ cung Rê, 80 BPM, 48 giây lặp liền mạch). `--preview` ghi ảnh phổ từng tiếng để soát.
+  tải, một lần giải mã) `lobby.mp3` (nhạc sảnh ngũ cung Rê, 80 BPM, 48 giây lặp liền mạch) và `field.mp3` (âm nền trong trận: gió, lá, chim, suối xa — 32 giây lặp). `--preview` ghi ảnh phổ từng tiếng để soát.
 - Độ to chuẩn hoá theo nhóm (ui, minor, combat, skill, econ, sting) bằng RMS ngắn hạn lớn nhất (cửa sổ 50 ms), đo **trung bình nhân giữa
   toàn dải và dải loa điện thoại** (bỏ dưới 220 Hz): loa iPhone gần như không phát dưới ~200 Hz nên tiếng nặng phần trầm (đánh vào người,
   sập trụ) phải có thân ở dải 250–1000 Hz (`punch` trong bank) chứ không chỉ "thịch" trầm. Cắt dưới 55 Hz (tiếng nặng: 100 Hz), giới hạn

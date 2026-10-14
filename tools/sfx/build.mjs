@@ -11,7 +11,7 @@ import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { SR, N, rng, fade, dcBlock, trim, peak, wav, hp, limit } from './dsp.mjs';
-import { BANK, lobbyMusic } from './bank.mjs';
+import { BANK, lobbyMusic, fieldAmbience } from './bank.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'), OUT = path.join(ROOT, 'assets/audio');
 const TARGET = { ui: 0.11, minor: 0.09, combat: 0.2, skill: 0.19, econ: 0.15, sting: 0.24 }; // RMS ngắn hạn mục tiêu theo nhóm
@@ -64,6 +64,15 @@ if (!only.length) {
   ff(['-i', path.join(tmp, 'lobby.wav'), '-c:a', 'libmp3lame', '-b:a', '112k', path.join(OUT, 'lobby.mp3')]);
   const start = (N(at) + W) / SR; music.lobby = { file: 'lobby.mp3', sync: LEAD, start: +start.toFixed(5), end: +(start + len / SR).toFixed(5) };
   console.log(`nhạc sảnh: ${(len / SR).toFixed(1)} giây → lobby.mp3 ${(fs.statSync(path.join(OUT, 'lobby.mp3')).size / 1024).toFixed(0)} KB (${((Date.now() - t1) / 1000).toFixed(1)} s)`);
+  // ——— âm nền trong trận (một kênh, cùng cách quấn vòng + vạch đồng bộ) ———
+  {
+    const A = fieldAmbience(), p2 = peak(A), k2 = 0.7 / p2, len2 = A.length, M = new Float32Array(N(at) + len2 + 2 * W + N(0.1));
+    M.set(sync, N(LEAD)); for (let i = 0; i < len2 + 2 * W; i++) M[N(at) + i] = A[(i - W + len2) % len2] * k2;
+    fs.writeFileSync(path.join(tmp, 'field.wav'), wav(M));
+    ff(['-i', path.join(tmp, 'field.wav'), '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '64k', path.join(OUT, 'field.mp3')]);
+    const s2 = (N(at) + W) / SR; music.field = { file: 'field.mp3', sync: LEAD, start: +s2.toFixed(5), end: +(s2 + len2 / SR).toFixed(5), ch: 1 };
+    console.log(`âm nền trận: ${(len2 / SR).toFixed(1)} giây → field.mp3 ${(fs.statSync(path.join(OUT, 'field.mp3')).size / 1024).toFixed(0)} KB`);
+  }
   fs.writeFileSync(path.join(OUT, 'sfx.json'), JSON.stringify({ sync: LEAD, sounds: meta, music }));
 }
 if (preview) {

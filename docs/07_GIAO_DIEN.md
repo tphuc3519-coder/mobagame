@@ -218,7 +218,7 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
   - *Thiết lập giao diện*: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, thời gian hồi số
     thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, FPS, miêu tả chiêu (giữ nút), tên chiêu dưới nút.
   - *Thiết lập*: góc camera Gần / Xa, độ sáng 5 nấc, viền nhân vật, hiệu ứng thông báo (bảng hạ gục), hiệu ứng sương mù; ở sảnh: xoá dữ liệu.
-  - *Âm thanh*: nhạc nền (bật/tắt + âm lượng), hiệu ứng âm thanh (bật/tắt + âm lượng), tiếng thông báo trong trận.
+  - *Âm thanh*: âm thanh nền — nhạc sảnh + âm nền trận (bật/tắt + âm lượng), hiệu ứng âm thanh (bật/tắt + âm lượng), tiếng thông báo trong trận.
   - *Dữ liệu*: tiết kiệm dữ liệu (không tải trước model mọi tướng khi ở sảnh).
   - Trong trận: nút **Đầu hàng** ở chân hộp (đấu hạng từ phút 8; chạm hai lần để xác nhận).
   - Không làm (chưa có chơi trực tuyến): trò chuyện, mic, ping nhanh, like / nhận lỗi trong trận, tự từ chối đầu hàng, mạng WIFI + 3G/4G.
@@ -229,7 +229,7 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
   chọn tướng: lướt + chuông; chuyển màn: tiếng lướt gió. **Tìm thấy trận**: trống + kèn đồng + chuông; **khoá tướng**: tiếng đập kim loại +
   hợp xướng; đồng đội khoá: chuông nhỏ; 5 giây cuối chưa khoá: tích tắc; màn đội hình: **VS** (vút lên + đập + kèn); kết quả: lướt giữa
   các màn, tiếng phần thưởng (đồng xu + lấp lánh).
-- **Trận**: vào trận (tù và + trống), đợt lính đầu tiên (tù và), đánh thường theo vũ khí từng tướng (vung nặng/nhẹ, bắn cung, bắn phép),
+- **Trận**: âm nền nhỏ (gió đồng, lá xào xạc, chim hót thưa, suối xa — theo công tắc Âm thanh), vào trận (tù và + trống), đợt lính đầu tiên (tù và), đánh thường theo vũ khí từng tướng (vung nặng/nhẹ, bắn cung, bắn phép),
   tiếng trúng (thịt, chém, giáp, phép, chuẩn, chí mạng), chiêu theo nguyên tố (lửa, nước, lá, gió, ánh sáng, huyền bí, đất) + chiêu cuối,
   lướt, choáng, hất tung, khiên, hồi máu / Hồi Máu bị cắt, phép bổ trợ, Trừng Trị, trụ bắn / trúng, lính, quái, chết, phá trụ, boss gầm,
   vàng, mua đồ, lên cấp, về thành, hồi sinh, nhặt cục máu; nhạc báo hạ gục / chiến công đầu / hạ liên tiếp (cao dần theo số mạng) /
