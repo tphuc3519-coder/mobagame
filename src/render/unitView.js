@@ -24,8 +24,8 @@ export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedM
 /** Bán kính cầu xét "trong khung nhìn" quanh chân đơn vị: đủ trùm thân + bóng đổ (nắng xiên ~0,8 × chiều cao) + camera trượt 1 khung. */
 const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.max(380, e.radius * 4) : 560);
 const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
-export function createUnitViews(scene, localTeam, localId, { floor = null } = {}) {
-  const views = new Map();
+export function createUnitViews(scene, localTeam, localId, { floor = null, outlines = true } = {}) { // outlines: viền nét tướng (tắt ở chi tiết Thấp — mỗi mesh vẽ thêm một lượt)
+  const views = new Map(), aliveIds = new Set();
   // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
   // xương đặt frustumCulled = false (khối bao không theo động tác) nên trước đây cả bản đồ ~70 đơn vị đều vẽ mỗi khung, kể cả lượt bóng.
   // Tướng chỉ ẩn (hiệu ứng bám xương tay/đầu vẫn cần ma trận xương cập nhật).
@@ -45,7 +45,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
     if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
-    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: art?.outline !== false }); castShadows(obj); };
+    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: outlines && art?.outline !== false }); castShadows(obj); };
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
     const useCapsule = () => {
       if (v.capsule) return;
@@ -88,7 +88,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null } = {}
     update(world, alpha, dt, camera = null) {
       if (camera) { pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); } // khung của lần vẽ trước
       const inView = (e, x, y, z) => { if (!camera) return true; const r = cullR(e); sph.center.set(x, y + r * 0.35, z); sph.radius = r; return frustum.intersectsSphere(sph); };
-      const alive = new Set();
+      const alive = aliveIds; alive.clear(); // dùng lại một Set (đỡ rác bộ nhớ mỗi khung)
       for (const e of world.entities) {
         alive.add(e.id);
         const v = views.get(e.id) || spawn(e, world);

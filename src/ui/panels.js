@@ -2,6 +2,8 @@
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
+import { gfxRows, gfxClick } from './gfxSettings.js';
+import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
 import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail, BAG_ITEMS } from './profile.js';
@@ -65,6 +67,9 @@ const STYLE = `
 .pn-set .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; margin-bottom: 10px; border-radius: 6px; background: linear-gradient(90deg, rgba(30,38,90,.78), rgba(12,16,42,.62)); box-shadow: inset 0 0 0 1px rgba(255,214,140,.16); font: 600 14px var(--u-body); }
 .pn-set .seg { display: flex; border-radius: 17px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,214,140,.5); } .pn-set .seg button { padding: 8px 16px; border: 0; background: transparent; font: 700 14px/1 var(--u-disp); letter-spacing: .05em; text-transform: uppercase; color: #cfd6ef; }
 .pn-set .seg button.on { background: var(--u-gold); color: #3b1a02; }
+.pn-set .row.gfx { padding: 8px 12px; margin-bottom: 6px; } .pn-set .row.gfx .seg button { padding: 7px 13px; font-size: 13px; }
+.pn-set .row small { display: block; margin-top: 2px; font-size: 11px; color: #a8b4d8; }
+.pn-sub { margin: 4px 2px 8px; font: 800 15px/1.2 var(--u-disp); letter-spacing: .06em; color: #ffd98a; text-transform: uppercase; }
 .pn-note { font-size: 12px; color: #a8b4d8; text-align: center; margin: 12px 0 4px; }
 `;
 let styled = false;
@@ -179,12 +184,16 @@ export function openBag() {
 
 export function openSettings() {
   css(); const { body } = panel({ title: 'Cài đặt' });
-  const Q = 'la.quality', cur = (() => { try { return localStorage.getItem(Q) || 'mid'; } catch (_) { return 'mid'; } })();
-  body.innerHTML = `<div class="pn-set"><div class="row"><span>Chất lượng đồ hoạ</span><span class="seg">${[['low', 'Thấp'], ['mid', 'Vừa'], ['high', 'Cao']].map(([v, n]) => `<button type="button" data-q="${v}" class="${v === cur ? 'on' : ''}">${n}</button>`).join('')}</span></div>
-    <div class="row"><span>Dữ liệu người chơi</span><button type="button" class="btn-ghost" data-a="reset">Xoá & bắt đầu lại</button></div>
-    <p class="pn-note">Vị trí cửa hàng trong trận: nút bánh răng góc phải khi đang chơi.</p></div>`;
+  const g = loadGfx('');
+  const draw = () => {
+    body.innerHTML = `<div class="pn-set"><h3 class="pn-sub">Đồ hoạ</h3>${gfxRows(g)}
+      <p class="pn-note">Điện thoại còn giật: chọn mức Thấp hoặc Vừa, Khung hình 30, hoặc bật Tự giảm khi giật. Trong trận đổi ở nút bánh răng góc phải (áp dụng ngay).</p>
+      <h3 class="pn-sub">Khác</h3><div class="row"><span>Dữ liệu người chơi</span><button type="button" class="btn-ghost" data-a="reset">Xoá & bắt đầu lại</button></div>
+      <p class="pn-note">Vị trí cửa hàng trong trận: nút bánh răng góc phải khi đang chơi.</p></div>`;
+  };
+  draw();
   body.onclick = (e) => {
-    const b = e.target.closest('[data-q]'); if (b) { try { localStorage.setItem(Q, b.dataset.q); } catch (_) { /* riêng tư */ } body.querySelectorAll('[data-q]').forEach((x) => x.classList.toggle('on', x === b)); toast('Áp dụng từ trận sau'); }
+    if (gfxClick(e, g)) { draw(); toast('Đã lưu — áp dụng khi vào trận'); return; }
     if (e.target.closest('[data-a="reset"]')) dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] });
   };
 }
