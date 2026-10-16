@@ -250,14 +250,16 @@ Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nú
 - **Lịch sử**: 20 trận gần nhất, chạm xem bảng thống kê.
 - **Cài đặt** (`ui/settingsModal.js`, kiểu Liên Quân, ở sảnh và nút bánh răng trong trận): hộp lớn tiêu đề vàng + nút X, cột thẻ bên trái:
   - *Thiết lập đồ hoạ*: thẻ Ưu tiên độ mượt / Cân bằng / Ưu tiên chất lượng / Tuỳ chỉnh; thanh Chất lượng hình ảnh (Mượt → Tối cao),
-    Chất lượng chi tiết (Mượt / Cao / Tối cao), FPS (Tiết kiệm pin / Cao), Độ phân giải; bóng đổ, ánh sáng rực, khử răng cưa, tự giảm khi giật.
+    Chất lượng chi tiết (Mượt / Cao / Tối cao), FPS (Tiết kiệm pin / Cao), Độ phân giải; bóng đổ, ánh sáng rực, khử răng cưa (Tắt / 2x /
+    4x), tự giảm khi giật.
   - *Điều khiển*: đánh thường chính xác, độ nhạy xoay chiêu, camera (Tắt / Giữ / Trượt) + tốc độ, chế độ công chỉ định (Tự đánh / Ăn
     lính + Đẩy trụ / Tự chọn mục tiêu), lựa chọn mục tiêu (% máu / máu / gần nhất), hướng tốc biến mặc định, hiển thị mục tiêu chỉ định,
     phương pháp tung chiêu (hỗ trợ xoay / tự nhắm), vị trí xoay chiêu (nút / ngón tay), huỷ chiêu (vùng / cự ly), góc quay theo định vị,
     lệnh di chuyển (cần đi theo / cố định).
   - *Thiết lập giao diện*: vị trí cửa hàng, đồ đề cử, mô tả trang bị, thông số mục tiêu, khung camera trên bản đồ nhỏ, thời gian hồi số
     thập phân, ảnh tướng khi tung chiêu cuối, tướng địch ở rìa màn hình, FPS, miêu tả chiêu (giữ nút), tên chiêu dưới nút.
-  - *Thiết lập*: góc camera Gần / Xa, độ sáng 5 nấc, viền nhân vật, hiệu ứng thông báo (bảng hạ gục), hiệu ứng sương mù; ở sảnh: xoá dữ liệu.
+  - *Thiết lập*: góc camera Gần / Xa, độ sáng 5 nấc, hiệu ứng thông báo (bảng hạ gục), hiệu ứng sương mù; ở sảnh: xoá dữ liệu. (Mục
+    "Viền" nhân vật đã bỏ cùng viền nhân vật — 02 §13.3.)
   - *Âm thanh*: âm thanh nền — nhạc sảnh + âm nền trận (bật/tắt + âm lượng), hiệu ứng âm thanh (bật/tắt + âm lượng), tiếng thông báo trong trận.
   - *Dữ liệu*: tiết kiệm dữ liệu (không tải trước model mọi tướng khi ở sảnh).
   - Trong trận: nút **Đầu hàng** ở chân hộp (đấu hạng từ phút 8; chạm hai lần để xác nhận).

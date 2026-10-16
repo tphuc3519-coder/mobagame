@@ -187,7 +187,11 @@ Mọi chữ hiển thị đi qua `i18n.js` (`t('ui.ready')`). Mặc định ti�
 - **Không dùng bóng đổ thời gian thực cho đơn vị.** Mỗi đơn vị có **bóng tròn** (plane + texture mờ, dùng instancing).
 - Bản đồ: ánh sáng **nướng sẵn (baked)** trong Blender thành lightmap/texture màu, vật liệu `MeshBasicMaterial` hoặc `MeshLambertMaterial` để rẻ.
 - Nhân vật: `MeshStandardMaterial` (hoặc `MeshToonMaterial` nếu chọn phong cách toon), 1 `HemisphereLight` + 1 `DirectionalLight` + **environment map** nhỏ (PMREM từ ảnh HDR 256px, tối ưu cho mobile).
-- **Viền sáng (rim light)** màu đội qua `material.onBeforeCompile` (thêm `fresnel` vào `emissive`): đồng minh ngọc lam, địch đỏ son, bản thân vàng nhạt. Chung một hàm trong `materials.js`.
+- **Không viền nhân vật trong trận** (16/10, người chơi: "đừng có mấy cái viền gây chướng mắt nữa"): bỏ viền đen "vỏ đảo" (mỗi tướng
+  vẽ thêm một lượt có xương) và viền sáng màu đội (fresnel trong `emissive`); ở độ phân giải điện thoại hai lớp này làm mép tướng răng cưa
+  và lốm đốm vàng. Phe nhận bằng màu thanh máu. Sảnh (`showcase`) vẫn có viền sáng nhẹ theo màu tướng (rim 0,35), không viền đen.
+- Tướng nét hơn: chất vẽ tay chỉ giữ vân to (vân mịn ×42…×90 mỗi mét nhỏ hơn 1 điểm ảnh → nhấp nháy); trong trận normal map nửa độ,
+  vật liệu PBR nhám ≥ 0,6 (bớt chấm sáng lấp lánh), texture lọc xiên ×4; mức Vừa có MSAA 2x (13.8).
 - Hiệu ứng trúng đòn: nháy trắng 80ms (tăng emissive).
 - Tàng hình: độ trong suốt 35% với đồng đội, không vẽ với địch.
 
@@ -224,17 +228,24 @@ Tên clip bắt buộc trong mọi GLB tướng (xem 11 §6):
 - Hạt: `Points` hoặc quad instancing, pool cố định, blending cộng (`AdditiveBlending`).
 - Không tạo `Material` mới trong vòng lặp; dùng `material.clone()` một lần lúc spawn.
 - Đo bằng `renderer.info` trong chế độ `?debug=1` (draw call, tam giác, texture).
+- Safari / iPhone (16/10): không dịch shader giữa trận — mọi vật liệu tạo về sau phải có bản mẫu lúc vào trận (vòng tầm trụ có vòng ẩn
+  sẵn; chân dung tướng chụp sẵn sau màn "Đang vào trận…"); `renderer.debug.checkShaderErrors` chỉ bật với `?debug` (đọc nhật ký dịch bắt
+  chờ dịch xong tại chỗ). Không nạp canvas 2D lên GPU mỗi khung (Safari đọc ngược ảnh canvas): sương mù tính trên mảng số → DataTexture.
+  Lính chỉ có bóng tròn (không đổ bóng thật). Lớp HUD: số bay chỉ cho đòn mình gây / mình nhận, tên + huy hiệu cấp vẽ sẵn ra canvas nhỏ.
+  Mô phỏng: tìm đường A* đống nhị phân + giới hạn 1500 ô (bản cũ có tick 300 ms).
 
 ### 13.7 Lớp HUD trên cảnh 3D
 - Thanh máu, tên, số sát thương vẽ trên canvas `#hud` 2D: dùng `project.js` chiếu điểm đầu nhân vật (`Y = chiều cao model + 40`) ra toạ độ màn hình mỗi frame.
 - Chỉ báo ngắm, vòng tầm, vùng AoE: vẽ **trong cảnh 3D** bằng mesh phẳng sát mặt đất (`indicators.js`) để đúng phối cảnh.
-- Sương mù: texture tầm nhìn cập nhật mỗi 3 tick, phủ lên mặt đất bằng shader, và ẩn object của địch ngoài tầm nhìn.
+- Sương mù (`fog.js`): mặt nạ tầm nhìn 256² tính trên mảng số ~10 lần/giây → DataTexture (alphaMap) của tấm phủ bản đồ; ẩn object của địch
+  ngoài tầm nhìn. Bản đồ nhỏ lấy ảnh canvas dựng từ cùng mặt nạ.
 
 ### 13.8 Cài đặt đồ hoạ (`quality.js`, thẻ "Thiết lập đồ hoạ" của `ui/settingsModal.js`)
 Ba mức đặt sẵn (thẻ Ưu tiên độ mượt / Cân bằng / Ưu tiên chất lượng) + chỉnh từng mục (Cài đặt ở sảnh và nút bánh răng trong trận), lưu
 trong máy (`localStorage['la.gfx']`). Mặc định: điện thoại **Cân bằng**, máy tính **Ưu tiên chất lượng**. Chọn từng mục khác mức đặt sẵn → thẻ
 "Tuỳ chỉnh". Thanh "Chất lượng hình ảnh" 5 nấc như Liên Quân gộp độ nét + bóng đổ + ánh sáng rực + khử răng cưa: Mượt (1 / tắt / tắt / tắt),
-Tầm trung (1,25 / tắt / bật / tắt), Cao (1,5 / bật / bật / tắt), Siêu cao (2 / bật / bật / tắt), Tối cao (2 / bật / bật / bật).
+Tầm trung (1,25 / tắt / bật / tắt), Cao (1,5 / bật / bật / 2x), Siêu cao (2 / bật / bật / 2x), Tối cao (2 / bật / bật / 4x). Bản lưu cũ
+(chưa có `v: 2`) đang theo một mức đặt sẵn thì nhận định nghĩa mức mới (Vừa thêm MSAA 2x); bản Tuỳ chỉnh giữ nguyên.
 
 | Mục | Thấp | Vừa | Cao | Đổi giữa trận |
 |---|---|---|---|---|
@@ -242,7 +253,7 @@ Tầm trung (1,25 / tắt / bật / tắt), Cao (1,5 / bật / bật / tắt), S
 | Khung hình | 60 | 60 | 60 (chọn được 30) | ngay |
 | Bóng đổ thời gian thực (chỉ nhân vật; bóng cây / đá / tường nướng sẵn trên nền) | tắt | bật | bật | ngay, không dịch lại shader |
 | Ánh sáng rực (bloom) | tắt | bật | bật | ngay |
-| Khử răng cưa (MSAA 4x trên render target cảnh) | tắt | tắt | bật | ngay |
+| Khử răng cưa (MSAA trên render target cảnh: tắt / 2x / 4x) | tắt | 2x | 4x | ngay |
 | Chi tiết cảnh (mật độ cây cỏ, shader nền / sông) | thấp | vừa | cao | trận sau |
 | Tự giảm khi giật (`autoQuality.js`) | bật | bật | bật | ngay |
 

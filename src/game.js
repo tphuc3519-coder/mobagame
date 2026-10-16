@@ -92,7 +92,7 @@ const sun = addLights(scene, renderer, { shadow: shadowSize(gfx), on: gfx.shadow
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 env.group.traverse((o) => { if (o.isMesh) o.castShadow = false; }); // bóng cây/đá/tường đã nướng sẵn trên nền (ground.js): lượt bóng thời gian thực chỉ vẽ nhân vật
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
-const views = createUnitViews(scene, 0, player.id, { floor, outlines: gfx.detail !== 'low' && prefs().outline }); // viền nhân vật (Cài đặt → Thiết lập → Viền)
+const views = createUnitViews(scene, 0, player.id, { floor, anisotropy: Math.min(4, renderer.capabilities.getMaxAnisotropy()) });
 const orbViews = createOrbViews(scene, world, { floor }); // cục máu sau trụ ngoài (sim/orbs.js)
 const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);
@@ -184,7 +184,8 @@ function applyGfx(k) {
 }
 let manual = false; // kiểm thử: __game.advance() tự bước mô phỏng + vẽ theo dt cố định (chụp hiệu ứng từng khung)
 const fxSlow = parseFloat(q.get('fxslow') || '1'); // kiểm thử: quay chậm hiệu ứng
-let lastDraw = 0, lastMini = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false;
+let lastDraw = 0, lastMini = 0, fpsAcc = 0, fpsN = 0, fps = 0, dead = false, gray = 0;
+if (!post) document.body.classList.add('nopost'); // không hậu kỳ (?nobloom): màn hình xám khi chết bằng CSS
 
 const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
@@ -212,6 +213,7 @@ const loopCfg = {
     cam.follow(px, py, d.x, d.y, dt, camLook.look(px, py)); sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn
     sounds.update(world, cam.target, cam.camera); // tâm nghe theo camera
     if (dead !== !player.alive) { dead = !player.alive; document.body.classList.toggle('dead', dead); } // chết: màn hình xám, nút cửa hàng nhấp nháy
+    if (post && gray !== (dead ? 1 : 0)) { gray = dead ? Math.min(1, gray + dt * 3) : Math.max(0, gray - dt * 4); post.set({ gray }); } // xám dần khi chết, hồi sinh thì màu về
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }
     env.update(performance.now() / 1000, dt, cam.camera, innerHeight * renderer.getPixelRatio());
@@ -239,6 +241,7 @@ async function warmUp() {
   try {
     views.update(world, 1, 0); await tick(); await tick(); // dựng view mọi đơn vị (model tướng đã tải gắn vào ở lượt kế tiếp)
     await within(preloadMonsters().catch(() => {}), 3000);
+    await within(portraits.prime(world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId)), 4000); // chân dung bản đồ nhỏ / bảng tỉ số / thông báo
     const tmp = new THREE.Group(); tmp.position.set(player.pos.x, -420, player.pos.y); scene.add(tmp); // dưới mặt đất, trong hộp bóng: lượt vẽ thử dịch cả biến thể bóng đổ
     for (const t of Object.keys(MINION_MODEL)) for (const team of [0, 1]) tmp.add(createMinion(t, team).object);
     for (const [type, d] of Object.entries(MONSTERS)) for (const m of Object.keys(d.stats || { x: 1 })) tmp.add(createMonster(type, m).object);

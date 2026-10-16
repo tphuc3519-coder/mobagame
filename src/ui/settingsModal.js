@@ -12,8 +12,8 @@ const TABS = [['gfx', 'Thiết lập đồ hoạ'], ['ctl', 'Điều khiển'], 
 const TAB_KEY = 'la.settab';
 // "Chất lượng hình ảnh" 5 nấc như Liên Quân = gộp độ nét + bóng đổ + ánh sáng rực + khử răng cưa (mức Thấp/Vừa/Cao cũ là nấc 1/3/5)
 const IQ = [
-  { scale: 1, shadows: false, bloom: false, aa: 0 }, { scale: 1.25, shadows: false, bloom: true, aa: 0 }, { scale: 1.5, shadows: true, bloom: true, aa: 0 },
-  { scale: 2, shadows: true, bloom: true, aa: 0 }, { scale: 2, shadows: true, bloom: true, aa: 4 }];
+  { scale: 1, shadows: false, bloom: false, aa: 0 }, { scale: 1.25, shadows: false, bloom: true, aa: 0 }, { scale: 1.5, shadows: true, bloom: true, aa: 2 },
+  { scale: 2, shadows: true, bloom: true, aa: 2 }, { scale: 2, shadows: true, bloom: true, aa: 4 }];
 const iqOf = (g) => IQ.findIndex((l) => Object.keys(l).every((k) => l[k] === g[k]));
 const SCALES = [1, 1.25, 1.5, 2], DETAIL = ['low', 'mid', 'high'];
 const CARDS = [['low', 'Ưu tiên độ mượt', 'Mượt, tiết kiệm pin'], ['mid', 'Cân bằng', 'Đẹp vừa, mát máy'], ['high', 'Ưu tiên chất lượng', 'Đồ hoạ cao, hao pin'], ['custom', 'Tuỳ chỉnh', 'Chỉnh từng mục bên dưới']];
@@ -32,7 +32,7 @@ function schema({ g, gfxSet, inMatch, onReset }) {
       { t: 'slider', label: 'Độ phân giải', stops: ['Thấp', 'Vừa', 'Cao', 'HD'], get: () => SCALES.indexOf(g.scale), set: (i) => gfxSet({ scale: SCALES[i] }) },
       { t: 'toggle', label: 'Bóng đổ nhân vật', get: () => g.shadows, set: (v) => gfxSet({ shadows: v }) },
       { t: 'toggle', label: 'Ánh sáng rực', desc: 'Quầng sáng đèn lồng, trụ, hiệu ứng chiêu', get: () => g.bloom, set: (v) => gfxSet({ bloom: v }) },
-      { t: 'toggle', label: 'Khử răng cưa', get: () => g.aa > 0, set: (v) => gfxSet({ aa: v ? 4 : 0 }) },
+      { t: 'pill', label: 'Khử răng cưa', opts: [[0, 'Tắt'], [2, '2x'], [4, '4x']], get: () => g.aa, set: (v) => gfxSet({ aa: v }) },
       { t: 'toggle', label: 'Tự giảm đồ hoạ khi giật', desc: 'Máy không giữ nổi FPS thì tự hạ độ nét / bóng đổ, ổn lại thì nâng lên', get: () => g.auto, set: (v) => gfxSet({ auto: v }) },
       { t: 'note', html: 'Điện thoại còn giật: chọn <b>Ưu tiên độ mượt</b>, FPS <b>Tiết kiệm pin</b> hoặc bật <b>Tự giảm đồ hoạ khi giật</b>.' },
     ],
@@ -68,7 +68,6 @@ function schema({ g, gfxSet, inMatch, onReset }) {
     gen: [
       { t: 'pill', label: 'Góc camera', opts: [['near', 'Gần'], ['far', 'Xa']], ...P('camDist') },
       { t: 'slider', label: 'Độ sáng', stops: ['Tối', '2 - Tối', 'Đề cử 3', '4 - Sáng', 'Sáng'], vals: [1, 2, 3, 4, 5], ...P('bright') },
-      tog('outline', 'Viền', inMatch ? 'Viền sáng quanh nhân vật — áp dụng từ trận sau' : 'Viền sáng quanh nhân vật (mức chi tiết Mượt luôn tắt)'),
       tog('killFx', 'Dùng H.ứng thông báo', 'Bảng hạ gục / chuỗi hạ gục giữa màn hình'),
       tog('fogFx', 'Hiệu ứng sương mù', 'Vùng chưa có tầm nhìn tối đi (địch trong sương vẫn ẩn)'),
       ...(inMatch ? [] : [{ t: 'button', label: 'Dữ liệu người chơi', text: 'Xoá & bắt đầu lại', danger: true, act: 'reset' }]),

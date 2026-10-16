@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { LEVELS } from './quality.js';
-import { setOutlineResolution } from './materials.js';
 
 /** WebGLRenderer + xử lý resize và mất ngữ cảnh WebGL (02 §13.10). gfx: cài đặt đồ hoạ (render/quality.js; chuỗi mức cũ vẫn nhận).
  *  Khung mặc định không khử răng cưa (cảnh vẽ qua render target của hậu kỳ — MSAA đặt ở đó, đổi được trong trận). Bản đồ bóng luôn bật:
@@ -9,6 +8,8 @@ export function createRenderer(canvas, gfx, { onLost, onRestored }) {
   const g = typeof gfx === 'string' ? { scale: LEVELS[gfx]?.pixelRatio ?? 1.5 } : gfx;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   renderer.setClearColor(0x0f1224);
+  // không đọc nhật ký dịch shader sau mỗi lần dịch (trừ ?debug): getProgramInfoLog bắt trình duyệt chờ dịch xong ngay tại chỗ (khựng)
+  renderer.debug.checkShaderErrors = typeof location !== 'undefined' && /[?&]debug\b/.test(location.search);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.84;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; // chỉ nhân vật đổ bóng thật (cảnh tĩnh dùng bóng nướng sẵn)
@@ -17,7 +18,6 @@ export function createRenderer(canvas, gfx, { onLost, onRestored }) {
   const resize = () => {
     renderer.setPixelRatio(pr ?? base());
     renderer.setSize(innerWidth, innerHeight, false);
-    setOutlineResolution(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio());
   };
   addEventListener('resize', resize); resize();
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onLost?.(); });

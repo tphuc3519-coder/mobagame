@@ -5,7 +5,7 @@ import { createAnimator } from './animator.js';
 import { createCapsule } from './placeholder/capsule.js';
 import { createDummy } from './placeholder/dummy.js';
 import { createBlobShadow } from './shadows.js';
-import { prepareUnitMaterials, RIM } from './materials.js';
+import { prepareUnitMaterials } from './materials.js';
 import { createTower, createCore, createFountain, createMinion } from './structures.js';
 import { canSee, bushAt } from '../sim/vision.js';
 import { createMonster } from './monsters.js';
@@ -24,7 +24,7 @@ export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedM
 /** Bán kính cầu xét "trong khung nhìn" quanh chân đơn vị: đủ trùm thân + bóng đổ (nắng xiên ~0,8 × chiều cao) + camera trượt 1 khung. */
 const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.max(380, e.radius * 4) : 560);
 const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
-export function createUnitViews(scene, localTeam, localId, { floor = null, outlines = true } = {}) { // outlines: viền nét tướng (tắt ở chi tiết Thấp — mỗi mesh vẽ thêm một lượt)
+export function createUnitViews(scene, localTeam, localId, { floor = null, anisotropy = 1 } = {}) { // anisotropy: lọc xiên texture tướng (renderer.capabilities)
   const views = new Map(), aliveIds = new Set();
   // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
   // xương đặt frustumCulled = false (khối bao không theo động tác) nên trước đây cả bản đồ ~70 đơn vị đều vẽ mỗi khung, kể cả lượt bóng.
@@ -42,10 +42,9 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, outli
       if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
       root.add(v.part.object); return v;
     }
-    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
+    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); v.atk = 0; return v; } // lính chỉ bóng tròn: ~20 lính mỗi khung đổ bóng thật = thêm ~20 lượt vẽ có xương
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
-    const rim = e.id === localId ? RIM.self : e.team === localTeam ? RIM.ally : RIM.enemy;
-    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, rim, { shading: art?.shading, outline: outlines && art?.outline !== false }); castShadows(obj); };
+    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, undefined, { shading: art?.shading, anisotropy, soft: true }); castShadows(obj); }; // không viền (02 §13.3)
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
     const useCapsule = () => {
       if (v.capsule) return;

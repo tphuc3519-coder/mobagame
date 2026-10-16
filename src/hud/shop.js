@@ -96,7 +96,11 @@ export function createShop(root, { world, player }) {
       const afford = (id) => { const p = planBuy(player, id); return p.ok && player.gold >= Math.ceil(p.cost) ? 1 : 0; };
       const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 1).map((q) => q.id + (q.ok ? 1 : 0)).join();
       const s = [player.items.join(), open, tab, sel, bits].join('|');
-      if (g !== this.lastGold) { this.lastGold = g; $('goldPill').innerHTML = `${CART}<b>${g}</b>`; $('shopGold').innerHTML = `${coinIcon()} ${g}`; }
+      if (g !== this.lastGold) { // vàng nhích vài lần mỗi giây: chỉ đổi chữ số (dựng lại cả hình giỏ SVG mỗi lần làm Safari tính lại bố cục)
+        this.lastGold = g; const gp = $('goldPill'), sg = $('shopGold');
+        if (!gp._b) { gp.innerHTML = `${CART}<b></b>`; gp._b = gp.querySelector('b'); } gp._b.textContent = g;
+        if (!sg._t) { sg.innerHTML = `${coinIcon()} <span></span>`; sg._t = sg.querySelector('span'); } sg._t.textContent = g;
+      }
       if (s === sig) return;
       sig = s;
       renderBar(); renderQb();

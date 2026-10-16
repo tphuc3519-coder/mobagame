@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { faceMaterial } from './face.js';
 
-// Vật liệu nhân vật: đổ bóng kiểu hoạt hình (toon 4 nấc), viền sáng màu đội bằng shader (không vẽ sẵn trong texture),
-// viền đen ngoài bằng "vỏ đảo" có bề dày cố định theo pixel, nháy trắng khi trúng đòn (02 §13.3).
-export const RIM = { self: '#ffe9a0', ally: '#5fe3d0', enemy: '#ff5a4a', neutral: '#b0b8d0' };
+// Vật liệu nhân vật: đổ bóng kiểu hoạt hình (toon), chất vẽ tay, nháy trắng khi trúng đòn (02 §13.3). Không còn viền: viền đen "vỏ
+// đảo" (vẽ thêm cả tướng một lượt) và viền sáng màu đội trong trận bị người chơi chê chướng mắt, lại làm mép tướng răng cưa / lốm đốm ở
+// độ phân giải điện thoại → bỏ (phe nhận bằng màu thanh máu). Viền sáng còn dùng ở sảnh (showcase, rim nhỏ theo màu tướng).
 
 let ramp;
 function gradientMap() {
@@ -17,13 +17,10 @@ function gradientMap() {
   return ramp;
 }
 
-/** Độ dày viền tính theo pixel màn hình; cập nhật khi đổi kích thước. */
-export const OUTLINE = { ndc: { value: new THREE.Vector2(0.004, 0.004) }, px: 1.2 };
-export function setOutlineResolution(w, h) { OUTLINE.ndc.value.set((OUTLINE.px * 2) / w, (OUTLINE.px * 2) / h); }
-
 // Chất "vẽ tay" theo loại chất liệu (thuộc tính _mat do tools/modelgen ghi): 0 vải, 1 da, 2 kim loại, 3 tóc, 4 da thuộc/gỗ, 5 phát sáng.
 // Vệt cọ + vân vải theo toạ độ vật thể (bám bề mặt khi chuyển động), kim loại có dải sáng và điểm loé vẽ tay,
-// tóc có vòng bóng, da có sắc ấm ở vùng tối. Không cần UV hay texture.
+// tóc có vòng bóng, da có sắc ấm ở vùng tối. Không cần UV hay texture. Chỉ giữ vân to (≥ ~5 điểm ảnh trên tướng cao ~150 px): vân mịn
+// cũ (×42 … ×90 mỗi mét) nhỏ hơn một điểm ảnh ở màn điện thoại → lấm tấm, nhấp nháy khi tướng chạy, tướng trông nhoè.
 const PAINT_V = `attribute float _mat;
 varying float vMat; varying vec3 vObj;`;
 const PAINT_F = `varying float vMat; varying vec3 vObj;
@@ -37,12 +34,12 @@ function patch(mat, u) {
     sh.vertexShader = PAINT_V + '\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMat = _mat; vObj = position;');
     sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float flashAmt;\nuniform float rimAmt;\n' + PAINT_F + '\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
-        float pn1 = pn3(vObj * 9.0), pn2 = pn3(vObj * 42.0), stroke = pn3(vec3(vObj.x * 14.0, vObj.y * 3.5, vObj.z * 14.0));
-        if (vMat < 0.5) diffuseColor.rgb *= 0.88 + 0.16 * pn1 + 0.08 * (stroke - 0.5) + 0.05 * (pn2 - 0.5);
+        float pn1 = pn3(vObj * 9.0), stroke = pn3(vec3(vObj.x * 14.0, vObj.y * 3.5, vObj.z * 14.0));
+        if (vMat < 0.5) diffuseColor.rgb *= 0.89 + 0.16 * pn1 + 0.08 * (stroke - 0.5);
         else if (vMat < 1.5) diffuseColor.rgb *= 0.97 + 0.05 * pn1;
         else if (vMat < 2.5) diffuseColor.rgb *= 0.8 + 0.3 * stroke;
-        else if (vMat < 3.5) diffuseColor.rgb *= 0.86 + 0.22 * pn3(vec3(vObj.x * 60.0, vObj.y * 6.0, vObj.z * 60.0));
-        else if (vMat < 4.5) diffuseColor.rgb *= 0.85 + 0.2 * pn3(vec3(vObj.x * 30.0, vObj.y * 90.0, vObj.z * 30.0));`)
+        else if (vMat < 3.5) diffuseColor.rgb *= 0.9 + 0.16 * pn3(vec3(vObj.x * 16.0, vObj.y * 3.0, vObj.z * 16.0));
+        else if (vMat < 4.5) diffuseColor.rgb *= 0.88 + 0.16 * pn3(vec3(vObj.x * 10.0, vObj.y * 24.0, vObj.z * 10.0));`)
       .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = diffuseColor.a;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         vec3 Vv = normalize(vViewPosition); float ndv = saturate(dot(normal, Vv));
@@ -50,11 +47,11 @@ function patch(mat, u) {
         totalEmissiveRadiance += rimColor * rimF * rimAmt + vec3(flashAmt);
         if (vMat > 0.5 && vMat < 1.5) totalEmissiveRadiance += diffuseColor.rgb * vec3(0.16, 0.06, 0.05) * (1.0 - ndv * 0.6);
         else if (vMat > 1.5 && vMat < 2.5) {
-          float wob = (pn2 - 0.5) * 0.12, band = smoothstep(0.18, 0.3, normal.y + wob) * (1.0 - smoothstep(0.45, 0.6, normal.y + wob));
+          float wob = (pn1 - 0.5) * 0.12, band = smoothstep(0.18, 0.3, normal.y + wob) * (1.0 - smoothstep(0.45, 0.6, normal.y + wob));
           float spec = pow(saturate(dot(reflect(-Vv, normal), normalize(vec3(0.35, 0.8, 0.5)))), 28.0);
           totalEmissiveRadiance += diffuseColor.rgb * band * 0.45 + vec3(1.0, 0.97, 0.9) * spec * 0.7 + diffuseColor.rgb * rimF * 0.3;
         } else if (vMat > 2.5 && vMat < 3.5) {
-          float w = normal.y + (pn2 - 0.5) * 0.14, ring = smoothstep(0.3, 0.4, w) * (1.0 - smoothstep(0.52, 0.64, w));
+          float w = normal.y + (pn1 - 0.5) * 0.14, ring = smoothstep(0.3, 0.4, w) * (1.0 - smoothstep(0.52, 0.64, w));
           totalEmissiveRadiance += mix(diffuseColor.rgb, vec3(1.0), 0.55) * ring * 0.5;
         } else if (vMat > 3.5 && vMat < 4.5) {
           totalEmissiveRadiance += vec3(1.0, 0.9, 0.75) * pow(saturate(dot(reflect(-Vv, normal), normalize(vec3(0.35, 0.8, 0.5)))), 10.0) * 0.18;
@@ -93,25 +90,13 @@ function toUnlit(m, u) {
   return c;
 }
 
-function outlineMaterial() {
-  const m = new THREE.MeshBasicMaterial({ color: 0x120e1a, side: THREE.BackSide });
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.outlineNdc = OUTLINE.ndc;
-    sh.vertexShader = 'uniform vec2 outlineNdc;\n' + sh.vertexShader.replace('#include <project_vertex>',
-      '#include <project_vertex>\n vec3 nV = normalize(normalMatrix * objectNormal);\n vec2 nOff = (projectionMatrix * vec4(nV, 0.0)).xy;\n if (length(nOff) > 1e-5) gl_Position.xy += normalize(nOff) * outlineNdc * gl_Position.w;');
-  };
-  m.customProgramCacheKey = () => 'unit-outline';
-  return m;
-}
-const outlineMat = outlineMaterial();
-const hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
-
-/** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi màu viền/độ trong suốt.
+/** Mỗi đơn vị có bản sao vật liệu riêng (clone một lần lúc spawn) để đổi độ chớp/độ trong suốt.
  *  shading (hero.art.json): 'toon' (mặc định, chất vẽ tay), 'pbr' (vật liệu gốc của model có texture, cần envMap ở cảnh không có scene.environment),
- *  'unlit' (chỉ màu texture). Model tô màu theo đỉnh (không phải MeshStandardMaterial) luôn dùng chất vẽ tay. */
-export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8, shading = 'toon', envMap = null } = {}) {
+ *  'unlit' (chỉ màu texture). Model tô màu theo đỉnh (không phải MeshStandardMaterial) luôn dùng chất vẽ tay. rim: độ viền sáng màu rimHex
+ *  (trong trận 0; sảnh dùng nhẹ). anisotropy: lọc texture xiên (model có ảnh) — nét hơn khi nhìn chéo từ camera trên cao. soft (trong trận): normal map nửa độ, kim loại/PBR nhám hơn — bớt lấp lánh. */
+export function prepareUnitMaterials(object, rimHex = '#ffffff', { rim = 0, shading = 'toon', envMap = null, anisotropy = 1, soft = false } = {}) {
   const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 }, rimAmt: { value: rim } };
-  const mats = [], outlines = [], faces = [];
+  const mats = [], faces = [];
   const meshes = [];
   object.traverse((o) => { if (o.isMesh) meshes.push(o); });
   for (const o of meshes) {
@@ -120,20 +105,18 @@ export function prepareUnitMaterials(object, rimHex, { outline = true, rim = 0.8
       if (/_face$/.test(m.name)) { const f = o.userData?.face || o.parent?.userData?.face; if (!f) { const k = m.clone(); k.visible = false; return k; } const fm = faceMaterial(f); faces.push(fm); return fm.material; }
       const c = !m.isMeshStandardMaterial ? (() => { const k = m.clone(); patch(k, u); return k; })()
         : shading === 'pbr' ? toPbr(m, u, envMap) : shading === 'unlit' ? toUnlit(m, u) : toToon(m, u);
+      for (const t of [c.map, c.normalMap]) if (t && t.anisotropy < anisotropy) { t.anisotropy = anisotropy; t.needsUpdate = true; } // texture dùng chung giữa các bản sao: đặt một lần
+      if (soft && c.normalMap) c.normalScale?.multiplyScalar(0.5); // trong trận tướng chỉ cao ~150 px: gờ normal map mịn thành chấm sáng lấp lánh
+      if (soft && c.isMeshStandardMaterial) c.roughness = Math.max(c.roughness, 0.6);
       mats.push(c); return c;
     });
     o.material = Array.isArray(o.material) ? list : list[0];
-    if (outline && o.isSkinnedMesh) { // viền đen: bản sao cùng xương, mặt trong, đẩy ra theo pháp tuyến
-      const ol = new THREE.SkinnedMesh(o.geometry, src.length > 1 ? src.map((s) => (/_face$/.test(s.name) ? hiddenMat : outlineMat)) : outlineMat);
-      ol.bind(o.skeleton, o.bindMatrix); ol.frustumCulled = false; ol.renderOrder = -1;
-      o.parent.add(ol); outlines.push(ol);
-    }
   }
   return {
     uniforms: u,
     setFlash(v) { u.flash.value = v; },
     /** Chớp mắt (gọi mỗi khung hình). */
     update(dt) { for (const f of faces) f.update(dt); },
-    setGhost(on) { for (const m of mats) { m.transparent = on; m.opacity = on ? 0.62 : 1; m.needsUpdate = true; } for (const ol of outlines) ol.visible = !on; }, // trong bụi: mờ vừa phải, vẫn ghi chiều sâu để không lộ mặt trong tối
+    setGhost(on) { for (const m of mats) { m.transparent = on; m.opacity = on ? 0.62 : 1; m.needsUpdate = true; } }, // trong bụi: mờ vừa phải, vẫn ghi chiều sâu để không lộ mặt trong tối
   };
 }

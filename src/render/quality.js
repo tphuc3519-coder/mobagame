@@ -5,16 +5,17 @@
 //   fps     — giới hạn khung hình: 30 (mát máy, đều) / 60
 //   shadows — bóng đổ thời gian thực của nhân vật (bóng cảnh tĩnh luôn nướng sẵn trên nền)
 //   bloom   — quầng sáng đèn lồng / lõi trụ / hiệu ứng chiêu (hậu kỳ)
-//   aa      — khử răng cưa nhiều mẫu (MSAA) khi vẽ cảnh: 0 / 4
+//   aa      — khử răng cưa nhiều mẫu (MSAA) khi vẽ cảnh: 0 / 2 / 4 (mức Vừa của điện thoại: 2 — mép tướng hết răng cưa; GPU xếp ô của
+//             iPhone làm MSAA khá rẻ, máy không kham nổi thì bộ tự giảm tắt nó trước tiên)
 //   detail  — chi tiết cảnh 'low' | 'mid' | 'high'
 //   auto    — tự hạ (rồi nâng lại) khi máy không giữ nổi FPS (render/autoQuality.js)
 export const PRESETS = {
   low: { scale: 1, fps: 60, shadows: false, bloom: false, aa: 0, detail: 'low' },
-  mid: { scale: 1.5, fps: 60, shadows: true, bloom: true, aa: 0, detail: 'mid' },
+  mid: { scale: 1.5, fps: 60, shadows: true, bloom: true, aa: 2, detail: 'mid' },
   high: { scale: 2, fps: 60, shadows: true, bloom: true, aa: 4, detail: 'high' },
 };
-const OPTS = { scale: [1, 1.25, 1.5, 2], fps: [30, 60], shadows: [false, true], bloom: [false, true], aa: [0, 4], detail: ['low', 'mid', 'high'] };
-const KEY = 'la.gfx';
+const OPTS = { scale: [1, 1.25, 1.5, 2], fps: [30, 60], shadows: [false, true], bloom: [false, true], aa: [0, 2, 4], detail: ['low', 'mid', 'high'] };
+const KEY = 'la.gfx', VER = 2; // VER 2: mức Vừa thêm MSAA 2x — cài đặt cũ đang theo một mức đặt sẵn thì nhận mức mới (tuỳ chỉnh thì giữ nguyên)
 const phone = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 /** Mức đặt sẵn trùng với cài đặt hiện tại, hoặc 'custom'. */
@@ -26,13 +27,14 @@ export function loadGfx(search = typeof location !== 'undefined' ? location.sear
   try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { saved = null; }
   if (!saved || typeof saved !== 'object') { let old = null; try { old = localStorage.getItem('la.quality'); } catch (_) { /* riêng tư */ } saved = { preset: PRESETS[old] ? old : phone() ? 'mid' : 'high' }; }
   const g = { ...(PRESETS[saved.preset] || PRESETS.mid), auto: saved.auto !== false, showFps: !!saved.showFps };
-  for (const [k, vals] of Object.entries(OPTS)) if (vals.includes(saved[k])) g[k] = saved[k];
+  const keep = saved.v === VER || !PRESETS[saved.preset]; // bản lưu cũ theo mức đặt sẵn: lấy định nghĩa mức hiện tại
+  if (keep) for (const [k, vals] of Object.entries(OPTS)) if (vals.includes(saved[k])) g[k] = saved[k];
   const q = new URLSearchParams(search).get('q'); if (PRESETS[q]) Object.assign(g, PRESETS[q]);
   g.preset = presetOf(g);
   return g;
 }
 export function saveGfx(g) {
-  const o = { preset: presetOf(g), auto: !!g.auto, showFps: !!g.showFps }; for (const k of Object.keys(OPTS)) o[k] = g[k];
+  const o = { v: VER, preset: presetOf(g), auto: !!g.auto, showFps: !!g.showFps }; for (const k of Object.keys(OPTS)) o[k] = g[k];
   try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (_) { /* chế độ riêng tư: chỉ áp dụng phiên này */ }
 }
 /** Mức chung 'low' | 'mid' | 'high' cho chỗ chỉ cần một mức (sân khấu sảnh, mật độ cảnh): theo chi tiết cảnh. */

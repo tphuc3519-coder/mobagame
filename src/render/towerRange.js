@@ -21,6 +21,7 @@ export function createTowerRanges(scene) {
         gl_FragColor = vec4(c * (1.0 + edge * 0.6), clamp(v, 0.0, 1.0)); }` });
   const beamMat = new THREE.MeshBasicMaterial({ color: 0xff3a2a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const beam = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), beamMat); beam.rotation.order = 'YXZ'; beam.visible = false; beam.renderOrder = 4; g.add(beam);
+  const warm = new THREE.Mesh(new THREE.CircleGeometry(1, 8), ringMat()); warm.visible = false; g.add(warm); // dịch sẵn shader vòng lúc vào trận (compile duyệt cả vật ẩn): trước đây lần đầu lại gần trụ địch thì khựng
   let t = 0;
   return {
     update(world, player, dt) {

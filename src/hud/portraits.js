@@ -29,6 +29,9 @@ export function createPortraits(renderer, size = 96) {
     done.set(id, c);
   }
   return {
+    /** Chụp sẵn chân dung các tướng của trận (lúc màn "Đang vào trận…"): chụp = dịch shader cảnh chân dung + đọc điểm ảnh từ GPU (chờ GPU
+     *  xong việc) — để tới lúc bản đồ nhỏ / bảng hạ gục cần mới chụp thì trận khựng. */
+    prime(ids) { return Promise.all([...new Set(ids)].map((id) => { if (done.has(id) || pending.has(id)) return null; pending.add(id); return shoot(id).catch(() => {}).finally(() => { if (!done.has(id)) pending.delete(id); }); })); },
     get(id) {
       if (done.has(id)) return done.get(id);
       if (!pending.has(id)) { // chưa chụp được (model tải lỗi): vài giây sau thử lại
