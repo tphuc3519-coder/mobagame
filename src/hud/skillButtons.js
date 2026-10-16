@@ -164,7 +164,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         const cost = level ? lv(sk.cost, level) : 0;
         // chỉ ghi DOM khi giá trị đổi (ghi mỗi khung làm trình duyệt tính lại bố cục liên tục → giật trên điện thoại)
         const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt'), lvl: el.querySelector('.lvl') };
-        set(c.cd.style, 'height', level ? `${Math.min(100, Math.round((left / total) * 1000) / 10)}%` : '100%');
+        set(c.cd.style, 'transform', `scaleY(${level ? Math.min(1, Math.round((left / total) * 1000) / 1000) : 1})`);
         set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 || !dec ? Math.ceil(left) : left.toFixed(1)) : '');
         el.classList.toggle('nomana', level > 0 && player.mana < cost);
         el.classList.toggle('locked', !level); el.classList.toggle('cooling', left > 0.05);

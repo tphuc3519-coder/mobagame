@@ -92,7 +92,7 @@ export function createSpellButtons(root, { world, player, indicators }) {
   });
 
   const set = (o, k, v) => { if (o[k] !== v) o[k] = v; }; // chỉ ghi DOM khi đổi (đỡ tính lại bố cục mỗi khung)
-  const overlay = (el, left, total) => { const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt') }; set(c.cd.style, 'height', `${Math.min(100, Math.round((left / total) * 1000) / 10)}%`); set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 || !pref('cdDecimal') ? Math.ceil(left) : left.toFixed(1)) : ''); };
+  const overlay = (el, left, total) => { const c = el._c ||= { cd: el.querySelector('.cd'), cdt: el.querySelector('.cdt') }; set(c.cd.style, 'transform', `scaleY(${Math.min(1, Math.round((left / total) * 1000) / 1000)})`); set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 || !pref('cdDecimal') ? Math.ceil(left) : left.toFixed(1)) : ''); };
   let lastItem = '';
   return {
     update() {

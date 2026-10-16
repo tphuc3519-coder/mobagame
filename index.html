@@ -33,7 +33,7 @@
   #fs { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 5; background: #171b33cc; color: inherit; border: 1px solid #2a3050; border-radius: 6px; padding: 6px 10px; font: inherit; }
   .sb { position: absolute; border-radius: 50%; border: 2px solid #f3e9d6aa; background: #171b33d9; color: #f3e9d6; font: 700 13px 'Be Vietnam Pro', system-ui, sans-serif; overflow: hidden; touch-action: none; display: grid; place-items: center; padding: 0; }
   .sb.down { transform: scale(0.94); border-color: #ffb84d; }
-  .cd { position: absolute; left: 0; right: 0; bottom: 0; background: #0009; pointer-events: none; }
+  .cd { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: #0009; pointer-events: none; transform-origin: 50% 100%; transform: scaleY(0); } /* hồi chiêu: co giãn bằng transform (đổi height mỗi khung → Safari tính lại bố cục) */
   .cdt { position: absolute; font-size: 18px; pointer-events: none; }
   .nm { position: relative; z-index: 1; } .cooling .nm { opacity: 0; }
   .sk.nomana { border-color: #4a9cff; color: #7ab4ff; } .sk.locked { opacity: 0.45; }
