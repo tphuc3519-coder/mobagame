@@ -33,7 +33,7 @@
   #fs { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 5; background: #171b33cc; color: inherit; border: 1px solid #2a3050; border-radius: 6px; padding: 6px 10px; font: inherit; }
   .sb { position: absolute; border-radius: 50%; border: 2px solid #f3e9d6aa; background: #171b33d9; color: #f3e9d6; font: 700 13px 'Be Vietnam Pro', system-ui, sans-serif; overflow: hidden; touch-action: none; display: grid; place-items: center; padding: 0; }
   .sb.down { transform: scale(0.94); border-color: #ffb84d; }
-  .cd { position: absolute; left: 0; right: 0; bottom: 0; background: #0009; pointer-events: none; }
+  .cd { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: #0009; pointer-events: none; transform-origin: 50% 100%; transform: scaleY(0); } /* hồi chiêu: co giãn bằng transform (đổi height mỗi khung → Safari tính lại bố cục) */
   .cdt { position: absolute; font-size: 18px; pointer-events: none; }
   .nm { position: relative; z-index: 1; } .cooling .nm { opacity: 0; }
   .sk.nomana { border-color: #4a9cff; color: #7ab4ff; } .sk.locked { opacity: 0.45; }
@@ -61,7 +61,7 @@
   .ic.pimg { border: 0; background: none; border-radius: 12%; } .ic.pimg img { display: block; width: 100%; height: 100%; pointer-events: none; }
   .coin { width: 16px; height: 16px; vertical-align: -3px; }
   #shopRoot { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
-  body.dead #world { filter: grayscale(0.85) brightness(0.8); } /* đang chờ hồi sinh */
+  body.dead.nopost #world { filter: grayscale(0.85) brightness(0.8); } /* đang chờ hồi sinh (có hậu kỳ thì làm xám trong post.js) */
   body.dead .goldPill { animation: buyPulse 1s ease-in-out infinite; } @keyframes buyPulse { 50% { box-shadow: 0 0 0 3px #ffd27a, 0 0 18px #ffb84d; transform: scale(1.06); } }
   #camBtn { position: fixed; right: calc(max(12px, env(safe-area-inset-right)) + 6px); bottom: calc(max(10px, env(safe-area-inset-bottom)) + var(--skh) + 16px); z-index: 4; width: 50px; height: 50px; padding: 0; border: 0; background: none; touch-action: none;
     --a: clamp(88px, 22vh, 124px); --s: clamp(60px, 15.5vh, 82px); --m: calc(var(--s) * 0.66); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 26px); } /* cùng số đo cụm kỹ năng */

@@ -161,15 +161,36 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
 
   // —— Hiệu ứng chiêu theo tướng ——
   const delayOf = (ev) => Math.max(0, ev.delay || 0);
+  /** Còn bao lâu tới lúc tướng vung tới tư thế chạm (animator.js tự canh theo lúc chiêu phát ra) — không có clip thì theo độ trễ chiêu. */
+  const releaseIn = (ev, e) => viewOf(e.id)?.animator?.impactIn ?? Math.min(0.5, delayOf(ev));
   const tipOf = (id) => boneOf(id, 'HandR_Tip') || boneOf(id, 'HandR') || headOf(id);
   /** Dấu hiệu ra chiêu chung: tay/vũ khí sáng lên theo màu tướng, tia sáng tụ vào rồi loé đúng lúc chiêu phát ra. */
   function castTell(ev, e) {
     const th = themeOf(e), t0 = tipOf(e.id); if (!t0) return;
     flash(t0.x, t0.y, t0.z, 70, th.col, 0.14);
     for (let i = 0; i < 8; i++) { const a = R(0, TAU), d = R(60, 110); A.spawn({ x: t0.x + Math.cos(a) * d, y: t0.y + R(-40, 40), z: t0.z + Math.sin(a) * d, vx: -Math.cos(a) * d * 5, vz: -Math.sin(a) * d * 5, life: 0.18, size: [22, 4], color: [0xffffff, th.col], tile: TILE.glow, drag: 0 }); }
-    later(Math.min(0.5, delayOf(ev)), () => { // loé lúc phát chiêu: trước mặt tướng theo hướng chiêu (mũi vũ khí lúc vung ngược có thể ở sau lưng)
+    const rin = releaseIn(ev, e), big = ev.slot === 's3';
+    if (rin >= 0.12) charge(e, th, rin, big);
+    later(rin, () => { // loé lúc phát chiêu: trước mặt tướng theo hướng chiêu (mũi vũ khí lúc vung ngược có thể ở sau lưng) + bùng ở mũi vũ khí
       const t1 = e.alive && tipOf(e.id); if (!t1) return; const f = fwd(e, 70), y = Math.min(170, Math.max(70, t1.y));
-      flash(f.x, y, f.z, 100, th.col, 0.12); A.spawn({ x: f.x, y, z: f.z, life: 0.22, size: [30, 150], color: [th.core, th.col], alpha: [0.7, 0], tile: TILE.ring, fadeIn: 0 }); });
+      flash(f.x, y, f.z, 100, th.col, 0.12); A.spawn({ x: f.x, y, z: f.z, life: 0.22, size: [30, 150], color: [th.core, th.col], alpha: [0.7, 0], tile: TILE.ring, fadeIn: 0 });
+      flash(t1.x, t1.y, t1.z, big ? 120 : 80, th.core, 0.1); burst(A, t1.x, t1.y, t1.z, { n: big ? 14 : 8, speed: [220, 520], up: [-60, 220], life: [0.14, 0.3], size: [24, 4], color: [0xffffff, th.col], drag: 4 }); });
+  }
+  /** Tụ lực suốt lúc gồng (≥ 0,12 s): hạt sáng hút vào mũi vũ khí / bàn tay (bám theo tay đang vung) + quầng sáng lớn dần; chiêu cuối dày, to hơn.
+   *  Hạt dùng hệ hạt chung (không thêm vật liệu); vị trí tay đọc một lần mỗi khung vào một vector dùng lại. */
+  function charge(e, th, dur, big) {
+    const p = new THREE.Vector3(); let ok = false;
+    const at = () => (ok ? p : null);
+    aura(dur, (dt, t) => {
+      const v = viewOf(e.id), b = v?.bones?.HandR_Tip || v?.bones?.HandR; ok = !!b && e.alive && v.root.visible; if (!ok) return;
+      b.getWorldPosition(p);
+      const k = Math.min(1, t / dur), r = big ? 120 : 80;
+      for (let n = (big ? 60 : 36) * (dt || 1 / 60) + Math.random(); n >= 1; n--) { // ~36–60 hạt/giây
+        const a = R(0, TAU), el = R(-0.7, 0.7), d = R(0.55, 1) * r, cx = Math.cos(a) * Math.cos(el), cy = Math.sin(el), cz = Math.sin(a) * Math.cos(el);
+        A.spawn({ x: cx * d, y: cy * d, z: cz * d, vx: -cx * d * 4.5, vy: -cy * d * 4.5, vz: -cz * d * 4.5, life: 0.2, size: [big ? 26 : 20, 4], color: [0xffffff, th.col], tile: TILE.glow, drag: 0, follow: at });
+      }
+      A.spawn({ x: 0, y: 0, z: 0, life: 0.05, size: (big ? 90 : 55) * (0.35 + 0.65 * k), color: th.col, alpha: [0.35 + 0.45 * k, 0.35 + 0.45 * k], tile: TILE.glow, fadeIn: 0, follow: at });
+    }, () => !e.alive);
   }
   const HB = HERO_SCALE * 0.9; // khiên cầu bao tướng: theo cỡ tướng (tướng to ×1,5)
   const fwd = (e, d) => ({ x: e.pos.x + Math.cos(e.facing) * d, z: e.pos.y + Math.sin(e.facing) * d });
@@ -195,7 +216,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
         if (ev.slot === 's1') { const t0 = tipOf(e.id); if (t0) { fire(t0.x, t0.y, t0.z, 4, 20, 0.6); embers(t0.x, t0.y, t0.z, 0xff4a00, 8, 30); } return; }
         if (ev.slot === 's3') { aura(0.5, () => { const r = rootOf(e.id); if (r && Math.random() < 0.9) { A.spawn({ x: r.x + R(-30, 30), y: r.y + R(20, 120), z: r.z + R(-30, 30), vy: R(-200, -60), life: 0.4, size: [40, 6], color: [0xffe0a0, 0xff4a00], tile: TILE.glow }); N.spawn({ x: r.x, y: r.y + 40, z: r.z, vy: -40, life: 0.6, size: [60, 150], color: [0xff8a30, 0x2a1810], alpha: [0.7, 0], tile: TILE.smoke }); } }, () => !e.alive); return; } // Đe Trời: vệt lửa + khói theo tướng đang bay
         if (ev.slot !== 's2') return; // Xỉ Sắt: giơ búa rồi dộng xuống trước mặt → sóng lửa, nứt đất; khiên xỉ sắt nóng chảy bao quanh; tăng tốc để lại vệt tàn lửa dưới chân
-        later(0.28, () => {
+        later(releaseIn(ev, e), () => { // đúng lúc búa chạm đất trong clip
           if (!e.alive) return;
           const f = e.facing, x = e.pos.x + Math.cos(f) * 150, z = e.pos.y + Math.sin(f) * 150;
           sh.ring(x, z, 20, 260, { color: 0xff6a14, width: 0.12, life: 0.45, fill: 0.4 });

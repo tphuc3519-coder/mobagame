@@ -54,7 +54,7 @@ const BRIGHT = `uniform sampler2D tScene; uniform vec2 uTexel; varying vec2 vUv;
 /** Lượt cuối ra canvas: cộng bloom vào màu tuyến tính, tone map (renderer.toneMapping/Exposure) + sRGB như OutputPass cũ, rồi chỉnh màu
  *  như cũ: làm nét (unsharp mask 4 lân cận trên ảnh đã tone map, giới hạn để không tạo viền trắng), bão hoà, tương phản, bóng ngả lam ngọc
  *  / sáng ngả ấm, vignette. Bloom thay đổi chậm nên lân cận dùng chung giá trị bloom của điểm giữa. */
-const FINAL = `uniform sampler2D tScene; uniform sampler2D tGlow4; uniform sampler2D tGlow8; uniform vec2 uPx; uniform float uSharp; uniform vec2 uBloom; varying vec2 vUv;
+const FINAL = `uniform sampler2D tScene; uniform sampler2D tGlow4; uniform sampler2D tGlow8; uniform vec2 uPx; uniform float uSharp; uniform vec2 uBloom; uniform float uGray; varying vec2 vUv;
   vec3 hdr(vec2 uv){ return min(max(texture2D(tScene, uv).rgb, vec3(0.0)), vec3(64.0)); }
   vec3 tm(vec3 c){
   #ifdef TONE_MAPPING
@@ -75,6 +75,7 @@ const FINAL = `uniform sampler2D tScene; uniform sampler2D tGlow4; uniform sampl
     x *= 0.94;                                                           // hạ tông chung
     x += mix(vec3(-0.025, 0.012, 0.045), vec3(0.025, 0.015, -0.015), smoothstep(0.15, 0.75, l)); // bóng ngả lam ngọc, sáng ngả ấm
     float v = smoothstep(1.1, 0.4, length(vUv - 0.5) * 1.35); x *= mix(0.82, 1.0, v); // vignette nhẹ
+    x = mix(x, vec3(dot(x, vec3(0.299, 0.587, 0.114))), uGray * 0.85) * (1.0 - uGray * 0.2); // đang chờ hồi sinh: xám + tối (trước là CSS filter trên canvas — Safari ghép thêm một lượt mỗi khung)
     gl_FragColor = vec4(clamp(x, 0.0, 1.0), 1.0); }`;
 
 /**
@@ -99,7 +100,7 @@ export function createPost(renderer, scene, camera, { bloom = true, aa = 4, stre
   const hB = blurH(SIG.w / 8, SIG.vw / 8), vB = blurV(SIG.w / 8, SIG.vw / 8, PART.w / (PART.w + PART.vw), PART.vw / (PART.w + PART.vw));
   const fin = [false, true].map((on) => passMat({
     defines: on ? { BLOOM: '' } : {}, // hai biến thể (có / không bloom), cùng dịch sẵn lúc tạo
-    uniforms: { tScene: { value: null }, tGlow4: { value: g4.texture }, tGlow8: { value: g8.texture }, uPx: { value: new THREE.Vector2() }, uSharp: { value: sharp }, uBloom: { value: new THREE.Vector2() } },
+    uniforms: { tScene: { value: null }, tGlow4: { value: g4.texture }, tGlow8: { value: g8.texture }, uPx: { value: new THREE.Vector2() }, uSharp: { value: sharp }, uBloom: { value: new THREE.Vector2() }, uGray: { value: 0 } },
     fragmentShader: FINAL,
   }));
   hA.uniforms.tSrc.value = b4.texture; vA.uniforms.tA.value = h4.textures[0]; vA.uniforms.tB.value = h4.textures[1];
@@ -143,8 +144,9 @@ export function createPost(renderer, scene, camera, { bloom = true, aa = 4, stre
       info.autoReset = auto;
     },
     resize,
-    /** Đổi giữa trận: bloom bật/tắt, aa (0/2/4) tạo lại render target cảnh, strength cường độ bloom. */
+    /** Đổi giữa trận: bloom bật/tắt, aa (0/2/4) tạo lại render target cảnh, strength cường độ bloom, gray 0..1 màn hình xám khi chết. */
     set(o = {}) {
+      if (o.gray !== undefined) for (const m of fin) m.uniforms.uGray.value = o.gray;
       if (o.bloom !== undefined) bloom = !!o.bloom;
       if (o.strength !== undefined) setStrength(o.strength);
       if (o.aa !== undefined && (o.aa | 0) !== aa) { aa = o.aa | 0; rt.dispose(); rt = makeTarget(); bindScene(); resize(); }

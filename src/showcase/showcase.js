@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { loadHero, peekHero, instantiate } from '../render/assets.js';
-import { prepareUnitMaterials, setOutlineResolution } from '../render/materials.js';
+import { prepareUnitMaterials } from '../render/materials.js';
 import { glowTexture } from '../render/env/textures.js';
 import { makeEnvMap } from '../render/lights.js';
 import { createSplash } from './splash.js';
@@ -79,7 +79,7 @@ export function makeHolder(m, id, ctx) {
   const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
   const sh = inst.art.showcaseShading || inst.art.shading; // sảnh có thể dùng kiểu khác trong trận (bản trưng bày chi tiết)
   if (sh === 'pbr' && !ctx.env) ctx.env = makeEnvMap(ctx.renderer);
-  const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: ctx.env, outline: (inst.art.showcaseOutline ?? inst.art.outline) !== false });
+  const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: ctx.env, anisotropy: Math.min(8, ctx.renderer?.capabilities.getMaxAnisotropy() ?? 1) }); // sảnh: viền sáng nhẹ theo màu tướng, không viền đen
   const mixer = new THREE.AnimationMixer(obj), acts = {};
   for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
   const g = new THREE.Group(); g.add(obj);
@@ -152,7 +152,7 @@ export function createShowcase(canvas, { quality = 'mid', stand = true, autoSpin
     const pr = Math.min(devicePixelRatio, quality === 'high' ? 2 : 1.5);
     renderer.setPixelRatio(pr); renderer.setSize(W, H, false);
     camera.aspect = W / H; camera.clearViewOffset(); if (offX) camera.setViewOffset(W, H, -offX, 0, W, H); camera.updateProjectionMatrix();
-    setOutlineResolution(W * pr, H * pr); sp.mat.uniforms.uH.value = H * pr;
+    sp.mat.uniforms.uH.value = H * pr;
   };
   addEventListener('resize', resize); resize();
 

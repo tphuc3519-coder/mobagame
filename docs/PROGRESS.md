@@ -274,3 +274,30 @@ khi có model hoạ sĩ thì chỉ cần đè file cùng tên. Cả 16 file qua 
   lưới và đi theo tới khi thấy thẳng tới đích. 4 trận 20 phút (seed 1–4): kẹt lâu nhất 287 giây → 11 giây, tổng thời gian kẹt > 3 giây
   809 → 98 giây. Bộ kiểm tra Node đều đạt (t_arena, t_bot, t_combat, t_determinism, t_items, t_jungle, t_kills, t_map, t_rank, t_restore,
   t_target, simtest).
+
+## Tối ưu Safari + tướng nét hơn, bỏ viền + tung chiêu có lực (16/10)
+Người chơi: "Tối ưu fps trên safari đi, đang bị lag, đồ hoạ model nhân vật nét hơn với đừng có mấy cái viền gây chướng mắt nữa. Nhân
+vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như vậy".
+- **Khựng giữa trận do bản bot gỡ kẹt hôm trước**: tìm đường A* sắp xếp lại cả danh sách mở mỗi bước → có tick mô phỏng 150–340 ms
+  (máy chủ; iPhone còn lâu hơn). Viết lại bằng đống nhị phân + A* có trọng số + giới hạn 1500 ô: tick nặng nhất 306 → 34 ms (bằng trước
+  khi có bot gỡ kẹt), bot vẫn gỡ kẹt như cũ.
+- **Bỏ viền nhân vật** (viền đen + viền sáng màu đội; bỏ mục "Viền" trong Cài đặt) và vân vẽ tay quá mịn (lốm đốm, nhấp nháy ở màn điện
+  thoại); normal map nửa độ, PBR nhám hơn, lọc xiên texture. **Mức Vừa (mặc định điện thoại) thêm MSAA 2x** — mép tướng hết răng cưa;
+  Cài đặt → Khử răng cưa Tắt / 2x / 4x. Ảnh so sánh: tướng sạch, hết chấm vàng và viền đen răng cưa.
+- **Safari**: sương mù không còn nạp canvas 2D lên GPU 10 lần/giây (Safari đọc ngược ảnh canvas) — tính trên mảng số, 0,1 ms/lần; chân
+  dung tướng chụp sẵn lúc vào trận; vòng tầm trụ dịch shader sẵn; không đọc nhật ký dịch shader (trừ ?debug); màn xám khi chết làm
+  trong hậu kỳ thay vì CSS filter; lính chỉ bóng tròn. Đo trên Chromium (trận phút 5): JS mỗi khung giảm rõ, dịch shader giữa trận
+  gần như hết.
+- **HUD**: số bay chỉ cho đòn mình gây / mình nhận (như Liên Quân — trước có số cho cả lính đánh lính), tên + huy hiệu cấp vẽ sẵn
+  (vẽ HUD ~3,3 → 0,6 ms/khung trên Chromium); số vàng chỉ đổi chữ.
+- **Ra chiêu có hồn, có lực**. Nguyên nhân "đơ": clip sinh bằng code nội suy smoothstep
+  giữa mọi khung (động tác nào cũng đều đều), phát một tốc độ cố định, thân không có lực; tư thế chạm thường lệch lúc chiêu phát ra — VD
+  Vung Búa (Emberforge): lửa bung ở khung đầu nhưng búa ~0,3 giây sau mới giáng.
+- Sửa (chỉ phần nhìn — không đụng mô phỏng, không dựng lại model; chi tiết 02 §13.5):
+  - `render/animator.js`: phân tích mỗi clip một lần lúc nạp (điểm chạm, đỉnh gồng, hướng cú đánh); clip hành động phát theo nhịp uốn —
+    gồng chậm dần → giáng nhanh, tư thế chạm rơi đúng tick chiêu / đòn phát ra → khựng → thu đòn; lớp thân lò xo trên node model (ngả,
+    lao tới / giật lùi, co – duỗi, vươn người khi giơ trời, nén người khi bổ / đập); khựng khi đòn trúng.
+  - `render/unitView.js`: lúc phát ra theo tick mô phỏng; quay mặt về hướng đòn trong ~2 khung; người trúng (tướng, hình nộm, quái lớn)
+    bị đẩy giật + ngả theo cú đánh, chờ đúng lúc vũ khí người đánh tới.
+  - `render/camera.js`: giật camera nhẹ theo hướng chiêu của người chơi (chiêu cuối mạnh hơn; tắt khi máy bật giảm chuyển động).
+  - `render/vfx/library.js`: tụ lực ở tay / vũ khí suốt lúc gồng, loé + bùng ở mũi vũ khí đúng khung chạm; cú búa Xỉ Sắt theo clip.
