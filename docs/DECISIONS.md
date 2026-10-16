@@ -607,3 +607,14 @@
   hình — không thêm loại vật cản mới vào mô phỏng.
 - **Bot chỉ tìm đường khi bị kẹt**, không tìm đường cho mọi bước đi: đi thẳng + lách công trình vẫn đúng ở gần như mọi chỗ và rẻ; A* chỉ
   chạy khi muốn đi mà đứng yên ~0,5 giây và tường chắn thật (lưới `world.nav`).
+
+## Tối ưu Safari + tướng nét hơn, bỏ viền (16/10)
+- **Bỏ hẳn viền nhân vật trong trận** (viền đen "vỏ đảo" + viền sáng màu đội) thay vì chỉ tắt mặc định: người chơi chê chướng mắt; bản
+  cài cũ đã lưu `outline: true`; viền đen tốn thêm một lượt vẽ có xương mỗi tướng. Phe nhận bằng màu thanh máu như Liên Quân.
+- **Mức Vừa thêm MSAA 2x thay vì tăng độ phân giải**: mép tướng là chỗ nhìn ra "không nét" rõ nhất; tô thêm điểm ảnh tốn hơn (shader nền
+  nhiều lớp texture) còn MSAA trên GPU xếp ô của iPhone khá rẻ; bộ tự giảm tắt MSAA đầu tiên khi máy không kham nổi. Bản lưu cũ đang
+  theo mức đặt sẵn thì nhận định nghĩa mới (`la.gfx` có `v: 2`), bản Tuỳ chỉnh giữ nguyên.
+- **A* có trọng số + giới hạn ô** (không cần đường ngắn nhất): bot chỉ cần đường vòng hợp lý khi kẹt; trọng số 2 mở ít ô hơn nhiều mà
+  đường chỉ dài hơn ~1%; giới hạn 1500 ô để không lần tìm nào quá vài ms.
+- **Sương mù bằng DataTexture** thay vì CanvasTexture: Safari vẽ canvas 2D bằng GPU nên mỗi lần nạp canvas thành texture phải đọc ngược.
+- **Số bay chỉ cho đòn của mình / vào mình**: giống Liên Quân, đỡ rối mắt và đỡ vẽ chữ (phần nặng nhất của lớp HUD trên Safari).
