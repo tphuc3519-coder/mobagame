@@ -18,6 +18,7 @@ import { createFog } from './render/fog.js';
 import { createOrbViews } from './render/orbs.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews, releaseSkeletons } from './render/unitView.js';
+import { loadHero } from './render/assets.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
@@ -239,9 +240,11 @@ async function warmUp() {
   cover.innerHTML = '<span>Đang vào trận…</span>'; document.body.append(cover);
   const tick = () => new Promise((r) => setTimeout(r, 0)), within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
   try {
-    views.update(world, 1, 0); await tick(); await tick(); // dựng view mọi đơn vị (model tướng đã tải gắn vào ở lượt kế tiếp)
+    const heroIds = world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId);
+    views.update(world, 1, 0); // dựng view mọi đơn vị; chờ model tướng gắn vào (vào thẳng trận chưa qua màn tải) để dịch luôn vật liệu tướng
+    await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 6000); await tick(); await tick();
     await within(preloadMonsters().catch(() => {}), 3000);
-    await within(portraits.prime(world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId)), 4000); // chân dung bản đồ nhỏ / bảng tỉ số / thông báo
+    await within(portraits.prime(heroIds), 6000); // chân dung bản đồ nhỏ / bảng tỉ số / thông báo
     const tmp = new THREE.Group(); tmp.position.set(player.pos.x, -420, player.pos.y); scene.add(tmp); // dưới mặt đất, trong hộp bóng: lượt vẽ thử dịch cả biến thể bóng đổ
     for (const t of Object.keys(MINION_MODEL)) for (const team of [0, 1]) tmp.add(createMinion(t, team).object);
     for (const [type, d] of Object.entries(MONSTERS)) for (const m of Object.keys(d.stats || { x: 1 })) tmp.add(createMonster(type, m).object);
