@@ -11,6 +11,22 @@ import { canSee, bushAt } from '../sim/vision.js';
 import { createMonster } from './monsters.js';
 
 const CAST_CLIP = { s1: 'Cast1', s2: 'Cast2', s3: 'Ult' };
+/** Lúc chiêu "phát ra" (giây sau sự kiện cast, theo tick mô phỏng) — tư thế chạm của clip rơi đúng lúc này: `delay` của sự kiện (windup của
+ *  chiêu, hay lúc vụ nổ chờ / cú nhảy chạm đất). Tự cường hoá (selfBuff) có hiệu lực ngay, không có lúc "phát ra": null → clip theo nhịp tự
+ *  nhiên (animator.js). */
+const castRelease = (ev) => (ev.skillType === 'selfBuff' ? null : Math.round((ev.delay || 0) * 30) / 30);
+/** Kiểu lớp thân (animator.js BODY) theo kiểu chiêu và tướng cận chiến / đánh xa. */
+const castStyle = (ev, e) => {
+  const t = ev.skillType, melee = !!e?.data?.basicAttack?.melee;
+  if (t === 'dash') return 'dash';
+  if (t === 'aoeSelf') return melee ? 'slam' : 'buff';
+  if (t === 'aoeCircle' && ev.lock >= ev.delay && ev.delay > 0) return 'slam'; // nhảy tới đập xuống (Đe Trời)
+  if (t === 'selfBuff') return 'buff';
+  if (t === 'cone' || t === 'skillshot') return melee ? 'swing' : t === 'cone' ? 'spell' : 'shot';
+  return 'spell';
+};
+const SNAP = 0.09; // giây quay mặt nhanh về hướng đòn / chiêu khi bắt đầu ra đòn (thay vì lerp 18/s) — đòn đánh nhắm đúng hướng
+const BIG_MONSTER = 80; // quái có bán kính từ đây trở lên tính là quái lớn (khựng + giật khi trúng đòn tướng)
 /** Tướng trong trận to hơn tỉ lệ gốc (bớt cảm giác chibi khi nhìn từ camera trên cao); bán kính va chạm mô phỏng giữ nguyên. */
 export const HERO_SCALE = 1.5;
 /** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không. */
@@ -69,15 +85,41 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
     tryLoad();
     return v;
   };
+  /** Đòn của tướng trúng tướng địch / hình nộm / quái lớn đang thấy: người đánh khựng (nếu đòn vừa vung tới — đạn bay xa thì thôi), người trúng khựng
+   *  nhẹ + bị đẩy giật khỏi hướng đòn (chỉ phần nhìn, ~0,1 s) + ngả người theo cú đánh. Liên quan tới người chơi thì mạnh hơn. */
+  const hitReact = (ev, v, world) => {
+    const src = world?.byId(ev.src), tgt = world?.byId(ev.id);
+    if (!src || !tgt || src.kind !== 'hero' || src.team === tgt.team || !(tgt.kind === 'hero' || tgt.kind === 'dummy' || (tgt.kind === 'monster' && tgt.radius >= BIG_MONSTER))) return; // hình nộm luyện tập tính như tướng
+    if (!ev.crit && ev.amount < Math.min(60, (tgt.stats?.maxHp || 1000) * 0.012)) return; // vết nhỏ (thiêu đốt, vùng độc từng nhịp): chỉ nháy trắng
+    const mine = ev.src === localId || ev.id === localId, ult = ev.slot === 's3', k = (mine ? 1 : 0.7) * (ev.crit ? 1.3 : 1);
+    const stop = (ult ? 0.1 : ev.slot ? 0.07 : 0.05) * k, sv = views.get(ev.src), near = !!(sv?.root.visible && sv.animator?.nearImpact?.());
+    const wait = near ? Math.min(0.15, sv.animator.impactIn ?? 0) : 0; // chiêu trúng ngay lúc bấm: mọi phản ứng chờ vũ khí vung tới tư thế chạm
+    if (near) sv.animator.hitStop(stop, wait);
+    if (!v.root.visible) return;
+    let dx = tgt.pos.x - src.pos.x, dz = tgt.pos.y - src.pos.y; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+    const amp = (ult ? 16 : ev.slot ? 12 : 8) * k * (tgt.kind === 'monster' ? 0.6 : 1);
+    if (!(v.jt != null && v.jt < 0.05 && v.ja >= amp)) { v.jx = dx; v.jz = dz; v.ja = amp; v.jt = -wait; } // dồn nhiều cú trong một khung: giữ cú mạnh nhất
+    v.animator?.hitStop?.(stop * 0.6, wait);
+    v.animator?.flinch?.(0.07 * k * (ult ? 1.4 : 1) * (Math.cos(v.angle) * dx + Math.sin(v.angle) * dz), wait); // trúng từ trước mặt → ngả ra sau
+  };
+  const late = (ev, world) => (world && ev.tick != null ? Math.max(0, world.tick - ev.tick) / 30 : 0); // sự kiện của tick trước trong cùng lượt vẽ
+  let W = null; // trận của lần update gần nhất (handle chạy trước update trong cùng khung)
   return {
     get: (id) => views.get(id),
-    handle(events) {
+    /** kick(dx, dz, độ): giật camera khi chiêu của người chơi tới tư thế chạm (game.js gắn camera.kick). */
+    kick: null,
+    handle(events, world = W) {
       for (const ev of events) {
         const v = views.get(ev.id);
         if (ev.type === 'attack' && v && v.atk !== undefined) v.atk = 0.001;
-        if (ev.type === 'attack') v?.animator?.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, ev.delay, (ev.delay ?? 0.25) + 0.06);
-        else if (ev.type === 'cast') v?.animator?.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, ev.delay ?? 0, ev.lock ?? 0);
-        else if (ev.type === 'damage' && v) v.flash = 0.08;
+        if (ev.type === 'attack' && v?.animator) {
+          const melee = !!world?.byId(ev.id)?.data?.basicAttack?.melee, hit = (Math.round((ev.delay ?? 0.25) * 30) + (melee ? 0 : 1)) / 30; // theo tick mô phỏng; đánh xa: đạn ra sau hẹn giờ thêm 1 tick (combat.js fire → shoot)
+          v.animator.trigger(ev.n % 2 ? 'Attack1' : 'Attack2', Math.min(0.9, ev.interval * 0.95), false, hit, (ev.delay ?? 0.25) + 0.06, { kind: 'attack', style: melee ? 'swing' : 'shot', late: late(ev, world) });
+          v.snap = SNAP;
+        } else if (ev.type === 'cast' && v?.animator) {
+          v.animator.trigger(CAST_CLIP[ev.slot], ev.slot === 's3' ? 1.2 : 0.7, false, castRelease(ev), ev.lock ?? 0, { kind: ev.slot === 's3' ? 'ult' : 'cast', style: castStyle(ev, world?.byId(ev.id)), late: late(ev, world) });
+          v.snap = SNAP;
+        } else if (ev.type === 'damage' && v) { v.flash = 0.08; hitReact(ev, v, world); }
         else if (ev.type === 'knockup' && v) v.lift = { t: 0, dur: ev.dur, h: 130 };
         else if (ev.type === 'jump' && v) v.lift = { t: 0, dur: ev.dur, h: 320 };
         else if (ev.type === 'death' && v) v.animator?.trigger('Death', null, true);
@@ -85,6 +127,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
       }
     },
     update(world, alpha, dt, camera = null) {
+      W = world;
       if (camera) { pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); } // khung của lần vẽ trước
       const inView = (e, x, y, z) => { if (!camera) return true; const r = cullR(e); sph.center.set(x, y + r * 0.35, z); sph.radius = r; return frustum.intersectsSphere(sph); };
       const alive = aliveIds; alive.clear(); // dùng lại một Set (đỡ rác bộ nhớ mỗi khung)
@@ -96,9 +139,13 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
         const rx = lerp(e.prevPos.x, e.pos.x, alpha), rz = lerp(e.prevPos.y, e.pos.y, alpha);
         if (!e.structure) { const g = floor ? floor(rx, rz) : 0; v.gy = v.gy == null ? g : v.gy + (g - v.gy) * (1 - Math.exp(-14 * dt)); } // bước lên/xuống bệ êm
         v.root.position.set(rx, y + (v.gy || 0), rz);
-        if (v.blob) { v.blob.position.set(v.root.position.x, v.gy || 0, v.root.position.z); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); }
+        if (v.jt != null && (v.jt += dt) > 0) { // bị đánh giật: bật ra ngay rồi về chỗ (~0,1 s), chỉ phần nhìn; jt < 0: chờ vũ khí người đánh tới
+          const j = v.jt < 0.025 ? v.jt / 0.025 : (1 - Math.min(1, (v.jt - 0.025) / 0.09)) ** 2;
+          v.root.position.x += v.jx * v.ja * j; v.root.position.z += v.jz * v.ja * j; if (v.jt > 0.12) v.jt = null;
+        }
+        if (v.blob) { const l = v.animator?.lunge || 0; v.blob.position.set(v.root.position.x + Math.cos(v.angle) * l, v.gy || 0, v.root.position.z + Math.sin(v.angle) * l); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); } // bóng theo cả bước lao tới của lớp thân
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
-        v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-18 * dt));
+        v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-(v.snap > 0 ? 55 : 18) * dt)); if (v.snap > 0) v.snap -= dt; // ra đòn: quay phắt về hướng đòn trong ~2 khung
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
         const seen = canSee(localTeam, e), shown = inView(e, rx, v.root.position.y, rz); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
         if (e.kind === 'monster') {
@@ -116,6 +163,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
           v.root.visible = seen && !(ghost && e.team !== localTeam) && shown;
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
+        if (this.kick && e.id === localId && v.animator?.struck) this.kick(Math.cos(e.facing), Math.sin(e.facing), v.animator.struck); // chiêu của mình vừa tới tư thế chạm
       }
       for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); views.delete(id); releaseSkeletons(v.root); }
     },

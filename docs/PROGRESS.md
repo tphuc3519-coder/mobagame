@@ -290,3 +290,14 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
   gần như hết.
 - **HUD**: số bay chỉ cho đòn mình gây / mình nhận (như Liên Quân — trước có số cho cả lính đánh lính), tên + huy hiệu cấp vẽ sẵn
   (vẽ HUD ~3,3 → 0,6 ms/khung trên Chromium); số vàng chỉ đổi chữ.
+- **Ra chiêu có hồn, có lực**. Nguyên nhân "đơ": clip sinh bằng code nội suy smoothstep
+  giữa mọi khung (động tác nào cũng đều đều), phát một tốc độ cố định, thân không có lực; tư thế chạm thường lệch lúc chiêu phát ra — VD
+  Vung Búa (Emberforge): lửa bung ở khung đầu nhưng búa ~0,3 giây sau mới giáng.
+- Sửa (chỉ phần nhìn — không đụng mô phỏng, không dựng lại model; chi tiết 02 §13.5):
+  - `render/animator.js`: phân tích mỗi clip một lần lúc nạp (điểm chạm, đỉnh gồng, hướng cú đánh); clip hành động phát theo nhịp uốn —
+    gồng chậm dần → giáng nhanh, tư thế chạm rơi đúng tick chiêu / đòn phát ra → khựng → thu đòn; lớp thân lò xo trên node model (ngả,
+    lao tới / giật lùi, co – duỗi, vươn người khi giơ trời, nén người khi bổ / đập); khựng khi đòn trúng.
+  - `render/unitView.js`: lúc phát ra theo tick mô phỏng; quay mặt về hướng đòn trong ~2 khung; người trúng (tướng, hình nộm, quái lớn)
+    bị đẩy giật + ngả theo cú đánh, chờ đúng lúc vũ khí người đánh tới.
+  - `render/camera.js`: giật camera nhẹ theo hướng chiêu của người chơi (chiêu cuối mạnh hơn; tắt khi máy bật giảm chuyển động).
+  - `render/vfx/library.js`: tụ lực ở tay / vũ khí suốt lúc gồng, loé + bùng ở mũi vũ khí đúng khung chạm; cú búa Xỉ Sắt theo clip.

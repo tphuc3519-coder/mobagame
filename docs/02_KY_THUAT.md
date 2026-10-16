@@ -217,8 +217,33 @@ Tên clip bắt buộc trong mọi GLB tướng (xem 11 §6):
 | `Victory` | màn chọn tướng, kết quả | tuỳ chọn |
 | `Showcase` | sảnh/chọn tướng | tuỳ chọn, dùng `Idle` nếu thiếu |
 
-- Chuyển clip bằng `crossFadeTo` 0.12s. Clip hành động (Attack/Cast/Ult) phát 1 lần rồi quay về Idle/Run.
+- Chuyển clip bằng `crossFadeTo` 0.12s (vào clip hành động 0,06 s; đòn phải chạm ngay 0,035 s). Clip hành động (Attack/Cast/Ult) phát 1 lần rồi quay về Idle/Run.
 - Animation **chỉ để nhìn**: thời điểm gây sát thương vẫn do mô phỏng quyết định. Nếu lệch, chỉnh `hitTime` trong file tướng cho khớp hình, không sửa mô phỏng theo hình.
+- **Ra đòn có lực** (đánh thường, K1–K3; chết vẫn phát đều như cũ):
+  - *Điểm chạm của clip*: phân tích một lần mỗi model lúc nạp (`analyzeClip`): tốc độ chuyển động theo thời gian = Σ tốc độ góc xương ×
+    cánh tay đòn + dời hông; cú đánh = đoạn nhanh nhất kết thúc trước 82% clip (ưu tiên nhẹ đoạn sau); điểm chạm = lúc tốc độ đoạn đó tụt
+    dưới 25% đỉnh, đỉnh gồng = lúc bắt đầu đoạn. Có `hitTime` thì dùng làm điểm chạm — trừ khi đỉnh tốc độ gần nhất nằm sau nó (giương cung:
+    lấy lúc buông dây). Dựng thử tư thế ở hai mốc để biết tay / vũ khí đi lên (giơ trời), xuống (bổ, đập) hay tới trước.
+  - *Lúc phát ra* (`unitView.castRelease`): độ trễ của sự kiện (`windup` / `delay` của chiêu — vụ nổ chờ, cú nhảy chạm đất; `delay` đòn
+    đánh) làm tròn theo tick, đòn đánh xa + 1 tick (đạn ra sau hẹn giờ lồng); tự cường hoá (hiệu lực ngay) theo nhịp tự nhiên của clip.
+  - *Uốn thời gian* (tự đặt `action.time`, `timeScale` 0): gồng chậm dần vào thế (luôn chậm hơn cú giáng ≥ 1,6 lần — không kịp thì bỏ bớt
+    đầu đoạn gồng) → giáng 0,045–0,16 s (~2,2–2,6× clip gốc, dồn lực đầu đoạn), tư thế chạm rơi đúng lúc phát ra → khựng 0,045 / 0,075 /
+    0,12 s (đánh thường / chiêu / chiêu cuối, clip vẫn trôi 12–25%) → thu đòn 1–1,1× (đánh nhanh thì gọn lại cho kịp đòn sau). Chiêu phát
+    ra ngay (độ trễ 0): bắt đầu từ thế gồng (thân vào thế gồng ngay khung đầu), giáng luôn. Hết `lock` mà tướng chạy thì nhường dáng chạy
+    như cũ (hết `lock` đúng lúc chạm thì vẫn cho thấy tư thế chạm).
+  - *Lớp thân* (cộng lên node model, lò xo bước ≤ 1/120 s nên 30/60 FPS như nhau): gồng thì ngả sau, co người, lùi nhẹ; giáng thì chúi tới
+    + lao theo hướng mặt (cận chiến ~8% chiều cao, phép ~3,5%), bắn thì giật lùi, giơ trời thì vươn người ưỡn ngực, bổ / đập thì nén người
+    lúc chạm; về thế đứng hơi lố. Chiêu cuối ×1,35, đánh thường ×0,6. Bóng tròn dưới chân theo bước lao. Bảng `PACE` / `BODY` đầu file.
+  - Ra đòn: quay mặt về hướng đòn trong ~2 khung (lerp 55/s thay vì 18/s).
+  - *Khựng khi trúng* (hit-stop): đòn tướng trúng tướng / hình nộm / quái lớn (bán kính ≥ 80) đang thấy — người đánh dừng 0,05 / 0,07 / 0,1 s
+    (đánh thường / chiêu / chiêu cuối, chí mạng ×1,3) nếu đòn đang quanh tư thế chạm (đạn bay xa thì thôi); người trúng dừng 60% chừng đó, bị
+    đẩy giật 8–16 đơn vị khỏi hướng đòn (~0,1 s, chỉ phần nhìn) và ngả theo cú đánh. Chiêu trúng ngay lúc bấm (trước khi vũ khí vung tới):
+    mọi phản ứng chờ tới tư thế chạm. Liên quan người chơi ×1, người khác ×0,7; vết nhỏ
+    (< min(60, 1,2% máu tối đa): thiêu đốt, vùng độc từng nhịp) chỉ nháy trắng.
+  - *Giật camera* (`camera.js kick`): chiêu của người chơi tới tư thế chạm → camera trượt ~14 đơn vị về hướng chiêu (chiêu cuối ×1,8, đập
+    đất ×1,3, lướt ×0,5) rồi về (lò xo, ~0,35 s); đánh thường không giật; máy bật "giảm chuyển động" thì tắt.
+  - `vfx/library.js`: gồng ≥ 0,12 s thì tụ lực ở mũi vũ khí / bàn tay (hạt hút vào, bám theo tay; quầng lớn dần — hệ hạt sẵn có, không thêm
+    vật liệu); "loé lúc phát chiêu" + bùng ở mũi vũ khí và cú búa Xỉ Sắt hẹn theo `animator.impactIn` (đúng khung tư thế chạm).
 - Lính/quái nhỏ: dùng **1 model + animation đơn giản** và tối đa 3 biến thể; có thể dùng `InstancedMesh` + vertex animation texture ở mức Thấp (tuỳ chọn, làm sau).
 
 ### 13.6 Hiệu năng

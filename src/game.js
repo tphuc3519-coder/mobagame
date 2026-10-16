@@ -100,6 +100,7 @@ const towerRanges = createTowerRanges(scene);
 const OVERVIEW = q.has('overview') ? parseFloat(q.get('overview') || '1.35') : 0;
 const camDist = () => parseFloat(q.get('camdist') || String(prefs().camDist === 'near' ? CAM_NEAR : CAM_DISTANCE)); // Cài đặt → Thiết lập → Góc camera
 const cam = createCamera({ distance: camDist() });
+views.kick = (x, z, k) => cam.kick(x, z, k); // giật camera nhẹ khi chiêu của mình tới tư thế chạm (unitView / animator)
 const fx = createFx(scene, { views, camera: cam.camera, renderer, shake: (a, d) => cam.shake(a, d), team: player.team, me: player.id, floor });
 cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
