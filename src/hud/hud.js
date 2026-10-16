@@ -28,19 +28,19 @@ export function createHud(canvas, input, portraits = null) {
   addEventListener('resize', resize); resize();
   /** Nhãn vẽ một lần ra canvas nhỏ rồi chỉ dán (drawImage) mỗi khung: strokeText + fillText cho từng tướng mỗi khung là phần nặng nhất của
    *  lớp HUD trên Safari. Chữ chưa tải xong phông thì không lưu (khỏi giữ mãi nhãn phông dự phòng). */
-  function tag(key, font, bw, bh, paint) {
+  function tag(key, font, text, bw, bh, paint) {
     let c = tags.get(key); if (c) return c;
     c = document.createElement('canvas'); c.width = Math.ceil(bw * dpr); c.height = Math.ceil(bh * dpr); c.w = bw; c.h = bh;
     const x = c.getContext('2d'); x.scale(dpr, dpr); paint(x);
-    if (!document.fonts || document.fonts.check(font)) { tags.set(key, c); if (tags.size > 160) tags.delete(tags.keys().next().value); }
+    if (!document.fonts || document.fonts.check(font, text)) { tags.set(key, c); if (tags.size > 160) tags.delete(tags.keys().next().value); } // check theo chữ: phần dấu tiếng Việt là tệp phông riêng
     return c;
   }
   const NAME_F = '700 12px "Be Vietnam Pro", system-ui, sans-serif', LV_F = '800 10px "Be Vietnam Pro", system-ui, sans-serif';
   /** Tên trên đầu tướng: chữ trắng xanh / hồng viền tối, căn giữa, đáy chữ tại (x, y). */
   const nameTag = (nm, fill) => { mctx.font = NAME_F; const bw = Math.ceil(mctx.measureText(nm).width) + 8, bh = 18;
-    return tag('n' + nm + fill, NAME_F, bw, bh, (x) => { x.font = NAME_F; x.textAlign = 'center'; x.textBaseline = 'bottom'; x.lineJoin = 'round'; x.lineWidth = 3; x.strokeStyle = 'rgba(0,0,0,0.75)'; x.strokeText(nm, bw / 2, bh - 2); x.fillStyle = fill; x.fillText(nm, bw / 2, bh - 2); }); };
+    return tag('n' + nm + fill, NAME_F, nm, bw, bh, (x) => { x.font = NAME_F; x.textAlign = 'center'; x.textBaseline = 'bottom'; x.lineJoin = 'round'; x.lineWidth = 3; x.strokeStyle = 'rgba(0,0,0,0.75)'; x.strokeText(nm, bw / 2, bh - 2); x.fillStyle = fill; x.fillText(nm, bw / 2, bh - 2); }); };
   /** Huy hiệu cấp lục giác viền màu phe, tâm ở giữa canvas. */
-  const levelTag = (lv, col) => tag('l' + lv + col, LV_F, 24, 24, (x) => {
+  const levelTag = (lv, col) => tag('l' + lv + col, LV_F, String(lv), 24, 24, (x) => {
     x.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; x.lineTo(12 + Math.cos(a) * 9, 12 + Math.sin(a) * 9); } x.closePath();
     x.fillStyle = '#141830'; x.fill(); x.lineWidth = 2; x.strokeStyle = col; x.stroke();
     x.fillStyle = '#fff'; x.font = LV_F; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(lv), 12, 12.5); });
