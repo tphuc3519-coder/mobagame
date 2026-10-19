@@ -647,3 +647,9 @@
   tiêu lớn cuối trận.
 - **Phân thân là entity `kind: 'clone'`** (`noTarget`, không thanh máu) để dùng lại đường vẽ tướng (`unitView` nạp model theo `heroId`); sát
   thương tính cho chủ; tan khi chủ chết / hết giờ.
+
+## Khoá 4 model cao cấp (19/10)
+- **Hoả Rèn, Thạch Quy, Bóng Tre, Nguyệt Hạ dùng model hoạ sĩ có texture do chủ dự án gửi** (`tools/modelgen/imports/hammer_pbr_20000.glb`, `diver_pbr_20000.glb`, `ronin_pbr_100000.glb`, `moonstream_pbr_*.glb`). Chủ dự án chốt: *không thay đổi model của 4 tướng này*.
+- Khoá bằng mã băm: `tools/premium.lock.json` (35 file: GLB, `hero.art.json`, file gốc, animation viết tay, ảnh thẻ / toàn thân / mặt), kiểm bằng `node tools/t_premium.mjs`. Danh sách tướng nằm ở `tools/premium.mjs`, dùng chung cho test và công cụ.
+- `tools/modelgen/build.mjs` và `tools/uiart/render.cjs` bỏ qua 4 tướng này kể cả khi chạy "dựng tất cả"; chỉ `FORCE_PREMIUM=1` (khi chính chủ dự án gửi bản mới, rồi chạy `node tools/t_premium.mjs --lock`).
+- Đã soát lại hai đợt sửa Giai đoạn 0 / 1: không file nào trong 35 file bị đụng tới (ảnh thẻ mới chỉ thêm cho 14 tướng kia).

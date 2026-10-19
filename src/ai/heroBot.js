@@ -8,6 +8,8 @@ import { quickBuys } from '../sim/inventory.js';
 import { foeHero, minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
 import { combo, survival } from './botSkills.js';
 import { updateLaneBot } from './laneBot.js';
+import { updateTeamBrains } from './teamBrain.js';
+import { dodgeStep } from './dodge.js';
 
 export function createBot(world, e, difficulty = 'normal') {
   const diff = DIFFICULTY[difficulty] || DIFFICULTY.normal;
@@ -63,6 +65,7 @@ function think(bot) {
   // mua đồ theo build (bot mua ở bất kỳ đâu như người chơi)
   const qb = quickBuys(e, 1)[0]; if (qb?.ok) world.command(e.id, { type: 'buy', item: qb.id });
   if (survival(bot, foeSeen ? foe : null)) return;
+  if (!e.recall && dodgeStep(bot, move)) { attack(bot, foeSeen && fd < e.stats.range + 150 ? foe : null); return; } // né chiêu
 
   // đang về thành: giữ yên trừ khi địch áp sát
   if (e.recall) { if (fd < 700) { bot.state = 'RETREAT'; } else { move(bot, e.pos); attack(bot, null); return; } }
@@ -130,6 +133,7 @@ function think(bot) {
 
 /** Gọi mỗi tick sau khi thế giới cập nhật; bot tự giãn nhịp suy nghĩ theo độ khó. */
 export function updateBots(world) {
+  updateTeamBrains(world); // 5v5: giao lệnh đội mỗi giây
   for (const e of world.entities) {
     const bot = e.bot; if (!bot) continue;
     if (bot.path) { updateLaneBot(world, e); continue; } // bot đội 5v5 (laneBot.js)

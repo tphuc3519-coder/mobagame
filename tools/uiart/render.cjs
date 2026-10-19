@@ -26,9 +26,11 @@ const jobs = [
 ];
 
 (async () => {
+  const { PREMIUM } = await import('../premium.mjs'); // ảnh thẻ / toàn thân / mặt của 4 model cao cấp: giữ nguyên bản đã chốt
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   for (const j of jobs) {
     if (only.length && !only.some((o) => j.name === o || j.name.startsWith(o + ':') || j.name.startsWith(o))) continue;
+    if (PREMIUM.some((id) => j.name.endsWith(':' + id)) && !process.env.FORCE_PREMIUM) { console.log(j.name, ': model cao cấp — bỏ qua'); continue; }
     const page = await browser.newPage({ viewport: { width: j.w, height: j.h }, deviceScaleFactor: j.dpr || 1 });
     page.setDefaultTimeout(900000);
     const logs = []; page.on('pageerror', (e) => logs.push('pageerror ' + e.message)); page.on('console', (m) => { if (m.type() === 'error') logs.push(m.text().slice(0, 200)); });

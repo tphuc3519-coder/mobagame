@@ -2,9 +2,11 @@
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { STARTER } from '../data/items.js';
 
-/** Đường ưu tiên theo dữ liệu tướng: temple / mid / river (jungle và support quy về đường gần nhất vì chưa có quái rừng). */
-const LANE_OF = { temple: 'temple', mid: 'mid', river: 'river', jungle: 'mid', support: 'river' };
-const SLOTS = ['temple', 'mid', 'river', 'river', 'mid'];   // 5 vị trí mỗi đội: 1 Đền, 2 Giữa, 2 Sông
+/** Vị trí theo dữ liệu tướng (như Liên Quân): Đường Đền, Đường Giữa, Đường Sông, Đi rừng, Trợ thủ. */
+const LANE_OF = { temple: 'temple', mid: 'mid', river: 'river', jungle: 'jungle', support: 'support' };
+const SLOTS = ['temple', 'mid', 'river', 'jungle', 'support'];   // 5 vị trí mỗi đội
+/** Đường gốc của vị trí không có đường riêng: đi rừng lấy đường Giữa (khi phải về đường), trợ thủ theo xạ thủ ở đường Sông. */
+export const LANE_BASE = { jungle: 'mid', support: 'river' };
 
 /** Phân tướng vào các vị trí: mỗi tướng chọn vị trí đầu tiên còn trống khớp đường ưu tiên, còn lại điền chỗ trống. */
 export function assignSlots(heroIds) {
@@ -43,12 +45,16 @@ export function setupTeams(world, opts) {
       const toCore = team ? map.mirror(map.structures[0].x, map.structures[0].y) : map.structures[0];
       const bx = toCore.x - f.x, by = toCore.y - f.y, L = Math.hypot(bx, by) || 1, ang = Math.atan2(by, bx) + (k - 2) * 0.5, r = 330;
       const e = world.spawnHero(sl.hero, team, { x: f.x + Math.cos(ang) * r, y: f.y + Math.sin(ang) * r });
-      e.slot = k; e.laneId = sl.lane;
-      const laneIdx = map.lanes.findIndex((l) => l.id === sl.lane);
+      e.slot = k; e.laneId = sl.lane; e.role = sl.lane;
+      const laneIdx = map.lanes.findIndex((l) => l.id === (LANE_BASE[sl.lane] || sl.lane));
       e.laneIdx = laneIdx;
       const mine = team === 0 && sl.hero === opts.heroId && !teams[0].some((h) => h.isPlayer);
       if (mine) e.isPlayer = true; // đồ khởi đầu của người chơi do game.js mua
-      else { for (const id of STARTER[HEROES[sl.hero].roles[0]] || []) world.command(e.id, { type: 'buy', item: id }); world.addBot(e, opts.difficulty || 'normal', laneIdx); }
+      else {
+        if (sl.lane === 'jungle') e.spell = { id: 'thu_hoach', ready: 0 }; // bot đi rừng luôn mang Trừng Trị
+        const start = sl.lane === 'jungle' ? ['nanh_thu_rung', 'tui_hat'] : sl.lane === 'support' ? STARTER.support : STARTER[HEROES[sl.hero].roles[0]]; // đồ khởi đầu theo vị trí
+        for (const id of start || []) world.command(e.id, { type: 'buy', item: id }); world.addBot(e, opts.difficulty || 'normal', laneIdx);
+      }
       teams[team].push(e);
     });
   });

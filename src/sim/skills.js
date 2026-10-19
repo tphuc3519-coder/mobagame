@@ -152,6 +152,8 @@ const HANDLERS = {
   aoeCircle(world, e, cast, aim) {
     const { skill } = cast, p = aimPoint(world, e, aim, skill.range), delay = skill.delay || 0.5, leap = skill.untargetableDuringDelay || skill.untargetableDuringLeap;
     world.emit('aoe', { id: e.id, x: p.x, y: p.y, radius: skill.radius, dur: delay, slot: cast.slot, team: e.team, warn: true });
+    world.dangers = (world.dangers || []).filter((z) => z.until >= world.tick); // vòng cảnh báo cho bot né (ai/dodge.js)
+    world.dangers.push({ key: 'z' + world.tick + '_' + e.id, x: p.x, y: p.y, r: skill.radius, team: e.team, until: world.tick + T(delay) });
     if (leap) { applyStatus(world, e, { status: 'untargetable', duration: delay }, e); world.emit('jump', { id: e.id, dur: delay }); }
     world.pending.push({ tick: world.tick + T(delay), run: () => {
       if (!e.alive) return;
