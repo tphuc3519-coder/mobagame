@@ -618,3 +618,17 @@
   đường chỉ dài hơn ~1%; giới hạn 1500 ô để không lần tìm nào quá vài ms.
 - **Sương mù bằng DataTexture** thay vì CanvasTexture: Safari vẽ canvas 2D bằng GPU nên mỗi lần nạp canvas thành texture phải đọc ngược.
 - **Số bay chỉ cho đòn của mình / vào mình**: giống Liên Quân, đỡ rối mắt và đỡ vẽ chữ (phần nặng nhất của lớp HUD trên Safari).
+
+## Kiểm toán 19/10 — Giai đoạn 0 (sửa lỗi đã đo được)
+- **Lính Đèn Lớn** tính MỘT lần lúc tạo đợt (`sim/minions.js` `giantsFor`). Trước đây xét theo từng lô lính ra; ba Lính Kiếm của một đợt ra ở ba tick khác nhau nên mỗi đợt sinh 3 siêu lính/đường (6 khi mất cả 3 nhà). Xe Đá mỗi 2 đợt sau phút 10 ở 5v5 (03 §A5).
+- **Vàng thụ động chạy cả lúc chết** (như Liên Quân). Trước đây dừng: 2 trận 5v5 toàn bot mất ~2.400–2.600 vàng mỗi trận, đội đang thua thiệt thêm.
+- **Kinh tế 5v5 tách khỏi 1v1** (`data/economy.js` `ECON_5V5`, `econOf(map)`): vàng thụ động 4/s từ 0:20, hồi sinh `6 + 2.5×cấp` (+5s sau phút 15), KN mạng hạ chia đều cho người hạ + người hỗ trợ đứng trong 1200, KN bắt kịp so với cấp trung bình cả trận (03 §A9–A10). **Vàng khởi đầu giữ 800** thay vì 600 của tài liệu: đồ khởi đầu xạ thủ (Dao Nhỏ + Găng Tay Da) giá 650, với 600 sẽ không mua đủ.
+- **Hút máu tính mọi sát thương vật lý, hút máu phép tính mọi sát thương phép** (trừ sát thương theo thời gian và phản đòn). Thay quyết định Mốc 4 ("chỉ đòn đánh thường") theo yêu cầu làm giống Liên Quân.
+- **Nội tại đồ rừng / hỗ trợ chạy thật** (`ITEM_PASSIVE` trong `data/items.js`; trước chỉ có chỉ số):
+  - Nanh Thú Rừng: +30% sát thương lên quái, hồi 30 HP mỗi đòn trúng quái, +30% vàng/KN từ quái cho người kết liễu. Đếm "bãi đã hạ" là số trại mà người mang đồ kết liễu con cuối; đủ 20 bãi thì nâng: tổng +25 Công/Phép, +50% sát thương lên quái.
+  - Đèn Đồng Hành: đồng minh kết liễu lính khi người mang đèn đứng trong 800 → người mang đèn nhận vàng bằng giá con lính (người kết liễu vẫn nhận đủ); người mang đèn tự kết liễu lính thì không nhận vàng lính. Nhận đủ 600 vàng từ nội tại → đổi ô đồ thành Đèn Soi Đường.
+  - Đèn Soi Đường: hồi máu và khiên cho người khác +15% (cho chính mình không cộng).
+- **Huỷ Biến về bằng kỹ năng / phép / Hồi Máu / chết** đi qua `cancelRecall` để phát sự kiện `recallCancel` (trước chỉ gán `recall = null`: tiếng niệm kêu tiếp tới hết).
+- **Màn kết quả dừng hẳn vòng vẽ** (`loop.stop()` — huỷ requestAnimationFrame). Trước đây chỉ dừng mô phỏng, cảnh 3D + hậu kỳ vẫn vẽ ~60 khung/giây phía sau lớp kết quả che kín.
+- **Deploy tự chạy khi push `main`** (vẫn bấm tay được) và chỉ đẩy `index.html`, `demo.html`, `src/`, `lib/`, `assets/` (trước đẩy cả repo: `tools/modelgen/imports` 26 MB, `docs/`). Xoá `play.html` (bản dựng cho artifact từ Mốc 5, không còn dùng, vẫn mở được ở `/play.html`).
+- Biểu tượng ứng dụng (đèn lồng) `assets/ui/app/`: favicon SVG + PNG, `apple-touch-icon` — hết lỗi 404 `favicon.ico`.

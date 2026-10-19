@@ -3,6 +3,9 @@ import { removeStatus, isStealthed, isInvulnerable } from './status.js';
 import { onKill, respawnSeconds } from './economy.js';
 import { tryRevive, onMagicTaken } from './items.js';
 import { revealOnAttack } from './vision.js';
+import { ITEM_PASSIVE } from '../data/items.js';
+
+const hasPassive = (e, p) => !!e?.bonus?.passives?.has(p);
 
 /** Sát thương nhận = raw × 100 / (100 + giáp hiệu dụng) (02 §7). Chuẩn không giảm. */
 export function mitigate(src, tgt, raw, type) {
@@ -31,6 +34,9 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   if (src && src !== tgt) revealOnAttack(world, src, tgt); // đánh người thì lộ mặt (bụi, sương mù)
   const hook = src?.data?.passive?.hooks?.onDealDamage;
   if (hook) { const ctx = { world, self: src, target: tgt, amount, type }; hook(ctx); amount = ctx.amount; }
+  if (tgt.kind === 'monster' && hasPassive(src, 'jungleFang')) { // Nanh Thú Rừng: +30% (đã nâng: +50%) sát thương lên quái
+    const J = ITEM_PASSIVE.jungleFang; amount *= 1 + (src.flags.fangUp ? J.monsterDmgUp : J.monsterDmg);
+  }
   let dmg = mitigate(src, tgt, amount, type) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0)) * (opts.basic ? 1 - (tgt.stats.basicReduce || 0) : 1) * backdoorFactor(world, src, tgt);
   let absorbed = 0;
   tgt.shields.sort((a, b) => a.until - b.until);
@@ -50,9 +56,10 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   }
   if (tgt.kind === 'hero') tgt.dmgTaken = (tgt.dmgTaken || 0) + got;
   tgt.lastDamagedTick = world.tick; if (src) tgt.lastAttacker = src.id;
-  if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu (đòn đánh) và hút máu phép (kỹ năng)
-    const rate = opts.basic && type === 'physical' ? src.stats.lifesteal : !opts.basic && type === 'magic' ? src.stats.spellvamp : 0;
+  if (dmg > 0 && src?.kind === 'hero' && !opts.dot && !opts.reflect) { // hút máu: mọi sát thương vật lý (đòn đánh lẫn kỹ năng); hút máu phép: mọi sát thương phép
+    const rate = type === 'physical' ? src.stats.lifesteal : type === 'magic' ? src.stats.spellvamp : 0;
     if (rate > 0) heal(world, src, dmg * rate);
+    if (tgt.kind === 'monster' && hasPassive(src, 'jungleFang')) heal(world, src, ITEM_PASSIVE.jungleFang.healPerHit); // Nanh Thú Rừng: hồi mỗi đòn lên quái
   }
   if (type === 'magic' && tgt.kind === 'hero') onMagicTaken(world, tgt);
   if (isStealthed(tgt)) removeStatus(tgt, 'stealth');
@@ -87,7 +94,7 @@ function kill(world, src, tgt) {
   tgt.hitBy = {};
   const victimStreak = tgt.killStreak || 0; tgt.multi = null;
   onKill(world, killer, tgt, killer ? assists : []); // vàng / KN cho người được tính mạng (+ phần chia hỗ trợ); chuỗi hạ gục của người hạ tăng, của nạn nhân về 0
-  tgt.respawnTick = world.tick + T(respawnSeconds(tgt));
+  tgt.respawnTick = world.tick + T(respawnSeconds(world, tgt));
   const ev = { id: tgt.id, killer: killer ? killer.id : src?.id, by: src?.id, assists: assists.map((h) => h.id) };
   if (killer) {
     killer.kills++;
@@ -103,12 +110,14 @@ const supportStat = (src, tgt, a) => { if (a > 0 && src && src !== tgt && src.ki
 export function heal(world, tgt, amount, src = null) {
   if (!tgt.alive) return 0;
   const ah = tgt.statuses.find((s) => s.kind === 'antiheal'); if (ah) amount *= 1 - ah.pct; // giảm hồi máu (Giáp Gai)
+  if (src && src !== tgt && hasPassive(src, 'guideLantern')) amount *= ITEM_PASSIVE.guideLantern.healShieldMult; // Đèn Soi Đường: hồi cho người khác +15%
   const a = Math.min(tgt.stats.maxHp - tgt.hp, amount); tgt.hp += a; supportStat(src, tgt, a);
   if (a > 0.5) world.emit('heal', { id: tgt.id, amount: Math.round(a) });
   return a;
 }
 export function addShield(world, tgt, amount, seconds, id = null, src = null) {
   if (!tgt.alive) return;
+  if (src && src !== tgt && hasPassive(src, 'guideLantern')) amount *= ITEM_PASSIVE.guideLantern.healShieldMult; // Đèn Soi Đường: khiên cho người khác +15%
   const until = seconds >= 9000 ? Infinity : world.tick + T(seconds);
   if (id) { const o = tgt.shields.find((s) => s.id === id); if (o) { supportStat(src, tgt, amount - o.amount); o.amount = Math.max(o.amount, amount); o.until = until; return; } }
   tgt.shields.push({ amount, until, id }); supportStat(src, tgt, amount);

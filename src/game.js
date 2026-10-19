@@ -154,7 +154,7 @@ function showResult(winner) {
   const b = document.createElement('div'); b.id = 'gover'; b.className = win ? 'win' : 'lose';
   b.innerHTML = `<b>${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</b><small>${win ? 'VICTORY' : 'DEFEAT'}</small>`;
   document.body.append(b); document.body.classList.add('over');
-  setTimeout(() => { loop.pause(); b.remove(); document.body.classList.add('post'); opts.onGameOver({ world, player, winner }); }, 3200);
+  setTimeout(() => { loop.stop(); b.remove(); document.body.classList.add('post'); opts.onGameOver({ world, player, winner }); }, 3200); // dừng hẳn vòng vẽ: màn kết quả che kín cảnh 3D (trước vẫn vẽ ~60 khung/giây phía sau, tốn pin)
 }
 document.getElementById('again').onclick = () => location.reload();
 

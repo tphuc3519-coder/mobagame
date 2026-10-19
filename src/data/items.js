@@ -65,11 +65,18 @@ export const ITEMS = {
   giap_den_long:   it('Giáp Đèn Lồng', 2100, { tier: 3, tab: 'def', from: ['hat_nang', 'ao_lua'], stats: { maxHp: 350, mr: 35, cdr: 0.10 }, passive: 'lanternaura', note: 'Duy nhất: đồng minh trong 700 được +10 Giáp và KP.' }),
 
   // ---- Hỗ trợ / đi rừng (mỗi loại tối đa 1; chỉ dùng ở chế độ nhiều người) ----
-  den_dong_hanh: it('Đèn Đồng Hành', 400, { tier: 1, tab: 'jungle', tags: ['support'], teamOnly: true, stats: { maxHp: 200, cdr: 0.05 }, upgrade: { to: 'den_soi_duong', gold: 600 }, note: 'Hỗ trợ: chia vàng khi đồng minh kết liễu lính; sau 600 vàng tự nâng cấp.' }),
-  nanh_thu_rung: it('Nanh Thú Rừng', 400, { tier: 1, tab: 'jungle', tags: ['jungle'], teamOnly: true, needSpell: 'thu_hoach', stats: { atk: 10, ap: 10 }, note: 'Đi rừng: +30% sát thương lên quái, hồi máu mỗi đòn lên quái. Cần phép Trừng Trị.' }),
-  den_soi_duong: it('Đèn Soi Đường', 1000, { tier: 2, tab: 'jungle', tags: ['support'], teamOnly: true, auto: true, stats: { maxHp: 400, cdr: 0.10 }, note: 'Nâng tự động từ Đèn Đồng Hành: hồi máu và khiên cho người khác +15%.' }),
+  den_dong_hanh: it('Đèn Đồng Hành', 400, { tier: 1, tab: 'jungle', tags: ['support'], teamOnly: true, stats: { maxHp: 200, cdr: 0.05 }, passive: 'supportLantern', upgrade: { to: 'den_soi_duong', gold: 600 }, note: 'Hỗ trợ: đồng minh kết liễu lính khi bạn đứng trong 800 thì bạn nhận vàng bằng giá lính (lính tự kết liễu không cho vàng); nhận đủ 600 vàng từ nội tại thì tự nâng thành Đèn Soi Đường.' }),
+  nanh_thu_rung: it('Nanh Thú Rừng', 400, { tier: 1, tab: 'jungle', tags: ['jungle'], teamOnly: true, needSpell: 'thu_hoach', stats: { atk: 10, ap: 10 }, passive: 'jungleFang', note: 'Đi rừng: +30% sát thương lên quái, hồi 30 HP mỗi đòn lên quái, +30% vàng và KN từ quái. Hạ 20 bãi: +25 Công/Phép, +50% sát thương lên quái. Cần phép Trừng Trị.' }),
+  den_soi_duong: it('Đèn Soi Đường', 1000, { tier: 2, tab: 'jungle', tags: ['support'], teamOnly: true, auto: true, stats: { maxHp: 400, cdr: 0.10 }, passive: 'guideLantern', note: 'Nâng tự động từ Đèn Đồng Hành: hồi máu và khiên cho người khác +15%.' }),
 };
 for (const [id, v] of Object.entries(ITEMS)) v.id = id;
+
+/** Số của nội tại đồ rừng / hỗ trợ (05 §4). jungleFang: Nanh Thú Rừng; supportLantern: Đèn Đồng Hành; guideLantern: Đèn Soi Đường. */
+export const ITEM_PASSIVE = {
+  jungleFang: { monsterDmg: 0.3, monsterDmgUp: 0.5, healPerHit: 30, rewardMult: 1.3, upCamps: 20, upStats: { atk: 15, ap: 15 } },
+  supportLantern: { radius: 800 },
+  guideLantern: { healShieldMult: 1.15 },
+};
 
 export const ITEM_MAX = 6;
 export const SELL_RATE = 0.6;

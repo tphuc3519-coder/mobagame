@@ -21,7 +21,9 @@ export function spawnMinion(world, type, team, laneIdx = 0, off = 0) {
   return e;
 }
 
-/** Lịch sinh lính: đợt đầu lúc first giây, mỗi every giây một đợt, ở mọi đường; mỗi siegeEvery đợt thêm Xe Đá. */
+/** Lịch sinh lính: đợt đầu lúc first giây, mỗi every giây một đợt, ở mọi đường; mỗi siegeEvery đợt thêm Xe Đá (sau phút siegeLateFrom
+ *  thì mỗi siegeEveryLate đợt — 03 §A5). Lính Đèn Lớn tính MỘT lần lúc tạo đợt: trước đây xét theo từng lô lính ra, mà ba Lính Kiếm của
+ *  một đợt ra ở ba tick khác nhau nên mỗi đợt sinh gấp 3 siêu lính (đo: 3/đợt/đường thay vì 1). */
 export function updateWaves(world) {
   const w = world.map.waves;
   const sec = world.tick / 30;
@@ -30,24 +32,30 @@ export function updateWaves(world) {
     const list = [];
     for (let i = 0; i < w.sword; i++) list.push('sword');
     for (let i = 0; i < w.archer; i++) list.push('archer');
-    if ((world.waveNo + 1) % w.siegeEvery === 0) list.push('siege');
+    const every = w.siegeEveryLate && sec >= (w.siegeLateFrom ?? Infinity) ? w.siegeEveryLate : w.siegeEvery;
+    if ((world.waveNo + 1) % every === 0) list.push('siege');
     list.forEach((type, i) => world.spawnQueue.push({ tick: world.tick + i * w.gap, type }));
+    // Lính Đèn Lớn (03 §A5): phá được trụ nhà của địch ở đường nào thì đường đó thêm 1 siêu lính mỗi đợt; phá cả 3 trụ nhà: 2 mỗi đường
+    if (world.map.lanes.length > 1) for (const team of [0, 1]) for (const g of giantsFor(world, team)) world.spawnQueue.push({ tick: world.tick, type: 'giant', team, lane: g });
     world.waveNo++; world.nextWave += w.every;
   }
   const due = world.spawnQueue.filter((s) => s.tick <= world.tick);
   if (due.length) {
     world.spawnQueue = world.spawnQueue.filter((s) => s.tick > world.tick);
     const jit = world.map.lanes.length > 1 ? 160 : 120;
-    for (const s of due) for (const team of [0, 1]) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, s.type, team, l, (world.rng.next() - 0.5) * jit);
-    // Lính Đèn Lớn (03 §A5): phá được trụ nhà của địch ở đường nào thì đường đó thêm 1 siêu lính mỗi đợt; phá cả 3 trụ nhà: 2 mỗi đường
-    if (world.map.lanes.length > 1 && due.some((s) => s.type === 'sword')) {
-      for (const team of [0, 1]) {
-        const homes = world.map.lanes.map((ln) => { const t = world.entities.find((e) => e.structure && e.team === 1 - team && e.sid === `${ln.id}_home`); return !!t && !t.alive; });
-        const all = homes.every(Boolean);
-        homes.forEach((down, l) => { if (down || all) for (let k = 0; k < (all ? 2 : 1); k++) spawnMinion(world, 'giant', team, l, (world.rng.next() - 0.5) * jit); });
-      }
+    for (const s of due) {
+      if (s.team != null) { spawnMinion(world, s.type, s.team, s.lane, (world.rng.next() - 0.5) * jit); continue; } // lính riêng một đội/đường (siêu lính)
+      for (const team of [0, 1]) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, s.type, team, l, (world.rng.next() - 0.5) * jit);
     }
   }
+}
+
+/** Các đường (chỉ số, có lặp nếu 2 con) đội `team` được thêm Lính Đèn Lớn trong đợt này. */
+export function giantsFor(world, team) {
+  const homes = world.map.lanes.map((ln) => { const t = world.entities.find((e) => e.structure && e.team === 1 - team && e.sid === `${ln.id}_home`); return !!t && !t.alive; });
+  const all = homes.every(Boolean), out = [];
+  homes.forEach((down, l) => { if (down || all) for (let k = 0; k < (all ? 2 : 1); k++) out.push(l); });
+  return out;
 }
 
 function pickTarget(world, e) {

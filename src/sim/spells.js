@@ -5,6 +5,7 @@ import { applyStatus, removeStatus, isHardCC } from './status.js';
 import { dealDamage, heal } from './damage.js';
 import { enemiesOf, alliesOf } from './targeting.js';
 import { clampToMap } from './util.js';
+import { cancelRecall } from './economy.js';
 
 const CLEANSE = ['stun', 'root', 'slow', 'silence', 'taunt']; // hất tung đang diễn ra thì giữ nguyên
 
@@ -39,7 +40,7 @@ export function castSpell(world, e, aim) {
   const smiteT = sp.id === 'thu_hoach' ? smiteTarget(world, e, sp) : null;
   if (sp.id === 'thu_hoach' && !smiteT) return { ok: false, reason: 'noTarget' }; // không có mục tiêu: không mất hồi chiêu
   e.spell.ready = world.tick + T(sp.cooldown);
-  e.recall = null;
+  cancelRecall(world, e); // huỷ Biến về kèm sự kiện (trước chỉ gán null: tiếng niệm kêu tiếp tới hết)
   world.emit('spell', { id: e.id, spell: sp.id });
   switch (sp.id) {
     case 'chop_buoc': {
@@ -87,7 +88,7 @@ export function castRestore(world, e) {
   if (!e.restore) e.restore = { ready: 0 };
   if (world.tick < e.restore.ready) return { ok: false, reason: 'cooldown' };
   e.restore.ready = world.tick + T(RESTORE.cooldown);
-  e.recall = null;
+  cancelRecall(world, e); // huỷ Biến về kèm sự kiện (trước chỉ gán null: tiếng niệm kêu tiếp tới hết)
   applyStatus(world, e, { status: 'hot', id: 'hoiMau', hps: (e.stats.maxHp * RESTORE.healPct) / RESTORE.duration, duration: RESTORE.duration }, e);
   world.emit('restore', { id: e.id, dur: RESTORE.duration });
   return { ok: true };
