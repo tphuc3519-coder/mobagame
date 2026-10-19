@@ -106,11 +106,11 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
         arrow.material.uniforms.uKind.value = 1; put(arrow, origin.x, origin.y, R, Math.max(110, (spec.width || 80) * 1.3), ang);
       } else if (t === 'cone') {
         sector.material.uniforms.uHalf.value = ((spec.angle || 90) * Math.PI) / 360; put(sector, origin.x, origin.y, R * 2, R * 2, ang);
-      } else if (t === 'aoeCircle' || t === 'zone') {
-        const r = spec.radius || 150; put(ret, point.x, point.y, r * 2, r * 2);
+      } else if (t === 'aoeCircle' || t === 'zone' || t === 'recast') {
+        const r = spec.radius || (t === 'recast' ? 110 : 150); put(ret, point.x, point.y, r * 2, r * 2);
       } else if (t === 'aoeSelf') {
         const r = spec.radius || R || 300; put(self, origin.x, origin.y, r * 2, r * 2);
-      } else if (t === 'allyTarget') {
+      } else if (t === 'allyTarget' || t === 'targeted') {
         arrow.material.uniforms.uKind.value = 0; put(arrow, origin.x, origin.y, R, 50, ang);
       }
     },

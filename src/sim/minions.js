@@ -36,7 +36,7 @@ export function updateWaves(world) {
     if ((world.waveNo + 1) % every === 0) list.push('siege');
     list.forEach((type, i) => world.spawnQueue.push({ tick: world.tick + i * w.gap, type }));
     // Lính Đèn Lớn (03 §A5): phá được trụ nhà của địch ở đường nào thì đường đó thêm 1 siêu lính mỗi đợt; phá cả 3 trụ nhà: 2 mỗi đường
-    if (world.map.lanes.length > 1) for (const team of [0, 1]) for (const g of giantsFor(world, team)) world.spawnQueue.push({ tick: world.tick, type: 'giant', team, lane: g });
+    for (const team of [0, 1]) for (const g of giantsFor(world, team)) world.spawnQueue.push({ tick: world.tick + list.length * w.gap, type: 'giant', team, lane: g });
     world.waveNo++; world.nextWave += w.every;
   }
   const due = world.spawnQueue.filter((s) => s.tick <= world.tick);
@@ -50,8 +50,14 @@ export function updateWaves(world) {
   }
 }
 
-/** Các đường (chỉ số, có lặp nếu 2 con) đội `team` được thêm Lính Đèn Lớn trong đợt này. */
+/** Các đường (chỉ số, có lặp nếu 2 con) đội `team` được thêm Lính Đèn Lớn trong đợt này. Bản 1v1 (một đường): từ phút `giantFrom`,
+ *  đội đã phá trụ ngoài của địch được 1 siêu lính mỗi đợt, phá cả trụ trong thêm 1 — chỉ bên đang thắng thế có, nên trận không hoà mãi. */
 export function giantsFor(world, team) {
+  if (world.map.lanes.length === 1) {
+    const w = world.map.waves; if (w.giantFrom == null || world.tick / 30 < w.giantFrom) return [];
+    const down = (sid) => { const t = world.entities.find((e) => e.structure && e.team === 1 - team && e.sid === sid); return !!t && !t.alive; };
+    return [down('outer'), down('inner')].filter(Boolean).map(() => 0);
+  }
   const homes = world.map.lanes.map((ln) => { const t = world.entities.find((e) => e.structure && e.team === 1 - team && e.sid === `${ln.id}_home`); return !!t && !t.alive; });
   const all = homes.every(Boolean), out = [];
   homes.forEach((down, l) => { if (down || all) for (let k = 0; k < (all ? 2 : 1); k++) out.push(l); });
@@ -60,7 +66,10 @@ export function giantsFor(world, team) {
 
 function pickTarget(world, e) {
   const range = e.stats.range, cur = e.target != null ? world.byId(e.target) : null;
-  if (cur && cur.alive && isTargetable(e, cur) && canSee(e.team, cur) && dist(cur.pos, e.pos) <= range + 700) return cur;
+  if (cur && cur.alive && isTargetable(e, cur) && canSee(e.team, cur) && dist(cur.pos, e.pos) <= range + 700) {
+    if (cur.kind !== 'hero' || world.tick < (e.aggroUntil || 0)) return cur; // đổi mục tiêu sang tướng (bị khiêu khích): giữ hết thời gian khiêu khích
+    if (dist(cur.pos, e.pos) - cur.radius <= range + 40 && !world.entities.some((m) => m.kind === 'minion' && m.alive && m.team !== e.team && dist(m.pos, e.pos) - m.radius <= 450)) return cur; // hết khiêu khích: còn lính địch quanh đây thì quay lại đánh lính
+  }
   let best = null, bs = Infinity;
   for (const t of world.entities) {
     if (t.team === e.team || t.team === 2 || t.noTarget || !isTargetable(e, t) || !canSee(e.team, t)) continue;

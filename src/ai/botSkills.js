@@ -4,6 +4,7 @@ import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
 import { ready, velocity, hp01 } from './perception.js';
+import { pickSkillTarget } from '../sim/skillTypes.js';
 
 const D2R = Math.PI / 180;
 function rotate(d, deg) { const a = deg * D2R, c = Math.cos(a), s = Math.sin(a); return { x: d.x * c - d.y * s, y: d.x * s + d.y * c }; }
@@ -22,8 +23,9 @@ export function trySkill(bot, slot, t, mode) {
   const err = () => (rng.next() * 2 - 1) * diff.aimErr;
   let aim = null;
   switch (sk.type) {
-    case 'skillshot': case 'cone': {
+    case 'skillshot': case 'cone': case 'line': case 'tether': {
       if (!t || d > sk.range * (sk.type === 'cone' ? 0.95 : 0.92)) return false;
+      if (sk.heroOnly && !t.isHero) return false;
       const p = predict(e, t, sk.speed); aim = rotate(norm(p.x - e.pos.x, p.y - e.pos.y), err()); break;
     }
     case 'aoeCircle': case 'zone': {
@@ -39,8 +41,23 @@ export function trySkill(bot, slot, t, mode) {
       aim = rotate(norm(t.pos.x - e.pos.x, t.pos.y - e.pos.y), err()); break;
     }
     case 'aoeSelf': if (!t || d > (sk.radius || 300) * 0.9) return false; break;
-    case 'selfBuff': if (mode === 'farm' || !t || d > 650) return false; break;
-    case 'allyTarget': if (hp01(e) > 0.75 && mode !== 'escape') return false; aim = { x: 0, y: 0 }; break;
+    case 'selfBuff': if (sk.params?.rewindSeconds ? hp01(e) > 0.3 : mode === 'farm' || !t || d > 650) return false; break; // tua ngược: chỉ khi sắp chết
+    case 'allyTarget': { // hồi / khiên: đồng minh tướng máu thấp nhất trong tầm (dưới 60%), không có thì chính mình khi máu thấp
+      let best = null;
+      for (const a of world.entities) if (a.kind === 'hero' && a.alive && a !== e && a.team === e.team && dist(a.pos, e.pos) <= sk.range && hp01(a) < 0.6 && (!best || hp01(a) < hp01(best))) best = a;
+      if (best) { aim = norm(best.pos.x - e.pos.x, best.pos.y - e.pos.y); break; }
+      if (hp01(e) > 0.75 && mode !== 'escape') return false; aim = { x: 0, y: 0 }; break;
+    }
+    case 'recast': { // phân thân: thả ngay cạnh địch đang đánh; giữ lượt đổi chỗ để thoát thân
+      if (e.recast?.slot === slot) { if (mode !== 'escape') return false; const c = world.byId(e.recast.clones[0]); if (!c) return false; aim = { x: c.pos.x, y: c.pos.y }; break; }
+      if (!t || d > sk.range + 300 || mode === 'farm') return false;
+      const k = Math.min(1, sk.range / Math.max(1, dist(e.pos, t.pos))); aim = { x: e.pos.x + (t.pos.x - e.pos.x) * k, y: e.pos.y + (t.pos.y - e.pos.y) * k }; break;
+    }
+    case 'targetedDash': case 'targeted': { // khoá mục tiêu: chỉ khi trong tầm có mục tiêu hợp lệ (tướng ưu tiên)
+      if (!t || mode === 'farm' || mode === 'escape') return false;
+      const pick = pickSkillTarget(world, e, sk, norm(t.pos.x - e.pos.x, t.pos.y - e.pos.y)); if (!pick || (t.isHero && !pick.isHero)) return false;
+      aim = norm(pick.pos.x - e.pos.x, pick.pos.y - e.pos.y); break;
+    }
     default: return false;
   }
   world.command(e.id, { type: 'cast', slot, aim });
@@ -49,9 +66,10 @@ export function trySkill(bot, slot, t, mode) {
 
 /** Combo theo ai.combo của tướng; mỗi lần nghĩ tung tối đa một chiêu (tự nhiên hơn). */
 export function combo(bot, t, mode) {
-  const order = bot.e.data.ai?.combo || ['s1', 's2', 's3'];
+  const order = bot.e.data.ai?.combo || ['s1', 's2', 's3'], rule = /hpBelow([\d.]+)/.exec(bot.e.data.ai?.ultRule || '');
   for (const slot of order) {
-    if ((mode === 'trade' || mode === 'farm') && slot === 's3') continue; // giữ chiêu cuối
+    if (slot === 's3' && rule && hp01(bot.e) >= +rule[1]) continue; // ultRule hpBelowX: chiêu cuối chỉ khi máu dưới X (Đổi Vai, Đồng Hồ Ngược)
+    if ((mode === 'trade' || mode === 'farm') && slot === 's3' && !rule) continue; // giữ chiêu cuối
     if (mode === 'farm' && bot.e.data.skills[slot]?.type === 'dash') continue;
     if (trySkill(bot, slot, t, mode)) return slot;
   }

@@ -209,7 +209,8 @@ export function createHud(canvas, input, portraits = null) {
       if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
       bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 10px "Be Vietnam Pro", ui-monospace, monospace'; ctx.fillStyle = '#fff';
-      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 6);
+      const gg = player.data.passive?.gauge?.(player, world); // thanh nội tại của tướng (Nụ, Ấn, Tầm Nhìn…)
+      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}${gg ? `    ${gg.label}${gg.max > 1 ? ` ${gg.v}${gg.unit || ''}/${gg.max}${gg.unit || ''}` : ''}` : ''}`, bx + 6, by + 6);
       // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
       if (!player.alive && player.respawnTick) drawDeath(world, player);
       // vàng nhận được: trên đầu tướng mình, nảy lên rồi mờ dần (giết tướng: chữ to)

@@ -13,7 +13,7 @@ export function onBasicAttack(world, e, pay) {
   const s = e.stats;
   let amount = pay.amount;
   let crit = false;
-  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0); crit = pay.crit = true; }
+  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= s.critDmg ?? (COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0)); crit = pay.crit = true; }
   const extra = [];
   if (e.flags.spellblade && world.tick >= (e.flags.sbCd || 0)) { extra.push({ amount: s.baseAtk, type: 'physical' }); e.flags.spellblade = false; e.flags.sbCd = world.tick + T(2); }
   if (has(e, 'forgehammer')) extra.push({ amount: 0.02 * pay.targetMaxHp, type: 'physical' });

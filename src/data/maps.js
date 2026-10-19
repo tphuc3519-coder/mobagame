@@ -20,7 +20,10 @@ export const DUEL = {
   // Bụi cỏ ở mép trong của đường (chỉ hình ở Mốc 3; ẩn đơn vị ở Mốc 9).
   bushes: [{ x: 2250, y: 850, w: 360, h: 220 }, { x: 2250, y: 1550, w: 360, h: 220 }, { x: 1650, y: 1520, w: 240, h: 180 }, { x: 1150, y: 880, w: 220, h: 160 }],
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
-  waves: { first: 15, every: 25, sword: 3, archer: 1, siegeEvery: 3, spawnX: 900, gap: 14 },
+  // giantFrom: từ phút 18, đội đã phá trụ của địch có thêm Lính Đèn Lớn mỗi đợt (sim/minions.js giantsFor)
+  waves: { first: 15, every: 25, sword: 3, archer: 1, siegeEvery: 3, spawnX: 900, gap: 14, giantFrom: 1080 },
+  // đột tử: từ phút 30 công trình nhận gấp đôi sát thương và thôi tự hồi máu — hai tướng hồi máu / đỡ đòn đấu nhau không hoà mãi
+  suddenDeath: { from: 1800, structureTaken: 2 },
   // Đường duy nhất cho lính, đi từ Xanh sang Đỏ (cùng định dạng với bản 5v5).
   lanes: [{ id: 'main', width: 900, pts: [[900, 1200], [W - 900, 1200]] }],
   mirror: (x, y) => ({ x: mirrorX(x), y }),
@@ -85,7 +88,7 @@ const LANES = [
 
 const tower = (id, tier, x, y, invulnUntil) => {
   const T = { outer: [4000, 80, 220], inner: [4500, 90, 260], home: [5000, 100, 300] }[tier];
-  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
+  return { id, kind: 'tower', tier, x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
@@ -314,7 +317,11 @@ export const ARENA = {
     ...CAMPS_BLUE.flatMap((c) => [{ ...c, x: c.x * K, y: c.y * K, side: 0 }, { ...c, id: c.id + '_r', x: c.y * K, y: c.x * K, side: 1 }]),
     ...BOSSES.map((b) => ({ ...b, x: b.x * K, y: b.y * K, side: null })),
   ],
-  tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
+  // fortifyUntil / fortifyTaken: giáp trụ ngoài — trước phút 4 trụ ngoài chỉ nhận 60% sát thương (đầu trận không bị phá trụ quá sớm);
+  // homeRegen: trụ nhà hồi 15 máu/giây khi không bị đánh `regenAfter` giây (nhà chính hồi riêng 20/giây). minionAggro: lính đổi mục tiêu
+  // sang tướng địch vừa đánh tướng phe mình trong `minionAggroRange`, giữ `minionAggroFor` giây.
+  tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90,
+    fortifyUntil: 240, fortifyTaken: 0.6, homeRegen: 15, regenAfter: 8, minionAggroRange: 700, minionAggroFor: 2.5 },
   // cục máu sau trụ ngoài mỗi đường (sim/orbs.js): cách trụ `behind` về phía nhà, tướng phe đó chạm vào → hồi máu + năng lượng, mọc lại sau `respawn` giây
   orbs: { behind: 560, radius: 120, respawn: 60, hpPct: 0.15, manaPct: 0.15 },
   waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, siegeEveryLate: 2, siegeLateFrom: 600, gap: 14, spawnDist: 900 },

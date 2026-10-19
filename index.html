@@ -146,6 +146,8 @@
   .sk .lvl { top: -24px; left: 50%; right: auto; margin-left: -17px; width: 34px; height: 34px; font-size: 24px; font-weight: 900; line-height: 1; box-shadow: 0 0 0 2px #1a1200, 0 0 10px #ffcf6a; animation: lvpulse 1.1s ease-in-out infinite; z-index: 5; } /* nút + cộng điểm kỹ năng: to, nằm trên nút kỹ năng (dễ bấm bằng ngón cái) */ @keyframes lvpulse { 50% { transform: scale(1.15); box-shadow: 0 0 0 2px #1a1200, 0 0 18px #ffe08a; } }
   .lvring .fresh { animation: lvup 0.9s ease-out; } @keyframes lvup { 0% { stroke-width: 16; stroke: #fff; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 18px #ffcf6a); } 100% { stroke-width: 8; } }
   .sk.nomana .art { filter: saturate(0.3) brightness(0.75); } .sk.nomana { box-shadow: 0 0 0 3px #4a9cff; }
+  .sk.nocond .art { filter: grayscale(0.85) brightness(0.6); } .sk.nocond { box-shadow: 0 0 0 3px #6a6a7a; } /* chưa đủ điều kiện riêng của chiêu */
+  .sk.recast { box-shadow: 0 0 0 3px #ffd36a, 0 0 18px #ffd36a; } .sk.recast .cd, .sk.recast .cdt { opacity: 0; } /* đang trong cửa sổ kích hoạt lại */
   .sk.locked .art { filter: grayscale(1) brightness(0.55); } .sk.locked { opacity: 1; }
   #extras { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + var(--skw) + 14px); z-index: 4; display: flex; gap: clamp(8px, 1.6vw, 18px); align-items: flex-end; pointer-events: none; }
   .xb { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: auto; } .xb[hidden] { display: none; }

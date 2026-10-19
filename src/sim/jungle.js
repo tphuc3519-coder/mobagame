@@ -8,6 +8,7 @@ import { dealDamage } from './damage.js';
 import { applyStatus, isHardCC, isRooted } from './status.js';
 import { spawnProjectile } from './projectiles.js';
 import { isTargetable } from './targeting.js';
+import { spawnMinion } from './minions.js';
 import { ITEM_PASSIVE } from '../data/items.js';
 import { computeBonus } from './inventory.js';
 
@@ -126,9 +127,11 @@ export function onMonsterKilled(world, killer, m, { addGold, gainXp }) {
     if (def.teamReward) for (const h of world.entities.filter((x) => x.kind === 'hero' && x.team === killer.team)) { addGold(world, h, def.teamReward.gold); gainXp(world, h, def.teamReward.xp); }
     const b = def.buff;
     if (b) for (const h of b.to === 'team' ? heroes.filter((x) => x.team === killer.team) : [killer]) {
-      applyStatus(world, h, { status: 'statMod', id: b.id, buff: b.id, ...b.mod, burn: b.burn, duration: b.duration }, h);
+      applyStatus(world, h, { status: 'statMod', id: b.id, buff: b.id, buffName: b.name, ...b.mod, burn: b.burn, duration: b.duration, transfer: b.to === 'killer', transferMin: b.transferMin || 0 }, h); // bùa cá nhân: rơi sang người hạ
       world.emit('buff', { id: h.id, buff: b.id, name: b.name, duration: b.duration });
     }
+    if (def.pushers && world.map.lanes.length > 1) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, def.pushers, killer.team, l, 0); // Người Đá Đèn đẩy cả ba đường
+    if (def.pushers) world.emit('pushers', { team: killer.team, type: def.pushers });
     if (def.boss) { const ts = (world.teamStats ||= [{}, {}])[killer.team]; ts[m.monsterType] = (ts[m.monsterType] || 0) + 1; ts.boss = (ts.boss || 0) + 1; } // bảng tỉ số
     world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, monster: m.monsterType, boss: !!def.boss, name: def.name });
   }

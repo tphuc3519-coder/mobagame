@@ -63,7 +63,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
     const d = t ? { x: t.pos.x - player.pos.x, y: t.pos.y - player.pos.y } : facingDir();
     const l = Math.hypot(d.x, d.y) || 1;
     if (sp.aim === 'point') { const f = t ? Math.min(l, sp.range) : sp.range * 0.7; return { x: player.pos.x + (d.x / l) * f, y: player.pos.y + (d.y / l) * f }; }
-    if (sp.aim === 'direction') return { x: d.x / l, y: d.y / l };
+    if (sp.aim === 'direction' || sp.aim === 'target') return { x: d.x / l, y: d.y / l }; // khoá mục tiêu: hướng để chọn (sim chọn tướng gần hướng nhất)
     return null;
   }
   const cast = (slot, aim) => world.command(player.id, { type: 'cast', slot, aim });
@@ -94,7 +94,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
       let aim = null;
       if (!a.aiming) aim = autoAim(slot);
       else if (sp.aim === 'point') aim = { x: player.pos.x + a.dir.x * sp.range * a.f, y: player.pos.y + a.dir.y * sp.range * a.f };
-      else if (sp.aim === 'direction') aim = a.dir;
+      else if (sp.aim === 'direction' || sp.aim === 'target') aim = a.dir;
       if (a.aiming) lastAim.dir = { ...a.dir }; // Chớp Bước chạm nhanh theo hướng chiêu vừa ngắm (flashDir = 'skill')
       cast(slot, aim);
     };
@@ -167,6 +167,8 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         set(c.cd.style, 'transform', `scaleY(${level ? Math.min(1, Math.round((left / total) * 1000) / 1000) : 1})`);
         set(c.cdt, 'textContent', left > 0.05 ? String(left >= 10 || !dec ? Math.ceil(left) : left.toFixed(1)) : '');
         el.classList.toggle('nomana', level > 0 && player.mana < cost);
+        el.classList.toggle('nocond', level > 0 && !!sk.canCast && !sk.canCast(player, world)); // chưa đủ điều kiện riêng (Ấn, Tầm Nhìn, máu dưới 30%…)
+        el.classList.toggle('recast', player.recast?.slot === slot); // đang trong cửa sổ kích hoạt lại (đổi chỗ phân thân)
         el.classList.toggle('locked', !level); el.classList.toggle('cooling', left > 0.05);
         set(c.lvl.style, 'display', canLevelSkill(player, slot) ? 'grid' : 'none');
         const max = Array.isArray(sk.cooldown) ? sk.cooldown.length : 3;

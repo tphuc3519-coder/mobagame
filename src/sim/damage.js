@@ -1,5 +1,5 @@
 import { T, dist } from './util.js';
-import { removeStatus, isStealthed, isInvulnerable } from './status.js';
+import { removeStatus, isStealthed, isInvulnerable, applyStatus } from './status.js';
 import { onKill, respawnSeconds } from './economy.js';
 import { tryRevive, onMagicTaken } from './items.js';
 import { revealOnAttack } from './vision.js';
@@ -8,36 +8,46 @@ import { ITEM_PASSIVE } from '../data/items.js';
 const hasPassive = (e, p) => !!e?.bonus?.passives?.has(p);
 
 /** Sát thương nhận = raw × 100 / (100 + giáp hiệu dụng) (02 §7). Chuẩn không giảm. */
-export function mitigate(src, tgt, raw, type) {
+export function mitigate(src, tgt, raw, type, extraPen = 0) {
   if (type === 'true') return raw;
   if (type === 'physical') {
     const st = src?.stats;
-    const eff = Math.max(0, tgt.stats.armor * (1 - (st?.armorPenPct || 0)) - (st?.armorPenFlat || 0));
+    const eff = Math.max(0, tgt.stats.armor * (1 - Math.min(1, (st?.armorPenPct || 0) + extraPen)) - (st?.armorPenFlat || 0)); // extraPen: xuyên giáp riêng của chiêu (Hai Nòng Liên Xạ)
     return (raw * 100) / (100 + eff);
   }
   const st = src?.stats;
   return (raw * 100) / (100 + Math.max(0, tgt.stats.mr * (1 - (st?.mrPenPct || 0)) - (st?.mrPen || 0)));
 }
 
-/** Chống phá lén: công trình nhận ít hơn 60% sát thương khi không có lính bên tấn công trong bán kính 900 (03 §A4). */
+/** Chống phá lén: công trình nhận ít hơn 60% sát thương khi không có lính bên tấn công trong bán kính 900 (03 §A4).
+ *  Giáp trụ ngoài: trước phút `fortifyUntil` trụ ngoài chỉ nhận `fortifyTaken` sát thương (đầu trận không mất trụ quá sớm). */
 function backdoorFactor(world, src, tgt) {
   if (!tgt.structure || !src) return 1;
-  const R = world.map.tower.minionAggroRadius;
-  return world.entities.some((m) => m.kind === 'minion' && m.alive && m.team === src.team && dist(m.pos, tgt.pos) <= R) ? 1 : world.map.tower.backdoorTaken;
+  const TW = world.map.tower, R = TW.minionAggroRadius;
+  const sd = world.map.suddenDeath, fort = (tgt.tier === 'outer' && TW.fortifyUntil && world.tick < T(TW.fortifyUntil) ? TW.fortifyTaken : 1) * (sd && world.tick >= T(sd.from) ? sd.structureTaken : 1);
+  return fort * (world.entities.some((m) => m.kind === 'minion' && m.alive && m.team === src.team && dist(m.pos, tgt.pos) <= R) ? 1 : TW.backdoorTaken);
 }
 
 /** Gây sát thương: hook, bất tử, giảm giáp/KP, khiên, chết. Trả sát thương thực vào máu.
- *  opts: basic (đòn đánh thường), crit (chí mạng — mọi loại sát thương đều hiện được kiểu chí mạng), dot, reflect. */
+ *  opts: basic (đòn đánh thường), crit (chí mạng — mọi loại sát thương đều hiện được kiểu chí mạng), dot, reflect, slot (chiêu gây ra),
+ *  armorPenPct (xuyên giáp riêng của chiêu). Hook nội tại: onDealDamage của người gây (đổi ctx.amount), onTakeDamage của người nhận
+ *  (đổi ctx.amount; ctx.cancel = true là né hẳn đòn — Thấu Nhãn). */
 export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}) {
   if (!tgt || !tgt.alive || amount <= 0 || tgt.noTarget) return 0;
   if (tgt.invulnerable || isInvulnerable(tgt)) { world.emit('immune', { id: tgt.id }); return 0; }
   if (src && src !== tgt) revealOnAttack(world, src, tgt); // đánh người thì lộ mặt (bụi, sương mù)
   const hook = src?.data?.passive?.hooks?.onDealDamage;
-  if (hook) { const ctx = { world, self: src, target: tgt, amount, type }; hook(ctx); amount = ctx.amount; }
+  if (hook) { const ctx = { world, self: src, target: tgt, amount, type, opts }; hook(ctx); amount = ctx.amount; }
+  const take = tgt.data?.passive?.hooks?.onTakeDamage;
+  if (take) {
+    const ctx = { world, self: tgt, src, amount, type, opts }; take(ctx);
+    if (ctx.cancel) { world.emit('dodge', { id: tgt.id, src: src?.id }); return 0; }
+    amount = ctx.amount;
+  }
   if (tgt.kind === 'monster' && hasPassive(src, 'jungleFang')) { // Nanh Thú Rừng: +30% (đã nâng: +50%) sát thương lên quái
     const J = ITEM_PASSIVE.jungleFang; amount *= 1 + (src.flags.fangUp ? J.monsterDmgUp : J.monsterDmg);
   }
-  let dmg = mitigate(src, tgt, amount, type) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0)) * (opts.basic ? 1 - (tgt.stats.basicReduce || 0) : 1) * backdoorFactor(world, src, tgt);
+  let dmg = mitigate(src, tgt, amount, type, opts.armorPenPct || 0) * (1 - Math.min(0.8, tgt.stats.dmgReduce || 0)) * (opts.basic ? 1 - (tgt.stats.basicReduce || 0) : 1) * backdoorFactor(world, src, tgt);
   let absorbed = 0;
   tgt.shields.sort((a, b) => a.until - b.until);
   for (const sh of tgt.shields) {
@@ -78,6 +88,7 @@ export const KILL_WINDOW = 10, MULTI_WINDOW = 10;
 function kill(world, src, tgt) {
   if (tgt.kind === 'dummy') { tgt.hp = tgt.stats.maxHp; world.emit('reset', { id: tgt.id }); return; } // hình nộm hồi đầy
   tgt.hp = 0; tgt.alive = false; tgt.deaths++; tgt.deadTick = world.tick;
+  const carry = tgt.kind === 'hero' ? tgt.statuses.filter((st) => st.transfer && st.until > world.tick) : []; // bùa xanh / đỏ: rơi sang người hạ
   tgt.dash = null; tgt.moveDir = { x: 0, y: 0 }; tgt.attacking = false; tgt.statuses = []; tgt.shields = [];
   if (src?.kind === 'hero' && (tgt.kind === 'minion' || tgt.kind === 'monster')) src.cs = (src.cs || 0) + 1; // lính / quái kết liễu
   if (tgt.structure && src && tgt.kind === 'tower') { const tm = 1 - tgt.team; (world.teamStats ||= [{}, {}])[tm].towers = ((world.teamStats[tm].towers) || 0) + 1; }
@@ -94,6 +105,11 @@ function kill(world, src, tgt) {
   tgt.hitBy = {};
   const victimStreak = tgt.killStreak || 0; tgt.multi = null;
   onKill(world, killer, tgt, killer ? assists : []); // vàng / KN cho người được tính mạng (+ phần chia hỗ trợ); chuỗi hạ gục của người hạ tăng, của nạn nhân về 0
+  if (killer?.alive) for (const st of carry) { // bùa chuyển sang người hạ, giữ thời gian còn lại (ít nhất `transferMin` giây)
+    const { kind, id, src, until, ...rest } = st, left = Math.max(st.transferMin || 0, (until - world.tick) / 30);
+    applyStatus(world, killer, { ...rest, status: kind, id, duration: left }, killer);
+    world.emit('buff', { id: killer.id, buff: st.buff, name: st.buffName, duration: left, stolen: true });
+  }
   tgt.respawnTick = world.tick + T(respawnSeconds(world, tgt));
   const ev = { id: tgt.id, killer: killer ? killer.id : src?.id, by: src?.id, assists: assists.map((h) => h.id) };
   if (killer) {

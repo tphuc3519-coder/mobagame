@@ -1,13 +1,13 @@
 // Phép bổ trợ (05 §6). Dùng chung một kiểu Command với kỹ năng: { type:'spell', aim }.
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { T, dist, norm } from './util.js';
-import { applyStatus, removeStatus, isHardCC } from './status.js';
+import { applyStatus, removeStatus, isHardCC, cannotDash } from './status.js';
 import { dealDamage, heal } from './damage.js';
 import { enemiesOf, alliesOf } from './targeting.js';
 import { clampToMap } from './util.js';
 import { cancelRecall } from './economy.js';
 
-const CLEANSE = ['stun', 'root', 'slow', 'silence', 'taunt']; // hất tung đang diễn ra thì giữ nguyên
+const CLEANSE = ['stun', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind']; // hất tung đang diễn ra và áp chế thì giữ nguyên
 
 /** Điểm đáp của Chớp Bước: đi thẳng theo hướng, bị giữ trong đường/bản đồ, không rơi vào công trình. */
 export function blinkTarget(world, e, dir, range) {
@@ -39,6 +39,7 @@ export function castSpell(world, e, aim) {
   if (isHardCC(e) && sp.id !== 'giai_troi') return { ok: false, reason: 'cc' };
   const smiteT = sp.id === 'thu_hoach' ? smiteTarget(world, e, sp) : null;
   if (sp.id === 'thu_hoach' && !smiteT) return { ok: false, reason: 'noTarget' }; // không có mục tiêu: không mất hồi chiêu
+  if (sp.id === 'chop_buoc' && cannotDash(e)) return { ok: false, reason: 'noDash' }; // kết giới / lãnh địa bóng chặn cả Chớp Bước
   e.spell.ready = world.tick + T(sp.cooldown);
   cancelRecall(world, e); // huỷ Biến về kèm sự kiện (trước chỉ gán null: tiếng niệm kêu tiếp tới hết)
   world.emit('spell', { id: e.id, spell: sp.id });

@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import { loadHero } from './src/render/assets.js';
 import { createShowcase, makeHolder, backdrop, lanterns, sparkles } from './src/showcase/showcase.js';
 import { createSplash } from './src/showcase/splash.js';
-import { setOutlineResolution } from './src/render/materials.js';
+const setOutlineResolution = () => {}; // viền nét đã bỏ khỏi materials.js (02 §13.3): giữ lời gọi cũ, không làm gì
 import { glowTexture } from './src/render/env/textures.js';
 import { createCore, createFountain, createTower } from './src/render/structures.js';
 import { flagstoneSurface } from './src/render/env/surfaces.js';
@@ -71,8 +71,9 @@ async function card() {
   show.pause(); const h = show.current; h.life = 9; h.g.scale.setScalar(1); h.mats.setFlash(0); // máy chậm: hiệu ứng "hiện ra" (phóng to + loé trắng) có thể chưa chạy xong
   show.stage.rotation.y = num('spin', -0.35); show.pose(q.get('clip') || 'Showcase', num('t', 2));
   frameUpper(show.camera, show.stage, { top: num('top', 0.42), bottom: num('bottom', 0.62), lift: num('lift', 0) });
+  if (q.get('exp')) show.renderer.toneMappingExposure = num('exp', 1); // model sinh tự động màu sáng: hạ phơi sáng để không cháy trắng
   show.renderer.render(show.scene, show.camera);
-  return post(cv, { bloom: 0.32, thr: 0.7, vignette: 0.5, cy: 0.4 }).toDataURL('image/jpeg', 0.86);
+  return post(cv, { bloom: num('bloom', 0.32), thr: num('thr', 0.7), vignette: 0.5, cy: 0.4 }).toDataURL('image/jpeg', 0.86);
 }
 
 async function face() {

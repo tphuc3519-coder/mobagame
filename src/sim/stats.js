@@ -14,14 +14,21 @@ export function computeStats(world, e) {
     mrPen: g('mrPen'), mrPenPct: g('mrPenPct'), crit: Math.min(1, g('crit')), lifesteal: g('lifesteal'), spellvamp: g('spellvamp'), cdr: Math.min(COMBAT_EXTRA.cdrCap, g('cdr')),
     tenacity: Math.min(COMBAT_EXTRA.tenacityCap, g('tenacity')), basicReduce: g('basicReduce') };
   s.atk = s.baseAtk + g('atk');
-  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, slow = 0, dmgReduce = 0, extraMana = 0;
+  s.critDmg = (b.critDmg || COMBAT_EXTRA.critBase) + (bo.critDmg || 0); // b.critDmg: tướng có sát thương chí mạng gốc riêng (vd Bà Năm Chảo 210%)
+  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, msAdd = 0, slow = 0, dmgReduce = 0, extraMana = 0, atkPct = 0, slowImmune = false;
   for (const st of e.statuses) {
     if (st.kind === 'statMod') {
       s.armor += st.armor || 0; s.mr += st.mr || 0; s.atk += st.atk || 0; s.ap += st.ap || 0; asPct += st.atkSpeedPct || 0; dmgReduce += st.dmgReducePct || 0;
       if (st.cdr) s.cdr = Math.min(COMBAT_EXTRA.cdrCap, s.cdr + st.cdr); if (st.regenMana) extraMana += st.regenMana;
+      atkPct += st.atkPct || 0; s.crit = Math.min(1, s.crit + (st.crit || 0)); s.range += st.range || 0; msAdd += st.moveSpeedPct || 0;
+      if (st.tenacity) s.tenacity = Math.min(COMBAT_EXTRA.tenacityCap, s.tenacity + st.tenacity);
+      if (st.slowImmune) slowImmune = true;
     } else if (st.kind === 'haste') msPct = Math.max(msPct, st.pct);
     else if (st.kind === 'slow') slow = Math.max(slow, st.pct);
   }
+  if (slowImmune) slow = 0;
+  if (atkPct) s.atk *= 1 + atkPct;
+  msPct += msAdd;
   if (world.tick > (e.heatUntil || 0)) e.heat = 0;
   if (e.heat > 0) asPct += 0.05 * e.heat;
   s.ap *= 1 + g('apMult');

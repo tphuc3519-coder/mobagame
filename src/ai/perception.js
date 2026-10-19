@@ -11,7 +11,7 @@ export const fountainOf = (world, team) => world.entities.find((s) => s.kind ===
 export const hp01 = (e) => e.hp / e.stats.maxHp;
 export const ready = (world, e, slot) => {
   const sk = e.data.skills?.[slot], L = e.skillLevels[slot];
-  return !!sk && L > 0 && world.tick >= e.cooldowns[slot] && e.mana >= lv(sk.cost, L);
+  return !!sk && L > 0 && world.tick >= e.cooldowns[slot] && e.mana >= lv(sk.cost, L) && (!sk.canCast || sk.canCast(e, world)); // canCast: điều kiện riêng (đủ Ấn, đủ Tầm Nhìn…)
 };
 
 /** Trụ địch đang che điểm p (tính cả lề an toàn). */

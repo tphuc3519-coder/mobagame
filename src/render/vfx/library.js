@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TILE } from './atlas.js';
 import { HERO_SCALE } from '../unitView.js';
+import { createExtraFx } from './extra.js';
 
 // Bộ hiệu ứng theo từng tướng (chủ đề màu + hình riêng cho mỗi chiêu) và hiệu ứng chung (trúng đòn, choáng, khiên, hồi máu, lên cấp, về thành).
 // Hàm ở đây chỉ đọc sự kiện mô phỏng và vẽ; không đổi trạng thái trận. Toạ độ: sim (x, y) → thế giới (x, z), y = độ cao (tướng cao ~250).
@@ -15,6 +16,21 @@ export const THEMES = {
   nguyet_ha: { col: 0x8ad4ff, core: 0xffffff, hit: 'water' },
   canh_dieu: { col: 0xc8f4ff, core: 0xffffff, hit: 'wind' },
   long_dang: { col: 0xffc84a, core: 0xfff6d0, hit: 'light' },
+  // 14 tướng mở khoá: màu viền (rim) của model
+  hanh_hoa: { col: 0xf2c14e, core: 0xfff6d0, hit: 'light' },
+  tieu_anh: { col: 0xff8a7a, core: 0xfff4ec, hit: 'wind' },
+  ba_nam: { col: 0xff7a8a, core: 0xfff0f2, hit: 'spark' },
+  cau_may: { col: 0x6fd6a0, core: 0xfff8d0, hit: 'fire' },
+  bong_den: { col: 0xb08aff, core: 0xf0e8ff, hit: 'spark' },
+  thay_do: { col: 0xc9a24a, core: 0xfff4d8, hit: 'light' },
+  kep_cheo: { col: 0xf0c040, core: 0xfff6d0, hit: 'light' },
+  meo_than_tai: { col: 0xf0c040, core: 0xfff6c8, hit: 'light' },
+  phu_dong: { col: 0xff7a3a, core: 0xffe6b0, hit: 'fire' },
+  thu_linh: { col: 0x7ad0ff, core: 0xffffff, hit: 'light' },
+  kiem_thuy: { col: 0x6ad4ff, core: 0xe8ffff, hit: 'water' },
+  luong_cuc: { col: 0x8a7aff, core: 0xffffff, hit: 'spark' },
+  nhan_su: { col: 0x5affd0, core: 0xe8fff8, hit: 'spark' },
+  trang_nhi: { col: 0x7ad8ff, core: 0xfff4e0, hit: 'spark' },
 };
 const TEAM = { 0: 0x5fe3d0, 1: 0xff6a4a };
 
@@ -404,6 +420,9 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
     }
   }
 
+  // —— Sự kiện của kiểu chiêu mở rộng / nội tại tướng mở khoá (extra.js) ——
+  const extra = createExtraFx({ A, N, sh, flash, burst, sparks, slash, rootOf, headOf, ent, visible, themeOf, aura, dust, later });
+
   // —— Sự kiện chung ——
   const lastHit = new Map();
   function handle(ev) {
@@ -455,7 +474,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
       case 'orbUp': { const o = world?.orbs?.[ev.orb]; if (!o) break; burst(A, o.x, 40, o.y, { n: 10, r: 60, speed: [5, 25], up: [80, 200], life: [0.6, 1], size: [18, 5], color: [0xf0fff0, 0x5aff8a], tile: TILE.star, drag: 1 }); break; } // cục máu mọc lại
       case 'recalled': { const r = e?.pos; if (r && visible(e)) sh.pillar(r.x, r.y, 90, 500, { color: 0x4fa8ff, top: 0xffffff, life: 0.5 }); break; }
       case 'towerShot': break;
-      default: break;
+      default: extra[ev.type]?.(ev, e); break;
     }
   }
 

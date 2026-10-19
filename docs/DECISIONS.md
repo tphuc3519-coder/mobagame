@@ -632,3 +632,18 @@
 - **Màn kết quả dừng hẳn vòng vẽ** (`loop.stop()` — huỷ requestAnimationFrame). Trước đây chỉ dừng mô phỏng, cảnh 3D + hậu kỳ vẫn vẽ ~60 khung/giây phía sau lớp kết quả che kín.
 - **Deploy tự chạy khi push `main`** (vẫn bấm tay được) và chỉ đẩy `index.html`, `demo.html`, `src/`, `lib/`, `assets/` (trước đẩy cả repo: `tools/modelgen/imports` 26 MB, `docs/`). Xoá `play.html` (bản dựng cho artifact từ Mốc 5, không còn dùng, vẫn mở được ở `/play.html`).
 - Biểu tượng ứng dụng (đèn lồng) `assets/ui/app/`: favicon SVG + PNG, `apple-touch-icon` — hết lỗi 404 `favicon.ico`.
+
+## Kiểm toán 19/10 — Giai đoạn 1a + 1b
+- **Kiểu chiêu mới nằm ở `sim/skillTypes.js`, tra lúc gọi** (`HANDLERS[type] || EXTRA_HANDLERS[type]`), không trải vào bảng lúc nạp module:
+  `skills.js` ↔ `skillTypes.js` nhập vòng nhau, trải lúc nạp sẽ gãy (TDZ) tuỳ thứ tự import.
+- **Cơ chế riêng của tướng vẫn chỉ ở file tướng** (hook + `params`), hệ thống không gọi tên tướng nào. Hook được đổi đòn sắp ra qua `cast`
+  (`dmgAdd`, `dmgMult`, `extraEffects`) trong `onCast` thay vì thêm cờ riêng cho từng tướng vào `skills.js`.
+- **Đổi vài chỗ trong dữ liệu tướng để chạy được thật**: `silenceDash` → `noDash`; Phân Thân Giấy sát thương mỗi phát của phân thân hạ
+  còn 18 (+0.22 Công) (2 phân thân bắn mỗi giây trong 4 s — để 40 (+0.5 Công) thì một chiêu thường gây ~900); Nhật Vũ 13 nhát hạ còn
+  18 (+0.18 Công) mỗi nhát (vẫn ~1.300 ở cấp 3); Chân Lý Duy Nhất là đạn khoá mục tiêu (`targeted`) thay vì lao vào (tướng xạ thủ);
+  Đá Lộn Ngược = +80 sát thương + choáng 0,5 s (mô tả cũ "140 sát thương"); Cánh Sếu "+50% tốc ra chiêu" = hồi chiêu trôi nhanh hơn 50%.
+- **Bùa rơi sang người hạ chỉ là bùa cá nhân** (xanh / đỏ — `to: 'killer'`); bùa cả đội (Uy Hổ, Lôi Vũ, Tà Lực) không rơi.
+- **1v1 có luật cuối trận riêng** (`DUEL.waves.giantFrom`, `DUEL.suddenDeath`); 5v5 không có — ở 5v5 đã có Lính Đèn Lớn khi mất trụ nhà và mục
+  tiêu lớn cuối trận.
+- **Phân thân là entity `kind: 'clone'`** (`noTarget`, không thanh máu) để dùng lại đường vẽ tướng (`unitView` nạp model theo `heroId`); sát
+  thương tính cho chủ; tan khi chủ chết / hết giờ.

@@ -301,3 +301,28 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
     bị đẩy giật + ngả theo cú đánh, chờ đúng lúc vũ khí người đánh tới.
   - `render/camera.js`: giật camera nhẹ theo hướng chiêu của người chơi (chiêu cuối mạnh hơn; tắt khi máy bật giảm chuyển động).
   - `render/vfx/library.js`: tụ lực ở tay / vũ khí suốt lúc gồng, loé + bùng ở mũi vũ khí đúng khung chạm; cú búa Xỉ Sắt theo clip.
+
+## Kiểm toán 19/10 — Giai đoạn 1a + 1b: mở đủ 20 tướng, luật 5v5 còn thiếu
+- **Mở khoá 14 tướng** (Hạnh Hoa, Tiểu Ảnh, Bà Năm Chảo, Cầu Mây, Bóng Đèn, Thầy Đồ, Kép Chèo, Mèo Thần Tài, Phù Đổng, Thư Linh, Kiếm Thuỷ,
+  Lưỡng Cực, Nhãn Sư, Trạng Nhí) — `ALPHA` giờ là 20 tướng; màn chọn, đội hình bot, chế độ thử (`?hero=<id>`) đều dùng được.
+  - Kiểu chiêu mới (`src/sim/skillTypes.js`): `line` (đường thẳng nhiều nhịp, hiệu ứng khi trúng đủ nhịp), `tether` (trói nối, hết giờ còn
+    trong tầm thì choáng, đứt khi người trói bị khống chế / kéo giãn), `recast` (phân thân giấy tự bắn, kích hoạt lại đổi chỗ), `targetedDash`
+    (lao khoá mục tiêu), `targeted` (đạn khoá mục tiêu); chém liên hoàn sau cú lướt; tua ngược vị trí + máu (lịch sử 0,5 s/mẫu).
+  - Kiểu cũ thêm: bắn nhiều phát (`count`/`interval`, phát sau bám mục tiêu phát đầu), biến thể ngẫu nhiên (Pháo Giấy nổ vùng giảm dần,
+    Đá Lộn Ngược), xuyên N mục tiêu, chỉ trúng tướng, nhiều đợt sóng + hất ngược đạn, nhiều tia trong quạt (đếm tia trúng → kiệt sức),
+    khiên đồng minh trong vùng, miễn đòn đánh thường, hiệu ứng tức thời (đẩy lùi, hút về, giải khống chế, cắt chiêu — `sim/effects.js`).
+  - Hook nội tại mới: `onCast` (đổi đòn sắp ra: `cast.dmgAdd/dmgMult/extraEffects`), `onTakeDamage` (giảm / né hẳn), `onSkillMiss`,
+    `canCast` / `canTarget` (điều kiện riêng: đủ Ấn, đủ Tầm Nhìn, máu dưới 30%, đủ 2 Manh Mối); công cụ tầng dấu `addStack/stacks/clearStack`;
+    `passive.gauge` hiện cạnh thanh máu (Nụ 2/4, Ấn 3/5, Tầm Nhìn 60/100…).
+  - Trạng thái mới: `noDash` (không lướt / Chớp Bước), `blind` (đánh thường có tỉ lệ trượt), `suppress`, `basicImmune`, `mark`; hồi máu theo %.
+  - HUD: chiêu khoá mục tiêu kéo để chọn, nút xám khi chưa đủ điều kiện, nút vàng khi đang trong cửa sổ kích hoạt lại; bot dùng đủ các kiểu mới
+    (`ai.ultRule` hpBelowX cho Đổi Vai / Đồng Hồ Ngược; hồi máu nhắm đồng minh máu thấp nhất).
+  - Hình: màu chủ đề 14 tướng, hiệu ứng mới `render/vfx/extra.js` (nét chém đường thẳng, dây trói, giấy vụn phân thân, phản đạn, tua ngược,
+    chuỗi chém, né / trượt, tráo máu, nội tại bùng); phân thân vẽ mờ như bóng. Ảnh thẻ + toàn thân 14 tướng dựng bằng `tools/uiart/render.cjs`
+    (sửa công cụ gãy vì gọi hàm viền đã bỏ).
+- **Luật 5v5 (03 §A4–A7)**: giáp trụ ngoài (−40% sát thương trước phút 4), trụ nhà hồi 15 máu/giây khi yên 8 s, lính quay sang đánh tướng
+  địch vừa đánh tướng phe mình (giữ 2,5 s), bùa xanh / đỏ rơi sang người hạ (giữ thời gian còn lại, ít nhất 30 s), hạ Tà Thần → mỗi đường
+  một Người Đá Đèn đẩy đường cho đội hạ; Lính Đèn Lớn trâu hơn dưới trụ (trụ bắn 20% máu / phát thay vì 45%).
+- **1v1 không hoà mãi**: tướng hồi máu / đỡ đòn đấu nhau từng kéo 40 phút (14/50 trận bot hoà). Từ phút 18 đội đã phá trụ địch có siêu lính,
+  từ phút 30 công trình nhận gấp đôi sát thương và thôi hồi máu; bot lao phá trụ khi đối thủ còn chết ≥ 6 s. Đo lại: 50/50 trận kết thúc, TB 20,4 phút.
+- Kiểm thử mới: `node tools/t_heroes.mjs` (cơ chế từng tướng + 14 trận bot 90 s), `node tools/t_rules5v5.mjs`. Toàn bộ `tools/t_*.mjs` đạt.

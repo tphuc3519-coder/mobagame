@@ -58,7 +58,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
       if (e.kind === 'core' && e.radius < 200) v.part.object.scale.setScalar(0.72); // bản 1v1 hẹp: tế đàn thu nhỏ để nằm gọn giữa hai tường
       root.add(v.part.object); return v;
     }
-    if (e.kind === 'minion') { v.part = createMinion(e.minionType, e.team); root.add(v.part.object); v.atk = 0; return v; } // lính chỉ bóng tròn: ~20 lính mỗi khung đổ bóng thật = thêm ~20 lượt vẽ có xương
+    if (e.kind === 'minion') { const golem = e.minionType === 'golem'; v.part = createMinion(golem ? 'giant' : e.minionType, e.team); if (golem) v.part.object.scale.multiplyScalar(1.45); root.add(v.part.object); v.atk = 0; return v; } // Người Đá Đèn: thân Lính Đèn Lớn phóng to // lính chỉ bóng tròn: ~20 lính mỗi khung đổ bóng thật = thêm ~20 lượt vẽ có xương
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
     const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, undefined, { shading: art?.shading, anisotropy, soft: true }); castShadows(obj); }; // không viền (02 §13.3)
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
@@ -158,9 +158,9 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); v.mats.update(dt); // trong bụi: sáng lên chút để không chìm vào màu bụi tối; update: chớp mắt
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
-          const ghost = e.statuses.some((s) => s.kind === 'stealth') || inBush;
+          const hide = e.statuses.some((s) => s.kind === 'stealth') || inBush, ghost = hide || e.kind === 'clone'; // phân thân: mờ như bóng, nhưng địch vẫn thấy
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
-          v.root.visible = seen && !(ghost && e.team !== localTeam) && shown;
+          v.root.visible = seen && !(hide && e.team !== localTeam) && shown;
         }
         v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
         if (this.kick && e.id === localId && v.animator?.struck) this.kick(Math.cos(e.facing), Math.sin(e.facing), v.animator.struck); // chiêu của mình vừa tới tư thế chạm

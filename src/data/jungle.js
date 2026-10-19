@@ -9,10 +9,10 @@ export const MONSTERS = {
     stats: { toad: { maxHp: 1900, atk: 48, armor: 30, mr: 20, radius: 80, range: 200 } }, atkSpeed: 0.7, moveSpeed: 280, gold: { toad: 80 }, xp: { toad: 110 }, first: 30, respawn: 70 },
   linh_thuy: { name: 'Linh Thuỷ', camp: 'Linh Thuỷ (bùa xanh)', members: [{ kind: 'spirit', x: 0, y: 0 }],
     stats: { spirit: { maxHp: 2800, atk: 56, armor: 30, mr: 40, radius: 90, range: 380 } }, atkSpeed: 0.75, moveSpeed: 300, ranged: 1500, gold: { spirit: 100 }, xp: { spirit: 150 }, first: 30, respawn: 90,
-    buff: { to: 'killer', id: 'an_thuy', name: 'Ấn Thuỷ', duration: 90, mod: { cdr: 0.1, regenMana: 30 }, desc: '-10% hồi chiêu, hồi năng lượng nhanh' } },
+    buff: { to: 'killer', id: 'an_thuy', name: 'Ấn Thuỷ', duration: 90, transferMin: 30, mod: { cdr: 0.1, regenMana: 30 }, desc: '-10% hồi chiêu, hồi năng lượng nhanh' } },
   hoa_nham: { name: 'Hoả Nham', camp: 'Hoả Nham (bùa đỏ)', members: [{ kind: 'golem', x: 0, y: 0 }],
     stats: { golem: { maxHp: 3100, atk: 66, armor: 40, mr: 25, radius: 100, range: 200 } }, atkSpeed: 0.7, moveSpeed: 290, gold: { golem: 100 }, xp: { golem: 150 }, first: 30, respawn: 90,
-    buff: { to: 'killer', id: 'an_hoa', name: 'Ấn Hoả', duration: 90, mod: {}, burn: { dps: 25, perLevel: 3, duration: 2, slow: 0.2 }, desc: 'Đòn đánh thiêu đốt và làm chậm 20%' } },
+    buff: { to: 'killer', id: 'an_hoa', name: 'Ấn Hoả', duration: 90, transferMin: 30, mod: {}, burn: { dps: 25, perLevel: 3, duration: 2, slow: 0.2 }, desc: 'Đòn đánh thiêu đốt và làm chậm 20%' } },
   long_ngu: { name: 'Long Ngư', camp: 'Long Ngư', boss: true, members: [{ kind: 'carp', x: 0, y: 0 }],
     stats: { carp: { maxHp: 8000, atk: 130, armor: 60, mr: 60, radius: 170, range: 420 } }, atkSpeed: 0.6, moveSpeed: 0, ranged: 1400, splash: 260, gold: { carp: 100 }, xp: { carp: 250 }, first: 120, respawn: 180,
     teamReward: { gold: 150, xp: 220 }, desc: 'Cá chép vàng sắp hoá rồng. Hạ được: cả đội +150 vàng, +220 KN.' },
@@ -31,7 +31,8 @@ export const MONSTERS = {
     stats: { demon: { maxHp: 32000, atk: 400, armor: 120, mr: 120, radius: 200, range: 300 } }, atkSpeed: 0.55, moveSpeed: 0, splash: 380, gold: { demon: 250 }, xp: { demon: 450 }, first: 900, respawn: 300,
     teamReward: { gold: 250, xp: 300 },
     buff: { to: 'team', id: 'ta_luc', name: 'Tà Lực', duration: 150, mod: { atk: 60, ap: 90, dmgReducePct: 0.12 }, desc: '+60 công, +90 phép, giảm 12% sát thương nhận' },
-    desc: 'Tà thần trong hang tím ngoài mép vực, xuất hiện phút 15. Hạ được: cả đội nhận Tà Lực 150s.' },
+    pushers: 'golem', // hạ Tà Thần: mỗi đường thêm một Người Đá Đèn của đội hạ, tự đẩy đường (03 §A7)
+    desc: 'Tà thần trong hang tím ngoài mép vực, xuất hiện phút 15. Hạ được: cả đội nhận Tà Lực 150s và mỗi đường có một Người Đá Đèn đẩy đường.' },
 };
 /** Sức mạnh chung của quái rừng + mục tiêu lớn so với số trong bảng: công −30%, máu −15% (đi rừng đỡ mất máu, hạ nhanh hơn). */
 export const MONSTER_POWER = { hp: 0.85, atk: 0.7 };

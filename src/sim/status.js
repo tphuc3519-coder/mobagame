@@ -1,8 +1,9 @@
 import { T } from './util.js';
 
 // Hiệu ứng (04 §3). Mỗi status: { id, kind, until, ...dữ liệu }. Thời gian theo tick.
-const HARD = new Set(['stun', 'knockup', 'stasis']); // stasis: bất động, không hành động (05 §8)
-const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt']);
+const HARD = new Set(['stun', 'knockup', 'stasis', 'suppress']); // stasis: bất động, không hành động (05 §8); suppress: áp chế (Giải Trói không gỡ)
+// noDash: không lướt / Chớp Bước được (Lãnh Địa Bóng, Vòng Kết Giới); blind: đòn đánh thường có tỉ lệ trượt (Hào Quang Sân Khấu)
+const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'suppress']);
 const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt']);
 
 /** Áp hiệu ứng. spec: {status, duration(giây), pct, ...}; id tuỳ chọn để thay thế bản cũ cùng id. */
@@ -32,13 +33,16 @@ export const isStealthed = (e) => e.statuses.some((s) => s.kind === 'stealth');
 export const isUntargetable = (e) => e.statuses.some((s) => s.kind === 'untargetable' || s.kind === 'stasis');
 export const isInvulnerable = (e) => e.statuses.some((s) => s.kind === 'stasis' || s.kind === 'invuln');
 export const tauntSource = (e) => e.statuses.find((s) => s.kind === 'taunt')?.src ?? null;
+export const cannotDash = (e) => e.statuses.some((s) => s.kind === 'noDash');
+/** Tỉ lệ trượt đòn đánh thường (hiệu ứng blind lớn nhất). */
+export const missChance = (e) => e.statuses.reduce((m, s) => (s.kind === 'blind' ? Math.max(m, s.miss || 0) : m), 0);
 
 /** Hết hạn, tick sát thương/hồi theo thời gian (2 lần/giây), khiên hết hạn. */
 export function updateStatuses(world, e, dealDamage, heal) {
   const now = world.tick;
   for (const s of e.statuses) {
     if (s.kind === 'dot' && now % 15 === 0 && now < s.until) dealDamage(world, world.byId(s.src), e, s.dps / 2, s.type || 'magic', { dot: true });
-    if (s.kind === 'hot' && now % 15 === 0 && now < s.until) { if (heal) heal(world, e, s.hps / 2, world.byId?.(s.src)); else e.hp = Math.min(e.stats.maxHp, e.hp + s.hps / 2); }
+    if (s.kind === 'hot' && now % 15 === 0 && now < s.until) { const hps = s.hps ?? (s.hpsPct || 0) * e.stats.maxHp; if (heal) heal(world, e, hps / 2, world.byId?.(s.src)); else e.hp = Math.min(e.stats.maxHp, e.hp + hps / 2); } // hpsPct: hồi theo % HP tối đa mỗi giây
   }
   e.statuses = e.statuses.filter((s) => s.until > now);
   e.shields = e.shields.filter((s) => s.until > now && s.amount > 0);

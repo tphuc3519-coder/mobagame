@@ -23,11 +23,12 @@ import { createLaneBot } from '../ai/laneBot.js';
 import { DIFFICULTY } from '../data/ai.js';
 import { initJungle, updateJungle } from './jungle.js';
 import { initOrbs, updateOrbs } from './orbs.js';
+import { updateSkillEntities } from './skillTypes.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
-  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
+  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], tethers: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.surrender = (team) => surrender(world, team);
   world.emit = (type, data) => world.events.push({ ...data, type, tick: world.tick }); // loại sự kiện không bị trường cùng tên trong data đè
@@ -63,7 +64,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   world.debug = {
     /** Bỏ bùa và đồ để đo sát thương thuần (dùng trong kiểm thử). */
     bare(e) { e.charm = null; e.items = e.items.map(() => null); e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; },
-    resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; },
+    resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; e.recast = null; },
     level15(e) { setLevel(world, e, 15); autoLevel(e); }, // thử nghiệm: cộng luôn điểm kỹ năng (người chơi bình thường tự cộng bằng nút +)
     fullHeal(e) { e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; },
   };
@@ -97,6 +98,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     if (due.length) { world.pending = world.pending.filter((p) => p.tick > world.tick); for (const p of due) p.run(); }
     updateProjectiles(world); updateZones(world);
     updateMovement(world);
+    updateSkillEntities(world); // dây trói, phân thân, lịch sử vị trí (tua ngược)
     updateOrbs(world);
     updateCombat(world);
     // dọn lính đã chết sau 1 giây (để hiệu ứng ngã kịp chạy)

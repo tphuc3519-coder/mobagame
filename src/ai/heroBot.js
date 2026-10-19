@@ -69,7 +69,8 @@ function think(bot) {
   if (atHome && (h < 0.92 || e.mana < e.stats.maxMana * 0.8) && fd > 1200) { bot.state = 'HEAL'; move(bot, home, 60); attack(bot, null); return; }
 
   const coverMe = towerCovering(world, e.team, e.pos, 30);
-  const underFire = coverMe && !tankedBy(world, coverMe, e.team) && (coverMe.streakTarget === e.id || coverMe.aggro === e.id);
+  const foeDown = foe && !foe.alive && foe.respawnTick ? (foe.respawnTick - world.tick) / 30 : 0; // đối thủ còn chết bao lâu (giây)
+  const underFire = coverMe && !tankedBy(world, coverMe, e.team) && (coverMe.streakTarget === e.id || coverMe.aggro === e.id) && !(foeDown > 4 && h > 0.45); // đang lao phá trụ lúc đối thủ chết: chịu đòn trụ
   const killable = foeSeen && canKill(world, e, foe);
   const foeCovered = foeSeen && towerCovering(world, e.team, foe.pos, 0);
 
@@ -114,7 +115,9 @@ function think(bot) {
   let hit = target;
   const defenders = tower ? theirs.filter((m) => dist(m.pos, tower.pos) < tower.stats.range + 100).length : 0;
   const pushing = !foe?.alive || !foeSeen || fd > 1500 || (defenders <= 1 && h > 0.45) || (world.tick > 30 * 60 * 16 && h > 0.6); // cuối trận hoặc đối thủ vắng hoặc trụ chỉ còn ít lính giữ: dồn trụ
-  if ((!target || pushing) && tower && (tankedBy(world, tower, e.team) || (!foe?.alive && h > 0.5 && tower.hp < tower.stats.maxHp * 0.25)) && (pushing || !target) && dist(tower.pos, e.pos) < tower.stats.range + 400) { hit = tower; spot = { x: tower.pos.x - sign * (e.stats.range * 0.7 + tower.radius), y: tower.pos.y }; }
+  // lao vào phá trụ không cần lính đỡ: đối thủ còn chết ≥ 6s (hoặc vắng mặt sau phút 25) mà mình đủ máu — trận không kẹt mãi dưới nhà chính
+  const dive = tower && h > 0.55 && (foeDown > 6 || (world.tick > 30 * 60 * 25 && (!foeSeen || fd > 2200) && h > 0.75)) && tower.hp < (tower.stats.maxHp * (foeDown > 12 ? 1 : 0.6) + e.stats.atk * 20);
+  if ((!target || pushing || dive) && tower && (tankedBy(world, tower, e.team) || dive || (!foe?.alive && h > 0.5 && tower.hp < tower.stats.maxHp * 0.25)) && (pushing || dive || !target) && dist(tower.pos, e.pos) < tower.stats.range + 400 + (dive ? 1500 : 0)) { hit = tower; spot = { x: tower.pos.x - sign * (e.stats.range * 0.7 + tower.radius), y: tower.pos.y }; }
   move(bot, spot, 40);
   attack(bot, hit);
   // dọn lính nhanh bằng kỹ năng khi dư mana hoặc đối thủ vắng mặt → đợt lính mình tiến lên, trận có nhịp

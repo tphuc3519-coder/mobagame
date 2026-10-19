@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const [port = '8080', ...only] = process.argv.slice(2);
 const ALPHA = ['hoa_ren', 'thach_quy', 'bong_tre', 'nguyet_ha', 'canh_dieu', 'long_dang'];
 const ALL = [...ALPHA, 'hanh_hoa', 'tieu_anh', 'ba_nam', 'cau_may', 'bong_den', 'thay_do', 'kep_cheo', 'meo_than_tai', 'phu_dong', 'thu_linh', 'kiem_thuy', 'luong_cuc', 'nhan_su', 'trang_nhi'];
-// dáng chụp thẻ (clip, giây, zoom, dy, xoay): chọn khung có vũ khí rõ nhất của từng tướng
+// dáng chụp thẻ (clip, giây, zoom, dy, xoay): chọn khung có vũ khí rõ nhất của từng tướng; tướng không ghi thì dùng dáng mặc định
 const POSE = {
   hoa_ren: ['Showcase', 1.9, 1.7, 0.08, -0.3], thach_quy: ['Showcase', 2.0, 1.7, 0.06, -0.45], bong_tre: ['Showcase', 2.0, 1.75, 0.1, -0.35],
   nguyet_ha: ['Showcase', 3.0, 1.8, 0.12, -0.3], canh_dieu: ['Showcase', 2.0, 1.75, 0.1, -0.4], long_dang: ['Showcase', 2.0, 1.7, 0.1, -0.35],
@@ -20,8 +20,8 @@ const jobs = [
   { name: 'keyart', q: 'mode=keyart&w=1600&h=740&ss=1.5', file: `${out}/keyart.jpg`, w: 1600, h: 740 },
   { name: 'room', q: 'mode=room&w=1600&h=740&ss=1.5', file: `${out}/room.jpg`, w: 1600, h: 740 },
   { name: 'lobby', q: 'mode=lobby&w=1600&h=740&ss=1.5' + (process.env.Q || ''), file: process.env.OUT || `${out}/lobby.jpg`, w: 1600, h: 740 },
-  ...ALPHA.map((id) => { const [clip, t, zoom, dy, spin] = POSE[id]; return { name: 'card:' + id, q: `mode=card&id=${id}&w=420&h=600&clip=${clip}&t=${t}&zoom=${zoom}&dy=${dy}&spin=${spin}`, file: `${out}/heroes/${id}_card.jpg`, w: 420, h: 600, dpr: 2 }; }),
-  ...ALPHA.map((id) => ({ name: 'splash:' + id, q: `mode=splash&id=${id}&w=520&h=760&ss=1.5&clip=ShowIdle&t=0.4${FULL[id] || ''}`, file: `${out}/heroes/${id}_full.webp`, w: 520, h: 760, webp: true })),
+  ...ALL.map((id) => { const [clip, t, zoom, dy, spin] = POSE[id] || ['Showcase', 2.0, 1.75, 0.1, -0.35]; return { name: 'card:' + id, q: `mode=card&id=${id}&w=420&h=600&clip=${clip}&t=${t}&zoom=${zoom}&dy=${dy}&spin=${spin}${POSE[id] ? '' : '&exp=0.62&bloom=0.12&thr=0.85'}`, file: `${out}/heroes/${id}_card.jpg`, w: 420, h: 600, dpr: 2 }; }),
+  ...ALL.map((id) => ({ name: 'splash:' + id, q: `mode=splash&id=${id}&w=520&h=760&ss=1.5&clip=ShowIdle&t=0.4${FULL[id] || ''}`, file: `${out}/heroes/${id}_full.webp`, w: 520, h: 760, webp: true })),
   ...ALL.map((id) => ({ name: 'face:' + id, q: `mode=face&id=${id}&size=192&w=192&h=192${FACE[id] || ''}`, file: `${out}/heroes/${id}_face.webp`, w: 192, h: 192, webp: true })),
 ];
 
