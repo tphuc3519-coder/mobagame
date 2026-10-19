@@ -132,6 +132,7 @@ export function onMonsterKilled(world, killer, m, { addGold, gainXp }) {
     }
     if (def.pushers && world.map.lanes.length > 1) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, def.pushers, killer.team, l, 0); // Người Đá Đèn đẩy cả ba đường
     if (def.pushers) world.emit('pushers', { team: killer.team, type: def.pushers });
+    if (def.boss) world.lastBoss = { team: killer.team, tick: world.tick, x: m.pos.x, y: m.pos.y, type: m.monsterType }; // não đội (ai/teamBrain.js): vừa hạ mục tiêu lớn → dồn đường gần đó
     if (def.boss) { const ts = (world.teamStats ||= [{}, {}])[killer.team]; ts[m.monsterType] = (ts[m.monsterType] || 0) + 1; ts.boss = (ts.boss || 0) + 1; } // bảng tỉ số
     world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, monster: m.monsterType, boss: !!def.boss, name: def.name });
   }

@@ -9,3 +9,8 @@ export const BOT = {
   retreatHp: 0.3, recallHp: 0.45, recallMana: 0.2, safeRange: 1400, fightRange: 900,
   escapeHp: 0.15, itemHp: 0.25, kiteDist: 320, towerMargin: 60, holdBack: 0.55,
 };
+/** Não đội 5v5 (ai/teamBrain.js). push: giây sau khi hạ mục tiêu lớn vẫn dồn đường, phút bắt đầu dồn khi hơn 2 người,
+ *  phút cuối trận dồn khi hơn 1 người, giây giữ một đường đã chọn. */
+export const BRAIN = {
+  push: { afterBoss: 25, advFrom: 6, lateFrom: 14, hold: 20 },
+};

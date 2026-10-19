@@ -141,12 +141,12 @@ function think(bot) {
   if (order && order.kind !== 'push' && doOrder(bot, order, foe, fd)) return;
   if (!order && e.role === 'jungle' && jungle(bot, h)) return;
   if (!order && e.role === 'support' && support(bot, foe, fd)) return;
-  if (order?.kind === 'push' && order.lane !== bot.laneIdx) return lanePlay(bot, order.lane, { foe, fd, h, allies });
-  lanePlay(bot, bot.laneIdx, { foe, fd, h, allies });
+  const push = order?.kind === 'push';
+  lanePlay(bot, push ? order.lane : bot.laneIdx, { foe, fd, h, allies, push });
 }
 
 /** Đánh đường `laneIdx`: đứng sau lính mình, kết liễu lính, đánh trụ khi lính mình đỡ, trao đổi chiêu khi có dịp. */
-function lanePlay(bot, laneIdx, { foe, fd, h, allies }) {
+function lanePlay(bot, laneIdx, { foe, fd, h, allies, push = false }) {
   const { world, e, cfg } = bot;
   const path = laneIdx === bot.laneIdx ? bot.path : lanePath(world.map, laneIdx, e.team);
   const mine = minionsOf(world, e.team).filter((m) => m.lane === laneIdx), theirs = minionsOf(world, 1 - e.team).filter((m) => m.lane === laneIdx && canSee(e.team, m));
@@ -159,6 +159,7 @@ function lanePlay(bot, laneIdx, { foe, fd, h, allies }) {
   let s;
   if (target) s = project(path, target.pos).s - Math.max(80, e.stats.range * 0.8);
   else if (frontS >= 0) s = frontS - Math.max(150, e.stats.range * cfg.holdBack);
+  else if (push && tower) s = project(path, tower.pos).s - tower.stats.range - cfg.towerMargin - 60; // đang dồn đường: chờ lính ngay ngoài tầm trụ địch
   else { // chưa có lính (đầu trận hoặc lính chết hết): đứng gần trụ ngoài cùng còn sống của mình trên đường
     const own = towersOf(world, e.team).map((t) => ({ t, p: project(path, t.pos) })).filter((o) => o.p.d < path.width + 300 && o.t.kind === 'tower').sort((a, b) => b.p.s - a.p.s)[0];
     s = own ? own.p.s + 260 : path.length * 0.08;
@@ -172,7 +173,8 @@ function lanePlay(bot, laneIdx, { foe, fd, h, allies }) {
   const defenders = tower ? theirs.filter((m) => dist(m.pos, tower.pos) < tower.stats.range + 100).length : 0;
   const alone = !foe || fd > 1500;
   const pushing = alone || (defenders <= 1 && h > 0.45) || (allies.length >= 2 && h > 0.6) || (world.tick > 30 * 60 * 14 && h > 0.6);
-  if ((!target || pushing) && tower && (tankedBy(world, tower, e.team) || (alone && h > 0.5 && allies.length >= 1)) && dist(tower.pos, e.pos) < tower.stats.range + 400) { hit = tower; spot = { x: tower.pos.x, y: tower.pos.y }; const st2 = project(path, tower.pos).s; spot = pointAt(path, st2 - Math.max(e.stats.range * 0.85, tower.radius + 90)); }
+  const dive = push && allies.length >= 2 && h > 0.5 && (alone || tower?.hp < tower?.stats.maxHp * 0.45); // dồn đường đông người: đánh trụ cả khi lính chưa đỡ (trụ yếu / địch vắng)
+  if ((!target || pushing || push) && tower && (tankedBy(world, tower, e.team) || (alone && h > 0.5 && allies.length >= 1) || dive) && dist(tower.pos, e.pos) < tower.stats.range + 400) { hit = tower; spot = { x: tower.pos.x, y: tower.pos.y }; const st2 = project(path, tower.pos).s; spot = pointAt(path, st2 - Math.max(e.stats.range * 0.85, tower.radius + 90)); }
   goLane(bot, project(path, spot).s, 40, path);
   attack(bot, hit);
   if (hit && hit === tower && e.mana > e.stats.maxMana * 0.3) combo(bot, tower, 'farm');
