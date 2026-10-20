@@ -12,6 +12,7 @@ const DEF = () => ({
   bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua)
   daily: { day: today(), played: 0, won: 0, kills: 0, claimed: [] }, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
+  charmPages: [], heroPage: {}, emblems: {}, // trang bùa riêng (u1..u10), trang nhớ theo tướng, phù hiệu theo tướng — ui/loadout.js
 });
 
 let P = null;

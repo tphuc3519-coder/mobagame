@@ -2,14 +2,14 @@
 // Chấp nhận → Cấm/chọn → Chuẩn bị → Đội hình → Tải → Trận (đúng vị trí, đúng tướng, không tướng bị cấm) → đầu hàng → Kết quả; Đấu thường
 // (vị trí + chọn ẩn); hộp thoại chọn vị trí khi bấm Bắt đầu lúc chưa chọn. Cần máy chủ tĩnh đang chạy ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_flow.cjs <cổng> [kịch bản…]      kịch bản: ranked844 ranked1280 normal844 normal1280 role844 (mặc định: tất cả)
+//   node tools/b_flow.cjs <cổng> [kịch bản…]      kịch bản: ranked844 ranked1280 normal844 normal1280 role844 loadout844 loadout1280 (mặc định: tất cả)
 //   SHOTS=<thư mục> lưu ảnh chụp từng màn. In ĐẠT / LỖI từng mục, dòng cuối "Tất cả đạt"; mã thoát 1 khi có lỗi.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['ranked844', 'ranked1280', 'normal844', 'normal1280', 'role844'];
+const ALL = ['ranked844', 'ranked1280', 'normal844', 'normal1280', 'role844', 'loadout844', 'loadout1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -165,6 +165,55 @@ async function roleDialog(browser, vp) {
   await ctx.close();
 }
 
+async function loadout(browser, vp) {
+  const label = `loadout${vp}`;
+  console.log(`— ${label}: Sảnh → Bảng Bùa (sửa trang mẫu → bản sao, phù hiệu) → chọn tướng dùng trang + phù hiệu → vào trận đúng bộ`);
+  const { ctx, page, errs } = await openPage(browser, vp, { stars: 10, rolePri: 'mid', roleSec: null, lastHero: 'nguyet_ha' });
+  await page.click('.hm-nav [data-a="loadout"]');
+  await page.waitForSelector('#loadout #loCharm .lo-slot', { timeout: T(10) }); await page.waitForTimeout(400);
+  const L = await layout(page, ['#loadout .lo-slot', '#loadout .lo-pg', '#loadout .lo-act button', '#loadout .lo-ch', '#loadout .lo-tabs button']);
+  ok(`${label}: bảng bùa nằm trọn trong màn hình, không cuộn ngang`, !L.out.length && L.sw <= L.W, L.out.slice(0, 3).join(' ; '));
+  ok(`${label}: mở đúng trang của tướng đang dùng (Pháp sư)`, await page.evaluate(() => window.__loadout.st.charm.pageId === 'mage'));
+  await shot(page, label + '_charm');
+  await page.click('#loCharm .lo-slot[data-c="red"][data-i="0"]');
+  await page.click('#loCharm .lo-ch[data-ch="r_gio"]');
+  let prof = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
+  ok(`${label}: sửa trang mẫu → tự tạo bản sao "Trang 1", gắn đúng ô`, prof.charmPages?.length === 1 && prof.charmPages[0].red[0] === 'r_gio' && prof.charmPages[0].red[1] === 'r_lua', JSON.stringify(prof.charmPages?.[0]?.red));
+  await page.click('#loCharm [data-pc="blue"]'); await page.click('#loCharm .lo-x5[data-fill="b_chan"]');
+  await page.click('#loCharm .lo-slot[data-c="gray"][data-i="2"]'); await page.click('#loCharm .lo-slot[data-c="gray"][data-i="2"]'); // chạm lại ô đang chọn: gỡ
+  prof = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
+  ok(`${label}: ×5 lấp cả hàng xanh, chạm lại ô gỡ bùa`, prof.charmPages[0].blue.every((c) => c === 'b_chan') && prof.charmPages[0].gray[2] === null);
+  ok(`${label}: cấp trang hiện 14/15`, (await page.textContent('#loCharm .lo-lv')).includes('14/15'));
+  await page.click('#loTabEmblem'); await page.waitForSelector('#loEmblem .lo-key', { timeout: T(5) });
+  const L2 = await layout(page, ['#loEmblem .lo-key', '#loEmblem .lo-min', '#loEmblem [data-a="emreset"]']);
+  ok(`${label}: thẻ phù hiệu nằm trọn trong màn hình`, !L2.out.length && L2.sw <= L2.W, L2.out.slice(0, 3).join(' ; '));
+  await shot(page, label + '_emblem');
+  await page.click('#loEmblem .lo-key[data-k="den_ho_menh"]'); await page.click('#loEmblem .lo-min[data-m="m_buoc_nhe"]');
+  prof = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
+  ok(`${label}: phù hiệu lưu theo tướng (Nguyệt Hạ: Đèn Hộ Mệnh + Bước Nhẹ)`, prof.emblems?.nguyet_ha?.key === 'den_ho_menh' && prof.emblems.nguyet_ha.minors[1] === 'm_buoc_nhe', JSON.stringify(prof.emblems));
+  await page.click('#loadout .ui-back'); await page.waitForTimeout(300);
+  await page.click('[data-a="normal"]'); await screen(page, 'room');
+  await page.click('#room [data-a="go"]'); await page.waitForSelector('.found [data-a="accept"]', { timeout: T(20) });
+  await page.click('.found [data-a="accept"]'); await screen(page, 'pick', 30); await page.waitForTimeout(600);
+  await page.click('#pick .hc[data-id="nguyet_ha"]'); await page.waitForTimeout(200);
+  ok(`${label}: nút phù hiệu ghi phù hiệu của tướng đang xem`, (await page.textContent('#pick .pk-pill[data-a="emblem"]')).includes('Đèn Hộ Mệnh'));
+  await page.click('#pick .pk-pill[data-a="charm"]'); await page.waitForSelector('.lo-pick [data-pg="u1"]', { timeout: T(5) });
+  ok(`${label}: hộp chọn trang có cả trang riêng`, (await page.$$('.lo-pick [data-pg]')).length === 6);
+  await shot(page, label + '_pagepick');
+  await page.click('.lo-pick [data-pg="u1"]'); await page.waitForTimeout(200);
+  ok(`${label}: chọn trang riêng → nút bùa đổi theo`, (await page.textContent('#pick .pk-pill[data-a="charm"]')).includes('Trang 1'));
+  const L3 = await layout(page, ['#pick .pk-pill', '#pick .pk-spell', '#pick .pk-go']);
+  ok(`${label}: hàng phép / bùa / phù hiệu nằm trọn trong màn hình`, !L3.out.length && L3.sw <= L3.W, L3.out.slice(0, 3).join(' ; '));
+  await page.evaluate(() => window.__pick.lock());
+  await screen(page, 'lineup', 60); await screen(page, 'loading', 30);
+  await page.waitForFunction(() => window.__game?.world && window.__game.world.tick > 2, null, { timeout: T(420) });
+  const m = await page.evaluate(() => { const e = window.__game.player; return { hero: e.heroId, blue: e.charm?.blue, red0: e.charm?.red?.[0], em: e.emblem, name: e.charm?.name }; });
+  ok(`${label}: vào trận mang đúng trang bùa + phù hiệu đã chỉnh`, m.hero === 'nguyet_ha' && m.red0 === 'r_gio' && m.blue?.every((c) => c === 'b_chan') && m.em?.key === 'den_ho_menh' && m.em.minors[1] === 'm_buoc_nhe', JSON.stringify(m));
+  await endMatch(page, label);
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 4).join(' || '));
+  await ctx.close();
+}
+
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const run = want.length ? want : ALL, t0 = Date.now();
@@ -175,6 +224,8 @@ async function roleDialog(browser, vp) {
       else if (k === 'normal844') await normal(browser, 844);
       else if (k === 'normal1280') await normal(browser, 1280);
       else if (k === 'role844') await roleDialog(browser, 844);
+      else if (k === 'loadout844') await loadout(browser, 844);
+      else if (k === 'loadout1280') await loadout(browser, 1280);
     } catch (e) { ok(`${k}: chạy hết kịch bản`, false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   }
   await browser.close();

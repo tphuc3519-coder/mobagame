@@ -711,3 +711,32 @@
   Thú Rừng khi thật sự mang Trừng Trị (`?role=jungle` không kèm phép thì vẫn đồ theo lớp).
 - *Khác spec (số dòng):* spec trỏ `main.js` dòng 117/138/152 nhưng file thật chỉ ~58 dòng; đã sửa theo code thật (import + `injectDraftCss()`
   cạnh `injectCss()`, `?role=` ở nhánh `?hero=`).
+
+## GĐ2 — phép bổ trợ, bảng bùa, phù hiệu (20/10)
+- **Phép theo `kind`, không theo id**: mỗi phép có `kind` (`blink, heal, execute, smite, haste, cleanse, towerOff, flashStun, warDrum, hex`);
+  mô phỏng (`sim/spells.js`), bot (`ai/botSkills.js`, `ai/botSpells.js`) và HUD (`hud/spellButtons.js`) rẽ nhánh theo `kind`. Phép cần mục
+  tiêu có `needTarget` — không có mục tiêu: `castFail 'noTarget'`, không mất hồi chiêu (luật cũ của Trừng Trị, giờ chung cho cả 4).
+- **4 phép mới, tên tự đặt**: Tắt Đèn (90s, trụ / nhà chính gần nhất trong 900 ngừng bắn 4s), Loá Mắt (110s, choáng 0,75s mọi tướng địch thấy
+  được trong 380), Trống Trận (100s, +30% tốc đánh +10% Công / đồng minh một nửa, 5s), Bùa Mỏi (100s, giảm 35% sát thương gây ra + chậm 25%
+  3s). Cả 4 dùng được ở 1v1.
+- **Tắt Đèn là trường `disabledUntil` trên công trình**, không phải trạng thái: `applyStatus` từ chối công trình. Tung lại thì lấy `max`.
+  Đang tắt: không bắn, xoá chuỗi bắn / thù hận mỗi nhịp; đạn đã bay vẫn tới; hồi máu / miễn sát thương của trụ không đổi.
+- **"Suy yếu" (weaken) là khống chế**: nằm trong CC + TENACITY, Giải Trói xoá, miễn khống chế chặn. Nhân vào **sát thương của người bị dán**
+  (mọi loại kể cả chuẩn và theo thời gian) sau hook của người gây, trước giảm giáp.
+- **Loá Mắt bỏ qua tướng đang miễn khống chế** khi đếm "trúng" (sửa lúc kiểm thử: trước đó tướng vừa Giải Trói vẫn bị tính trúng).
+- **Bộ trang bị vào mô phỏng chỉ qua `world.setLoadout(e, { spellId, charm, emblem })`, chỉ nhận ở tick 0** (sau đó trả false, không đổi gì).
+  Dữ liệu làm sạch bằng `sanitizePage` / `sanitizeEmblem` (localStorage hỏng / sửa tay không lọt vào trận). Cùng seed + cùng bộ ⇒ cùng trận.
+  `spawnHero` **không** gắn phù hiệu (giữ nguyên mọi số đo cũ); `setupTeams` gắn cho bot; `game.js` gắn cho người chơi (`opts.loadout`) và bot 1v1.
+- **Phù hiệu chạy theo `kind`** (`sim/emblems.js`), gọi từ đúng 2 chỗ trong `dealDamage` (trước giảm giáp: Săn Mồi; sau khi trừ máu: phù hiệu
+  chính của người gây / người nhận) — không thêm hook vào tướng. Sát thương phù hiệu / theo thời gian / phản không kích phù hiệu.
+- **Bảng bùa**: ô trống được; cấp = số ô đã gắn; 5 trang mẫu chỉ đọc, **sửa trang mẫu là tự tạo bản sao** (đỡ một bước "sao chép" trên điện
+  thoại); tối đa 10 trang riêng (id `u1..u10`, lấy id nhỏ nhất còn trống); nhớ trang theo tướng (`profile.heroPage`, ghi lúc chốt tướng);
+  phù hiệu theo tướng (`profile.emblems`). Trường cũ `profile.page` không còn đọc. **Mở hết 15 bùa** — tiền "Xu Đèn" của 05 §7 để sau.
+- **Kho dữ liệu không DOM** (`ui/loadout.js`) tách khỏi giao diện (`charmEditor.js`, `emblemEditor.js`, `loadoutPanel.js`) để kiểm bằng node
+  (`tools/t_charms.mjs`). CSS riêng `ui/loadoutCss.js` (css.js đã quá dài).
+- **Âm thanh / hình phép mới dùng lại bộ có sẵn** (không dựng lại `sfx.mp3`): Trống Trận `horn`, Loá Mắt `light_cast`, Tắt Đèn `tower_down`,
+  Bùa Mỏi `arcane_hit`; phù hiệu `fire_hit` / `haste` / `heal` (Mai Rùa dùng tiếng khiên sẵn có). Biểu tượng phép / phù hiệu là huy hiệu SVG
+  (`hud/art.js`) — chưa vẽ ảnh webp như 6 phép cũ. Hiệu ứng 3D trong `render/vfx/extra.js`, không vẽ khi kẻ tung đang trong sương mù.
+- **Màn tải trận lấy phép máy từ đúng hàm của mô phỏng** (`assignSlots` + `botSpellOf`) — trước đây đoán theo `defaultSpell` nên sai với máy
+  đi rừng.
+

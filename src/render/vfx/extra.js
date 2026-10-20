@@ -93,20 +93,30 @@ export function createExtraFx(api) {
     },
     /** Loá Mắt: chớp trắng vàng quanh người tung + vòng sáng nở ra; người trúng loé sao trên đầu. */
     flashBang(ev) {
+      if (!visible(ent(ev.id))) return; // trong sương mù: không lộ
       flash(ev.x, 120, ev.y, ev.r * 1.2, 0xfff2a0, 0.18); sh.ring(ev.x, ev.y, 30, ev.r, { color: 0xffe060, width: 0.16, life: 0.35 });
       sparks(ev.x, 120, ev.y, 0xffffff, 18, 1.2);
       for (const id of ev.hits || []) { const h = headOf(id); if (h) sparks(h.x, h.y + 40, h.z, 0xffe060, 8, 0.8); }
     },
     /** Trống Trận: ba vòng sóng đỏ cam theo nhịp trống quanh người tung, đồng minh nhận ánh cam. */
     warDrum(ev) {
+      if (!visible(ent(ev.id))) return;
       for (let k = 0; k < 3; k++) setTimeout(() => sh.ring(ev.x, ev.y, 40, ev.r * (0.5 + k * 0.25), { color: 0xff7a3a, width: 0.1, life: 0.4 }), k * 160);
       for (const id of [ev.id, ...(ev.allies || [])]) { const p = rootOf(id); if (p) sh.pillar(p.x, p.z, 60, 260, { color: 0xff8a4a, top: 0xffe0c0, life: 0.45 }); }
     },
     /** Bùa Mỏi: lá bùa tím xoáy dán lên mục tiêu. */
     hex(ev) {
-      const p = rootOf(ev.target); if (!p) return;
+      const p = rootOf(ev.target); if (!p || !visible(ent(ev.target))) return;
       sh.ring(p.x, p.z, 20, 140, { color: 0xa060ff, width: 0.18, life: 0.5 }); const h = headOf(ev.target);
       if (h) burst(A, h.x, h.y + 30, h.z, { n: 12, speed: [40, 140], up: [40, 160], life: [0.5, 0.9], size: [26, 8], color: [0xe0c0ff, 0x7a30d0], drag: 2 });
+    },
+    /** Phù hiệu kích hoạt (sim/emblems.js): Tam Hoả nổ lửa trên mục tiêu, Sóng Dồn đủ tầng vòng xanh, Đèn Hộ Mệnh cột vàng trên người
+     *  được che chắn (Mai Rùa: hiệu ứng khiên sẵn có). */
+    emblem(ev) {
+      const t = ent(ev.target) || ent(ev.id); if (!t || !visible(t)) return; const p = rootOf(t.id); if (!p) return;
+      if (ev.kind === 'triHit') { const h = headOf(t.id); sparks(p.x, (h?.y ?? 140) * 0.7, p.z, 0xff7a2a, 22, 1.1); flash(p.x, 120, p.z, 160, 0xff9a4a, 0.12); }
+      else if (ev.kind === 'ramp') sh.ring(p.x, p.z, 20, 140, { color: 0x8fd8ff, width: 0.12, life: 0.4 });
+      else if (ev.kind === 'ward') sh.pillar(p.x, p.z, 40, 220, { color: 0xffd36a, top: 0xffffff, life: 0.5 });
     },
   };
 }

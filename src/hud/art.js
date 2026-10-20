@@ -86,3 +86,9 @@ export function skillArt(skill, theme = '#ffb84d') {
       : t === 'aoeCircle' ? 'meteor' : t === 'cone' ? 'fan' : t === 'zone' ? 'vortex' : t === 'selfBuff' ? 'shield' : t === 'allyTarget' ? 'heart' : t === 'tether' ? 'anchor' : 'sword';
   return badge(GLYPHS[g]('#ffffff', theme), { c0: theme, c1: '#141428', glow: theme });
 }
+// Phù hiệu chính (ui/emblemEditor.js, nút ở màn chọn tướng): huy hiệu tròn, mỗi phù hiệu một hình + một màu.
+const EMBLEM_ART = { tam_hoa: ['meteor', '#ff7a3a'], song_don: ['haste', '#7ad8ff'], mai_rua: ['shield', '#8fd0a0'], den_ho_menh: ['lantern', '#ffd36a'] };
+export function emblemArt(key) {
+  const [g, col] = EMBLEM_ART[key] || ['blink', '#9aa0b8'];
+  return badge(GLYPHS[g]('#ffffff', col), { c0: col, c1: '#141428', glow: col });
+}

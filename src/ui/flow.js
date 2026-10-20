@@ -45,7 +45,7 @@ export const nav = {
     P.foeHeroes.forEach((h, i) => { names[1][h] = A.foes[i].name; });
     startMatch({
       mode: M.map, heroId: P.heroId, enemyId: P.foeHeroes[0] || null, allies: M.map === '5v5' ? P.allyHeroes : undefined, foes: M.map === '5v5' ? P.foeHeroes : undefined,
-      spellId: P.spellId, charmId: P.charmId, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
+      spellId: P.spellId, charmId: P.charmId, loadout: P.charm ? { spellId: P.spellId, charm: P.charm, emblem: P.emblem } : undefined, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       onGameOver: gameOver,

@@ -4,7 +4,6 @@
 // của mình đứng trên sân khấu 3D, đổi phép bổ trợ / bảng bùa) → đội hình → tải trận. Luật thuần nằm ở draftRules.js; file này chỉ vẽ + hẹn giờ.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { SPELLS } from '../data/spells.js';
-import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
 import { ROLE_IDS, ROLE_INFO } from '../data/roles.js';
 import { DRAFT, DRAFT_SEQ, DRAFT_NAME } from '../data/draft.js';
 import { mulberry32 } from '../core/rng.js';
@@ -17,7 +16,7 @@ import { stage, stageOn, backdrop } from './stage.js';
 import { ROLE_VI } from './panels.js';
 import { fit, recommend, assignRoles, roleIcon, roleTag } from './roles.js';
 import { createDraft, startTurn, act, turnDone, isAvail, available, bansPerSide, botBan, botPick, autoPick, heroMain } from './draftRules.js';
-import { spellList, initialSpell, saveSpell, openSpellPicker, nextPage } from './pickLoadout.js';
+import { spellList, initialSpell, saveSpell, openSpellPicker, pageFor, charmPill, emblemPill, openPagePicker, openEmblemFor, finishLoadout } from './pickLoadout.js';
 import { sfx } from '../audio/audio.js';
 
 export function openDraft(nav, { mode = 'ranked' } = {}) {
@@ -31,7 +30,7 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
   const red = A.foes, D = createDraft({ seq: DRAFT_SEQ[seqKey], roles: [blue.map((r) => r.role), red.map((r) => r.role)], meSeat: seat });
   const main = heroMain(p.history || []), nBan = bansPerSide(D.seq), recFor = ALPHA.filter((id) => fit(myRole, id) === 2);
   const st = { hover: ALPHA.includes(p.lastHero) && fit(myRole, p.lastHero) >= 1 ? p.lastHero : recommend(myRole)[0], banSel: null, filter: 'all', left: DRAFT.banSec, sec: DRAFT.banSec, turnT: 0,
-    gap: DRAFT.introSec, speed: 1, phase: 'draft', spell: initialSpell(p, '5v5', myRole), page: CHARM_PAGES[p.page] ? p.page : null, prep: DRAFT.prepSec, ready: false };
+    gap: DRAFT.introSec, speed: 1, phase: 'draft', spell: initialSpell(p, '5v5', myRole), page: null, prep: DRAFT.prepSec, ready: false };
   stageOn(false);
 
   const el = document.createElement('div'); el.id = 'draft'; el.className = 'scr ph-ban';
@@ -42,13 +41,13 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
     <aside class="dr-col blue"><h4 class="hd">Đội Xanh</h4><div class="dr-rows"></div></aside><aside class="dr-col red"><h4 class="hd foe">Đội Đỏ</h4><div class="dr-rows"></div></aside>
     <main class="dr-mid"><nav class="dr-tabs">${tabs.map(([f, t]) => `<button type="button" data-f="${f}">${t}</button>`).join('')}</nav><div class="dr-grid"></div></main>
     <div class="dr-bar"><div class="dr-info"><b></b><small></small></div><button type="button" class="btn-ghost dr-skip" data-a="skip" hidden>Bỏ qua</button><button type="button" class="btn-gold dr-go" data-a="lock"></button></div>
-    <div class="dr-prep"><button type="button" class="dr-spell" data-a="spell"></button><button type="button" class="dr-pill" data-a="charm"></button><button type="button" class="btn-gold dr-ready" data-a="ready">Sẵn sàng</button></div>`;
+    <div class="dr-prep"><button type="button" class="dr-spell" data-a="spell"></button><button type="button" class="dr-pill" data-a="charm"></button><button type="button" class="dr-pill" data-a="emblem"></button><button type="button" class="btn-gold dr-ready" data-a="ready">Sẵn sàng</button></div>`;
   document.getElementById('ui').append(el);
   const $ = (s) => el.querySelector(s);
   const put = (node, html) => { if (node._h !== html) { node._h = html; node.innerHTML = html; } }; // chỉ dựng lại khi đổi (giữ ảnh + nhịp sáng)
   const mine = () => D.actors.find((a) => a.me && !a.done) || null; // lượt của mình đang chờ
   const myHero = () => D.picks[0][seat];
-  const pageOf = () => st.page || PAGE_BY_ROLE[HEROES[myHero() || st.hover].roles[0]] || 'dps';
+  const pageOf = () => pageFor(st.page, myHero() || st.hover);
   const name = (id) => HEROES[id]?.name || '';
 
   // —— vẽ ——
@@ -56,7 +55,7 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
     const m = mine(), pend = D.actors.find((a) => !a.done), T = D.turn || D.seq[0];
     $('.dr-phase').textContent = st.phase === 'prep' ? 'Chuẩn bị' : T.act === 'ban' ? 'Cấm tướng' : 'Chọn tướng';
     const who = $('.dr-who'); who.classList.toggle('me', !!m);
-    who.textContent = st.phase === 'prep' ? 'Đổi phép bổ trợ, bảng bùa' : m ? 'Lượt của bạn' : pend ? `${pend.team ? 'Đối thủ' : 'Đồng đội'} đang ${pend.act === 'ban' ? 'cấm' : 'chọn'}…` : DRAFT_NAME[seqKey];
+    who.textContent = st.phase === 'prep' ? 'Đổi phép bổ trợ, bảng bùa, phù hiệu' : m ? 'Lượt của bạn' : pend ? `${pend.team ? 'Đối thủ' : 'Đồng đội'} đang ${pend.act === 'ban' ? 'cấm' : 'chọn'}…` : DRAFT_NAME[seqKey];
     const v = st.phase === 'prep' ? st.prep : st.left, k = Math.max(0, Math.min(1, v / st.sec)), t = $('.dr-timer');
     t.querySelector('b').textContent = Math.max(0, Math.ceil(v)); t.querySelector('.tp').setAttribute('stroke-dashoffset', (175.9 * (1 - k)).toFixed(1));
     t.classList.toggle('low', !!m && st.left <= DRAFT.lowSec);
@@ -99,7 +98,8 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
   }
   function renderPrep() {
     put($('.dr-spell'), `${spellArt(st.spell)}<small>${SPELLS[st.spell].name}</small>`);
-    $('.dr-pill').innerHTML = `<b>Bùa</b>${CHARM_PAGES[pageOf()].name}`;
+    $('.dr-pill[data-a="charm"]').innerHTML = charmPill(pageOf());
+    $('.dr-pill[data-a="emblem"]').innerHTML = emblemPill(myHero() || st.hover);
     $('.dr-ready').disabled = st.ready; $('.dr-ready').textContent = st.ready ? 'Đã sẵn sàng' : 'Sẵn sàng';
   }
   const render = () => { renderTop(); renderBans(); renderCols(); if (st.phase === 'draft') { renderGrid(); renderBar(); } else renderPrep(); };
@@ -165,16 +165,16 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
     st.phase = 'prep'; st.sec = st.prep = DRAFT.prepSec; st.speed = 1; el.className = 'scr ph-prep'; // tua nhanh (kiểm thử) chỉ cho lượt cấm/chọn
     show = stage(); stageOn(true); backdrop('soft'); show.autoSpin(false); show.aura(true, 0.6); show.frame({ zoom: 1, dy: 0, dx: 0.25 }); show.setOffset(0);
     show.show(myHero()); poseT = setTimeout(() => show?.play('Victory'), 400); sfx('ui_confirm');
-    toast(myRole && st.spell !== p.spell ? `${ROLE_INFO[myRole].name}: đã mang ${SPELLS[st.spell].name}` : 'Chỉnh phép bổ trợ và bảng bùa');
+    toast(myRole && st.spell !== p.spell ? `${ROLE_INFO[myRole].name}: đã mang ${SPELLS[st.spell].name}` : 'Chỉnh phép bổ trợ, bảng bùa và phù hiệu');
     render();
   }
   function finish() {
     if (closed || st.phase === 'done') return; st.phase = 'done';
     const heroId = myHero();
-    S.pick = { heroId, spellId: st.spell, charmId: pageOf(), dummies: false, role: myRole, draft: seqKey,
+    S.pick = { heroId, spellId: st.spell, ...finishLoadout(heroId, st.page), dummies: false, role: myRole, draft: seqKey,
       allyHeroes: A.allies.map((_, i) => D.picks[0][allySeat[i]]), allyRoles: A.allies.map((a) => a.role || null), // khớp chỉ số với A.allies (flow / đội hình / tải trận)
       foeHeroes: D.picks[1].slice(), foeRoles: red.map((f) => f.role || null), bans: D.bans.map((b) => b.filter(Boolean)) };
-    p.lastHero = heroId; saveSpell(p, myRole, st.spell); p.page = st.page; saveProfile();
+    p.lastHero = heroId; saveSpell(p, myRole, st.spell); saveProfile();
     nav.go('lineup');
   }
 
@@ -186,7 +186,8 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
     if (a === 'ban' || a === 'lock') doLock();
     else if (a === 'skip') doSkip();
     else if (a === 'spell' && st.phase === 'prep') openSpellPicker(spellList('5v5'), st.spell, (id) => { st.spell = id; renderPrep(); });
-    else if (a === 'charm' && st.phase === 'prep') { st.page = nextPage(pageOf()); renderPrep(); toast(`Bảng bùa: ${CHARM_PAGES[st.page].name}`); }
+    else if (a === 'charm' && st.phase === 'prep') openPagePicker(myHero(), pageOf(), (id) => { st.page = id; renderPrep(); }, renderPrep);
+    else if (a === 'emblem' && st.phase === 'prep') openEmblemFor(myHero(), renderPrep);
     else if (a === 'ready' && st.phase === 'prep' && !st.ready) { st.ready = true; st.prep = Math.min(st.prep, DRAFT.readyDelay); renderPrep(); sfx('ui_lock'); }
   };
   function hoverHero(id) {

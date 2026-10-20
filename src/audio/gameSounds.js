@@ -83,6 +83,10 @@ export function createGameSounds({ team, me }) {
       case 'smite': play('smite', { x: ev.x, y: ev.y }); break;
       case 'towerOff': play('tower_down', { x: ev.x, y: ev.y, rate: 1.4, vol: 0.6 }); break; // Tắt Đèn: tiếng đèn trụ tắt
       case 'hex': { const t = ent(ev.target); if (seen(t)) play('arcane_hit', at(t, { rate: 0.7 })); break; } // Bùa Mỏi
+      case 'emblem': { // phù hiệu kích hoạt: dùng lại tiếng có sẵn (Mai Rùa đã có tiếng khiên)
+        const e = ent(ev.id), m = { triHit: ['fire_hit', 1.1], ramp: ['haste', 1.25], ward: ['heal', 1.3] }[ev.kind];
+        if (m && seen(e)) play(m[0], at(ent(ev.target) || e, { rate: m[1], vol: 0.6 })); break;
+      }
       case 'restore': { const e = ent(ev.id); if (seen(e)) play('restore', at(e)); break; }
       case 'restoreBreak': { const e = ent(ev.id); if (seen(e)) play('restore_break', at(e)); break; }
       case 'shield': { const e = ent(ev.id); if (e?.kind === 'hero' && seen(e) && ev.amount >= 60 && once('sh' + e.id, 1)) play('shield', at(e)); break; }

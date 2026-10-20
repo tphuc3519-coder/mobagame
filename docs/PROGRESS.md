@@ -354,3 +354,18 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
   ranked1280 (Hải Đăng → full, 3 cấm mỗi bên), normal844, normal1280, role844 — vào trận đúng vị trí / đúng tướng, đi rừng có Trừng Trị +
   Nanh Thú Rừng, tướng bị cấm không có trong trận, không lỗi trang / console; ảnh ở `/tmp/claude-0/shots/gd2a/`. `t_determinism 8 1`:
   băm 5v5 / 1v1 trùng khớp bản trước cụm này (e6c2888). Sửa thêm: ô tướng bị cấm trong lưới có nền tối để chữ "Bị cấm" không đè lên tên tướng.
+
+## GĐ2 (20/10) — phép bổ trợ, bảng bùa tự xếp, phù hiệu
+- **4 phép mới** (10 phép): Tắt Đèn, Loá Mắt, Trống Trận, Bùa Mỏi — hộp chọn phép theo thứ tự `SPELL_LIST`, nút xám khi không có mục tiêu,
+  hiệu ứng / tiếng / biểu tượng; bot 5v5 mang phép theo vị trí + vai và biết dùng (`ai/botSpells.js`).
+- **Bảng Bùa** ở Sảnh (nút thứ 5 thanh dưới trái): thẻ Bảng bùa (5 trang mẫu + 10 trang riêng, 3×5 ô, ×5, sao chép / gỡ hết / xoá / đổi tên,
+  tổng chỉ số, cấp n/15) và thẻ Phù hiệu (4 phù hiệu chính + 2 hàng nét phụ, theo từng tướng, "Mặc định theo vai").
+- **Màn chọn tướng / chuẩn bị cấm-chọn**: nút "Bùa · <trang> Cấp n" mở hộp chọn trang nhanh (+ "Chỉnh trang" → "Dùng trang này"), nút "Phù hiệu ·
+  <tên>" mở thẻ phù hiệu của tướng đang xem. Vào trận mang đúng phép + trang + phù hiệu (`world.setLoadout`).
+- File mới: `src/sim/emblems.js`, `src/data/emblems.js`, `src/ai/botSpells.js`, `src/ui/loadout.js`, `src/ui/loadoutPanel.js`,
+  `src/ui/charmEditor.js`, `src/ui/emblemEditor.js`, `src/ui/charmArt.js`, `src/ui/loadoutCss.js`.
+- Kiểm thử: `node tools/t_spells.mjs` (4 phép: mục tiêu, hồi chiêu, khống chế, bot dùng đúng lúc), `node tools/t_emblems.mjs` (4 phù hiệu + nét phụ,
+  `setLoadout` tick 0, làm sạch dữ liệu, tất định), `node tools/t_charms.mjs` (kho trang: bản sao, giới hạn 10, xoá, hồ sơ hỏng, gói vào trận);
+  trình duyệt `node tools/b_flow.cjs <cổng> loadout844 loadout1280`: Sảnh → Bảng Bùa → sửa trang mẫu (tự sao) → ×5 → gỡ ô → Phù hiệu → Đấu
+  thường → chọn tướng → hộp trang → vào trận đúng trang + phù hiệu, nằm trọn màn hình, không lỗi console.
+

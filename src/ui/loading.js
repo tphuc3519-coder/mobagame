@@ -3,7 +3,8 @@
 // model quái/lính); thanh của máy chạy nhanh chậm khác nhau như người chơi thật nhưng không bao giờ xong trước model thật.
 import { HEROES } from '../data/heroes/index.js';
 import { SPELLS } from '../data/spells.js';
-import { ROLE_SPELL } from '../data/roles.js';
+import { botSpellOf } from '../data/ai.js';
+import { assignSlots } from '../sim/lineup.js';
 import { spellArt } from '../hud/art.js';
 import { loadHero, heroProgress } from '../render/assets.js';
 import { preloadMonsters } from '../render/monsterModels.js';
@@ -18,14 +19,18 @@ const MIN_SEC = 2.6;
 export function openLoading(nav) {
   stageDispose(); stageOn(false); // trận tạo ngữ cảnh WebGL riêng: giải phóng sân khấu trước
   const p = profile(), M = MODES[S.mode], P = S.pick, A = S.match;
-  const spellOf = (id, role) => { // phép máy mang vào trận: theo vị trí (máy đi rừng mang Trừng Trị — sim/lineup.js), không thì phép mặc định của tướng
-    if (M.map === '5v5' && SPELLS[ROLE_SPELL[role]]) return ROLE_SPELL[role];
+  // phép máy mang vào trận: 5v5 dùng đúng hàm của mô phỏng (vị trí do sim/lineup.js chia → botSpellOf), 1v1 là phép mặc định của tướng
+  const lanesOf = (ids, fixed) => { const out = [], used = assignSlots(ids, fixed); ids.forEach((h, i) => { const k = used.findIndex((x, j) => x.hero === h && !out.includes(j)); out[i] = k; }); return out.map((k) => used[k]?.lane); };
+  const laneA = M.map === '5v5' ? lanesOf([P.heroId, ...P.allyHeroes], [P.role, ...(P.allyRoles || [])]).slice(1) : [];
+  const laneF = M.map === '5v5' ? lanesOf(P.foeHeroes, P.foeRoles || []) : [];
+  const spellOf = (id, lane) => {
+    if (M.map === '5v5') return botSpellOf(id, lane);
     const s = HEROES[id].defaultSpell; return SPELLS[s] && !(M.map === '1v1' && SPELLS[s].disabledIn1v1) ? s : 'chop_buoc';
   };
   const me = { hero: P.heroId, name: p.name, stars: p.stars, spell: P.spellId, me: true };
-  const allies = P.allyHeroes.map((h, i) => ({ hero: h, name: `${A.allies[i].name} ${botLabel}`, stars: A.allies[i].stars, spell: spellOf(h, P.allyRoles?.[i]) }));
+  const allies = P.allyHeroes.map((h, i) => ({ hero: h, name: `${A.allies[i].name} ${botLabel}`, stars: A.allies[i].stars, spell: spellOf(h, laneA[i]) }));
   const ally = M.size === 5 ? [allies[0], allies[1], me, allies[2], allies[3]] : [me];
-  const foe = P.foeHeroes.map((h, i) => ({ hero: h, name: `${A.foes[i].name} ${botLabel}`, stars: A.foes[i].stars, spell: spellOf(h, P.foeRoles?.[i]) }));
+  const foe = P.foeHeroes.map((h, i) => ({ hero: h, name: `${A.foes[i].name} ${botLabel}`, stars: A.foes[i].stars, spell: spellOf(h, laneF[i]) }));
   const all = [...ally, ...foe];
   for (const c of all) { c.v = 0; c.fake = c.me ? 1 : 0; c.speed = 0.22 + Math.random() * 0.55; c.stall = Math.random() < 0.3 ? 0.55 + Math.random() * 0.3 : 2; }
 

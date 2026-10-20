@@ -101,17 +101,31 @@ Chọn 1 trước trận (màn chọn tướng). Hiện ở nút nhỏ trên c�
 | thu_hoach | Thu Hoạch | 30s | Gây `600 (+40/cấp)` sát thương chuẩn lên quái rừng/mục tiêu lớn/lính trong 500; lên tướng địch gây 300 và làm chậm 30% 1s. Bắt buộc để mua Nanh Thú Rừng |
 | gio_luot | Gió Lướt | 100s | +40% tốc chạy trong 5s, bỏ qua va chạm với lính |
 | giai_troi | Giải Trói | 100s | Xoá mọi hiệu ứng khống chế (trừ hất tung đang diễn ra) và miễn khống chế 1s |
+| tat_den | Tắt Đèn | 90s | Thổi tắt đèn trụ / nhà chính địch gần nhất trong 900 (tính tới mép công trình): ngừng bắn 4s (đạn đã bay vẫn tới) |
+| loa_mat | Loá Mắt | 110s | Chớp sáng quanh mình: mọi tướng địch nhìn thấy trong 380 bị choáng 0,75s |
+| trong_tran | Trống Trận | 100s | Bản thân +30% tốc đánh, +10% Công trong 5s; đồng minh tướng trong 700 nhận một nửa (+15%, +5%) |
+| bua_moi | Bùa Mỏi | 100s | Tướng địch gần nhất trong 600: sát thương gây ra giảm 35% (mọi loại, kể cả sát thương theo thời gian) và chậm 25% trong 3s |
 
-Giới hạn theo chế độ: 1v1 không cho mang Thu Hoạch (không có mục tiêu lớn).
+Giới hạn theo chế độ: 1v1 không cho mang Thu Hoạch (không có mục tiêu lớn). **Phép cần mục tiêu** (Thu Hoạch, Tắt Đèn, Loá Mắt, Bùa Mỏi):
+không có mục tiêu thì không dùng được và **không mất hồi chiêu**; nút xám "không có mục tiêu". Mô phỏng / bot / HUD đọc theo `kind` của phép
+(`blink, heal, execute, smite, haste, cleanse, towerOff, flashStun, warDrum, hex`), không đọc theo id. "Suy yếu" (Bùa Mỏi) là khống chế:
+Giải Trói xoá được, kháng hiệu ứng rút ngắn, miễn khống chế chặn được. Thứ tự hiện: `SPELL_LIST` trong `data/spells.js`.
 
 ## 7. Bảng bùa (charm)
 
 Bảng bùa là trang chỉ số chọn trước trận, tương tự bảng ngọc nhưng **tự thiết kế**. Nút "Chỉnh" ở màn chọn tướng mở bảng này; tên trang hiện cạnh (vd. "ST liên tục"). Trang có **cấp** = tổng số bùa đã gắn.
 
 ### Cấu trúc
-- 3 màu bùa, mỗi màu **5 ô** (15 ô/trang). Mỗi ô gắn 1 bùa cùng màu, được gắn trùng.
-- Bùa mở bằng tiền **Xu Đèn** (xem `08`); ở offline có thể mở hết từ đầu bằng cài đặt "Mở tất cả bùa".
-- Mỗi người có tối đa **10 trang**, đặt tên được, chọn trang mặc định cho từng tướng.
+- 3 màu bùa, mỗi màu **5 ô** (15 ô/trang). Mỗi ô gắn 1 bùa cùng màu, được gắn trùng, được để trống. **Cấp trang = số ô đã gắn (0..15)**.
+- Hiện tại **mở hết 15 bùa** (Xu Đèn để sau — xem DECISIONS).
+- 5 trang mẫu (bảng dưới) chỉ đọc: sửa trang mẫu là **tự tạo bản sao** "Trang n". Tối đa **10 trang riêng**, đặt tên được (≤ 16 ký tự).
+- Trang dùng gần nhất của mỗi tướng được nhớ làm trang mặc định của tướng đó; chưa có thì trang mẫu theo vai.
+
+### Màn chỉnh (`ui/loadoutPanel.js` + `ui/charmEditor.js`)
+- Mở ở Sảnh → nút **Bảng Bùa** (thanh dưới trái), hoặc ở màn chọn tướng / chuẩn bị cấm-chọn: nút "Bùa" mở hộp chọn trang nhanh, nút
+  "Chỉnh trang" mở bảng có nút **Dùng trang này**.
+- Cột trái danh sách trang; giữa 3 hàng × 5 ô + tổng chỉ số + Sao chép / Gỡ hết / Xoá; phải bảng bùa theo màu. Chạm ô → chọn ô (bảng
+  đổi sang màu ô); chạm lại ô đang chọn → gỡ; chạm bùa → gắn vào ô đang chọn rồi nhảy sang ô trống kế; "×5" lấp cả hàng. Tự lưu.
 
 ### Danh sách bùa
 
@@ -170,3 +184,24 @@ export const ITEMS = {
 Giá `cost` là **tổng giá**; phần "+1100" trong bảng là giá ghép = `cost − tổng giá thành phần`. Code tính tự động, không khai báo riêng.
 
 Thêm status `stasis` vào hệ hiệu ứng: bất động + không thể bị chọn + không nhận sát thương + không hành động.
+
+## 9. Phù hiệu (emblem)
+
+Chọn theo **từng tướng** (Sảnh → Bảng Bùa → thẻ Phù hiệu, hoặc nút "Phù hiệu" ở màn chọn tướng): **1 phù hiệu chính** (cơ chế) + **1 nét phụ
+mỗi hàng** (Thân, Tâm). Mở hết. Chưa chỉnh thì mặc định theo vai. Dữ liệu `data/emblems.js`, mô phỏng `sim/emblems.js` (chạy theo `kind`).
+
+| id | Tên | Cơ chế |
+|---|---|---|
+| tam_hoa | Tam Hoả | 3 đòn riêng biệt (đánh thường hoặc kỹ năng, cách nhau ≥ 0,1s) trúng cùng tướng địch trong 3s: thêm 40 (+12/cấp, +25% Công cộng thêm, +20% Phép), vật lý nếu Công cộng thêm ≥ Phép, không thì phép. Hồi 10s |
+| song_don | Sóng Dồn | Mỗi đòn đánh thường trúng tướng / quái: +5% tốc đánh (tối đa 5 tầng, giữ 4s); đủ 5 tầng thêm 8% Công |
+| mai_rua | Mai Rùa | Máu < 55% bị tướng địch gây sát thương: khiên 60 + 7% HP tối đa trong 3s. Hồi 22s |
+| den_ho_menh | Đèn Hộ Mệnh | Kỹ năng gây sát thương lên tướng địch: tướng phe mình ít máu nhất (%) trong 700 — kể cả mình — nhận khiên 45 (+9/cấp, +15% Phép) 2,5s. Hồi 8s |
+
+| Hàng | Nét phụ |
+|---|---|
+| Thân | Da Dày (+6 Giáp, +6 KP) · Suối Nguồn (+60 HP, +2,4 HP/giây) · Kiên Cường (+8% kháng hiệu ứng) |
+| Tâm | Tỉnh Táo (+5% giảm hồi chiêu) · Bước Nhẹ (+4% tốc chạy) · Săn Mồi (+6% sát thương lên tướng địch dưới 40% máu) |
+
+Mặc định theo vai: xạ thủ Sóng Dồn (Suối Nguồn, Bước Nhẹ) · sát thủ Tam Hoả (Da Dày, Săn Mồi) · pháp sư Tam Hoả (Suối Nguồn, Tỉnh Táo) ·
+đỡ đòn Mai Rùa (Da Dày, Tỉnh Táo) · đấu sĩ Sóng Dồn (Kiên Cường, Săn Mồi) · trợ thủ Đèn Hộ Mệnh (Kiên Cường, Tỉnh Táo).
+Sát thương của phù hiệu, sát thương theo thời gian và sát thương phản không kích phù hiệu.

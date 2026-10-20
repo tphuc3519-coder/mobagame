@@ -5,14 +5,13 @@
 // vị trí của mình lên đầu (nhãn "Đề cử"), máy chọn tướng hợp vị trí của nó; đối thủ chọn ẩn theo vị trí của họ.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { SPELLS } from '../data/spells.js';
-import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
 import { ROLE_INFO } from '../data/roles.js';
 import { DRAFT } from '../data/draft.js';
 import { mulberry32 } from '../core/rng.js';
 import { spellArt } from '../hud/art.js';
 import { icon, face, cardSrc, toast } from './kit.js';
 import { fit, recommend, choose, teamPicks, roleTag } from './roles.js';
-import { spellList, initialSpell, saveSpell, openSpellPicker, nextPage } from './pickLoadout.js';
+import { spellList, initialSpell, saveSpell, openSpellPicker, pageFor, charmPill, emblemPill, openPagePicker, openEmblemFor, finishLoadout } from './pickLoadout.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
 import { profile, saveProfile } from './profile.js';
 import { botLabel, pickHeroes } from './people.js';
@@ -36,10 +35,10 @@ export function openPick(nav, { mode = S.mode } = {}) {
   if (myRole) ids = recommend(myRole, ids); // tướng hợp vị trí lên đầu
   const first = ALPHA.includes(p.lastHero) ? p.lastHero : p.feature;
   const st = { sel: myRole && fit(myRole, first) < 1 ? ids[0] : first, locked: false, spell: initialSpell(p, M.map, myRole),
-    page: CHARM_PAGES[p.page] ? p.page : null, foe: null, left: training ? Infinity : PICK_SEC, ready: -1 };
+    page: null, foe: null, left: training ? Infinity : PICK_SEC, ready: -1 };
   if (myRole && st.spell !== p.spell) toast(`${ROLE_INFO[myRole].name}: đã mang ${SPELLS[st.spell].name}`);
   const taken = () => team.filter((t) => t.locked).map((t) => t.hero);
-  const pageOf = () => st.page || PAGE_BY_ROLE[HEROES[st.sel].roles[0]] || 'dps';
+  const pageOf = () => pageFor(st.page, st.sel); // trang chọn trong phiên → trang nhớ theo tướng → mẫu theo vai
   const bestFree = () => { const free = ALPHA.filter((h) => !taken().includes(h)); return (myRole ? recommend(myRole, free) : free)[0]; };
 
   const el = document.createElement('div'); el.id = 'pick'; el.className = 'scr';
@@ -54,7 +53,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
     <div class="pk-timer" ${training ? 'hidden' : ''}><svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="28"/><circle class="tp" cx="32" cy="32" r="28" stroke-dasharray="175.9" stroke-dashoffset="0"/></svg><b></b><small></small></div>
     <div class="pk-skills"></div><div class="pk-tip fr" hidden></div>
     <aside class="pk-team"><div class="pk-rows"></div><button type="button" class="btn-gold pk-go" data-a="lock"></button></aside>
-    <div class="pk-bl"><button type="button" class="pk-spell" data-a="spell"></button><button type="button" class="pk-pill" data-a="charm"></button>${training ? '<button type="button" class="pk-pill" data-a="foe"></button>' : ''}</div>
+    <div class="pk-bl"><button type="button" class="pk-spell" data-a="spell"></button><button type="button" class="pk-pill" data-a="charm"></button><button type="button" class="pk-pill" data-a="emblem"></button>${training ? '<button type="button" class="pk-pill" data-a="foe"></button>' : ''}</div>
     <p class="pk-hint">Vuốt ngang để xoay · chạm đúp để xem động tác</p>`;
   const $ = (s) => el.querySelector(s);
 
@@ -94,7 +93,8 @@ export function openPick(nav, { mode = S.mode } = {}) {
   }
   function renderBottom() {
     $('.pk-spell').innerHTML = `${spellArt(st.spell)}<small>${SPELLS[st.spell].name}</small>`;
-    $('.pk-pill[data-a="charm"]').innerHTML = `<b>Bùa</b>${CHARM_PAGES[pageOf()].name}`;
+    $('.pk-pill[data-a="charm"]').innerHTML = charmPill(pageOf());
+    $('.pk-pill[data-a="emblem"]').innerHTML = emblemPill(st.sel);
     if (training) $('.pk-pill[data-a="foe"]').innerHTML = `<b>Đối thủ</b>${st.foe === 'dummy' ? 'Hình nộm' : st.foe ? HEROES[st.foe].name : 'Ngẫu nhiên'}`;
     const go = $('.pk-go'); go.disabled = st.locked || taken().includes(st.sel);
     go.textContent = training ? 'Bắt đầu' : st.locked ? 'Đã khoá' : 'Khoá tướng';
@@ -149,9 +149,9 @@ export function openPick(nav, { mode = S.mode } = {}) {
     if (M.size === 5) foeHeroes = myRole ? teamPicks(S.match.foes.map((f) => f.role), [], rng.next) : pickHeroes(5); // chọn ẩn: đối thủ có thể trùng tướng đội mình
     else if (training && st.foe === 'dummy') { foeHeroes = []; dummies = true; }
     else foeHeroes = [training && st.foe ? st.foe : pickHeroes(1, [heroId])[0]];
-    S.pick = { heroId, spellId: st.spell, charmId: pageOf(), allyHeroes: team.map((t) => t.hero), foeHeroes, dummies,
+    S.pick = { heroId, spellId: st.spell, ...finishLoadout(heroId, st.page), allyHeroes: team.map((t) => t.hero), foeHeroes, dummies,
       role: myRole, allyRoles: team.map((t) => t.role || null), foeRoles: M.size === 5 ? S.match.foes.map((f) => f.role || null) : [] };
-    p.lastHero = heroId; saveSpell(p, myRole, st.spell); p.page = st.page; saveProfile();
+    p.lastHero = heroId; saveSpell(p, myRole, st.spell); saveProfile();
     nav.go('lineup');
   }
 
@@ -167,7 +167,8 @@ export function openPick(nav, { mode = S.mode } = {}) {
     }
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'lock') lock();
-    else if (a === 'charm') { st.page = nextPage(pageOf()); renderBottom(); toast(`Bảng bùa: ${CHARM_PAGES[st.page].name}`); }
+    else if (a === 'charm') openPagePicker(st.sel, pageOf(), (id) => { st.page = id; renderBottom(); }, renderBottom);
+    else if (a === 'emblem') openEmblemFor(st.sel, renderBottom);
     else if (a === 'foe') { const opts = [null, ...ALPHA, 'dummy']; st.foe = opts[(opts.indexOf(st.foe) + 1) % opts.length]; renderTeam(); renderBottom(); }
     else if (a === 'spell') openSpellPicker(spells, st.spell, (id) => { st.spell = id; renderBottom(); });
   };
