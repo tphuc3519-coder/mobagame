@@ -183,7 +183,8 @@ async function pings(browser) {
     ok(`${tag}: bot đồng đội nhận lệnh đi tới`, ack >= 0, `${ack} tick`);
     await sleep(700);
     await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="retreat"]', { timeout: 60000 });
-    await tap(page, '#pingWheel button[data-k="retreat"]'); await tap(page, '#pingWheel button[data-k="retreat"]');
+    // hai cú chạm liền nhau trong cùng một nhịp: máy không GPU mỗi page.tap chờ vài khung (vài giây) — quá 4 s là vòng tự đóng (hud/pings.js)
+    await page.evaluate(() => { const b = document.querySelector('#pingWheel button[data-k="retreat"]'); for (let i = 0; i < 2; i++) b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })); });
     const r = await waitFor(page, () => { const g = window.__game, p = g.world.pings.find((q) => q.kind === 'retreat' && q.src === g.player.id); return p && Math.hypot(p.x - g.player.pos.x, p.y - g.player.pos.y) < 400; }, 60);
     ok(`${tag}: chạm Rút lui hai lần → tín hiệu ngay chỗ mình`, r >= 0, `${r} tick`);
     await shot(page, `pings_${tag}.png`);
