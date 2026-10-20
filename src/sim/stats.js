@@ -15,7 +15,7 @@ export function computeStats(world, e) {
     tenacity: Math.min(COMBAT_EXTRA.tenacityCap, g('tenacity')), basicReduce: g('basicReduce') };
   s.atk = s.baseAtk + g('atk');
   s.critDmg = (b.critDmg || COMBAT_EXTRA.critBase) + (bo.critDmg || 0); // b.critDmg: tướng có sát thương chí mạng gốc riêng (vd Bà Năm Chảo 210%)
-  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, msAdd = 0, slow = 0, dmgReduce = 0, extraMana = 0, atkPct = 0, slowImmune = false;
+  let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, msAdd = 0, slow = 0, dmgReduce = 0, extraMana = 0, atkPct = 0, slowImmune = false, weaken = 0;
   for (const st of e.statuses) {
     if (st.kind === 'statMod') {
       s.armor += st.armor || 0; s.mr += st.mr || 0; s.atk += st.atk || 0; s.ap += st.ap || 0; asPct += st.atkSpeedPct || 0; dmgReduce += st.dmgReducePct || 0;
@@ -25,6 +25,7 @@ export function computeStats(world, e) {
       if (st.slowImmune) slowImmune = true;
     } else if (st.kind === 'haste') msPct = Math.max(msPct, st.pct);
     else if (st.kind === 'slow') slow = Math.max(slow, st.pct);
+    else if (st.kind === 'weaken') weaken = Math.max(weaken, st.pct || 0); // Bùa Mỏi: giảm sát thương gây ra
   }
   if (slowImmune) slow = 0;
   if (atkPct) s.atk *= 1 + atkPct;
@@ -35,6 +36,7 @@ export function computeStats(world, e) {
   s.atkSpeed = Math.min(2.5, b.atkSpeed * (1 + asPct));
   s.moveSpeed = b.moveSpeed > 0 ? Math.max(150, (b.moveSpeed * (e.kind === 'hero' ? HERO_SPEED_MULT : 1) + g('moveSpeed')) * (1 + msPct + g('moveSpeedPct')) * (1 - slow)) : 0;
   s.dmgReduce = dmgReduce;
+  s.weaken = weaken;
   s.regenHp = 40 + 4 * L; // hồi thêm từ bùa/đồ cộng riêng trong items.js
   s.regenMana = 25 + 2.5 * L + extraMana;
   return s;

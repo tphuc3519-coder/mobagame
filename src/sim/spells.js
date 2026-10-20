@@ -1,13 +1,13 @@
-// Phép bổ trợ (05 §6). Dùng chung một kiểu Command với kỹ năng: { type:'spell', aim }.
+// Phép bổ trợ (05 §6). Dùng chung một kiểu Command với kỹ năng: { type:'spell', aim }. Cơ chế chọn theo `kind` của dữ liệu (không theo id);
+// phép `needTarget` không có mục tiêu thì báo 'noTarget' và không mất hồi chiêu.
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { T, dist, norm } from './util.js';
-import { applyStatus, removeStatus, isHardCC, cannotDash } from './status.js';
+import { applyStatus, removeStatus, isHardCC, cannotDash, CLEANSE_KINDS } from './status.js';
 import { dealDamage, heal } from './damage.js';
 import { enemiesOf, alliesOf } from './targeting.js';
+import { canTarget } from './vision.js';
 import { clampToMap } from './util.js';
 import { cancelRecall } from './economy.js';
-
-const CLEANSE = ['stun', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind']; // hất tung đang diễn ra và áp chế thì giữ nguyên
 
 /** Điểm đáp của Chớp Bước: đi thẳng theo hướng, bị giữ trong đường/bản đồ, không rơi vào công trình. */
 export function blinkTarget(world, e, dir, range) {
@@ -31,20 +31,46 @@ export function smiteTarget(world, e, sp = SPELLS.thu_hoach) {
   return best;
 }
 
+/** Tắt Đèn: trụ / nhà chính địch còn đứng gần nhất, tính tới mép công trình (kể cả đang bất tử). */
+export function towerOffTarget(world, e, sp) {
+  let best = null, bd = Infinity;
+  for (const s of world.entities) {
+    if (!s.structure || !s.alive || s.noTarget || s.team === e.team || (s.kind !== 'tower' && s.kind !== 'core')) continue;
+    const d = dist(s.pos, e.pos) - s.radius; if (d <= sp.radius && (d < bd || (d === bd && s.id < best.id))) { best = s; bd = d; }
+  }
+  return best;
+}
+/** Tướng địch (cả hình nộm) nhắm được và thấy được trong r (tính bán kính mục tiêu), gần trước. */
+export function enemyHeroesNear(world, e, r) {
+  const out = [];
+  for (const t of world.entities) { if (!t.isHero || t.team === e.team || !canTarget(e, t)) continue; const d = dist(t.pos, e.pos) - t.radius; if (d <= r) out.push([d, t]); }
+  return out.sort((a, b) => a[0] - b[0] || a[1].id - b[1].id).map((x) => x[1]);
+}
+/** Mục tiêu của phép cần mục tiêu (null / mảng rỗng = không dùng được). Dùng chung cho mô phỏng, bot, HUD. */
+export function spellTarget(world, e, sp) {
+  switch (sp.kind) {
+    case 'smite': return smiteTarget(world, e, sp);
+    case 'towerOff': return towerOffTarget(world, e, sp);
+    case 'flashStun': return enemyHeroesNear(world, e, sp.radius);
+    case 'hex': return enemyHeroesNear(world, e, sp.radius)[0] || null;
+    default: return null;
+  }
+}
+
 export function castSpell(world, e, aim) {
   const sp = e.spell && SPELLS[e.spell.id];
   if (!sp || !e.alive) return { ok: false, reason: 'none' };
   if (sp.disabledIn1v1 && world.map.id === 'duel1v1') return { ok: false, reason: 'mode' };
   if (world.tick < e.spell.ready) return { ok: false, reason: 'cooldown' };
-  if (isHardCC(e) && sp.id !== 'giai_troi') return { ok: false, reason: 'cc' };
-  const smiteT = sp.id === 'thu_hoach' ? smiteTarget(world, e, sp) : null;
-  if (sp.id === 'thu_hoach' && !smiteT) return { ok: false, reason: 'noTarget' }; // không có mục tiêu: không mất hồi chiêu
-  if (sp.id === 'chop_buoc' && cannotDash(e)) return { ok: false, reason: 'noDash' }; // kết giới / lãnh địa bóng chặn cả Chớp Bước
+  if (isHardCC(e) && sp.kind !== 'cleanse') return { ok: false, reason: 'cc' };
+  const tgt = sp.needTarget ? spellTarget(world, e, sp) : null;
+  if (sp.needTarget && (!tgt || (Array.isArray(tgt) && !tgt.length))) return { ok: false, reason: 'noTarget' }; // không có mục tiêu: không mất hồi chiêu
+  if (sp.kind === 'blink' && cannotDash(e)) return { ok: false, reason: 'noDash' }; // kết giới / lãnh địa bóng chặn cả Chớp Bước
   e.spell.ready = world.tick + T(sp.cooldown);
   cancelRecall(world, e); // huỷ Biến về kèm sự kiện (trước chỉ gán null: tiếng niệm kêu tiếp tới hết)
   world.emit('spell', { id: e.id, spell: sp.id });
-  switch (sp.id) {
-    case 'chop_buoc': {
+  switch (sp.kind) {
+    case 'blink': {
       let d = aim && (aim.x || aim.y) ? norm(aim.x, aim.y) : null;
       if (!d) { const m = Math.hypot(e.moveDir.x, e.moveDir.y); d = m > 0.1 ? norm(e.moveDir.x, e.moveDir.y) : { x: Math.cos(e.facing), y: Math.sin(e.facing) }; }
       const from = { x: e.pos.x, y: e.pos.y }, to = blinkTarget(world, e, d, sp.range);
@@ -52,31 +78,51 @@ export function castSpell(world, e, aim) {
       world.emit('blink', { id: e.id, from, to });
       break;
     }
-    case 'hoi_phuc': {
+    case 'heal': {
       const near = alliesOf(world, e, sp.radius).filter((a) => a.kind === 'hero').sort((a, b) => dist(a.pos, e.pos) - dist(b.pos, e.pos))[0];
       for (const t of [e, near]) if (t) { heal(world, t, t.stats.maxHp * sp.healPct, e); applyStatus(world, t, { status: 'haste', id: 'spellHaste', pct: sp.haste.pct, duration: sp.haste.duration }, e); }
       break;
     }
-    case 'tram_hon':
+    case 'execute':
       for (const t of enemiesOf(world, e).filter((x) => x.kind === 'hero' && dist(x.pos, e.pos) - x.radius <= sp.radius)) {
         dealDamage(world, e, t, (t.stats.maxHp - t.hp) * sp.missingHpPct, 'true');
         applyStatus(world, t, { status: 'slow', id: 'tramhon', pct: sp.slow.pct, duration: sp.slow.duration }, e);
       }
       break;
-    case 'thu_hoach': { // Trừng Trị: sét giáng một mục tiêu
-      const t = smiteT;
+    case 'smite': { // Trừng Trị: sét giáng một mục tiêu
+      const t = tgt;
       world.emit('smite', { id: e.id, target: t.id, x: t.pos.x, y: t.pos.y });
       if (t.kind === 'hero') { dealDamage(world, e, t, sp.heroDamage, 'true'); applyStatus(world, t, { status: 'slow', id: 'trungtri', pct: sp.slow.pct, duration: sp.slow.duration }, e); }
       else { dealDamage(world, e, t, smiteDamage(e, sp), 'true'); if (t.alive) applyStatus(world, t, { status: 'stun', duration: sp.stun }, e); }
       break;
     }
-    case 'gio_luot':
+    case 'haste':
       applyStatus(world, e, { status: 'haste', id: 'gioluot', pct: sp.haste.pct, duration: sp.haste.duration }, e);
       applyStatus(world, e, { status: 'ghost', duration: sp.haste.duration }, e);
       break;
-    case 'giai_troi':
-      for (const k of CLEANSE) removeStatus(e, k);
+    case 'cleanse':
+      for (const k of CLEANSE_KINDS) removeStatus(e, k);
       applyStatus(world, e, { status: 'ccImmune', duration: sp.immune }, e);
+      break;
+    case 'towerOff': // Tắt Đèn: công trình là trường của đơn vị (công trình miễn nhiễm hiệu ứng — status.js), dùng lại thì cộng dồn tới mốc xa hơn
+      tgt.disabledUntil = Math.max(tgt.disabledUntil || 0, world.tick + T(sp.disable)); tgt.aggro = null; tgt.streak = 0;
+      world.emit('towerOff', { id: e.id, target: tgt.id, x: tgt.pos.x, y: tgt.pos.y, dur: sp.disable });
+      break;
+    case 'flashStun': // Loá Mắt: choáng mọi tướng địch trong vùng
+      for (const t of tgt) applyStatus(world, t, { status: 'stun', id: 'loamat', duration: sp.stun }, e);
+      world.emit('flashBang', { id: e.id, x: e.pos.x, y: e.pos.y, r: sp.radius, hits: tgt.map((t) => t.id) });
+      break;
+    case 'warDrum': { // Trống Trận: bản thân mạnh hơn đồng minh (id khác nhau nên buff của mình không bị bản yếu đè)
+      applyStatus(world, e, { status: 'statMod', id: 'trongtran', ...sp.self, duration: sp.duration }, e);
+      const allies = alliesOf(world, e, sp.radius).filter((a) => a.kind === 'hero');
+      for (const a of allies) applyStatus(world, a, { status: 'statMod', id: 'trongtranAlly', ...sp.ally, duration: sp.duration }, e);
+      world.emit('warDrum', { id: e.id, x: e.pos.x, y: e.pos.y, r: sp.radius, allies: allies.map((a) => a.id), dur: sp.duration });
+      break;
+    }
+    case 'hex': // Bùa Mỏi: giảm sát thương gây ra + làm chậm
+      applyStatus(world, tgt, { status: 'weaken', id: 'buamoi', pct: sp.weaken, duration: sp.duration }, e);
+      applyStatus(world, tgt, { status: 'slow', id: 'buamoiSlow', pct: sp.slow, duration: sp.duration }, e);
+      world.emit('hex', { id: e.id, target: tgt.id, dur: sp.duration });
       break;
     default: break;
   }

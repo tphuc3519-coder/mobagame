@@ -3,8 +3,11 @@ import { T } from './util.js';
 // Hiệu ứng (04 §3). Mỗi status: { id, kind, until, ...dữ liệu }. Thời gian theo tick.
 const HARD = new Set(['stun', 'knockup', 'stasis', 'suppress']); // stasis: bất động, không hành động (05 §8); suppress: áp chế (Giải Trói không gỡ)
 // noDash: không lướt / Chớp Bước được (Lãnh Địa Bóng, Vòng Kết Giới); blind: đòn đánh thường có tỉ lệ trượt (Hào Quang Sân Khấu)
-const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'suppress']);
-const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt']);
+// weaken: giảm sát thương gây ra (Bùa Mỏi) — là khống chế (miễn khống chế chặn, Giải Trói gỡ, kháng hiệu ứng rút ngắn) nhưng KHÔNG phải khống chế cứng
+const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'suppress', 'weaken']);
+const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt', 'weaken']);
+/** Khống chế gỡ được (Giải Trói, kỹ năng giải khống chế): hất tung đang diễn ra và áp chế thì giữ nguyên (05 §6). */
+export const CLEANSE_KINDS = ['stun', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'weaken'];
 
 /** Áp hiệu ứng. spec: {status, duration(giây), pct, ...}; id tuỳ chọn để thay thế bản cũ cùng id. */
 export function applyStatus(world, target, spec, src) {

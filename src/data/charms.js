@@ -1,4 +1,6 @@
-// Bảng bùa (05 §7): 3 màu × 5 ô. Mỗi viên cộng chỉ số phẳng theo bảng; UI chỉnh bùa làm sau, hiện dùng trang mặc định.
+// Bảng bùa (05 §7): 3 màu × 5 ô. Mỗi viên cộng chỉ số phẳng theo bảng; trùng viên được, ô trống được, cấp trang = số ô đã gắn (0..15).
+// Người chơi tự xếp ở Sảnh → Bảng Bùa (ui/charmEditor.js; tối đa CHARM_PAGE_MAX trang riêng, 5 trang mẫu chỉ đọc — sửa là tạo bản sao).
+// Mọi trang vào mô phỏng đều đi qua sanitizePage (localStorage hỏng / sửa tay không lọt vào trận).
 export const CHARMS = {
   r_luoi: { name: 'Bùa Lưỡi', color: 'red', stats: { atk: 2.4 } },
   r_lua: { name: 'Bùa Lửa', color: 'red', stats: { ap: 3.6 } },
@@ -27,9 +29,30 @@ export const CHARM_PAGES = {
 };
 export const PAGE_BY_ROLE = { marksman: 'dps', assassin: 'assassin', mage: 'mage', tank: 'tank', fighter: 'assassin', support: 'support' };
 
-/** Cộng dồn chỉ số của một trang bùa. */
+export const CHARM_SLOTS = 5;
+export const CHARM_COLORS = ['red', 'blue', 'gray'];
+export const CHARM_PAGE_MAX = 10;
+export const CHARM_NAME_MAX = 16;
+export const COLOR_INFO = { red: { name: 'Đỏ', sub: 'Tấn công', hex: '#ff6a5a' }, blue: { name: 'Xanh', sub: 'Tiện ích', hex: '#5fb6ff' }, gray: { name: 'Xám', sub: 'Phòng thủ', hex: '#b8c0d8' } };
+
+/** Tên trang: bỏ khoảng trắng hai đầu, bỏ ký tự <>&", tối đa CHARM_NAME_MAX; rỗng thì 'Bảng bùa'. */
+export const cleanName = (raw) => String(raw ?? '').replace(/[<>&"]/g, '').trim().slice(0, CHARM_NAME_MAX).trim() || 'Bảng bùa';
+/** Trang hợp lệ từ dữ liệu bất kỳ: không phải object → null; mỗi màu đúng 5 ô, ô sai màu / id lạ → null (ô trống). */
+export function sanitizePage(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = { name: cleanName(raw.name) };
+  for (const c of CHARM_COLORS) {
+    const src = Array.isArray(raw[c]) ? raw[c] : [];
+    out[c] = Array.from({ length: CHARM_SLOTS }, (_, i) => (typeof src[i] === 'string' && CHARMS[src[i]]?.color === c ? src[i] : null));
+  }
+  return out;
+}
+/** Cấp trang = số ô đã gắn bùa (0..15). */
+export const pageLevel = (page) => (page ? CHARM_COLORS.reduce((n, c) => n + (page[c] || []).filter((id) => id && CHARMS[id]).length, 0) : 0);
+
+/** Cộng dồn chỉ số của một trang bùa (bỏ qua ô trống / id lạ). */
 export function pageStats(page) {
   const sum = {};
-  for (const id of [...page.red, ...page.blue, ...page.gray]) for (const [k, v] of Object.entries(CHARMS[id].stats)) sum[k] = (sum[k] || 0) + v;
+  for (const id of [...(page.red || []), ...(page.blue || []), ...(page.gray || [])]) { const ch = id && CHARMS[id]; if (ch) for (const [k, v] of Object.entries(ch.stats)) sum[k] = (sum[k] || 0) + v; }
   return sum;
 }

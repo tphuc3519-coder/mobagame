@@ -5,6 +5,7 @@ import { SPELLS } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
 import { ready, velocity, hp01 } from './perception.js';
 import { pickSkillTarget } from '../sim/skillTypes.js';
+import { spellFight, spellSurvive } from './botSpells.js';
 
 const D2R = Math.PI / 180;
 function rotate(d, deg) { const a = deg * D2R, c = Math.cos(a), s = Math.sin(a); return { x: d.x * c - d.y * s, y: d.x * s + d.y * c }; }
@@ -66,6 +67,7 @@ export function trySkill(bot, slot, t, mode) {
 
 /** Combo theo ai.combo của tướng; mỗi lần nghĩ tung tối đa một chiêu (tự nhiên hơn). */
 export function combo(bot, t, mode) {
+  spellFight(bot, t, mode); // phép chiến thuật (Trống Trận, Loá Mắt, Bùa Mỏi, Tắt Đèn) — cùng lượt nghĩ vẫn tung được chiêu
   const order = bot.e.data.ai?.combo || ['s1', 's2', 's3'], rule = /hpBelow([\d.]+)/.exec(bot.e.data.ai?.ultRule || '');
   for (const slot of order) {
     if (slot === 's3' && rule && hp01(bot.e) >= +rule[1]) continue; // ultRule hpBelowX: chiêu cuối chỉ khi máu dưới X (Đổi Vai, Đồng Hồ Ngược)
@@ -83,16 +85,17 @@ export function survival(bot, foe) {
   const slot = e.items.findIndex((i) => i && ITEMS[i].active);
   if (slot >= 0 && h < bot.cfg.itemHp && near && world.tick >= (e.itemCd?.[e.items[slot]] || 0)) { world.command(e.id, { type: 'useItem', slot }); return true; }
   if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall && !(foe && foe.alive && dist(foe.pos, e.pos) < 900)) { world.command(e.id, { type: 'restore' }); return true; } // tướng địch đánh trúng là mất hồi: chỉ dùng khi đã thoát
-  if (spReady && sp.id === 'thu_hoach') { // đi rừng: Trừng Trị kết liễu quái (cướp mục tiêu lớn/bùa) khi máu quái ≤ sát thương sét
+  if (spReady && sp.kind === 'smite') { // đi rừng: Trừng Trị kết liễu quái (cướp mục tiêu lớn/bùa) khi máu quái ≤ sát thương sét
     const t = smiteTarget(world, e, sp);
     if (t && t.kind === 'monster' && t.hp <= smiteDamage(e, sp) + (t.boss ? 60 : 0)) { world.command(e.id, { type: 'spell' }); return true; }
     if (t && t.kind === 'hero' && near && t.hp <= sp.heroDamage) { world.command(e.id, { type: 'spell' }); return true; }
   }
+  if (spellSurvive(bot, foe)) return true;
   if (!spReady || !near) return false;
-  if (sp.id === 'chop_buoc' && h < bot.cfg.escapeHp) { world.command(e.id, { type: 'spell', aim: bot.homeDir() }); return true; }
-  if (sp.id === 'hoi_phuc' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }
-  if (sp.id === 'tram_hon' && foe.hp < (foe.stats.maxHp - foe.hp) * 0.14 + 30) { world.command(e.id, { type: 'spell' }); return true; }
-  if (sp.id === 'giai_troi' && e.statuses.some((s) => s.kind === 'stun' || s.kind === 'root')) { world.command(e.id, { type: 'spell' }); return true; }
-  if (sp.id === 'gio_luot' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }
+  if (sp.kind === 'blink' && h < bot.cfg.escapeHp) { world.command(e.id, { type: 'spell', aim: bot.homeDir() }); return true; }
+  if (sp.kind === 'heal' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }
+  if (sp.kind === 'execute' && foe.hp < (foe.stats.maxHp - foe.hp) * sp.missingHpPct + 30) { world.command(e.id, { type: 'spell' }); return true; }
+  if (sp.kind === 'cleanse' && e.statuses.some((s) => s.kind === 'stun' || s.kind === 'root')) { world.command(e.id, { type: 'spell' }); return true; }
+  if (sp.kind === 'haste' && h < 0.3) { world.command(e.id, { type: 'spell' }); return true; }
   return false;
 }

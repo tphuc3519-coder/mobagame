@@ -4,6 +4,7 @@ import { onKill, respawnSeconds } from './economy.js';
 import { tryRevive, onMagicTaken } from './items.js';
 import { revealOnAttack } from './vision.js';
 import { ITEM_PASSIVE } from '../data/items.js';
+import { emblemDeal, emblemAfter, emblemTaken } from './emblems.js';
 
 const hasPassive = (e, p) => !!e?.bonus?.passives?.has(p);
 
@@ -30,7 +31,8 @@ function backdoorFactor(world, src, tgt) {
 
 /** Gây sát thương: hook, bất tử, giảm giáp/KP, khiên, chết. Trả sát thương thực vào máu.
  *  opts: basic (đòn đánh thường), crit (chí mạng — mọi loại sát thương đều hiện được kiểu chí mạng), dot, reflect, slot (chiêu gây ra),
- *  armorPenPct (xuyên giáp riêng của chiêu). Hook nội tại: onDealDamage của người gây (đổi ctx.amount), onTakeDamage của người nhận
+ *  armorPenPct (xuyên giáp riêng của chiêu), emblem (sát thương của phù hiệu — không kích lại phù hiệu). Thứ tự: hook người gây → phù hiệu
+ *  (nét phụ) → Bùa Mỏi (người gây bị giảm sát thương gây ra) → hook người nhận → giảm giáp … → chết → phù hiệu chính. Hook nội tại: onDealDamage của người gây (đổi ctx.amount), onTakeDamage của người nhận
  *  (đổi ctx.amount; ctx.cancel = true là né hẳn đòn — Thấu Nhãn). */
 export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}) {
   if (!tgt || !tgt.alive || amount <= 0 || tgt.noTarget) return 0;
@@ -38,6 +40,8 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   if (src && src !== tgt) revealOnAttack(world, src, tgt); // đánh người thì lộ mặt (bụi, sương mù)
   const hook = src?.data?.passive?.hooks?.onDealDamage;
   if (hook) { const ctx = { world, self: src, target: tgt, amount, type, opts }; hook(ctx); amount = ctx.amount; }
+  if (src?.emblem) amount = emblemDeal(world, src, tgt, amount); // phù hiệu: nét phụ khuếch sát thương (Săn Mồi)
+  if (src?.stats?.weaken) amount *= 1 - src.stats.weaken; // Bùa Mỏi: mọi sát thương người bị dán gây ra (cả chuẩn, cả cháy/độc)
   const take = tgt.data?.passive?.hooks?.onTakeDamage;
   if (take) {
     const ctx = { world, self: tgt, src, amount, type, opts }; take(ctx);
@@ -77,6 +81,7 @@ export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}
   if (src?.kind === 'hero' && tgt.kind === 'hero' && src.team !== tgt.team && got > 0 && tgt.statuses.some((s) => s.id === 'hoiMau')) { removeStatus(tgt, 'hoiMau'); world.emit('restoreBreak', { id: tgt.id }); } // Hồi Máu: tướng địch đánh trúng là mất hồi
   world.emit('damage', { id: tgt.id, src: src?.id, amount: Math.round(dmg + absorbed), dmgType: type, crit: !!opts.crit, slot: opts.slot, shield: absorbed > 0 && dmg <= 0 }); // crit: số bay kiểu chí mạng (hud.js)
   if (tgt.hp <= 0 && !tryRevive(world, tgt)) kill(world, src, tgt);
+  if (got > 0) { if (src?.emblem && src.kind === 'hero') emblemAfter(world, src, tgt, got, type, opts); if (tgt.emblem && tgt.alive) emblemTaken(world, tgt, src); } // phù hiệu chính
   return dmg;
 }
 

@@ -1,7 +1,7 @@
 // Dựng đội hình 5v5: chọn tướng cho đồng đội và đối thủ, phân đường theo vai, đặt vị trí xuất phát quanh Suối Đèn, gắn bot.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { starterFor } from '../data/items.js';
-import { ROLE_SPELL } from '../data/roles.js';
+import { botSpellOf } from '../data/ai.js';
 
 /** Vị trí theo dữ liệu tướng (như Liên Quân): Đường Đền, Đường Giữa, Đường Sông, Đi rừng, Trợ thủ. */
 const LANE_OF = { temple: 'temple', mid: 'mid', river: 'river', jungle: 'jungle', support: 'support' };
@@ -57,7 +57,7 @@ export function setupTeams(world, opts) {
       const mine = team === 0 && !teams[0].some((h) => h.isPlayer) && (byRole ? sl.lane === opts.playerRole : sl.hero === opts.heroId);
       if (mine) e.isPlayer = true; // đồ khởi đầu của người chơi do game.js mua
       else {
-        if (ROLE_SPELL[sl.lane]) e.spell = { id: ROLE_SPELL[sl.lane], ready: 0 }; // bot đi rừng luôn mang Trừng Trị
+        world.setLoadout(e, { spellId: botSpellOf(sl.hero, sl.lane) }); // vị trí → phép (rừng: Trừng Trị) + phù hiệu mặc định theo vai
         const start = starterFor(HEROES[sl.hero], sl.lane, e.spell?.id); // đồ khởi đầu theo vị trí
         for (const id of start || []) world.command(e.id, { type: 'buy', item: id }); world.addBot(e, opts.difficulty || 'normal', laneIdx);
       }

@@ -12,7 +12,7 @@ export function spawnStructures(world) {
   for (const s of structuresOf(map)) {
     const data = { name: s.kind === 'core' ? 'Nhà chính' : 'Trụ', structure: true, base: { maxHp: s.hp, maxMana: 0, atk: s.atk, ap: 0, armor: s.armor, mr: s.armor, atkSpeed: s.rate, moveSpeed: 0, range: s.range }, perLevel: {}, basicAttack: {}, skills: {} };
     const e = world.spawnEntity({ kind: s.kind, structure: true, team: s.team, sid: s.id, tier: s.tier ?? (s.kind === 'tower' ? s.id.split('_').pop() : null), data, radius: s.radius, pos: { x: s.x, y: s.y }, invulnUntil: s.invulnUntil, invulnerable: !!s.invulnUntil,
-      streak: 0, streakTarget: null, aggro: null, aggroUntil: 0, height: s.kind === 'core' ? 900 : 700 });
+      streak: 0, streakTarget: null, aggro: null, aggroUntil: 0, disabledUntil: 0, height: s.kind === 'core' ? 900 : 700 });
     e.hp = e.stats.maxHp;
   }
   for (const team of [0, 1]) {
@@ -62,6 +62,7 @@ export function updateStructures(world) {
     // hồi máu khi lâu không bị đánh: nhà chính 20/giây, trụ nhà `homeRegen`/giây
     const regen = s.kind === 'core' ? 20 : s.tier === 'home' ? map.tower.homeRegen || 0 : 0;
     if (regen && !(map.suddenDeath && world.tick >= T(map.suddenDeath.from)) && world.tick - s.lastDamagedTick > T(map.tower.regenAfter ?? 8)) s.hp = Math.min(s.stats.maxHp, s.hp + regen / 30);
+    if (world.tick < (s.disabledUntil || 0)) { s.streak = 0; s.streakTarget = null; s.aggro = null; continue; } // Tắt Đèn: ngừng bắn (đạn đã bay vẫn tới)
     if (world.tick < s.attackReady) continue;
     const t = pickTarget(world, s);
     if (!t) { s.streak = 0; s.streakTarget = null; continue; }
