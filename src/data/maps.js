@@ -133,12 +133,13 @@ const CAMPS_BLUE = [
   { id: 'toad_b', type: 'coc_reu', x: 3150, y: 4470, arc: { r: 330, face: 90 } },
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
-const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
-  // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
-  // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
-  // Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm): Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8 (phía Đỏ, gần đường Sông).
-  { id: 'long_ngu', type: 'long_ngu', x: 1430, y: 2020, boss: true, back: 2.36 },
-  { id: 'ho_loi', type: 'ho_loi', x: 4990, y: 4380, boss: true, back: -0.785 },
+const BOSSES = [ // hai hang lớn NẰM TRÊN TRỤC SÔNG y = x (03 §A7 "trung lập, trên trục sông"; như Liên Quân: cùng một đường gần hang cho cả hai đội)
+  // Long Ngư (phút 2) giữa sông đoạn gần đường Đền, Hổ Lôi (phút 8) giữa sông đoạn gần đường Sông; lưng hang quay về mũi đá cuối sông (Thần Điểu /
+  // Tà Thần), miệng hang mở về giữa bản đồ nên đội nào cũng vào từ sông như nhau. Trước 20/10 hai hang nằm ở mép rừng mỗi bên (Long Ngư
+  // phía Xanh, Hổ Lôi phía Đỏ): đo 50 trận toàn bot đổi bên cùng đội hình, Xanh thắng 60–65% (Long Ngư mọc sớm, thưởng vàng + KN cả đội,
+  // nằm sát rừng Xanh); bỏ Long Ngư → 50%, dời Long Ngư lên trục → 47%. Xem docs/DECISIONS.md.
+  { id: 'long_ngu', type: 'long_ngu', x: 1725, y: 1725, boss: true, back: -2.356 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4675, y: 4675, boss: true, back: 0.785 },
   // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
@@ -299,13 +300,10 @@ export const ARENA = {
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
-    // bụi cỏ dài mọc mép nước dọc bờ sông ở cả bốn cửa sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân. Không lấy ảnh x↔y
-    // (bờ đối diện mỗi bụi là một hang lớn) mà ĐỐI XỨNG TÂM (x, y) → (6400 − x, 6400 − y) như hai hang: khai [x1, y1, x2, y2, r] gốc một
-    // bụi, bụi kia là ảnh. Cặp 1: bụi bờ phía Đỏ cạnh trụ ngoài đường Đền (ảnh: phía Xanh cạnh trụ ngoài đường Sông). Cặp 2: bụi bờ phía
-    // Xanh cạnh trụ ngoài đường Đền, sát hang Long Ngư (ảnh: phía Đỏ cạnh trụ ngoài đường Sông, sát hang Hổ Lôi) — cùng đường tâm bờ
-    // (|x − y| = 310) nhưng ngắn và mảnh hơn: đầu gần trụ giữ mép bụi ngoài tầm trụ như cặp 1 (≥ 350 + bán kính tướng), đầu kia dừng
-    // trước mũi vách hang (cách ≥ 10; vách Hổ Lôi to hơn nên quyết định độ dài cho cả cặp).
-    ...[[1560, 1250, 1870, 1560, 95], [1235, 1545, 1345, 1655, 85]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [6400 - c, 6400 - d, 6400 - a, 6400 - b]]
+    // bụi cỏ mọc mép nước ở cả bốn cửa sông, sát hai đường cánh — như Liên Quân. Hai hang lớn nằm trên trục sông nên bốn bụi giống hệt nhau:
+    // khai một bụi (bờ phía Đỏ cạnh trụ ngoài đường Đền), ba bụi kia là ảnh x↔y và ảnh đối xứng tâm. Đường tâm bờ |x − y| = 310; đầu gần trụ
+    // giữ mép bụi ngoài tầm trụ (≥ 350 + bán kính tướng), đầu kia dừng trước vách hang (vách Hổ Lôi to hơn nên quyết định độ dài cho cả bốn).
+    ...[[1560, 1250, 1654, 1344, 95]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [b, a, d, c], [6400 - c, 6400 - d, 6400 - a, 6400 - b], [6400 - d, 6400 - c, 6400 - b, 6400 - a]]
       .map((q) => ({ cap: q.map((v) => v * K), r: r * K, bank: true, noMirror: true }))),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.

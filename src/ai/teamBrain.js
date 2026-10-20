@@ -63,7 +63,7 @@ function think(world, team, prev) {
   const freeNow = bots.filter((b) => !taken.has(b.id)), lb = world.lastBoss;
   const fresh = lb && lb.team === team && world.tick - lb.tick < T(PUSH.afterBoss);
   const why = !foes.length ? 'ace' : advantage >= 2 && minute >= PUSH.advFrom ? 'adv' : fresh && advantage >= 0 && avgOf(freeNow) > 0.5 ? 'boss'
-    : minute >= PUSH.lateFrom && advantage >= 1 ? 'late' : null;
+    : minute >= PUSH.lateFrom && advantage >= 1 ? 'late' : PUSH.groupFrom != null && minute >= PUSH.groupFrom && advantage >= 0 && avgOf(freeNow) > PUSH.groupHp && freeNow.length >= 4 ? 'group' : null;
   if (!boss && why && freeNow.length >= (why === 'ace' ? 1 : 3)) {
     const cx = freeNow.reduce((a, b) => a + b.pos.x, 0) / freeNow.length, cy = freeNow.reduce((a, b) => a + b.pos.y, 0) / freeNow.length;
     const from = why === 'boss' ? { x: lb.x, y: lb.y } : { x: cx, y: cy };
