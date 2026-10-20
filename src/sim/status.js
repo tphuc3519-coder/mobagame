@@ -4,15 +4,16 @@ import { T } from './util.js';
 const HARD = new Set(['stun', 'knockup', 'stasis', 'suppress']); // stasis: bất động, không hành động (05 §8); suppress: áp chế (Giải Trói không gỡ)
 // noDash: không lướt / Chớp Bước được (Lãnh Địa Bóng, Vòng Kết Giới); blind: đòn đánh thường có tỉ lệ trượt (Hào Quang Sân Khấu)
 const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'suppress']);
-const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt']);
+const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt']); // cố ý không có 'suppress': áp chế giữ đủ thời gian (04 §3)
 
 /** Áp hiệu ứng. spec: {status, duration(giây), pct, ...}; id tuỳ chọn để thay thế bản cũ cùng id. */
 export function applyStatus(world, target, spec, src) {
   if (!target.alive || target.structure) return null; // công trình miễn nhiễm hiệu ứng
   const kind = spec.status, id = spec.id || kind;
   if (CC.has(kind) && target.statuses.some((x) => x.kind === 'ccImmune')) return null;
+  if (src && src.team !== target.team && kind !== 'stasis' && target.statuses.some((x) => x.kind === 'stasis')) return null; // Sương Đông: hiệu ứng của địch không bám
   const dur = TENACITY.has(kind) ? (spec.duration ?? 0) * (1 - (target.stats?.tenacity || 0)) : spec.duration ?? 0; // kháng hiệu ứng rút ngắn khống chế
-  const s = { ...spec, kind, id, src: src?.id, until: world.tick + T(dur) };
+  const s = { ...spec, kind, id, src: src?.id, t0: world.tick, until: world.tick + T(dur) }; // t0: lúc áp (thanh thời gian khống chế trên HUD)
   delete s.status;
   const i = target.statuses.findIndex((x) => x.id === id);
   if (i >= 0) {
@@ -34,6 +35,9 @@ export const isUntargetable = (e) => e.statuses.some((s) => s.kind === 'untarget
 export const isInvulnerable = (e) => e.statuses.some((s) => s.kind === 'stasis' || s.kind === 'invuln');
 export const tauntSource = (e) => e.statuses.find((s) => s.kind === 'taunt')?.src ?? null;
 export const cannotDash = (e) => e.statuses.some((s) => s.kind === 'noDash');
+export const isSuppressed = (e) => e.statuses.some((s) => s.kind === 'suppress');
+export const isLocked = (e) => e.statuses.some((s) => s.kind === 'suppress' || s.kind === 'stasis'); // khoá hoàn toàn: không chiêu / phép / đồ / Hồi Máu / Biến về
+export const isCcImmune = (e) => e.statuses.some((s) => s.kind === 'ccImmune');
 /** Tỉ lệ trượt đòn đánh thường (hiệu ứng blind lớn nhất). */
 export const missChance = (e) => e.statuses.reduce((m, s) => (s.kind === 'blind' ? Math.max(m, s.miss || 0) : m), 0);
 

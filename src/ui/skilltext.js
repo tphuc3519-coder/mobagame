@@ -63,6 +63,8 @@ export function skillDesc(s) {
   if (s.ambush) out.push(`đòn đánh đầu tiên khi tàng hình gây thêm ${amount(s.ambush)} sát thương${s.ambush.slow ? ` và làm chậm ${pct(s.ambush.slow)}` : ''}`);
   if (s.nextAttackRange) out.push(`đòn đánh kế tiếp xa thêm ${s.nextAttackRange}`);
   if (s.onHitHero === 'cutS2') out.push('trúng tướng thì thời gian hồi K2 còn lại giảm một nửa');
+  if (s.suppress) out.push(`áp chế tướng trúng đầu tiên ${sec(s.suppress.duration ?? s.duration ?? 1)} (đứng niệm giữ; không giảm bởi kháng hiệu ứng, không bị giải)`);
+  if (s.unstoppable) out.push(`không thể bị cản ${sec(s.unstoppable)} đầu`);
   const text = out.filter(Boolean).join(', ');
   return (text ? text[0].toUpperCase() + text.slice(1) + '.' : '') + (meta ? ` (${meta})` : '');
 }

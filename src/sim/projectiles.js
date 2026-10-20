@@ -1,5 +1,6 @@
 import { TICK } from '../core/loop.js';
 import { isTargetable } from './targeting.js';
+import { isUntargetable } from './status.js';
 
 // Đạn: thẳng (kỹ năng) hoặc tự dẫn (đòn đánh xa, chiêu khoá mục tiêu). onHit(target) trả true nếu đạn dừng lại.
 // skip(t): bỏ qua mục tiêu (đòn đánh thường không trúng người có basicImmune); pierce: true = xuyên mọi mục tiêu, số n = xuyên n mục tiêu rồi dừng ở mục tiêu kế; heroOnly: chỉ va tướng; onEnd(p): hết tầm / mất mục tiêu mà chưa dừng.
@@ -23,7 +24,8 @@ export function updateProjectiles(world) {
     let done = false;
     if (p.homing != null) { // đòn đánh xa tự dẫn
       const t = world.byId(p.homing);
-      if (!t || !t.alive) { done = true; p.onEnd?.(p); }
+      // chiêu khoá mục tiêu trượt khi mục tiêu thành không thể chọn / Sương Đông giữa đường (đòn đánh thường giữ như cũ)
+      if (!t || !t.alive || (p.kind === 'skill' && isUntargetable(t))) { done = true; p.onEnd?.(p); }
       else {
         const dx = t.pos.x - p.x, dy = t.pos.y - p.y, d = Math.hypot(dx, dy);
         if (d <= p.perTick + t.radius * 0.6) { p.hit.add(t.id); p.onHit(t); done = true; }

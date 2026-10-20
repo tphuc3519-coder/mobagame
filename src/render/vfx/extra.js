@@ -1,5 +1,6 @@
 // Hiệu ứng cho các sự kiện của kiểu chiêu mở rộng (sim/skillTypes.js) và nội tại của 14 tướng mở khoá: nhát chém đường thẳng, dây trói,
-// phân thân giấy, phản đạn, tua ngược, chém liên hoàn, né đòn, trượt đòn, tráo máu, bùng nội tại. Chỉ vẽ; không đổi trạng thái trận.
+// phân thân giấy, phản đạn, tua ngược, chém liên hoàn, né đòn, trượt đòn, tráo máu, bùng nội tại; áp chế (xích), không thể cản, đồ kích hoạt.
+// Chỉ vẽ; không đổi trạng thái trận.
 import * as THREE from 'three';
 import { TILE } from './atlas.js';
 
@@ -10,6 +11,7 @@ const TAU = Math.PI * 2;
 export function createExtraFx(api) {
   const { A, N, sh, flash, burst, sparks, slash, rootOf, headOf, ent, visible, themeOf, aura, dust } = api;
   const cut = new Set(); // dây trói đã đứt / hết giờ (khoá `${người trói}:${mục tiêu}`) — không ghi gì vào đơn vị của mô phỏng
+  const cutS = new Set(); // xích áp chế đã đứt / hết giờ (cùng kiểu khoá)
   const at = (id, y = 120) => { const r = rootOf(id); return r ? r.clone().setY(r.y + y) : null; };
   return {
     /** Đường thẳng (nét mực, tia lửa, nhát chém): vệt sáng chạy dọc hình chữ nhật + vạch trên đất. */
@@ -74,6 +76,43 @@ export function createExtraFx(api) {
       const t = ent(ev.target); if (!t) return; const th = themeOf(e), until = performance.now() + 700;
       sh.chain(() => at(ev.id, 140), () => at(ev.target, 140), { color: th.col, width: 12, life: 0.7, kill: () => performance.now() > until });
       for (const id of [ev.id, ev.target]) { const p = rootOf(id); if (p) { sh.pillar(p.x, p.z, 80, 360, { color: th.col, top: 0xffffff, life: 0.6 }); } }
+    },
+    /** Áp chế: xích nối người gây và mục tiêu (dây bóng đã có xích riêng của sự kiện tether), vòng ký tự dưới chân mục tiêu, khói tím bốc lên. */
+    suppress(ev, e) {
+      const t = ent(ev.target); if (!t || (!visible(e) && !visible(t))) return;
+      const col = ev.item ? 0xd8a24a : themeOf(e).col, key = ev.id + ':' + ev.target, until = performance.now() + (ev.dur || 1) * 1000 + 150; cutS.delete(key);
+      const gone = () => cutS.has(key) || !e?.alive || !t.alive || performance.now() > until;
+      if (ev.via !== 'tether') sh.chain(() => at(ev.id, 120), () => at(ev.target, 130), { color: col, width: ev.item ? 11 : 9, life: (ev.dur || 1) + 0.3, kill: gone });
+      sh.decal('rune', t.pos.x, t.pos.y, 150, { color: col, life: ev.dur || 1, alpha: 0.7, spin: -2, fadeIn: 0.05 });
+      aura(ev.dur || 1, () => { const p = at(ev.target, 60); if (p && Math.random() < 0.5) A.spawn({ x: p.x + R(-35, 35), y: p.y + R(0, 80), z: p.z + R(-35, 35), vy: R(-30, 30), life: 0.45, size: [24, 6], color: [0xf0d8ff, 0x6a3aa8], tile: TILE.smoke, drag: 1 }); }, gone);
+    },
+    suppressEnd(ev, e) {
+      cutS.add(ev.id + ':' + ev.target);
+      const t = ent(ev.target), p = t && rootOf(t.id); if (!p || !visible(t)) return;
+      if (ev.ok) burst(A, p.x, 140, p.z, { n: 14, speed: [120, 300], up: [40, 220], life: [0.3, 0.6], size: [22, 5], color: [0xfff0c0, themeOf(e).col], tile: TILE.shard, drag: 2 });
+      else burst(N, p.x, 130, p.z, { n: 10, speed: [80, 220], up: [20, 160], life: [0.4, 0.7], size: [40, 70], color: [0x6a5a8a, 0x1a1428], alpha: [0.6, 0], tile: TILE.smoke, drag: 2 });
+    },
+    /** Không thể cản: vòng vàng loé ở chân + vệt vàng bốc lên suốt cửa sổ. */
+    unstoppable(ev, e) {
+      if (!visible(e)) return; const p = rootOf(e.id); if (!p) return;
+      sh.ring(p.x, p.z, 10, 170, { color: 0xffd36a, width: 0.12, life: 0.35 });
+      aura(ev.dur || 0.5, () => { const r = rootOf(e.id); if (r && Math.random() < 0.7) A.spawn({ x: r.x + R(-40, 40), y: 20, z: r.z + R(-40, 40), vy: R(220, 380), life: 0.35, size: [18, 4], color: [0xfff6c0, 0xffb030], tile: TILE.streak, drag: 1 }); },
+        () => !e.alive || !e.statuses.some((s) => s.id === 'unstoppable'));
+    },
+    /** Đồ kích hoạt: Sương Đông (kén băng), Lọng Che (vòng + cột sáng; khiên có sự kiện shield riêng), Lụa Gió (vệt lụa). Xích Giữ: sự kiện suppress. */
+    itemUse(ev, e) {
+      if (!visible(e)) return; const p = rootOf(e.id);
+      switch (ev.act) {
+        case 'stasis':
+          sh.bubble(() => rootOf(e.id), 120, { color: 0xbfefff, life: ev.dur || 2, alpha: 0.9, hex: true, kill: () => !e.alive || !e.statuses.some((s) => s.kind === 'stasis') });
+          if (p) burst(A, p.x, 120, p.z, { n: 14, speed: [80, 220], up: [40, 200], life: [0.3, 0.6], size: [22, 5], color: [0xffffff, 0x8fe0ff], tile: TILE.shard, drag: 2 });
+          break;
+        case 'ward': sh.ring(ev.x, ev.y, 40, ev.radius || 600, { color: 0xffd36a, width: 0.08, life: 0.6, fill: 0.25 }); sh.pillar(ev.x, ev.y, 70, 300, { color: 0xffc860, top: 0xffffff, life: 0.5 }); break;
+        case 'dash':
+          if (p) { const rot = Math.atan2(ev.dx || 1, (ev.dy || 0) * 0.62); for (let i = 0; i < 6; i++) A.spawn({ x: p.x - (ev.dx || 0) * i * 30, y: 90 + R(-20, 20), z: p.z - (ev.dy || 0) * i * 30, life: 0.25 + i * 0.03, size: [90, 12], color: [0xffffff, 0x9ae8d0], alpha: [0.8, 0], tile: TILE.streak, rot, fadeIn: 0 }); }
+          break;
+        default: break;
+      }
     },
     /** Nội tại bùng (đủ tầng, đổi thế, lên cấp Nghĩa, thoát khống chế…): loé + vòng sáng ở người dùng. */
     proc(ev, e) {

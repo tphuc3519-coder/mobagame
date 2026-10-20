@@ -8,20 +8,24 @@ import { enemiesOf, isTargetable } from './targeting.js';
 import { canSee } from './vision.js';
 import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
-import { skillHit, applyEffects, aimDir, aimPoint, inRadius } from './skills.js';
+import { skillHit, applyEffects, aimDir, aimPoint, inRadius, startSkillSuppress } from './skills.js';
+import { updateSuppressions } from './suppress.js';
+import { lv } from '../data/heroes/_levels.js';
 
 const missHook = (world, e, cast) => e.data.passive?.hooks?.onSkillMiss?.(makeCtx(world, e, { cast, skill: cast.skill }));
 
 /** Mục tiêu của chiêu khoá mục tiêu: trong tầm, nhìn thấy, chọn được; tướng trước, rồi gần hướng kéo nhất (aim là hướng), rồi gần nhất.
- *  skill.heroOnly: chỉ tướng; skill.canTarget(e, t, world): điều kiện riêng (vd đủ 2 Manh Mối). */
+ *  aim.id: mục tiêu chỉ định (người chơi khoá trên HUD / đang xem trước khi kéo / bot chọn) — dùng nếu qua đúng các điều kiện trên, không thì
+ *  chọn như thường (không bất ngờ báo "không có mục tiêu"). skill.heroOnly: chỉ tướng; skill.canTarget(e, t, world): điều kiện riêng. */
 export function pickSkillTarget(world, e, skill, aim) {
   const R = skill.range || 600, dir = aim && (aim.x || aim.y) && Math.hypot(aim.x, aim.y) <= 1.5 ? norm(aim.x, aim.y) : null;
+  const valid = (t) => !!t && t.team !== e.team && !t.structure && isTargetable(e, t) && canSee(e.team, t) && (!skill.heroOnly || t.isHero)
+    && dist(t.pos, e.pos) - t.radius <= R && (!skill.canTarget || skill.canTarget(e, t, world));
+  if (aim?.id != null) { const t = world.byId(aim.id); if (valid(t)) return t; } // mục tiêu chỉ định (khoá trên HUD / xem trước khi kéo / bot)
   let best = null, bs = -Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || t.structure || !isTargetable(e, t) || !canSee(e.team, t)) continue;
-    if (skill.heroOnly && !t.isHero) continue;
-    const d = dist(t.pos, e.pos); if (d - t.radius > R) continue;
-    if (skill.canTarget && !skill.canTarget(e, t, world)) continue;
+    if (!valid(t)) continue;
+    const d = dist(t.pos, e.pos);
     const dd = d > 0 ? { x: (t.pos.x - e.pos.x) / d, y: (t.pos.y - e.pos.y) / d } : { x: 0, y: 0 }, align = dir ? dd.x * dir.x + dd.y * dir.y : 0;
     const sc = (t.isHero ? 1e5 : 0) + (dir ? align * 3000 : 0) - d;
     if (sc > bs) { bs = sc; best = t; }
@@ -127,8 +131,13 @@ export const EXTRA_HANDLERS = {
 };
 
 function startTether(world, e, t, cast) {
-  const { skill, level } = cast, dur = skill.duration || 2, n = Math.max(1, Math.round(dur / 0.5));
+  const { skill, level } = cast, S = skill.suppress, dur = S ? lv(S.duration ?? skill.duration ?? 1, level) : skill.duration || 2, n = Math.max(1, Math.round(dur / 0.5));
   applyEffects(world, e, t, skill.effects, level);
+  if (S) { // dây áp chế (Trói Bóng): sợi xích của suppress.js chạy cả nhịp sát thương lẫn hiệu ứng cuối; không áp được (miễn khống chế) thì dây thường
+    const link = startSkillSuppress(world, e, t, cast, { via: 'tether', every: 15, onTick: () => skillHit(world, e, t, cast, { mult: 1 / n, noEffects: true }),
+      onEnd: (ok) => world.emit('tetherEnd', { id: e.id, target: t.id, ok }) });
+    if (link) { world.emit('tether', { id: e.id, target: t.id, dur, slot: cast.slot }); skillHit(world, e, t, cast, { mult: 1 / n, noEffects: true }); return; }
+  }
   (world.tethers ||= []).push({ owner: e.id, target: t.id, cast, until: world.tick + T(dur), next: world.tick + 15, n, maxD: (skill.range || 700) * 1.15 });
   world.emit('tether', { id: e.id, target: t.id, dur, slot: cast.slot });
   skillHit(world, e, t, cast, { mult: 1 / n, noEffects: true });
@@ -194,4 +203,4 @@ export function recordHistory(world) {
 }
 
 /** Mọi phần chạy mỗi tick của kỹ năng mở rộng. */
-export function updateSkillEntities(world) { updateTethers(world); updateClones(world); recordHistory(world); }
+export function updateSkillEntities(world) { updateSuppressions(world); updateTethers(world); updateClones(world); recordHistory(world); }

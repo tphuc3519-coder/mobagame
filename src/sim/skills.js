@@ -2,7 +2,7 @@
 // Kiểu cơ bản ở đây; kiểu mới (đường thẳng, trói nối, phân thân, lao khoá mục tiêu, đạn khoá mục tiêu) ở skillTypes.js.
 import { lv } from '../data/heroes/_levels.js';
 import { T, dist, norm, dirTo, clampToMap } from './util.js';
-import { applyStatus, removeStatus, isSilenced, isHardCC, cannotDash } from './status.js';
+import { applyStatus, removeStatus, isSilenced, isHardCC, isRooted, cannotDash } from './status.js';
 import { dealDamage, heal, addShield } from './damage.js';
 import { enemiesOf, alliesOf } from './targeting.js';
 import { spawnProjectile, spawnZone } from './projectiles.js';
@@ -13,6 +13,7 @@ import { forceMove } from './movement.js';
 import { cancelRecall } from './economy.js';
 import { INSTANT, applyInstant } from './effects.js';
 import { EXTRA_HANDLERS, pickSkillTarget, recastAgain, rewind, startSlashes } from './skillTypes.js';
+import { startSuppress } from './suppress.js';
 
 /** Áp danh sách hiệu ứng của chiêu lên `t`: hiệu ứng tức thời (đẩy, hút, giải, cắt chiêu) hoặc trạng thái. Hiệu ứng đánh dấu `atEnd`
  *  (cuối lúc trói) và `ifAllTicksHit` (trúng đủ nhịp) do kiểu chiêu tự áp đúng lúc; `include` để áp riêng các hiệu ứng đó. */
@@ -35,12 +36,22 @@ export function skillHit(world, owner, target, cast, opt = {}) {
     onSkillDamage(world, owner, target);
   }
   if (!opt.noEffects) applyEffects(world, owner, target, cast.extraEffects ? [...(skill.effects || []), ...cast.extraEffects] : skill.effects, level, opt.origin);
+  if (skill.suppress && skill.type !== 'tether' && target.isHero && !opt.noEffects && !cast.flags.suppressed) { cast.flags.suppressed = true; startSkillSuppress(world, owner, target, cast); } // áp chế: một lần mỗi lượt tung, tướng trúng đầu tiên
   const hooks = owner.data.passive?.hooks;
   const ctx = makeCtx(world, owner, { target, cast, skill });
   if (target.isHero) cast.hitHero = true;
   if (target.isHero) hooks?.onHit?.(ctx);
   hooks?.onSkillHit?.(ctx);
   if (skill.onHitHero === 'cutS2' && target.isHero) { const left = owner.cooldowns.s2 - world.tick; if (left > 0) owner.cooldowns.s2 = world.tick + Math.floor(left / 2); }
+}
+
+/** Áp chế từ chiêu có `suppress: { duration?, channel?, breakRange? }` (suppress.js): mặc định thời lượng = skill.duration, đứt khi kéo giãn
+ *  quá 115% tầm chiêu; hết giờ (không đứt) thì áp các hiệu ứng `atEnd` của chiêu. extra: via, every, onTick, onEnd (dây bóng — skillTypes.js). */
+export function startSkillSuppress(world, e, t, cast, extra = {}) {
+  const { skill, level } = cast, S = skill.suppress;
+  return startSuppress(world, e, t, { duration: lv(S.duration ?? skill.duration ?? 1, level), channel: S.channel !== false, breakRange: S.breakRange ?? (skill.range || 600) * COMBAT_EXTRA.suppress.breakMult,
+    slot: cast.slot, via: extra.via, every: extra.every, onTick: extra.onTick,
+    onEnd: (ok) => { if (ok && t.alive) applyEffects(world, e, t, skill.effects, level, null, 'atEnd'); extra.onEnd?.(ok); } });
 }
 
 /** Nhịp đứng ra chiêu (giây) của chiêu có hướng/điểm sau khi chiêu phát ra: đủ để thấy tướng quay về hướng chiêu rồi mới chạy tiếp. */
@@ -235,11 +246,15 @@ export function castSkill(world, e, slot, aim) {
   const skill = e.data.skills?.[slot], level = e.skillLevels[slot];
   if (!skill || !e.alive) return { ok: false, reason: 'none' };
   if (!level) return { ok: false, reason: 'locked' };
+  if (e.channel && world.tick < e.channel.until) return { ok: false, reason: 'channel' }; // đang niệm giữ áp chế
   if (e.recast?.slot === slot && world.tick <= e.recast.until && !isHardCC(e)) return recastAgain(world, e, slot, aim); // kích hoạt lại (đổi chỗ phân thân): không tốn mana, không tính hồi chiêu
   if (world.tick < e.cooldowns[slot]) return { ok: false, reason: 'cooldown' };
   if (isSilenced(e) || isHardCC(e)) return { ok: false, reason: 'cc' };
   if (e.dash) return { ok: false, reason: 'busy' };
-  if ((skill.type === 'dash' || skill.type === 'targetedDash') && cannotDash(e)) return { ok: false, reason: 'noDash' }; // trong kết giới / lãnh địa bóng
+  if (skill.type === 'dash' || skill.type === 'targetedDash') { // lướt: không được trong kết giới / lãnh địa bóng, khi bị trói (04 §3)
+    if (cannotDash(e)) return { ok: false, reason: 'noDash' };
+    if (isRooted(e)) return { ok: false, reason: 'rooted' };
+  }
   if (skill.canCast && !skill.canCast(e, world)) return { ok: false, reason: 'cond' }; // điều kiện riêng (đủ Ấn, đủ Tầm Nhìn, máu dưới 30%…)
   const cost = lv(skill.cost, level);
   if (e.mana < cost) return { ok: false, reason: 'mana' };
@@ -251,6 +266,7 @@ export function castSkill(world, e, slot, aim) {
   e.cooldowns[slot] = world.tick + T(lv(skill.cooldown, level) * (1 - Math.min(COMBAT_EXTRA.cdrCap, e.stats.cdr || 0)));
   cancelRecall(world, e); onCastSkill(world, e); // huỷ Biến về kèm sự kiện (dừng tiếng niệm, vòng sáng)
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
+  if (skill.unstoppable) { const d = lv(skill.unstoppable, level); applyStatus(world, e, { status: 'ccImmune', id: 'unstoppable', duration: d }, e); world.emit('unstoppable', { id: e.id, dur: d, slot }); } // không thể cản (lướt: hết khi cú lướt dừng — movement.js)
   if (target) e.facing = Math.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
   else if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
   // khoá ra chiêu: đứng yên, mặt giữ hướng chiêu tới lúc chiêu phát ra (+ một nhịp ngắn), sau đó mới đi/quay theo cần di chuyển.

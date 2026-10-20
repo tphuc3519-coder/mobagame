@@ -25,4 +25,6 @@ export const ECON_5V5 = {
 };
 /** Bảng kinh tế đang dùng cho trận (1v1 hoặc 5v5). */
 export const econOf = (map) => (map && map.id !== 'duel1v1' && map.lanes?.length > 1 ? { ...ECON, ...ECON_5V5 } : ECON);
-export const COMBAT_EXTRA = { critBase: 1.75, cdrCap: 0.4, tenacityCap: 0.8, penCap: 0.8 };
+// suppress (áp chế, 04 §3): pad = số giây hiệu ứng trên mục tiêu sống lâu hơn sợi xích (xích tự gỡ hiệu ứng khi kết thúc);
+// breakMult × tầm chiêu = khoảng cách đứt mặc định.
+export const COMBAT_EXTRA = { critBase: 1.75, cdrCap: 0.4, tenacityCap: 0.8, penCap: 0.8, suppress: { pad: 0.2, breakMult: 1.15 } };

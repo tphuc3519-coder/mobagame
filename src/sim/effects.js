@@ -1,7 +1,7 @@
 // Hiệu ứng tức thời của kỹ năng (04 §3): đẩy lùi, hút về, giải khống chế, cắt chiêu đang gồng. Khác trạng thái (status.js) ở chỗ không
 // kéo dài — áp một lần lúc trúng. Đẩy / hút dùng forceMove (đơn vị bị dời thẳng, bị choáng suốt lúc bay nên mất lượt lướt / vung chiêu).
 import { forceMove } from './movement.js';
-import { applyStatus, removeStatus } from './status.js';
+import { applyStatus, removeStatus, isCcImmune } from './status.js';
 import { cancelRecall } from './economy.js';
 import { dirTo } from './util.js';
 
@@ -17,6 +17,7 @@ export function interrupt(world, t) {
 /** Áp một hiệu ứng tức thời lên `t`. origin: tâm đẩy / hút (vùng tròn, vùng lưu) — mặc định chỗ đứng của người tung. */
 export function applyInstant(world, t, eff, src, origin = null) {
   if (!t.alive || t.structure) return;
+  if (eff.status !== 'cleanse' && src && src.team !== t.team && isCcImmune(t)) return; // miễn khống chế / không thể cản: không bị đẩy, hút, cắt chiêu
   const o = origin || src.pos;
   switch (eff.status) {
     case 'knockback': {

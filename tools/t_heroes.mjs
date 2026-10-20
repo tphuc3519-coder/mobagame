@@ -74,12 +74,12 @@ ok('mọi tướng: kiểu chiêu đều có engine', ALPHA.every((id) => Object
   c2('s3'); st2(40);
   ok('Cầu Mây K3: hai phát đều trúng', w2.drainEvents().filter((e) => e.type === 'damage' && e.id === d2.id && e.slot === 's3').length === 2);
 }
-{ // Bóng Đèn: trói nối 2s rồi choáng; sau lưng +30%; lãnh địa chặn lướt
+{ // Bóng Đèn: dây bóng áp chế 1,25s (Bóng Đèn đứng niệm) rồi choáng; sau lưng +30%; lãnh địa chặn lướt
   const { w, p, d, step, cast } = setup('bong_den', 400, 'phu_dong');
   cast('s2'); step(12);
-  ok('Bóng Đèn K2: trói', d.statuses.some((s) => s.kind === 'root'));
-  step(60);
-  ok('Bóng Đèn K2: hết 2s còn trong tầm thì choáng', d.statuses.some((s) => s.id === 'troi_bong_stun'));
+  ok('Bóng Đèn K2: áp chế', d.statuses.some((s) => s.kind === 'suppress' && s.src === p.id) && p.channel?.target === d.id);
+  step(32);
+  ok('Bóng Đèn K2: giữ đủ 1,25s còn trong tầm thì choáng', d.statuses.some((s) => s.id === 'troi_bong_stun'));
   const { w: w2, p: p2, d: d2, step: st2, cast: c2 } = setup('bong_den', 300, 'phu_dong');
   d2.facing = 0; c2('s1'); st2(30); const back = lost(d2);
   const { w: w3, p: p3, d: d3, step: st3, cast: c3 } = setup('bong_den', 300, 'phu_dong'); d3.facing = Math.PI; c3('s1'); st3(30); const front = lost(d3);

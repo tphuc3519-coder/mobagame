@@ -42,5 +42,5 @@ export default hero({
     s3: { id: 'hai_nong_lien_xa', name: 'Hai Nòng Liên Xạ', type: 'skillshot', aim: 'direction', range: 1000, width: 80, speed: 3000, requires: 'Tầm Nhìn 100', canCast: (e) => vis(e) >= P.need, cooldown: [55, 47, 40], cost: [0, 0, 0], damage: { base: 135, perLevel: 60, ad: 1.0, type: 'physical' }, params: { armorPenPct: 0.15, opportunityDamage: 157 }, desc: 'Cần Tầm Nhìn 100: loạt bắn 135 xuyên 15% giáp (×157/135 nếu địch đang bị khống chế / làm chậm).' },
   },
   ai: { combo: ['s1', 's2', 's3'], preferredRange: 500, engageHpRatio: 0.9 },
-  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_xa_thu', 'cung_gio', 'kiem_nhanh', 'ao_giap_nhe', 'nhan_bao_kich', 'mat_na_hoi_sinh'],
+  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_xa_thu', 'cung_gio', 'kiem_nhanh', 'dai_lua_gio', 'nhan_bao_kich', 'mat_na_hoi_sinh'],
 });

@@ -13,5 +13,5 @@ export default hero({
     s3: { id: 'bay_len_troi', name: 'Bay Lên Trời', type: 'aoeCircle', aim: 'point', range: 900, radius: 300, delay: 0.9, untargetableDuringLeap: true, cooldown: [60, 52, 44], cost: [100, 100, 100], damage: { base: 220, perLevel: 110, ad: 1.0, type: 'physical' }, effects: [{ status: 'knockup', duration: 0.8 }], desc: 'Bay lên rồi lao xuống điểm chỉ định: không thể bị chọn khi bay, hất tung mọi địch trong vùng rơi.' },
   },
   ai: { combo: ['s3', 's2', 's1'], preferredRange: 190, engageHpRatio: 0.7 },
-  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_giap', 'khien_da', 'ao_giap_dong', 'ngoc_binh_an', 'giap_gai', 'mat_na_hoi_sinh'],
+  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_giap', 'khien_da', 'ao_giap_dong', 'xich_dong', 'giap_gai', 'mat_na_hoi_sinh'],
 });

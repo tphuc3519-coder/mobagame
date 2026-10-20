@@ -66,8 +66,10 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     return pts;
   }
 
+  let overlay = null; // vẽ thêm (tín hiệu — hud/pings.js) sau cùng
   return {
     canvas: cv,
+    setOverlay(fn) { overlay = fn; },
     draw() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.drawImage(bg, 0, 0, W, H);
@@ -108,6 +110,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         if (portraits) portraits.draw(ctx, e.heroId, e.data.name, x, y, me ? R * 1.12 : R, col(e), { me });
         else { ctx.fillStyle = col(e); ctx.beginPath(); ctx.arc(x, y, R * 0.6, 0, 7); ctx.fill(); }
       }
+      overlay?.(ctx, wx, wy);
     },
   };
 }

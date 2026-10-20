@@ -9,7 +9,9 @@ const G = {
   bolt: 'M14 1L4 14h6l-1 9 10-13h-6z', gem: 'M12 2l9 10-9 10-9-10z', boot: 'M7 3h6v8l7 3v6H4V9z',
   hour: 'M6 2h12v4l-4 6 4 6v4H6v-4l4-6-4-6z', leaf: 'M4 20C4 10 10 4 21 3c0 10-5 16-14 17z', plus: 'M9 2h6v7h7v6h-7v7H9v-7H2V9h7z',
   arrow: 'M2 10h11V5l9 7-9 7v-5H2z', wing: 'M2 18C4 8 10 4 22 4c-3 5-6 7-9 8 3 0 5-1 8-2-2 6-8 10-19 8z', cross: 'M4 2l8 8 8-8 2 2-8 8 8 8-2 2-8-8-8 8-2-2 8-8-8-8z',
+  chain: 'M8 4a5 5 0 100 10A5 5 0 008 4zm0 3a2 2 0 110 4 2 2 0 010-4zM16 10a5 5 0 100 10 5 5 0 000-10zm0 3a2 2 0 110 4 2 2 0 010-4z', parasol: 'M12 2C6.5 2 2 6 2 11h20c0-5-4.5-9-10-9zM11 11h2v8a3 3 0 01-6 0h2a1 1 0 002 0z',
 };
+const ACTIVE_GLYPH = { suppress: 'chain', ward: 'parasol', dash: 'wing' }; // đồ kích hoạt chưa có ảnh vẽ tay: hình theo loại kích hoạt
 const STAT_GLYPH = { atk: 'sword', ap: 'star', maxHp: 'heart', maxMana: 'drop', armor: 'shield', mr: 'ring', atkSpeedPct: 'bolt', crit: 'gem', cdr: 'hour', moveSpeed: 'boot', mrPen: 'star', tenacity: 'ring' };
 const TAB_COLOR = { atk: '#c4553c', mag: '#5d6fd8', def: '#5f8f9c', boots: '#b98a36', jungle: '#4f9f78' };
 const TIER_RING = ['#6d7388', '#6d7388', '#c9d2e6', '#f2c25a'];
@@ -23,7 +25,7 @@ export function itemIcon(id) {
   const url = itemArtURL(id, it.tier); // ảnh vẽ tay riêng từng món
   if (url) return `<i class="ic pimg"><img src="${url}" alt="" draggable="false"></i>`;
   const key = Object.keys(it.stats || {})[0];
-  const glyph = it.tags?.includes('boots') ? 'boot' : it.tags?.some((t) => t === 'jungle' || t === 'support') ? 'leaf' : STAT_GLYPH[key] || 'gem';
+  const glyph = ACTIVE_GLYPH[it.active?.id] || (it.tags?.includes('boots') ? 'boot' : it.tags?.some((t) => t === 'jungle' || t === 'support') ? 'leaf' : STAT_GLYPH[key] || 'gem');
   const c = TAB_COLOR[it.tab] || '#777';
   const keys = Object.keys(it.stats || {}), second = keys[1] && STAT_GLYPH[keys[1]] && STAT_GLYPH[keys[1]] !== glyph ? STAT_GLYPH[keys[1]] : it.passive || it.unique ? 'gem' : '';
   const hue = [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 40, 0) - 20; // mỗi món lệch màu nhẹ để dễ phân biệt
