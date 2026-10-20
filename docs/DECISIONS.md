@@ -653,3 +653,18 @@
 - Khoá bằng mã băm: `tools/premium.lock.json` (35 file: GLB, `hero.art.json`, file gốc, animation viết tay, ảnh thẻ / toàn thân / mặt), kiểm bằng `node tools/t_premium.mjs`. Danh sách tướng nằm ở `tools/premium.mjs`, dùng chung cho test và công cụ.
 - `tools/modelgen/build.mjs` và `tools/uiart/render.cjs` bỏ qua 4 tướng này kể cả khi chạy "dựng tất cả"; chỉ `FORCE_PREMIUM=1` (khi chính chủ dự án gửi bản mới, rồi chạy `node tools/t_premium.mjs --lock`).
 - Đã soát lại hai đợt sửa Giai đoạn 0 / 1: không file nào trong 35 file bị đụng tới (ảnh thẻ mới chỉ thêm cho 14 tướng kia).
+
+## GĐ1c — bot 5v5 có não đội (20/10)
+- **Não đội là gợi ý, không phải điều khiển cứng** (`ai/teamBrain.js`): một lượt mỗi giây cho mỗi đội, giao lệnh `defend / boss / push`
+  cho bot rảnh; `laneBot.js` chỉ làm theo khi đang LANE (rảnh). Tất định (không rng). Người chơi không nhận lệnh.
+- **Hai hang mục tiêu lớn lên đúng trục sông y = x** (03 §A7 "trung lập, trên trục sông"): Long Ngư (1725, 1725) gần đường Đền, Hổ Lôi
+  (4675, 4675) gần đường Sông, lưng hang quay về mũi đá cuối sông. *Lý do đo được*: 64 trận toàn bot cùng đội hình đổi bên — Xanh thắng
+  **65%** vì hang Long Ngư (phút 2, thưởng vàng + kinh nghiệm cả đội) nằm sát rừng Xanh; bỏ Long Ngư → 50%, dời lên trục → 47–54%. Bốn bụi
+  bờ sông đối xứng qua cả hai trục (một khai báo, ba ảnh).
+- **Thần Điểu / Tà Thần mọc phút 12** (cũ 15) — đúng nhịp 03 §A9 và kéo trận về 12–18 phút.
+- **Gom đội đẩy đường từ phút 10** khi không thua người và máu trung bình > 65% (`BRAIN.push.groupFrom/groupHp`). Thử thêm "giảm 20% máu
+  công trình" chỉ làm trận còn 18,9 phút và lệch Xanh 63% nên **không dùng**.
+- **Kết quả chốt** (`node tools/t_arena_batch.mjs 50 normal`): 50/50 trận kết thúc, **trung vị 15,9 phút** (trước GĐ1c 22,6), **Xanh thắng
+  54%**, mục tiêu lớn bị hạ **3,6 lần / trận**, 17 mạng / trận, 0 lỗi. Đổi bên cùng đội hình (64 trận): Xanh 52%, trung vị 15,9 phút.
+  Cả ba tiêu chí của lộ trình (12–18 phút, 45–55%, ≥ 2 mục tiêu lớn) đạt.
+

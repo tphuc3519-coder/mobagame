@@ -326,3 +326,11 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 - **1v1 không hoà mãi**: tướng hồi máu / đỡ đòn đấu nhau từng kéo 40 phút (14/50 trận bot hoà). Từ phút 18 đội đã phá trụ địch có siêu lính,
   từ phút 30 công trình nhận gấp đôi sát thương và thôi hồi máu; bot lao phá trụ khi đối thủ còn chết ≥ 6 s. Đo lại: 50/50 trận kết thúc, TB 20,4 phút.
 - Kiểm thử mới: `node tools/t_heroes.mjs` (cơ chế từng tướng + 14 trận bot 90 s), `node tools/t_rules5v5.mjs`. Toàn bộ `tools/t_*.mjs` đạt.
+
+## Kiểm toán 19–20/10 — Giai đoạn 1c: bot 5v5 có não đội
+- **Não đội** (`src/ai/teamBrain.js`): mỗi giây giao lệnh thủ trụ / đánh mục tiêu lớn / dồn đường cho bot rảnh; bot đường (`laneBot.js`) làm theo,
+  đứng ngoài tầm trụ chờ lính khi đẩy, chỉ lặn trụ khi an toàn.
+- **Hai hang Long Ngư / Hổ Lôi lên trục sông** cho công bằng hai phe; Thần Điểu / Tà Thần mọc phút 12; gom đội đẩy đường từ phút 10.
+- **Đo** (`node tools/t_arena_batch.mjs 50 normal`, ~19 phút máy): 50/50 kết thúc, trung vị **15,9 phút**, Xanh **54%**, mục tiêu lớn **3,6 /
+  trận**, 0 lỗi. Trước GĐ1c: trung vị 22,6 phút, Xanh 65% (đo đổi bên cùng đội hình), mục tiêu lớn gần như không ai đánh.
+
