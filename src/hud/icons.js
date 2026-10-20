@@ -2,7 +2,9 @@
 import { ITEMS } from '../data/items.js';
 import { itemArtURL } from './itemArt.js';
 
-const G = {
+export const GLYPH = {
+  // (dùng chung: biểu tượng bùa / phù hiệu ở ui/charmArt.js)
+
   sword: 'M17 2l5 5-10 10-3-1-1-3zM5 14l5 5-3 3-5-5z', star: 'M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z',
   heart: 'M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z', shield: 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z',
   ring: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 5a5 5 0 110 10 5 5 0 010-10z', drop: 'M12 2s7 7.5 7 12a7 7 0 01-14 0c0-4.5 7-12 7-12z',
@@ -11,6 +13,7 @@ const G = {
   arrow: 'M2 10h11V5l9 7-9 7v-5H2z', wing: 'M2 18C4 8 10 4 22 4c-3 5-6 7-9 8 3 0 5-1 8-2-2 6-8 10-19 8z', cross: 'M4 2l8 8 8-8 2 2-8 8 8 8-2 2-8-8-8 8-2-2 8-8-8-8z',
   chain: 'M8 4a5 5 0 100 10A5 5 0 008 4zm0 3a2 2 0 110 4 2 2 0 010-4zM16 10a5 5 0 100 10 5 5 0 000-10zm0 3a2 2 0 110 4 2 2 0 010-4z', parasol: 'M12 2C6.5 2 2 6 2 11h20c0-5-4.5-9-10-9zM11 11h2v8a3 3 0 01-6 0h2a1 1 0 002 0z',
 };
+const G = GLYPH;
 const ACTIVE_GLYPH = { suppress: 'chain', ward: 'parasol', dash: 'wing' }; // đồ kích hoạt chưa có ảnh vẽ tay: hình theo loại kích hoạt
 const STAT_GLYPH = { atk: 'sword', ap: 'star', maxHp: 'heart', maxMana: 'drop', armor: 'shield', mr: 'ring', atkSpeedPct: 'bolt', crit: 'gem', cdr: 'hour', moveSpeed: 'boot', mrPen: 'star', tenacity: 'ring' };
 const TAB_COLOR = { atk: '#c4553c', mag: '#5d6fd8', def: '#5f8f9c', boots: '#b98a36', jungle: '#4f9f78' };
@@ -32,15 +35,15 @@ export function itemIcon(id) {
   return `<i class="ic" style="background:linear-gradient(160deg,${c},#1b1f38);border-color:${TIER_RING[it.tier] || TIER_RING[1]};--h:${hue}deg">${svg(G[glyph])}${second ? `<svg class="sub" viewBox="0 0 24 24"><path d="${G[second]}" fill="#ffe08a" stroke="#000" stroke-width="1.5" paint-order="stroke"/></svg>` : ''}</i>`;
 }
 
-const SPELL_GLYPH = { chop_buoc: 'arrow', hoi_phuc: 'plus', tram_hon: 'cross', thu_hoach: 'leaf', gio_luot: 'wing', giai_troi: 'ring' };
-const SPELL_COLOR = { chop_buoc: '#4fb3d9', hoi_phuc: '#4fbf7a', tram_hon: '#d05a4a', thu_hoach: '#c9a13a', gio_luot: '#8a7ad8', giai_troi: '#d99a4f' };
+const SPELL_GLYPH = { chop_buoc: 'arrow', hoi_phuc: 'plus', tram_hon: 'cross', thu_hoach: 'leaf', gio_luot: 'wing', giai_troi: 'ring', tat_den: 'hour', loa_mat: 'star', trong_tran: 'bolt', bua_moi: 'drop' };
+const SPELL_COLOR = { chop_buoc: '#4fb3d9', hoi_phuc: '#4fbf7a', tram_hon: '#d05a4a', thu_hoach: '#c9a13a', gio_luot: '#8a7ad8', giai_troi: '#d99a4f', tat_den: '#6a7898', loa_mat: '#d8c040', trong_tran: '#d8743a', bua_moi: '#9a6ad8' };
 export function spellIcon(id) {
   return `<i class="ic round" style="background:linear-gradient(160deg,${SPELL_COLOR[id] || '#888'},#1b1f38)">${svg(G[SPELL_GLYPH[id]] || G.gem)}</i>`;
 }
 export const homeIcon = () => `<i class="ic round" style="background:linear-gradient(160deg,#6a7fbf,#1b1f38)">${svg('M12 3l10 9h-3v9h-5v-6h-4v6H5v-9H2z')}</i>`;
 export const coinIcon = () => '<svg class="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#f2c25a" stroke="#8a5a12" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#8a5a12" stroke-width="2"/></svg>';
 
-const STAT_LABEL = { atk: ['Công', ''], ap: ['Phép', ''], maxHp: ['HP', ''], maxMana: ['Mana', ''], armor: ['Giáp', ''], mr: ['KP', ''], atkSpeedPct: ['Tốc đánh', '%'], crit: ['Chí mạng', '%'],
+export const STAT_LABEL = { atk: ['Công', ''], ap: ['Phép', ''], maxHp: ['HP', ''], maxMana: ['Mana', ''], armor: ['Giáp', ''], mr: ['KP', ''], atkSpeedPct: ['Tốc đánh', '%'], crit: ['Chí mạng', '%'],
   lifesteal: ['Hút máu', '%'], spellvamp: ['Hút máu phép', '%'], cdr: ['Giảm hồi chiêu', '%'], mrPen: ['Xuyên KP', ''], moveSpeed: ['Tốc chạy', ''], tenacity: ['Kháng hiệu ứng', '%'],
   regenHp: ['Hồi máu/giây', ''], moveSpeedPct: ['Tốc chạy', '%'], armorPenFlat: ['Xuyên giáp', ''] };
 /** Danh sách chỉ số dạng chữ. */

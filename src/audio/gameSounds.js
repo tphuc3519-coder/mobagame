@@ -16,7 +16,7 @@ const KIT = {
 };
 const kitOf = (e) => KIT[e.heroId] || (e.data?.basicAttack?.melee ? ['swing_light', 'hit_flesh', 'arcane'] : ['shot_magic', 'hit_magic', 'arcane']);
 const SKILL = new Set(['s1', 's2', 's3']);
-const SPELL = { hoi_phuc: ['heal'], tram_hon: ['arcane_hit', 0.8], gio_luot: ['haste'], giai_troi: ['cleanse'] }; // Chớp Bước / Trừng Trị: sự kiện blink / smite
+const SPELL = { hoi_phuc: ['heal'], tram_hon: ['arcane_hit', 0.8], gio_luot: ['haste'], giai_troi: ['cleanse'], trong_tran: ['horn', 0.9], loa_mat: ['light_cast', 1.2] }; // Chớp Bước / Trừng Trị: sự kiện blink / smite
 
 export function createGameSounds({ team, me }) {
   let world = null, hornDone = false;
@@ -81,6 +81,12 @@ export function createGameSounds({ team, me }) {
       case 'blink': { const e = ent(ev.id); if (seen(e)) play('blink', ev.from ? { x: ev.from.x, y: ev.from.y } : at(e)); break; }
       case 'spell': { const e = ent(ev.id), s = SPELL[ev.spell]; if (s && seen(e)) play(s[0], at(e, { rate: s[1] })); break; }
       case 'smite': play('smite', { x: ev.x, y: ev.y }); break;
+      case 'towerOff': play('tower_down', { x: ev.x, y: ev.y, rate: 1.4, vol: 0.6 }); break; // Tắt Đèn: tiếng đèn trụ tắt
+      case 'hex': { const t = ent(ev.target); if (seen(t)) play('arcane_hit', at(t, { rate: 0.7 })); break; } // Bùa Mỏi
+      case 'emblem': { // phù hiệu kích hoạt: dùng lại tiếng có sẵn (Mai Rùa đã có tiếng khiên)
+        const e = ent(ev.id), m = { triHit: ['fire_hit', 1.1], ramp: ['haste', 1.25], ward: ['heal', 1.3] }[ev.kind];
+        if (m && seen(e)) play(m[0], at(ent(ev.target) || e, { rate: m[1], vol: 0.6 })); break;
+      }
       case 'restore': { const e = ent(ev.id); if (seen(e)) play('restore', at(e)); break; }
       case 'restoreBreak': { const e = ent(ev.id); if (seen(e)) play('restore_break', at(e)); break; }
       case 'shield': { const e = ent(ev.id); if (e?.kind === 'hero' && seen(e) && ev.amount >= 60 && once('sh' + e.id, 1)) play('shield', at(e)); break; }

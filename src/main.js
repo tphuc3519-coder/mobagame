@@ -4,6 +4,7 @@ import { ALPHA, HEROES } from './data/heroes/index.js';
 import { startMatch } from './game.js';
 import { loadHero, heroProgress } from './render/assets.js';
 import { injectCss } from './ui/css.js';
+import { injectDraftCss } from './ui/cssDraft.js';
 import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
 import { faceSrc, cardSrc, ICONS, iconSrc, toast } from './ui/kit.js';
 import { profile, rankOf } from './ui/profile.js';
@@ -24,7 +25,7 @@ for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEve
 document.getElementById('fs').onclick = async () => {
   try { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape'); } catch (_) { /* tuỳ thiết bị */ }
 };
-injectCss();
+injectCss(); injectDraftCss();
 loadAudio(); hookUiSounds(); // âm thanh: tải + giải mã song song với màn tải game (không chặn vào game); phát được sau lần chạm đầu
 // model tướng tải lỗi hẳn (sau các lần thử lại): báo kèm lỗi (để biết lý do khi chơi trên điện thoại); game tự thử lại sau
 const failShown = new Map();
@@ -38,7 +39,7 @@ if (q.has('hero')) {
   const bot = !q.has('nobot') && !q.has('dummies');
   const heroId = ALPHA.includes(q.get('hero')) ? q.get('hero') : 'hoa_ren';
   const enemyId = ALPHA.includes(q.get('enemy')) ? q.get('enemy') : ALPHA[(ALPHA.indexOf(heroId) + 3) % ALPHA.length];
-  startMatch({ heroId, enemyId, bot, dummies: q.has('dummies'), difficulty: q.get('diff') || 'normal', mode: q.get('mode') || '1v1' });
+  startMatch({ heroId, enemyId, bot, dummies: q.has('dummies'), difficulty: q.get('diff') || 'normal', mode: q.get('mode') || '1v1', playerRole: q.get('role') || undefined }); // ?role=jungle: vị trí người chơi (5v5)
 } else {
   const next = takeNext(), p = profile();
   bootStart(next ? 'Đang trở về sảnh…' : undefined);

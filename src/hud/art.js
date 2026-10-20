@@ -68,6 +68,8 @@ const SPELL_ART = {
   chop_buoc: ['blink', '#5fd0ff', '#0d3a6a', '#fff8c0', '#e8f8ff'], hoi_phuc: ['heal', '#7af0a0', '#0e4a2c', '#ffffff', '#3fcf6a'],
   tram_hon: ['execute', '#ff7a5a', '#4a0e10', '#fff0e8', '#ff5a3a'], thu_hoach: ['smite', '#ffd25a', '#4a320a', '#fff6d0', '#e8a82a'],
   gio_luot: ['haste', '#b8a8ff', '#2a1a5a', '#ffffff', '#d8d0ff'], giai_troi: ['cleanse', '#ffc87a', '#4a2a0a', '#ffffff', '#ffd89a'],
+  tat_den: ['lantern', '#7a86a8', '#14182c', '#c8d0e8', '#5a6688'], loa_mat: ['meteor', '#fff2a0', '#5a4a0a', '#ffffff', '#ffe060'],
+  trong_tran: ['stomp', '#ff8a4a', '#4a160a', '#ffe0c0', '#ff6a2a'], bua_moi: ['vortex', '#c890ff', '#2a0e4a', '#ffffff', '#a060ff'],
 };
 export function spellArt(id) {
   const pt = typeof document !== 'undefined' && paintedSpell(id); if (pt) return pt;
@@ -83,4 +85,10 @@ export function skillArt(skill, theme = '#ffb84d') {
     : t === 'skillshot' ? (skill.pierce ? 'arrow' : 'shot') : t === 'dash' || t === 'targetedDash' ? 'dash' : t === 'aoeSelf' ? (skill.windup ? 'stomp' : 'wave')
       : t === 'aoeCircle' ? 'meteor' : t === 'cone' ? 'fan' : t === 'zone' ? 'vortex' : t === 'selfBuff' ? 'shield' : t === 'allyTarget' ? 'heart' : t === 'tether' ? 'anchor' : 'sword';
   return badge(GLYPHS[g]('#ffffff', theme), { c0: theme, c1: '#141428', glow: theme });
+}
+// Phù hiệu chính (ui/emblemEditor.js, nút ở màn chọn tướng): huy hiệu tròn, mỗi phù hiệu một hình + một màu.
+const EMBLEM_ART = { tam_hoa: ['meteor', '#ff7a3a'], song_don: ['haste', '#7ad8ff'], mai_rua: ['shield', '#8fd0a0'], den_ho_menh: ['lantern', '#ffd36a'] };
+export function emblemArt(key) {
+  const [g, col] = EMBLEM_ART[key] || ['blink', '#9aa0b8'];
+  return badge(GLYPHS[g]('#ffffff', col), { c0: col, c1: '#141428', glow: col });
 }

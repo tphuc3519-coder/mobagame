@@ -1,12 +1,11 @@
 // Hiệu ứng tức thời của kỹ năng (04 §3): đẩy lùi, hút về, giải khống chế, cắt chiêu đang gồng. Khác trạng thái (status.js) ở chỗ không
 // kéo dài — áp một lần lúc trúng. Đẩy / hút dùng forceMove (đơn vị bị dời thẳng, bị choáng suốt lúc bay nên mất lượt lướt / vung chiêu).
 import { forceMove } from './movement.js';
-import { applyStatus, removeStatus, isCcImmune } from './status.js';
+import { applyStatus, removeStatus, isCcImmune, CLEANSE_KINDS as CLEANSE } from './status.js';
 import { cancelRecall } from './economy.js';
 import { dirTo } from './util.js';
 
 export const INSTANT = new Set(['knockback', 'pull', 'cleanse', 'interrupt']);
-const CLEANSE = ['stun', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind']; // hất tung và áp chế không gỡ được (05 §6 Giải Trói)
 
 /** Cắt chiêu đang gồng / lướt / Biến về: chiêu có `windup` đang chờ phát ra sẽ mất (skills.js so bộ đếm interrupts). */
 export function interrupt(world, t) {

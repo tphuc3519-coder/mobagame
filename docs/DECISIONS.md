@@ -775,3 +775,90 @@
 - **Thanh khống chế**: mỗi hiệu ứng ghi lúc áp (`t0`); trên đầu tướng hiện loại khống chế cứng mạnh nhất (áp chế > hất tung > choáng >
   khiêu khích > trói > câm lặng) kèm dải thời gian rút dần; tướng mình có thêm ô "CHOÁNG 1,2s" dưới chân.
 - **Quét Sạch** do mô phỏng phát (`sim/match.js` `checkAce`): cả đội (≥ 2 tướng) cùng nằm, báo đúng một lần mỗi lần bị hạ hết; chỉ 5v5.
+
+## GĐ2 — chọn vị trí + cấm/chọn (20/10)
+- **Vị trí = 5 ô của mô phỏng** (`temple`, `mid`, `river`, `jungle`, `support` — `data/roles.js`, trùng `SLOTS` trong `sim/lineup.js`) cộng
+  `fill` (Tuỳ ý) chỉ có ở giao diện. Tên hiện: Đường Đền / Đường Giữa / Đường Sông / Đi rừng / Trợ thủ / Tuỳ ý (không đặt tên đường theo mục tiêu lớn).
+- **Chọn vị trí ở phòng chờ 5v5** (đấu thường + đấu hạng): nút dưới ô của mình mở hộp "Vị trí chính" (5 + Tuỳ ý) và "Vị trí phụ" (không bắt
+  buộc; khoá khi chính là Tuỳ ý hoặc trùng chính). Lưu hồ sơ (`rolePri`, `roleSec`). Bấm Bắt đầu khi chưa chọn → mở hộp trước rồi mới tìm.
+  1v1 / luyện tập không có vị trí.
+- **Chia vị trí lúc tìm thấy trận** (giao diện, `Math.random`): 85% vị trí chính (`ROLE_PRI_ODDS`), còn lại vị trí phụ nếu có; Tuỳ ý = một vị
+  trí ngẫu nhiên. Đồng đội nhận 4 vị trí còn lại (xáo), đối thủ một hoán vị đủ 5. Hộp "Đã tìm thấy trận" ghi vị trí. Bạn bè trong phòng là
+  máy nên nhận vị trí còn lại như máy.
+- **Vị trí vào mô phỏng chỉ như dữ liệu dựng trận**: `startMatch({ playerRole, allyRoles, foeRoles })` → `setupTeams` → `assignSlots(ids,
+  fixed)` ghim tướng vào ô trước, ô sai / thiếu thì phân theo đường ưu tiên như cũ → gọi không có vị trí (t_determinism, t_arena_batch,
+  `?hero=`) giống từng bit (đã đo băm trước/sau: trùng). Có `playerRole` hợp lệ thì nhận ra người chơi theo **ô**, không theo id tướng
+  (đối thủ có thể trùng tướng ở đấu thường). `?role=` trên đường `?hero=&mode=5v5` để thử thẳng.
+- **Độ hợp tướng ↔ vị trí** (`ui/roles.js fit`): 2 nếu `lanes` có vị trí đó ("Đề cử"), 1 nếu **lớp chính** (`roles[0]`) nằm trong
+  `ROLE_CLASS_FIT` (Đền: đấu sĩ/đỡ đòn, Giữa: pháp sư, Sông: xạ thủ, Rừng: sát thủ/đấu sĩ, Trợ thủ: trợ thủ/đỡ đòn), còn lại 0 — cần vì chỉ 2
+  tướng ghi `lanes` đi rừng. Lưới xếp độ hợp giảm dần; máy chọn theo `FIT_WEIGHT [0,5,10]` + nhiễu 0..3.
+- **Đấu hạng luôn qua cấm/chọn**, kể cả dưới Hải Đăng (tiêu chí xong của lộ trình yêu cầu Đấu hạng → Cấm/chọn cho mọi người chơi; hồ sơ mới
+  là Đèn Dầu). Luật bậc của 07 §7.3 giữ ở **kích thước** thứ tự: dưới Hải Đăng `lite` (2 cấm mỗi bên, 1 pha cấm, chọn rắn 1-2-2-2-2-1, 14
+  tướng), từ Hải Đăng `full` đúng 07 §7.3 (3 cấm, 2 pha cấm, 16 tướng ≤ 20). Đấu thường vẫn chọn ẩn (có vị trí).
+- **Người chơi luôn ở đội Xanh** (chọn trước — trùng mô phỏng: người chơi là đội 0). Ghế chọn `S.match.seat` ngẫu nhiên 0..4, đè được bằng
+  `?seat=N` (kiểm thử). Lượt cấm thứ k của một đội do ghế k làm → người chơi chỉ cấm khi ghế < số lượt cấm (thật, vẫn thấy pha cấm). Muốn ai
+  cũng được cấm thì chỉ sửa ánh xạ ghế trong `draftRules.startTurn`.
+- **Đấu hạng: mỗi tướng chỉ cấm hoặc chọn một lần cho cả hai đội**; đối thủ chọn hiện ngay ở cột đỏ, vị trí đối thủ chỉ hiện sau khi họ chọn.
+  Đấu thường chọn ẩn: chỉ không trùng trong đội, đối thủ có thể trùng tướng đội mình (như trước).
+- **Giờ** (`data/draft.js`): cấm 20 s, chọn 30 s (07 §7.3), chuẩn bị **15 s** (07 ghi 20 s cho đổi tướng + bùa; offline đồng đội là máy nên
+  không có đổi tướng), nghỉ 0,7 s giữa lượt, máy nghĩ 2–6 s khi cùng lượt với người chơi, 1,2–3,5 s khi chỉ có máy (cả ván lite ~45–60 s).
+  Hết giờ: lượt cấm → bỏ lượt (ghi null, báo "Hết giờ: bỏ lượt cấm"); lượt chọn → tướng đang xem nếu còn, không thì tướng hợp vị trí nhất. Có
+  nút "Bỏ qua" lượt cấm.
+- **Máy cấm** (`draftRules.botBan`, tất định theo rnd): đối thủ xem `heroMain(lịch sử)` — ≥ 5 trận, tướng ≥ 2 trận thắng ≥ 60% → cấm với
+  tỉ lệ 50% (06 §6); còn lại bốc theo trọng số `1 + BAN_BIAS[id] + 2` (nếu tướng đúng vị trí đội kia còn thiếu). `BAN_BIAS` để trống
+  (điền sau khi đo tỉ lệ thắng). Một đội **không bao giờ cấm** tướng đúng vị trí cuối cùng (≤ `protectMin` 1) của vị trí mình chưa chọn;
+  hết lựa chọn thì bỏ lượt. Đồng đội máy không cấm tướng mình đang xem, tướng quen dùng, và **tướng Đề cử cho vị trí của mình** (thêm khi chạy
+  thật: máy đồng đội từng cấm mất 1 trong 2 tướng đi rừng Đề cử của người chơi).
+- **Máy chọn** (`draftRules.botPick`): điểm `FIT_WEIGHT[độ hợp] + nhiễu − 2` nếu tướng là lựa chọn đúng vị trí cuối cùng của **đồng đội khác**
+  chưa chọn. *Khác spec:* spec chỉ phạt khi độ hợp của chính máy < 2; đo được máy Đường Đền vẫn lấy Kiếm Thuỷ (Đền + Rừng) — tướng đi rừng
+  cuối cùng của đồng đội — 64/400 lần, nên phạt mọi trường hợp (phạt 2 < khoảng cách giữa hai mức hợp 5 nên chỉ đổi thứ tự trong cùng mức):
+  còn 0/400. Máy đồng đội tránh tướng người chơi đang xem tới khi người chơi khoá.
+- **Ngẫu nhiên cấm/chọn ở giao diện nhưng có seed**: `mulberry32((seed trận ^ DRAFT.seedSalt) >>> 0)`; máy chọn ở chọn ẩn dùng seed + 1. Node
+  dựng lại được từng ván; mô phỏng không đụng tới. Thời điểm máy bấm (2–6 s) dùng `Math.random` (chỉ là nhịp hình).
+- **Luật cấm/chọn là module thuần `src/ui/draftRules.js`** (cùng `ui/roles.js`), không đặt ở `src/ai/draftBot.js` như 02 gợi ý: cấm/chọn không
+  bao giờ chạy trong mô phỏng, để ở `ai/` dễ kéo theo import mô phỏng.
+- **Đi rừng mang sẵn Trừng Trị**: vị trí có `ROLE_SPELL` (đi rừng) thì chọn tướng / cấm chọn chọn sẵn phép đó (báo "Đi rừng: đã mang Trừng
+  Trị"); nhớ riêng ở `profile.spellJungle` để trận không đi rừng vẫn giữ `profile.spell`. Đồ khởi đầu người chơi theo vị trí qua
+  `starterFor(hero, lane, spellId)` (`data/items.js`): đi rừng (chỉ khi mang Trừng Trị) Nanh Thú Rừng + Túi Hạt, trợ thủ đồ trợ thủ, còn lại
+  theo lớp tướng. Máy dùng đúng hàm đó (đồ y như cũ) — mô phỏng hết ghi cứng id đồ / phép.
+- **Pha chuẩn bị** sau lượt chọn cuối (15 s): ẩn lưới, tướng mình đứng trên sân khấu 3D dùng chung (`stage()`, không tạo ngữ cảnh WebGL thứ
+  hai), đổi phép / bảng bùa, "Sẵn sàng" kết thúc sớm → đội hình → tải → trận như cũ.
+- **CSS mới ở `src/ui/cssDraft.js`** (tự chèn `<style>`), không thêm vào `css.js` (đã 414 dòng). Nhãn vị trí dùng `em.rl` (không đặt lớp `.rl`
+  chung: `.pn-detail .rl` của bảng tướng đã dùng tên đó cho một `<p>`).
+- **Âm thanh**: không thêm file — cấm `ui_lock` (nhỏ, trầm), mình khoá `ui_lock`, máy chọn `ui_select`, tới lượt `ui_confirm`, 5 s cuối `ui_tick`;
+  `ban` / `skip` / `lock` bỏ khỏi bộ nghe chung (draft.js tự phát).
+- **Hộp thoại phép / bùa tách ra `src/ui/pickLoadout.js`** (không đặt tên `loadout.js` như spec — tên đó để dành cho module dữ liệu của cụm kế).
+- **Đồ khởi đầu của người chơi theo vị trí cả trên đường `?hero=&mode=5v5`**: `game.js` gọi `starterFor(hero, player.role, phép)` nên người
+  chơi rơi vào ô Trợ thủ (do đường ưu tiên của tướng) giờ nhận đồ trợ thủ thay vì đồ theo lớp — đúng như máy cùng ô. Đi rừng chỉ nhận Nanh
+  Thú Rừng khi thật sự mang Trừng Trị (`?role=jungle` không kèm phép thì vẫn đồ theo lớp).
+- *Khác spec (số dòng):* spec trỏ `main.js` dòng 117/138/152 nhưng file thật chỉ ~58 dòng; đã sửa theo code thật (import + `injectDraftCss()`
+  cạnh `injectCss()`, `?role=` ở nhánh `?hero=`).
+
+## GĐ2 — phép bổ trợ, bảng bùa, phù hiệu (20/10)
+- **Phép theo `kind`, không theo id**: mỗi phép có `kind` (`blink, heal, execute, smite, haste, cleanse, towerOff, flashStun, warDrum, hex`);
+  mô phỏng (`sim/spells.js`), bot (`ai/botSkills.js`, `ai/botSpells.js`) và HUD (`hud/spellButtons.js`) rẽ nhánh theo `kind`. Phép cần mục
+  tiêu có `needTarget` — không có mục tiêu: `castFail 'noTarget'`, không mất hồi chiêu (luật cũ của Trừng Trị, giờ chung cho cả 4).
+- **4 phép mới, tên tự đặt**: Tắt Đèn (90s, trụ / nhà chính gần nhất trong 900 ngừng bắn 4s), Loá Mắt (110s, choáng 0,75s mọi tướng địch thấy
+  được trong 380), Trống Trận (100s, +30% tốc đánh +10% Công / đồng minh một nửa, 5s), Bùa Mỏi (100s, giảm 35% sát thương gây ra + chậm 25%
+  3s). Cả 4 dùng được ở 1v1.
+- **Tắt Đèn là trường `disabledUntil` trên công trình**, không phải trạng thái: `applyStatus` từ chối công trình. Tung lại thì lấy `max`.
+  Đang tắt: không bắn, xoá chuỗi bắn / thù hận mỗi nhịp; đạn đã bay vẫn tới; hồi máu / miễn sát thương của trụ không đổi.
+- **"Suy yếu" (weaken) là khống chế**: nằm trong CC + TENACITY, Giải Trói xoá, miễn khống chế chặn. Nhân vào **sát thương của người bị dán**
+  (mọi loại kể cả chuẩn và theo thời gian) sau hook của người gây, trước giảm giáp.
+- **Loá Mắt bỏ qua tướng đang miễn khống chế** khi đếm "trúng" (sửa lúc kiểm thử: trước đó tướng vừa Giải Trói vẫn bị tính trúng).
+- **Bộ trang bị vào mô phỏng chỉ qua `world.setLoadout(e, { spellId, charm, emblem })`, chỉ nhận ở tick 0** (sau đó trả false, không đổi gì).
+  Dữ liệu làm sạch bằng `sanitizePage` / `sanitizeEmblem` (localStorage hỏng / sửa tay không lọt vào trận). Cùng seed + cùng bộ ⇒ cùng trận.
+  `spawnHero` **không** gắn phù hiệu (giữ nguyên mọi số đo cũ); `setupTeams` gắn cho bot; `game.js` gắn cho người chơi (`opts.loadout`) và bot 1v1.
+- **Phù hiệu chạy theo `kind`** (`sim/emblems.js`), gọi từ đúng 2 chỗ trong `dealDamage` (trước giảm giáp: Săn Mồi; sau khi trừ máu: phù hiệu
+  chính của người gây / người nhận) — không thêm hook vào tướng. Sát thương phù hiệu / theo thời gian / phản không kích phù hiệu.
+- **Bảng bùa**: ô trống được; cấp = số ô đã gắn; 5 trang mẫu chỉ đọc, **sửa trang mẫu là tự tạo bản sao** (đỡ một bước "sao chép" trên điện
+  thoại); tối đa 10 trang riêng (id `u1..u10`, lấy id nhỏ nhất còn trống); nhớ trang theo tướng (`profile.heroPage`, ghi lúc chốt tướng);
+  phù hiệu theo tướng (`profile.emblems`). Trường cũ `profile.page` không còn đọc. **Mở hết 15 bùa** — tiền "Xu Đèn" của 05 §7 để sau.
+- **Kho dữ liệu không DOM** (`ui/loadout.js`) tách khỏi giao diện (`charmEditor.js`, `emblemEditor.js`, `loadoutPanel.js`) để kiểm bằng node
+  (`tools/t_charms.mjs`). CSS riêng `ui/loadoutCss.js` (css.js đã quá dài).
+- **Âm thanh / hình phép mới dùng lại bộ có sẵn** (không dựng lại `sfx.mp3`): Trống Trận `horn`, Loá Mắt `light_cast`, Tắt Đèn `tower_down`,
+  Bùa Mỏi `arcane_hit`; phù hiệu `fire_hit` / `haste` / `heal` (Mai Rùa dùng tiếng khiên sẵn có). Biểu tượng phép / phù hiệu là huy hiệu SVG
+  (`hud/art.js`) — chưa vẽ ảnh webp như 6 phép cũ. Hiệu ứng 3D trong `render/vfx/extra.js`, không vẽ khi kẻ tung đang trong sương mù.
+- **Màn tải trận lấy phép máy từ đúng hàm của mô phỏng** (`assignSlots` + `botSpellOf`) — trước đây đoán theo `defaultSpell` nên sai với máy
+  đi rừng.
+

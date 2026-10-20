@@ -377,3 +377,46 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 - Kiểm thử: `node tools/t_pings.mjs`.
 - Thử trên điện thoại: chạm nút cờ cạnh bản đồ nhỏ → chọn Tập hợp → chạm hang Long Ngư trên bản đồ nhỏ: dòng chữ hiện, bot đồng đội báo
   "Tới ngay!" và kéo tới; Rút lui gần bot thì bot lùi; bị choáng thấy ô "CHOÁNG 1,2s" dưới chân; mua nhanh hiện 2 món không đè cần di chuyển.
+
+## GĐ2 (20/10) — chọn vị trí + cấm/chọn đấu hạng
+- **Phòng chờ 5v5**: nút vị trí dưới ô của mình ("Chọn vị trí" nhấp nháy khi chưa chọn) → hộp Vị trí chính (Đền / Giữa / Sông / Rừng / Trợ
+  thủ / Tuỳ ý) + Vị trí phụ; Bắt đầu khi chưa chọn thì mở hộp trước. Đấu hạng ghi luật "Cấm/chọn Cơ bản · 4 cấm / Đầy đủ · 6 cấm". Tìm thấy
+  trận: chia vị trí (85% vị trí chính), hộp chấp nhận ghi "Vị trí của bạn: Đi rừng (vị trí phụ)".
+- **Đấu thường (chọn ẩn) có vị trí**: mỗi dòng đội ghi vị trí, lưới xếp tướng hợp vị trí lên đầu + nhãn "Đề cử", máy chọn tướng hợp vị trí,
+  đối thủ chọn ẩn theo vị trí của họ; đi rừng chọn sẵn Trừng Trị.
+- **Đấu hạng → Cấm/chọn** (`src/ui/draft.js`): hàng ô cấm hai bên, đồng hồ lượt, cột Xanh / Đỏ (vị trí, "Đang cấm… / Đang chọn…", tướng đã
+  chọn), lưới lọc Tất cả / Đề cử / theo vị trí, Cấm / Bỏ qua / Khoá tướng; dưới Hải Đăng 2 cấm mỗi bên, từ Hải Đăng đủ 3 (07 §7.3). Xong:
+  15 s chuẩn bị (tướng trên sân khấu, phép bổ trợ, bảng bùa, Sẵn sàng) → đội hình (có vị trí) → tải trận (máy đi rừng hiện Trừng Trị) → trận.
+- **Vị trí vào trận**: `startMatch` nhận `playerRole / allyRoles / foeRoles`; mỗi tướng đứng đúng ô đã chia; người chơi đi rừng có Trừng Trị +
+  Nanh Thú Rừng. Gọi không có vị trí: y như cũ (băm `t_determinism 8 1` trước/sau trùng nhau).
+- File mới: `src/data/roles.js`, `src/data/draft.js`, `src/ui/roles.js`, `src/ui/draftRules.js`, `src/ui/roleSelect.js`, `src/ui/pickLoadout.js`,
+  `src/ui/draft.js`, `src/ui/cssDraft.js`; sửa nhỏ `sim/lineup.js` (ghim ô), `game.js`, `main.js`, `data/items.js` (`starterFor`), `ui/room.js`,
+  `ui/pick.js`, `ui/flow.js`, `ui/lineup.js`, `ui/loading.js`, `ui/profile.js`, `audio/uiSounds.js`.
+- Kiểm thử: `node tools/t_draft.mjs` (thứ tự lượt, 3000 ván máy: không trùng / không chọn tướng bị cấm / không tự cấm tướng được bảo vệ, 98,7%
+  tướng máy chọn hợp vị trí, tất định theo seed, chia vị trí 85%, tướng tủ bị cấm ~50%), `node tools/t_lineup_roles.mjs` (vị trí vào sim, đường
+  cũ giữ nguyên 20 seed, trùng tướng hai đội, đồ khởi đầu, 2 phút trận người chơi đi rừng), trình duyệt `node tools/b_flow.cjs <cổng>` (cần máy
+  chủ tĩnh) hoặc `node tools/t_ui_draft.mjs [cổng]` (tự mở máy chủ): Sảnh → Đấu hạng → Phòng chờ → Tìm trận → Chấp nhận → Cấm/chọn → Chuẩn
+  bị → Đội hình → Tải → Trận ở 844×390 (lite) và 1280×720 (full), Đấu thường ở cả hai cỡ, hộp chọn vị trí; đo trong khung nhìn, không cuộn
+  ngang, không lỗi trang / console.
+- Danh sách thử trên điện thoại: 19,5:9 ngang + máy tính bảng 16:9 — Sảnh → Đấu hạng → Phòng chờ (nút Vị trí) → Tìm trận → Chấp nhận (hiện vị
+  trí) → Cấm/chọn (Cơ bản ở Đèn Dầu, Đầy đủ ở Hải Đăng) → Chuẩn bị → Đội hình → Tải → Trận (đúng đường; đi rừng có Trừng Trị + Nanh Thú Rừng) →
+  Kết quả → Đấu lại về phòng chờ, vị trí vẫn giữ.
+- **Kiểm chứng lượt hoàn thiện (20/10):** `node tools/b_flow.cjs 8781` cả 5 kịch bản đạt — ranked844 (Đèn Dầu → lite, 2 cấm mỗi bên),
+  ranked1280 (Hải Đăng → full, 3 cấm mỗi bên), normal844, normal1280, role844 — vào trận đúng vị trí / đúng tướng, đi rừng có Trừng Trị +
+  Nanh Thú Rừng, tướng bị cấm không có trong trận, không lỗi trang / console; ảnh ở `/tmp/claude-0/shots/gd2a/`. `t_determinism 8 1`:
+  băm 5v5 / 1v1 trùng khớp bản trước cụm này (e6c2888). Sửa thêm: ô tướng bị cấm trong lưới có nền tối để chữ "Bị cấm" không đè lên tên tướng.
+
+## GĐ2 (20/10) — phép bổ trợ, bảng bùa tự xếp, phù hiệu
+- **4 phép mới** (10 phép): Tắt Đèn, Loá Mắt, Trống Trận, Bùa Mỏi — hộp chọn phép theo thứ tự `SPELL_LIST`, nút xám khi không có mục tiêu,
+  hiệu ứng / tiếng / biểu tượng; bot 5v5 mang phép theo vị trí + vai và biết dùng (`ai/botSpells.js`).
+- **Bảng Bùa** ở Sảnh (nút thứ 5 thanh dưới trái): thẻ Bảng bùa (5 trang mẫu + 10 trang riêng, 3×5 ô, ×5, sao chép / gỡ hết / xoá / đổi tên,
+  tổng chỉ số, cấp n/15) và thẻ Phù hiệu (4 phù hiệu chính + 2 hàng nét phụ, theo từng tướng, "Mặc định theo vai").
+- **Màn chọn tướng / chuẩn bị cấm-chọn**: nút "Bùa · <trang> Cấp n" mở hộp chọn trang nhanh (+ "Chỉnh trang" → "Dùng trang này"), nút "Phù hiệu ·
+  <tên>" mở thẻ phù hiệu của tướng đang xem. Vào trận mang đúng phép + trang + phù hiệu (`world.setLoadout`).
+- File mới: `src/sim/emblems.js`, `src/data/emblems.js`, `src/ai/botSpells.js`, `src/ui/loadout.js`, `src/ui/loadoutPanel.js`,
+  `src/ui/charmEditor.js`, `src/ui/emblemEditor.js`, `src/ui/charmArt.js`, `src/ui/loadoutCss.js`.
+- Kiểm thử: `node tools/t_spells.mjs` (4 phép: mục tiêu, hồi chiêu, khống chế, bot dùng đúng lúc), `node tools/t_emblems.mjs` (4 phù hiệu + nét phụ,
+  `setLoadout` tick 0, làm sạch dữ liệu, tất định), `node tools/t_charms.mjs` (kho trang: bản sao, giới hạn 10, xoá, hồ sơ hỏng, gói vào trận);
+  trình duyệt `node tools/b_flow.cjs <cổng> loadout844 loadout1280`: Sảnh → Bảng Bùa → sửa trang mẫu (tự sao) → ×5 → gỡ ô → Phù hiệu → Đấu
+  thường → chọn tướng → hộp trang → vào trận đúng trang + phù hiệu, nằm trọn màn hình, không lỗi console.
+

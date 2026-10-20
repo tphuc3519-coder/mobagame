@@ -11,7 +11,7 @@ export const MODES = {
   training: { name: 'Luyện tập', short: 'Luyện tập', size: 1, map: '1v1', mapName: 'Đường Đơn Suối Đèn', room: false },
 };
 /** Trận đang chuẩn bị: mode; party (bạn bè đã vào phòng); match (người chơi hai đội sau khi ghép: { allies, foes, seed });
- *  pick (sau chọn tướng: { heroId, spellId, charmId, allyHeroes, foeHeroes, dummies }). */
+ *  pick (sau chọn tướng: { heroId, spellId, charmId, charm (trang bùa đã làm sạch), emblem (phù hiệu), allyHeroes, foeHeroes, dummies }). */
 export const S = { mode: 'normal', party: [], match: null, pick: null };
 /** Độ khó máy của chế độ (theo hồ sơ hiện tại). */
 export function modeDiff(mode) {
