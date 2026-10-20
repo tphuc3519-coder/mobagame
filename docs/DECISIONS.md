@@ -706,3 +706,8 @@
 - **Âm thanh**: không thêm file — cấm `ui_lock` (nhỏ, trầm), mình khoá `ui_lock`, máy chọn `ui_select`, tới lượt `ui_confirm`, 5 s cuối `ui_tick`;
   `ban` / `skip` / `lock` bỏ khỏi bộ nghe chung (draft.js tự phát).
 - **Hộp thoại phép / bùa tách ra `src/ui/pickLoadout.js`** (không đặt tên `loadout.js` như spec — tên đó để dành cho module dữ liệu của cụm kế).
+- **Đồ khởi đầu của người chơi theo vị trí cả trên đường `?hero=&mode=5v5`**: `game.js` gọi `starterFor(hero, player.role, phép)` nên người
+  chơi rơi vào ô Trợ thủ (do đường ưu tiên của tướng) giờ nhận đồ trợ thủ thay vì đồ theo lớp — đúng như máy cùng ô. Đi rừng chỉ nhận Nanh
+  Thú Rừng khi thật sự mang Trừng Trị (`?role=jungle` không kèm phép thì vẫn đồ theo lớp).
+- *Khác spec (số dòng):* spec trỏ `main.js` dòng 117/138/152 nhưng file thật chỉ ~58 dòng; đã sửa theo code thật (import + `injectDraftCss()`
+  cạnh `injectCss()`, `?role=` ở nhánh `?hero=`).

@@ -52,7 +52,7 @@ const CSS = `
 #draft .hc.hide { display: none; }
 #draft .hc.ban { filter: grayscale(1) brightness(.5); }
 #draft .hc.ban::after, #draft .hc.ally::after, #draft .hc.mine::after, #draft .hc.foe::after { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.66); font: 700 12px var(--u-disp); letter-spacing: .06em; text-transform: uppercase; color: #ffcf8a; }
-#draft .hc.ban::after { content: 'Bị cấm'; background: linear-gradient(45deg, transparent 46%, rgba(255,58,42,.9) 46% 54%, transparent 54%); color: #ffb4a4; }
+#draft .hc.ban::after { content: 'Bị cấm'; background: linear-gradient(45deg, transparent 46%, rgba(255,58,42,.9) 46% 54%, transparent 54%), rgba(0,0,0,.62); color: #ffb4a4; }
 #draft .hc.ally::after { content: 'Đồng đội'; } #draft .hc.mine::after { content: 'Bạn'; color: #ffe08a; } #draft .hc.foe::after { content: 'Đối thủ'; color: #ff9a8a; }
 .hc em.rec, #pick .hc em.rec, #draft .hc em.rec { position: absolute; top: 3px; left: 3px; right: auto; padding: 1px 5px; border-radius: 4px; background: var(--u-gold); color: #3b1a02; font: 800 italic 9.5px/1.2 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; }
 #draft .dr-bar { position: absolute; left: calc(var(--l) + var(--colw) + 10px); right: calc(var(--r) + var(--colw) + 10px); bottom: var(--b); height: var(--bar); display: flex; align-items: center; gap: 8px; }

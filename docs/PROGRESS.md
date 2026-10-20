@@ -350,3 +350,7 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 - Danh sách thử trên điện thoại: 19,5:9 ngang + máy tính bảng 16:9 — Sảnh → Đấu hạng → Phòng chờ (nút Vị trí) → Tìm trận → Chấp nhận (hiện vị
   trí) → Cấm/chọn (Cơ bản ở Đèn Dầu, Đầy đủ ở Hải Đăng) → Chuẩn bị → Đội hình → Tải → Trận (đúng đường; đi rừng có Trừng Trị + Nanh Thú Rừng) →
   Kết quả → Đấu lại về phòng chờ, vị trí vẫn giữ.
+- **Kiểm chứng lượt hoàn thiện (20/10):** `node tools/b_flow.cjs 8781` cả 5 kịch bản đạt — ranked844 (Đèn Dầu → lite, 2 cấm mỗi bên),
+  ranked1280 (Hải Đăng → full, 3 cấm mỗi bên), normal844, normal1280, role844 — vào trận đúng vị trí / đúng tướng, đi rừng có Trừng Trị +
+  Nanh Thú Rừng, tướng bị cấm không có trong trận, không lỗi trang / console; ảnh ở `/tmp/claude-0/shots/gd2a/`. `t_determinism 8 1`:
+  băm 5v5 / 1v1 trùng khớp bản trước cụm này (e6c2888). Sửa thêm: ô tướng bị cấm trong lưới có nền tối để chữ "Bị cấm" không đè lên tên tướng.
