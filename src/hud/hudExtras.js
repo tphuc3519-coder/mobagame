@@ -7,6 +7,7 @@ import { prefs, onPref } from '../core/prefs.js';
 import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
 import { cardSrc } from '../ui/kit.js';
+import { on, currentScope } from '../core/scope.js';
 
 const STYLE = `
 body.no-rec #qb { display: none !important; }
@@ -20,16 +21,18 @@ body.no-idesc .shop .note, body.no-idesc #qb .qn small { display: none !importan
 @keyframes ultShine { to { transform: translateX(100%); } }
 `;
 
+let styled = false;
 export function createHudExtras({ portraits = null } = {}) {
-  const st = document.createElement('style'); st.textContent = STYLE; document.head.append(st);
+  const sc = currentScope(); // phần tử tạo sau (băng-rôn chiêu cuối) vẫn gỡ khi rời trận
+  if (!styled) { styled = true; const st = document.createElement('style'); st.textContent = STYLE; document.head.append(st); } // một lần cho cả phiên (đấu lại trong trang)
   const classes = () => { const p = prefs(); document.body.classList.toggle('no-rec', !p.recommend); document.body.classList.toggle('no-idesc', !p.itemDesc); };
   classes(); onPref((k) => { if (k === 'recommend' || k === 'itemDesc') classes(); });
   let splash = null, lastHit = null, mmw = 0;
   const mm = () => (mmw ||= parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mmw')) || 160);
-  addEventListener('resize', () => { mmw = 0; });
+  on(window, 'resize', () => { mmw = 0; });
 
   function ult(heroId) {
-    if (!splash) { splash = document.createElement('div'); splash.className = 'ultsplash'; splash.innerHTML = '<img alt="">'; document.body.append(splash); }
+    if (!splash) { splash = document.createElement('div'); splash.className = 'ultsplash'; splash.innerHTML = '<img alt="">'; document.body.append(splash); sc?.node(splash); }
     splash.firstChild.src = cardSrc(heroId); splash.classList.remove('on'); void splash.offsetWidth; splash.classList.add('on');
   }
 

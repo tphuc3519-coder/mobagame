@@ -18,6 +18,7 @@ import { pref } from '../core/prefs.js';
 import { canTarget } from '../sim/vision.js';
 import { pickItemTarget } from '../sim/itemActives.js';
 import { isLocked } from '../sim/status.js';
+import { on } from '../core/scope.js';
 
 const HOLD = 350;
 const TAP = { move: 'hướng đang chạy (đứng yên: hướng nhìn)', skill: 'hướng chiêu vừa ngắm', enemy: 'về phía tướng địch gần nhất' }; // chạm nhanh phép có hướng (flashDir)
@@ -108,7 +109,7 @@ export function createSpellButtons(root, { world, player, indicators, lockId = (
     };
     b.addEventListener('pointerup', (e) => end(e, false)); b.addEventListener('pointercancel', (e) => end(e, true));
   }
-  addEventListener('keydown', (e) => {
+  on(window, 'keydown', (e) => {
     if (e.repeat) return; const k = e.key.toLowerCase();
     if (k === 'f') act.spell(null); else if (k === 'r' || k === 'b') act.recall(); else if (k === 'h') act.restore(); else if (k === 'e') act.itemAct0(null); else if (k === 'q') act.itemAct1?.(null);
   });

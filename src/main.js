@@ -9,7 +9,9 @@ import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
 import { faceSrc, cardSrc, ICONS, iconSrc, toast } from './ui/kit.js';
 import { profile, rankOf } from './ui/profile.js';
 import { FRIENDS } from './ui/people.js';
-import { enter, takeNext } from './ui/flow.js';
+import { enter, takeNext, canPromptUpdate } from './ui/flow.js';
+import { initPwa, warmHeroes } from './ui/pwa.js';
+import { LITE } from './render/assets.js';
 import { loadAudio } from './audio/audio.js';
 import { hookUiSounds } from './audio/uiSounds.js';
 import { prefs } from './core/prefs.js';
@@ -26,6 +28,7 @@ document.getElementById('fs').onclick = async () => {
   try { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape'); } catch (_) { /* tuỳ thiết bị */ }
 };
 injectCss(); injectDraftCss();
+initPwa({ canPrompt: canPromptUpdate }); // cài như ứng dụng + chơi không mạng (src/ui/pwa.js, sw.js)
 loadAudio(); hookUiSounds(); // âm thanh: tải + giải mã song song với màn tải game (không chặn vào game); phát được sau lần chạm đầu
 // model tướng tải lỗi hẳn (sau các lần thử lại): báo kèm lỗi (để biết lý do khi chơi trên điện thoại); game tự thử lại sau
 const failShown = new Map();
@@ -54,5 +57,5 @@ if (q.has('hero')) {
   enter(next);
   bootDone();
   // model trong trận của các tướng: tải dần lúc người chơi còn ở sảnh để màn tải trận nhanh (Cài đặt → Dữ liệu → Tiết kiệm dữ liệu: bỏ)
-  if (!prefs().saveData) setTimeout(() => ALPHA.reduce((pr, id) => pr.then(() => loadHero(id)), Promise.resolve()), 2500);
+  if (!prefs().saveData) setTimeout(() => { ALPHA.reduce((pr, id) => pr.then(() => loadHero(id)), Promise.resolve()); warmHeroes(ALPHA, LITE); }, 2500); // + nhờ service worker lưu để chơi không mạng
 }

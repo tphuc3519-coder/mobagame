@@ -8,19 +8,20 @@ export function makeEnvMap(renderer) {
   s.add(new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xc4c8d8, side: THREE.BackSide })));
   const l = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd9a0 })); l.position.set(3, 3, 3); s.add(l);
   const tex = pm.fromScene(s, 0.04).texture;
-  pm.dispose();
+  pm.dispose(); s.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); // cảnh tạm: trả GPU
   return tex;
 }
 
 /** Ánh sáng: hemisphere + 1 directional (ấm) + env map nhỏ (02 §13.3). Cảnh tĩnh dùng bóng nướng sẵn (ground.js, cùng hướng nắng);
  *  nắng đổ bóng thật cho nhân vật/quái/lính trong khung hình quanh camera (hộp bóng đi theo camera).
  *  opts: { shadow: cỡ bản đồ bóng, on: bật bóng } (hoặc chuỗi mức cũ 'low' | 'mid' | 'high'). */
+const ENV = new WeakMap();
 export function addLights(scene, renderer, opts = 'mid') {
   const o = typeof opts === 'string' ? { shadow: LEVELS[opts]?.shadow || 0, on: !!LEVELS[opts]?.shadow } : opts;
   scene.add(new THREE.HemisphereLight(0xd8eaff, 0x34505a, 0.75)); // trời lam nhạt, đất phản lam ngọc → bóng mát kiểu Liên Quân
   const key = new THREE.DirectionalLight(0xffe6c4, 1.75); key.position.set(600, 1200, 800); scene.add(key, key.target);
   const rim = new THREE.DirectionalLight(0x8fc8ff, 0.9); rim.position.set(-800, 700, -800); scene.add(rim);
-  scene.environment = makeEnvMap(renderer);
+  scene.environment = ENV.get(renderer) || (ENV.set(renderer, makeEnvMap(renderer)), ENV.get(renderer)); // một bản cho mỗi renderer (đấu lại không dựng lại)
   let size = renderer.shadowMap.enabled ? o.shadow || 1024 : 0;
   const dir = new THREE.Vector3(600, 1200, 800).normalize();
   if (size) {
@@ -57,6 +58,8 @@ export function addLights(scene, renderer, opts = 'mid') {
       key.shadow.mapSize.set(n, n); key.shadow.map?.dispose(); key.shadow.map = null; renderer.shadowMap.needsUpdate = true;
     },
     get shadowsOn() { return !!size && !off; },
+    /** Rời trận: trả bản đồ bóng. */
+    dispose() { key.shadow.dispose(); },
   };
   if (size && !o.on) api.setShadows(false);
   return api;

@@ -420,3 +420,27 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
   trình duyệt `node tools/b_flow.cjs <cổng> loadout844 loadout1280`: Sảnh → Bảng Bùa → sửa trang mẫu (tự sao) → ×5 → gỡ ô → Phù hiệu → Đấu
   thường → chọn tướng → hộp trang → vào trận đúng trang + phù hiệu, nằm trọn màn hình, không lỗi console.
 
+## GĐ2 (20/10) — gộp hai cụm + HUD còn thiếu
+- Gộp cụm trong trận (khoá mục tiêu, áp chế, 3 đồ kích hoạt, 4 tín hiệu, Quét Sạch, mua nhanh 2 món, thanh thời gian khống chế) và cụm tiền
+  trận (chọn vị trí, cấm/chọn, 4 phép, bảng bùa, phù hiệu) vào nhánh chính. Sửa khi gộp: lệnh tín hiệu chen giữa `if/else` khối mục tiêu lớn
+  của não đội làm đội đang đánh dở mục tiêu lớn quên mục tiêu.
+- HUD: chữ "SUY YẾU" trên đầu tướng dính Bùa Mỏi, "TẮT ĐÈN 3s" trên trụ bị Tắt Đèn (vòng tầm trụ mờ đi, mất tia nhắm), chữ nổi tên phù hiệu
+  khi phù hiệu của mình kích hoạt.
+- Kiểm chứng: `node tools/b_flow.cjs <cổng> ranked844 ranked1280` (Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả, 19,5:9 và 16:9,
+  không lỗi), `b_match.cjs --only=pings`, cả bộ `tools/t_*.mjs`; 50 trận bot: trung vị 16,4 phút, Xanh 46%, mục tiêu lớn 4,2 / trận, 0 lỗi.
+
+## GĐ3 (20/10) — kết thúc trận, đấu lại trong trang, cài như ứng dụng
+- **Cuối trận**: camera lướt tới nhà chính bên thua rồi nổ + rung (cả khi đầu hàng); băng-rôn rồi màn kết quả như cũ.
+- **Màn kết quả → Chi tiết**: mỗi người 3 ô phần trăm có thanh (sát thương lên tướng, gánh chịu, tham gia / 1v1: tỉ lệ hạ) + trang bị;
+  bảng Số liệu thêm 5 cột.
+- **Đấu lại / Về sảnh không tải lại trang**: đo bằng `tools/b_gd3.cjs` (máy không GPU, CPU giả lập chậm 4×): **về phòng chờ 0,3 s** (trước:
+  tải lại cả trang); trận 2 dịch sẵn **0,46 s** thay vì 7,1 s; sau khi dọn: 0 hình khối trên GPU, 3 ảnh dùng chung cả phiên (không tăng qua
+  3 trận), listener window / document / body không dồn qua các trận, không còn phần tử HUD.
+- **Cài như ứng dụng + chơi không mạng**: đo bằng `tools/b_pwa.cjs`: tải sẵn 429 tệp / 13,8 MB, Sảnh lưu đủ 20 tướng, Chrome báo cài được,
+  tắt mạng vẫn mở tới Sảnh và đánh trận 1v1 không hỏng yêu cầu nào; đẩy bản mới → hộp "Có bản mới" ở Sảnh → Cập nhật → đúng bản mới,
+  chỉ tệp đổi được tải lại, không tải lại model tướng.
+- Kiểm thử mới: `t_share.mjs`, `t_scope.mjs`, `t_dispose.mjs`, `t_endcam.mjs`, `t_pwa.mjs` (node); `b_gd3.cjs`, `b_pwa.cjs` (trình duyệt).
+- Danh sách thử trên điện thoại: Android Chrome → Cài đặt → Dữ liệu → "Thêm vào màn hình chính" → mở toàn màn ngang, không có nút toàn màn;
+  bật chế độ máy bay → mở game, đánh một trận 5v5; iPhone Safari → Chia sẻ → Thêm vào MH chính, mở một lần khi có mạng rồi thử không mạng;
+  "Đấu lại" về phòng chờ dưới 3 s; cuối trận thấy nhà chính nổ phía trên băng-rôn ở màn 844×390.
+

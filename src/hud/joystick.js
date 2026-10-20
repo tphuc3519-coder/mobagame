@@ -3,6 +3,7 @@
 // Bán kính 90 px, vùng chết 10% (07 §9). Kéo gần hay hết tầm đều đi đúng một tốc độ (tốc độ chạy của tướng) — chỉ hướng là quan trọng. WASD/mũi tên cho máy tính.
 // Vẽ cần: hud.js (đế ở js.ox/oy khi đang chạm, ở rest() khi nghỉ).
 import { pref } from '../core/prefs.js';
+import { on } from '../core/scope.js';
 
 export function createInput(target) {
   const R = 90, DEAD = 0.1;
@@ -23,14 +24,14 @@ export function createInput(target) {
     if (!js.fixed && l > R) { js.ox = js.x - (dx / l) * R; js.oy = js.y - (dy / l) * R; } // kéo quá bán kính: đế trượt theo ngón (đổi hướng không phải kéo ngược cả đoạn)
   };
   const up = (e) => { if (e.pointerId === js.id) js.active = false; };
-  target.addEventListener('pointerdown', down);
-  target.addEventListener('pointermove', move);
-  target.addEventListener('pointerup', up);
-  target.addEventListener('pointercancel', up);
-  addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
-  addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
-  addEventListener('blur', () => { keys.clear(); js.active = false; }); // rời ứng dụng giữa lúc giữ cần: không để tướng chạy mãi
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); js.active = false; } });
+  on(target, 'pointerdown', down);
+  on(target, 'pointermove', move);
+  on(target, 'pointerup', up);
+  on(target, 'pointercancel', up);
+  on(window, 'keydown', (e) => keys.add(e.key.toLowerCase()));
+  on(window, 'keyup', (e) => keys.delete(e.key.toLowerCase()));
+  on(window, 'blur', () => { keys.clear(); js.active = false; }); // rời ứng dụng giữa lúc giữ cần: không để tướng chạy mãi
+  on(document, 'visibilitychange', () => { if (document.hidden) { keys.clear(); js.active = false; } });
   return {
     js, R, rest,
     /** Vector hướng đơn vị (hoặc 0), trục màn hình (y xuống = +). */

@@ -2,6 +2,7 @@
 import { ITEMS, SHOP_TABS, SELL_RATE, cleanBuild } from '../data/items.js';
 import { planBuy, quickBuys } from '../sim/inventory.js';
 import { itemIcon, coinIcon, statLines } from './icons.js';
+import { on } from '../core/scope.js';
 
 const CART = '<svg class="cart" viewBox="0 0 32 32"><defs><linearGradient id="cartg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c0"/><stop offset="1" stop-color="#e0a83a"/></linearGradient></defs><path d="M3 6h4l3 14h15l3-10H9" fill="none" stroke="url(#cartg)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="25" r="2.4" fill="#ffe08a"/><circle cx="23" cy="25" r="2.4" fill="#ffe08a"/><path d="M13 13h11" stroke="#ffe08a" stroke-width="2"/></svg>';
 const stop = (el) => { for (const t of ['pointerdown', 'pointerup', 'pointermove']) el.addEventListener(t, (e) => e.stopPropagation()); };
@@ -30,7 +31,7 @@ export function createShop(root, { world, player }) {
   const setOpen = (v) => { open = v; shop.classList.toggle('on', v); shop.setAttribute('aria-hidden', String(!v)); sig = ''; };
   $('shopX').onclick = () => setOpen(false);
   $('goldPill').onclick = () => setOpen(!open);
-  addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'b') setOpen(!open); });
+  on(window, 'keydown', (e) => { if (e.key.toLowerCase() === 'b') setOpen(!open); });
 
   tabsEl.innerHTML = SHOP_TABS.map((t) => `<button data-t="${t.id}">${t.name}</button>`).join('');
   tabsEl.onclick = (e) => { const b = e.target.closest('button'); if (b) { tab = b.dataset.t; sel = null; sig = ''; } };

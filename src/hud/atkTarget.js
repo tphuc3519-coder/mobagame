@@ -12,6 +12,7 @@ import { pref, onPref } from '../core/prefs.js';
 import { project } from '../render/project.js';
 import { HERO_SCALE } from '../render/unitView.js';
 import { canTarget } from '../sim/vision.js';
+import { on, track } from '../core/scope.js';
 
 const TAP_PX = 60, TAP_MOVE = 14, TAP_MS = 450, KEEP = 1800;
 /** Khoảng cách điểm (x, y) tới đoạn a–b trên màn hình. */
@@ -44,17 +45,17 @@ export function createAtkTarget({ world, player, camera = null, input = null, vi
     return best;
   }
   const world3d = document.getElementById('world'), taps = new Map(); // ngón đang chạm nền 3D: chỗ chạm, lúc chạm, địch dưới ngón
-  document.body.addEventListener('pointerdown', (e) => {
+  on(document.body, 'pointerdown', (e) => {
     if (e.target !== world3d || pref('atkMode') !== 'manual') return;
     if (input?.js.active && input.js.id === e.pointerId) return; // ngón này vừa thành cần di chuyển (joystick.js nghe trước)
     taps.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now(), hit: pickAt(e.clientX, e.clientY) });
   });
-  document.body.addEventListener('pointermove', (e) => { const t = taps.get(e.pointerId); if (t && Math.hypot(e.clientX - t.x, e.clientY - t.y) > TAP_MOVE) taps.delete(e.pointerId); });
+  on(document.body, 'pointermove', (e) => { const t = taps.get(e.pointerId); if (t && Math.hypot(e.clientX - t.x, e.clientY - t.y) > TAP_MOVE) taps.delete(e.pointerId); });
   const tapUp = (e) => {
     const t = taps.get(e.pointerId); if (!t) return; taps.delete(e.pointerId);
     if (e.type === 'pointerup' && performance.now() - t.t < TAP_MS && pref('atkMode') === 'manual') setLock(valid(t.hit) ? t.hit.id : null); // trúng địch: khoá; đất trống: bỏ khoá
   };
-  document.body.addEventListener('pointerup', tapUp); document.body.addEventListener('pointercancel', tapUp);
+  on(document.body, 'pointerup', tapUp); on(document.body, 'pointercancel', tapUp);
 
   return {
     lockId: () => lock,

@@ -14,6 +14,8 @@ export const lastAim = { dir: null };
 
 let pad = null, xz = null, knob = null, lab = null, owner = null; // owner: nút đang vẽ vòng ngắm (nhiều ngón: nút khác thả ra không tắt nhầm)
 const focus = { pt: null, range: 0 }; // điểm đang ngắm (thế giới) của owner — camAim (camLook.js)
+/** Rời trận: ẩn vòng ngắm / vùng huỷ (phần tử dùng chung cả phiên, không gỡ). */
+export function aimReset() { if (!pad) return; pad.hidden = true; xz.hidden = true; owner = null; focus.pt = null; focus.range = 0; }
 function ensure() {
   if (pad) return;
   pad = document.createElement('div'); pad.className = 'aimpad'; pad.hidden = true; pad.innerHTML = '<i></i><b hidden>Thả để huỷ</b>';

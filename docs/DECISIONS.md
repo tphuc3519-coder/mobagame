@@ -499,13 +499,13 @@
 ## Sảnh và luồng ngoài trận (07/10)
 - **Mọi người chơi khác là máy**, kể cả "bạn bè" (danh sách bạn hư cấu để sảnh có sức sống): tên luôn kèm "[Máy]" ở màn tải, bảng tỉ số,
   kết quả. Ghép trận chỉ là hiệu ứng chờ (3–6 giây).
-- **Rời màn kết quả = tải lại trang** (`sessionStorage` `la.next` nhớ màn cần mở: sảnh hoặc phòng chờ cùng chế độ + bạn trong phòng).
-  Trận dựng nhiều thứ toàn cục (renderer, HUD, trình nghe sự kiện); dọn tay dễ rò rỉ, tải lại vừa sạch vừa nhanh (tài nguyên đã có trong
-  bộ đệm trình duyệt).
+- ~~Rời màn kết quả = tải lại trang~~ → **từ GĐ3 (20/10) rời màn kết quả ngay trong trang** (xem mục GĐ3 cuối tệp); tải lại trang chỉ còn
+  là đường dự phòng (dọn lỗi, hoặc sau `END.reloadEvery` = 12 trận trong một lần mở trang), vẫn qua `sessionStorage` `la.next`.
 - **Ảnh giao diện dựng sẵn từ model** (`tools/uiart.html` + `tools/uiart/render.cjs`): tranh mở màn, nền phòng chờ, thẻ tướng, chân dung
   20 tướng, ảnh toàn thân nền trong 6 tướng — chụp chân dung bằng WebGL lúc chạy (cách cũ) tốn thời gian và bộ nhớ trên điện thoại.
-- **Một ngữ cảnh WebGL**: sân khấu 3D của sảnh / chọn tướng / đội hình dùng chung một renderer, tạm dừng khi bị che, giải phóng ở màn tải
-  trận (trận tạo renderer riêng).
+- **Một ngữ cảnh WebGL ĐANG VẼ tại mỗi lúc**: sân khấu 3D của sảnh / chọn tướng / đội hình dùng chung một renderer, tạm dừng khi bị che,
+  giải phóng ở màn tải trận. Từ GĐ3 renderer trận dùng lại cả phiên: giữa hai trận nó được **cất** (khung vẽ 1×1, canvas ẩn, không còn hình
+  khối / ảnh trên GPU, chỉ giữ chương trình shader) nên ở sảnh có hai ngữ cảnh nhưng chỉ một ngữ cảnh vẽ.
 - **Đơn giản hoá so với 08**: thanh Điểm tích luỹ đầy được dùng ngay trong trận đó (thắng → +1 sao, thua → giữ sao) thay vì để người chơi
   chọn chế độ; Bùa Giữ Sao (MVP thua) tự dùng (không hỏi); chưa có Điểm Hào Quang, Thiên Hà, mùa giải, cấm/chọn. Quà tân thủ 2 bùa;
   nhiệm vụ "Tham gia 3 trận" thưởng thêm 1 bùa.
@@ -861,4 +861,40 @@
   (`hud/art.js`) — chưa vẽ ảnh webp như 6 phép cũ. Hiệu ứng 3D trong `render/vfx/extra.js`, không vẽ khi kẻ tung đang trong sương mù.
 - **Màn tải trận lấy phép máy từ đúng hàm của mô phỏng** (`assignSlots` + `botSpellOf`) — trước đây đoán theo `defaultSpell` nên sai với máy
   đi rừng.
+
+## GĐ3 — kết thúc trận, đấu lại trong trang, cài như ứng dụng (20/10)
+- **Camera cuối trận** (`render/endCam.js`, số ở `data/endgame.js`): nhà chính vỡ (hoặc đầu hàng) → camera trượt êm (smootherstep 0,9 s, không
+  phụ thuộc FPS) tới nhà chính bên thua, lệch xuống 480 để nhà chính nằm nửa trên màn (dải băng-rôn giữa màn không che) + lùi gần 1900; tới
+  0,75 s thì nổ (`fx.coreBlast`: sóng lan, cột sáng, vết cháy, tia lửa, khói) + rung + tiếng `tower_down` (gameSounds không phát tiếng đó
+  cho nhà chính lúc sự kiện nữa để khỏi kêu hai lần). Sương mù chiến trường tắt lúc lướt. **Đầu hàng**: nhà chính trong mô phỏng vẫn sống
+  nhưng phần nhìn vẽ như đã đổ (`views.down(id)`) — chỉ tầng render, mô phỏng không đổi.
+- **Thẻ "Chi tiết" màn kết quả = phần trăm có thanh** (`ui/score.js` `pct100` + `r.pct`): sát thương lên tướng / gánh chịu tính theo đội
+  (chia bằng phần dư lớn nhất nên mỗi đội cộng đúng 100, bằng nhau thì người đứng trước), tham gia = round(100·min(1,(H+HT)/hạ của đội));
+  1v1 tính trên cả trận và cột thứ ba là "Tỉ lệ hạ". Người cao nhất đội tô vàng. Mục tiêu / hồi-khiên / lính-quái dời sang bảng "Số liệu"
+  (5 cột mới) nên không mất số nào. Điểm trận / MVP không đổi (đã kiểm bằng số chụp).
+- **Đấu lại / Về sảnh ngay trong trang** (`ui/flow.js leave`): trận trả `dispose()` — dừng vòng lặp; gỡ mọi listener toàn cục, phần tử gắn
+  body, hẹn giờ, đăng ký cài đặt qua **một phạm vi** (`core/scope.js`: `startMatch` dựng trận trong `enterScope`, module HUD gọi
+  `on()` / `track()`; `onPref` tự gỡ khi có phạm vi); trả bộ nhớ GPU (`render/dispose.js`: hình khối, ảnh — kể cả ảnh gắn qua
+  `onBeforeCompile`, đọc từ `renderer.properties.get(m).uniforms` — khung xương, lưới instanced, render target hậu kỳ, bản đồ bóng);
+  cất renderer (`render/renderer.js park`). **LUẬT: listener toàn cục mới trong trận phải dùng `on()`, phần tử gắn vào body phải bọc `track()`.**
+  Màn kết quả mở ra là gỡ luôn phạm vi trận (cần điều khiển giữ con trỏ chuột trên body — để lại thì chuột không bấm được nút màn kết quả;
+  lỗi này có từ trước, giờ hết).
+- **Giữ chương trình shader giữa các trận**: three r186 đếm tham chiếu chương trình theo vật liệu và khoá chương trình ShaderMaterial theo mã
+  từng chặng shader — huỷ vật liệu trước khi trận sau dịch xong là dịch lại từ đầu. Nên vật liệu trận cũ được **giữ một thế hệ**
+  (`holdMaterials`) và chỉ huỷ sau khi trận mới dịch sẵn xong (`releaseHeld(vật liệu đang dùng)`, gọi trước khi gỡ nhóm lính / quái mẫu).
+  Đo (máy không GPU): trận 1 dịch sẵn 7,1–8,4 s → trận 2 **0,46–0,56 s**, số chương trình đứng yên (69 → 69). PMREM env map giữ một bản
+  mỗi renderer (`WeakMap`). Vật liệu mẫu hiệu ứng (`shapes.js keep`) giữ cả phiên, không chép thêm mỗi trận.
+- **Chính sách 'drop'** (an toàn): từng mất ngữ cảnh WebGL, hoặc `?freshgl` → rời trận huỷ hẳn renderer + `forceContextLoss` + thay canvas
+  mới (trận sau dịch lại như trước GĐ3). `stageDispose()` cũng thay canvas `#show` (canvas đã mất ngữ cảnh không dựng được renderer mới).
+  Lý do giữ mặc định 'keep': iPhone dịch mỗi shader 0,05–0,3 s × ~70–100 chương trình.
+- **Cài như ứng dụng + chơi không mạng**: `manifest.webmanifest` (toàn màn ngang, biểu tượng có maskable), `sw.js` + `tools/mk_sw.mjs`
+  lúc deploy ghi mã commit + danh sách tệp kèm băm SHA-256 (16 ký tự). **Một bộ đệm `la-files`, khoá theo băm** (`đường dẫn?v=băm`): deploy
+  mới chỉ tải lại tệp đổi (model tướng không tải lại khi chỉ đổi code), mã cũ / mới không bao giờ trộn. Tải sẵn lúc cài 429 tệp / 13,8 MB;
+  model 20 tướng (36,7 MB gồm cả bản trưng bày) lưu khi dùng + Sảnh nhờ lưu sau 2,5 s (trừ khi bật Tiết kiệm dữ liệu). Mỗi tệp kiểm băm;
+  lệch (bộ đệm HTTP 10 phút của Pages) thì tải lại bỏ đệm, vẫn lệch thì cài hỏng và bản cũ chạy tiếp.
+- **Không tự `skipWaiting`**: bản mới tải xong thì đang ở màn khởi động áp ngay, còn lại chỉ hỏi "Có bản mới" ở Sảnh / Phòng chờ (không bao
+  giờ giữa chọn tướng / trận / kết quả), "Để sau" hoãn 30 phút. Đăng ký chỉ trên https (localhost cần `?sw` để bộ kiểm thử trên máy không bị
+  bộ đệm chen vào; `?nosw` luôn bỏ). Trong repo (chưa đánh phiên bản) `sw.js` chạy chế độ DEV: lấy mạng trước — sửa code không bị bản cũ.
+- iPhone: ứng dụng ở màn hình chính có bộ nhớ riêng với Safari — **mở một lần khi có mạng** rồi mới chơi không mạng được (ghi ở Cài đặt →
+  Dữ liệu). Đang ở chế độ ứng dụng thì ẩn nút toàn màn (`#fs`, nút ở Sảnh).
 

@@ -2,6 +2,7 @@
 // Lưu trong máy (localStorage 'la.prefs'); cài đặt đồ hoạ để riêng ở render/quality.js ('la.gfx').
 // Đọc: prefs().aimSens hoặc pref('aimSens'). Đổi: setPref(k, v) → lưu ngay + gọi mọi hàm đã đăng ký bằng onPref (áp dụng tức thì trong trận).
 // Giá trị đọc từ máy sai kiểu / ngoài danh sách lựa chọn / ngoài khoảng → về mặc định (không để cài đặt hỏng làm hỏng trận).
+import { currentScope } from './scope.js';
 const KEY = 'la.prefs';
 
 export const PREF_DEFAULTS = Object.freeze({
@@ -78,6 +79,6 @@ export function setPref(k, v) {
   for (const fn of [...subs]) { try { fn(k, v, p); } catch (e) { console.warn(e); } }
 }
 /** Nghe thay đổi cài đặt: fn(khoá, giá trị, toàn bộ). Trả về hàm huỷ đăng ký. */
-export function onPref(fn) { subs.add(fn); return () => subs.delete(fn); }
+export function onPref(fn) { subs.add(fn); const off = () => subs.delete(fn); currentScope()?.add(off); return off; } // trong trận: tự huỷ khi rời trận (core/scope.js)
 /** Đưa các mục về mặc định. */
 export function resetPrefs(keys = Object.keys(PREF_DEFAULTS)) { for (const k of keys) setPref(k, PREF_DEFAULTS[k]); }

@@ -99,7 +99,7 @@ export function createGameSounds({ team, me }) {
         else if (e.kind === 'monster') play('death_monster', at(e, { rate: e.data?.boss ? 0.8 : 1 }));
         break;
       }
-      case 'structureDown': play('tower_down', { vol: 0.85, announce: true }); break; // tin lớn: nghe ở đâu cũng thấy
+      case 'structureDown': if (ev.kind !== 'core') play('tower_down', { vol: 0.85, announce: true }); break; // tin lớn: nghe ở đâu cũng thấy (nhà chính: tiếng nổ phát lúc camera tới — game.js)
       case 'monsterKill': if (ev.boss) play('boss_roar', { vol: 0.85, announce: true }); break;
       case 'orbTaken': { const o = world.orbs?.[ev.orb]; if (o && ev.team === team) play('orb', { x: o.x, y: o.y }); break; }
       case 'recallStart': { const e = ent(ev.id); if (seen(e)) recalls.set(ev.id, play('recall_start', at(e))); break; }
@@ -128,6 +128,8 @@ export function createGameSounds({ team, me }) {
     }
   }
   return {
+    /** Rời trận: tắt tiếng biến về đang kêu, bỏ tham chiếu thế giới. */
+    dispose() { for (const r of recalls.values()) r?.stop?.(0.1); recalls.clear(); vis.clear(); world = null; },
     handle(events, w) { world = w; for (const ev of events) handle(ev); },
     /** Mỗi khung: tâm nghe = tâm camera, hướng "phải" của màn hình; tù và khi đợt lính đầu tiên ra trận. */
     update(w, target, camera) {

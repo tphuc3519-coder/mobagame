@@ -3,8 +3,9 @@ import { loadHero, instantiate } from '../render/assets.js';
 
 // Chân dung tướng (khung đầu-vai) chụp từ model thật bằng renderer của trận, một lần cho mỗi tướng, dùng cho bản đồ nhỏ, bảng tỉ số…
 // get(id) trả canvas khi đã chụp xong, null khi đang chụp (lần đầu gọi sẽ bắt đầu nạp/chụp).
+const DONE = new Map(), PENDING = new Set(); // ảnh 2D chụp xong dùng lại cho mọi trận trong phiên (đấu lại không chụp lại)
 export function createPortraits(renderer, size = 96) {
-  const done = new Map(), pending = new Set();
+  const done = DONE, pending = PENDING;
   async function shoot(id) {
     const m = await loadHero(id); if (!m) return;
     const inst = instantiate(m), obj = inst.object; obj.scale.setScalar(1); // mét, như cảnh trưng bày

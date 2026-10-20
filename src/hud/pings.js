@@ -10,6 +10,7 @@ import { play } from '../audio/audio.js';
 import { canSee } from '../sim/vision.js';
 import { PING, PING_KINDS, PING_ORDER } from '../data/signals.js';
 import { placeName } from './pingText.js';
+import { on, track } from '../core/scope.js';
 
 const KEYS = { z: 'attack', x: 'gather', c: 'retreat', v: 'careful' };
 const SND = { attack: ['ui_lock', 1.2], gather: ['horn', 1.15], retreat: ['ui_back', 1], careful: ['ui_tick', 0.8] };
@@ -40,7 +41,7 @@ export function createPingHud({ world, player, map, cam, minimap, hudCanvas }) {
   const wheel = document.createElement('div'); wheel.id = 'pingWheel'; wheel.hidden = true;
   const hint = document.createElement('div'); hint.id = 'pingHint'; hint.hidden = true;
   const feed = document.createElement('div'); feed.id = 'pingFeed';
-  document.body.append(btn, wheel, hint, feed);
+  document.body.append(track(btn), track(wheel), track(hint), track(feed));
   PING_ORDER.forEach((k, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k; b.style.setProperty('--c', PING_KINDS[k].color); b.innerHTML = svg(k) + `<small>${PING_KINDS[k].name}</small>`; wheel.appendChild(b); b.dataset.i = i; });
 
   let open = false, armed = null, last = 'gather', idle = 0, lastMm = { t: -9, x: 0, y: 0 }, pend = null;
@@ -54,7 +55,7 @@ export function createPingHud({ world, player, map, cam, minimap, hudCanvas }) {
   const close = () => setOpen(false);
   btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); });
   wheel.addEventListener('pointerdown', (e) => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); e.stopPropagation(); const k = b.dataset.k; if (armed === k) send(k, player.pos.x, player.pos.y); else arm(k); });
-  addEventListener('keydown', (e) => { if (e.repeat || e.target.closest?.('input,textarea')) return; const k = e.key.toLowerCase(); if (k === 'g') setOpen(!open); else if (open && KEYS[k]) arm(KEYS[k]); });
+  on(window, 'keydown', (e) => { if (e.repeat || e.target.closest?.('input,textarea')) return; const k = e.key.toLowerCase(); if (k === 'g') setOpen(!open); else if (open && KEYS[k]) arm(KEYS[k]); });
 
   // chạm bản đồ nhỏ / mặt đất: bắt ở pha capture trên window (trước camLook / joystick) và chỉ chặn khi thật sự dùng cú chạm
   const mmPoint = (e) => { const r = minimap.canvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(map.w, (e.clientX - r.left) / r.width * map.w)), y: Math.max(0, Math.min(map.h, (e.clientY - r.top) / r.height * map.h)), r }; };
@@ -72,7 +73,7 @@ export function createPingHud({ world, player, map, cam, minimap, hudCanvas }) {
     return best;
   }
   const place = (kind, p, u) => (u && kind === 'attack' ? send(kind, u.pos.x, u.pos.y, u.id) : send(kind, p.x, p.y));
-  addEventListener('pointerdown', (e) => {
+  on(window, 'pointerdown', (e) => {
     const onMm = e.target === minimap.canvas;
     if (onMm) {
       const pt = mmPoint(e), t = performance.now() / 1000;
@@ -84,7 +85,7 @@ export function createPingHud({ world, player, map, cam, minimap, hudCanvas }) {
     if (e.clientX > innerWidth * 0.45) { const g = groundAt(e.clientX, e.clientY); if (g) place(armed, g, armed === 'attack' && unitAtScreen(e.clientX, e.clientY)); e.stopPropagation(); e.preventDefault(); return; }
     pend = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }; // vùng cần di chuyển: không chặn ngay (joystick vẫn chạy), thả tay nhanh + ít rê mới là chạm đặt tín hiệu
   }, true);
-  addEventListener('pointerup', (e) => {
+  on(window, 'pointerup', (e) => {
     if (!pend || e.pointerId !== pend.id) return; const p = pend; pend = null;
     if (armed && performance.now() - p.t < 280 && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 14) { const g = groundAt(e.clientX, e.clientY); if (g) place(armed, g, armed === 'attack' && unitAtScreen(e.clientX, e.clientY)); }
   }, true);

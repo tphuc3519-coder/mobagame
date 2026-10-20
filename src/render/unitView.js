@@ -42,6 +42,7 @@ const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.ma
 const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
 export function createUnitViews(scene, localTeam, localId, { floor = null, anisotropy = 1 } = {}) { // anisotropy: lọc xiên texture tướng (renderer.capabilities)
   const views = new Map(), aliveIds = new Set();
+  let dead = false; // đã dọn (rời trận): bỏ các lần tải model đang chờ
   // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
   // xương đặt frustumCulled = false (khối bao không theo động tác) nên trước đây cả bản đồ ~70 đơn vị đều vẽ mỗi khung, kể cả lượt bóng.
   // Tướng chỉ ẩn (hiệu ứng bám xương tay/đầu vẫn cần ma trận xương cập nhật).
@@ -78,9 +79,9 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
     // model tải lỗi (mạng chập chờn): hiện hình nhân giữ chỗ ngay, thử tải lại dần (2 s, 4 s … tối đa 15 s) rồi thay bằng model thật
     let tries = 0;
     const tryLoad = () => loadHero(e.heroId).then((m) => {
-      if (views.get(e.id) !== v) return; // đơn vị đã bị gỡ
+      if (dead || views.get(e.id) !== v) return; // đơn vị đã bị gỡ / trận đã dọn
       if (m) return real(m);
-      useCapsule(); setTimeout(tryLoad, Math.min(15000, 2000 * ++tries));
+      useCapsule(); if (!dead) setTimeout(tryLoad, Math.min(15000, 2000 * ++tries));
     }).catch((err) => { console.warn('Model tướng lỗi', e.heroId, err?.message); useCapsule(); });
     tryLoad();
     return v;
@@ -106,6 +107,12 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
   let W = null; // trận của lần update gần nhất (handle chạy trước update trong cùng khung)
   return {
     get: (id) => views.get(id),
+    /** Gốc hình của mọi đơn vị (kể cả lính / quái đang được gỡ khỏi cảnh vì ở xa) — để dọn bộ nhớ GPU khi rời trận. */
+    roots() { const out = []; for (const v of views.values()) { out.push(v.root); if (v.blob) out.push(v.blob); } return out; },
+    /** Rời trận: gỡ mọi đơn vị khỏi cảnh, trả khung xương. */
+    dispose() { dead = true; for (const v of views.values()) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); releaseSkeletons(v.root); } views.clear(); },
+    /** Vẽ công trình như đã đổ (chỉ phần nhìn; mô phỏng không đổi) — nhà chính bên đầu hàng lúc kết thúc trận. */
+    down(id) { const v = views.get(id); if (v) v.forced = true; },
     /** kick(dx, dz, độ): giật camera khi chiêu của người chơi tới tư thế chạm (game.js gắn camera.kick). */
     kick: null,
     handle(events, world = W) {
@@ -144,7 +151,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
           v.root.position.x += v.jx * v.ja * j; v.root.position.z += v.jz * v.ja * j; if (v.jt > 0.12) v.jt = null;
         }
         if (v.blob) { const l = v.animator?.lunge || 0; v.blob.position.set(v.root.position.x + Math.cos(v.angle) * l, v.gy || 0, v.root.position.z + Math.sin(v.angle) * l); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); } // bóng theo cả bước lao tới của lớp thân
-        if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive); continue; }
+        if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive || !!v.forced); continue; } // forced: đầu hàng — nhà chính vẫn sống trong mô phỏng nhưng vẽ đổ
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-(v.snap > 0 ? 55 : 18) * dt)); if (v.snap > 0) v.snap -= dt; // ra đòn: quay phắt về hướng đòn trong ~2 khung
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
         const seen = canSee(localTeam, e), shown = inView(e, rx, v.root.position.y, rz); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ

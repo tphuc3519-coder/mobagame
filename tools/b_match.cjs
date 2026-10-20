@@ -3,13 +3,15 @@
 //             giữ nút Lọng xem mô tả, phím Q dùng Lọng (có khiên); bán Xích mua Dải Lụa Gió, kéo nút sang phải → lướt ~320.
 //  lockon   — Trạng Nhí: kéo K3 về phía tướng địch có 2 Manh Mối → dấu vàng xem trước hiện, lệnh tung mang aim.id đúng tướng đó.
 //  suppress — Bóng Đèn: chạm K2 → tướng địch bị áp chế, Bóng Đèn niệm giữ dây.
+//  pings    — nút cờ mở vòng 4 tín hiệu (không đè bản đồ nhỏ / nút kỹ năng / mép màn); chọn Tập hợp rồi chạm bản đồ nhỏ → tín hiệu vào
+//             mô phỏng, dòng báo bên trái, bot đồng đội nhận lệnh; chạm Rút lui hai lần → tín hiệu ngay chỗ mình.
 // Mỗi cảnh chạy ở 844×390 rồi 1280×720 (đổi cỡ trên cùng trang — dịch shader một lần), chụp ảnh đáy HUD, đếm lỗi trang / console.
 // Chạy: python3 -m http.server <PORT> --bind 127.0.0.1 ở gốc repo, rồi node tools/b_match.cjs <PORT> [--only=items,lockon,suppress] [--shots=<thư mục>]
 const path = require('path'), fs = require('fs');
 let PW; try { PW = require('playwright'); } catch (_) { PW = require('/opt/node22/lib/node_modules/playwright'); }
 const port = +process.argv[2] || 8080;
 const arg = (k, d) => (process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || d;
-const only = arg('only', 'items,lockon,suppress').split(',');
+const only = arg('only', 'items,lockon,suppress,pings').split(',');
 const shots = arg('shots', '/tmp/claude-0/shots/gd2b'), DPR = +arg('dpr', '2');
 fs.mkdirSync(shots, { recursive: true });
 const SIZES = [[844, 390], [1280, 720]];
@@ -156,10 +158,44 @@ async function suppress(browser) {
   await ctx.close();
 }
 
+async function pings(browser) {
+  const { page, ctx, errs } = await open(browser, 'canh_dieu');
+  const box = (sel) => page.evaluate((s) => { const r = document.querySelector(s)?.getBoundingClientRect(); return r && { l: r.left, t: r.top, r: r.right, b: r.bottom }; }, sel);
+  const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+  for (const [W, H] of SIZES) {
+    const tag = `${W}x${H}`;
+    await page.setViewportSize({ width: W, height: H }); await sleep(400);
+    await page.evaluate(() => { const g = window.__game; g.world.pings.length = 0; g.player.pingLog = []; });
+    await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 });
+    const btns = await page.evaluate(() => [...document.querySelectorAll('#pingWheel button')].map((b) => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
+    const mm = await box('#minimap'), skills = await page.evaluate(() => [...document.querySelectorAll('#skills [data-k], #skills button')].map((b) => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
+    const inView = btns.every((r) => r.l >= 0 && r.t >= 0 && r.r <= W && r.b <= H), clash = btns.filter((r) => hit(r, mm) || skills.some((k) => hit(r, k))).length;
+    ok(`${tag}: vòng 4 tín hiệu nằm trong màn, không đè bản đồ nhỏ / nút kỹ năng`, btns.length === 4 && inView && !clash, `${btns.length} nút, đè ${clash}`);
+    await shot(page, `pings_wheel_${tag}.png`);
+    await tap(page, '#pingWheel button[data-k="gather"]');
+    const c = mm && { x: (mm.l + mm.r) / 2, y: (mm.t + mm.b) / 2 };
+    await page.touchscreen.tap(c.x, c.y);
+    const t = await waitFor(page, () => window.__game.world.pings.some((p) => p.kind === 'gather' && p.src === window.__game.player.id), 60);
+    ok(`${tag}: Tập hợp + chạm bản đồ nhỏ → tín hiệu vào mô phỏng`, t >= 0, `${t} tick`);
+    const feed = await page.evaluate(() => document.querySelector('#pingFeed')?.textContent || '');
+    ok(`${tag}: dòng báo bên trái ghi Tập hợp`, /Tập hợp/.test(feed), feed.slice(0, 60));
+    const ack = await waitFor(page, () => [...(window.__game.world.brains?.[0]?.orders?.values() || [])].some((o) => o.kind === 'ping'), 90);
+    ok(`${tag}: bot đồng đội nhận lệnh đi tới`, ack >= 0, `${ack} tick`);
+    await sleep(700);
+    await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="retreat"]', { timeout: 60000 });
+    await tap(page, '#pingWheel button[data-k="retreat"]'); await tap(page, '#pingWheel button[data-k="retreat"]');
+    const r = await waitFor(page, () => { const g = window.__game, p = g.world.pings.find((q) => q.kind === 'retreat' && q.src === g.player.id); return p && Math.hypot(p.x - g.player.pos.x, p.y - g.player.pos.y) < 400; }, 60);
+    ok(`${tag}: chạm Rút lui hai lần → tín hiệu ngay chỗ mình`, r >= 0, `${r} tick`);
+    await shot(page, `pings_${tag}.png`);
+  }
+  ok('pings: không lỗi trang / console', !errs.length, errs.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
 (async () => {
   const browser = await PW.chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   try {
-    for (const [name, fn] of [['items', items], ['lockon', lockon], ['suppress', suppress]]) if (only.includes(name)) { const t0 = Date.now(); await fn(browser); console.log(`(${name}: ${((Date.now() - t0) / 1000).toFixed(0)}s)`); }
+    for (const [name, fn] of [['items', items], ['lockon', lockon], ['suppress', suppress], ['pings', pings]]) if (only.includes(name)) { const t0 = Date.now(); await fn(browser); console.log(`(${name}: ${((Date.now() - t0) / 1000).toFixed(0)}s)`); }
   } catch (e) { console.log('LỖI chạy kịch bản: ' + e.message); fail++; }
   await browser.close();
   console.log(fail ? `${fail} mục LỖI` : 'Tất cả đạt');

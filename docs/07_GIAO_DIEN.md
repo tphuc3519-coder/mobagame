@@ -252,6 +252,12 @@ Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nú
 - Nếu là MVP đội thua và có **Bùa Giữ Sao** trong kho: popup hỏi "Dùng Bùa Giữ Sao để không bị trừ sao?" [Dùng] [Bỏ qua].
 - Nút: Tiếp tục → Nhận thưởng.
 
+> **Đã làm (GĐ3, 20/10):** trước màn kết quả, camera lướt tới nhà chính bên thua rồi nổ (kể cả khi đầu hàng) — nhà chính nằm nửa trên màn,
+> băng-rôn CHIẾN THẮNG / THẤT BẠI giữa màn không che. Màn bảng tỉ số có thẻ **Giản lược** (điểm, K/D/A, vàng) và **Chi tiết**: mỗi người 3 ô
+> phần trăm có thanh — **Sát thương tướng**, **Gánh chịu** (mỗi đội cộng đúng 100%), **Tham gia** (1v1: **Tỉ lệ hạ**, tính trên cả trận),
+> số tuyệt đối nhỏ bên dưới, người cao nhất đội tô vàng, cột trang bị (ẩn ở màn hẹp). Bảng **Số liệu** thêm Gây ST / Chịu ST / Mục tiêu /
+> Hồi-khiên / Lính-quái. **Đấu lại / Sảnh không tải lại trang** (về phòng chờ ~0,3 s). Chưa có: biểu đồ vàng theo thời gian.
+
 ## 11. Nhận thưởng (theo ảnh 2)
 - Nền mờ tối có hạt sáng.
 - Tiêu đề lớn **"Nhận thưởng thành công"** giữa trên, đường trang trí hai bên + hoạ tiết mũi nhọn ở giữa.

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createParticles } from './vfx/particles.js';
 import { createShapes } from './vfx/shapes.js';
 import { createLibrary } from './vfx/library.js';
+import { TILE } from './vfx/atlas.js';
 
 // Hiệu ứng trận: hạt (cộng sáng + trộn thường), hình (sóng, vệt đất, cung chém, xoáy, khiên, cột sáng, xích, vệt vũ khí)
 // và bộ hiệu ứng riêng từng tướng (vfx/library.js). Thêm vòng tầm bắn trụ địch (03 §A4 luật 7).
@@ -21,6 +22,14 @@ export function createFx(scene, opts = {}) {
   return {
     lib,
     warm: () => sh.warm(),
+    /** Nhà chính vỡ (cuối trận): sóng lan, cột sáng, vết cháy, tia lửa + khói. own: nhà chính phe mình (màu lam) / địch (cam). */
+    coreBlast(x, z, own) {
+      const color = own ? 0x7fc8ff : 0xffb050, y = 260;
+      sh.ring(x, z, 80, 1500, { color, core: 0xffffff, width: 0.05, life: 1.3 }); sh.ring(x, z, 40, 800, { color: 0xffffff, core: color, width: 0.1, life: 0.8 });
+      sh.pillar(x, z, 260, 1600, { color, top: 0xffffff, life: 1.2 }); sh.decal('scorch', x, z, 620, { life: 3.2, alpha: 0.85, additive: false });
+      for (let i = 0; i < 70; i++) { const a = Math.random() * 6.283, v = 300 + Math.random() * 900; A.spawn({ x, y, z, vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 300 + Math.random() * 900, life: 0.8 + Math.random() * 0.8, size: [60, 8], color: [0xffffff, color], grav: 900, drag: 1.2, tile: TILE.glow }); }
+      for (let i = 0; i < 26; i++) { const a = Math.random() * 6.283, v = 120 + Math.random() * 380; N.spawn({ x, y: y * 0.6, z, vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 80 + Math.random() * 220, life: 1.4 + Math.random() * 0.9, size: [220, 520], color: [0x9a8a78, 0x2a2420], alpha: [0.55, 0], drag: 1.8, tile: TILE.smoke }); }
+    },
     handle(events, world) { lib.handle(events, world); },
     update(world, dt, player) {
       // vòng tầm bắn của trụ địch: hiện khi tướng mình lại gần 900, đỏ khi đang nhắm mình

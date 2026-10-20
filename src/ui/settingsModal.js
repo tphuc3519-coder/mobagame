@@ -4,6 +4,7 @@
 // ghi "(mặc định)"), công tắc gạt. Dùng chung ở sảnh (nút Cài đặt) và trong trận (bánh răng) — trong trận có nút Đầu hàng ở chân hộp.
 // Đổi là lưu + áp dụng ngay: đồ hoạ qua onGfx (game.js applyGfx; chi tiết cảnh áp dụng trận sau), các mục khác qua core/prefs.js →
 // onPref ở từng phần (điều khiển, HUD, âm thanh…).
+import { canInstall, promptInstall, pwaNote } from './pwa.js';
 import { prefs, setPref, resetPrefs, PREF_DEFAULTS } from '../core/prefs.js';
 import { PRESETS, presetOf, saveGfx } from '../render/quality.js';
 import { sfx } from '../audio/audio.js';
@@ -80,7 +81,9 @@ function schema({ g, gfxSet, inMatch, onReset }) {
     ],
     net: [
       tog('saveData', 'Tiết kiệm dữ liệu', 'Không tải trước hình 3D các tướng khi đang ở sảnh — chỉ tải tướng trong trận lúc vào trận (đỡ tốn 3G/4G)'),
-      { t: 'note', html: 'Trận đấu với máy chạy ngay trên điện thoại: không cần mạng khi đang đấu, chỉ cần khi mở game lần đầu (tải hình, tiếng). Trò chuyện, mic, ping nhanh chưa có vì chưa có chơi trực tuyến.' },
+      ...(canInstall() ? [{ t: 'button', label: 'Cài game vào máy', text: 'Thêm vào màn hình chính', act: () => promptInstall() }] : []),
+      { t: 'note', html: pwaNote() },
+      { t: 'note', html: 'Trận đấu với máy chạy ngay trên điện thoại: không cần mạng khi đang đấu; cài vào màn hình chính thì mở game cũng không cần mạng. Trò chuyện, mic chưa có vì chưa có chơi trực tuyến — tín hiệu (ping) cho đồng đội máy thì đã có.' },
     ],
   };
 }
@@ -116,6 +119,8 @@ function rowHtml(row, i, g) {
 }
 
 let open = null; // một bảng duy nhất
+/** Đóng bảng cài đặt nếu đang mở (hết trận / rời trận). */
+export function closeSettings() { open?.(); }
 
 /**
  * Mở bảng Cài đặt. o: { gfx (đối tượng cài đặt đồ hoạ — sửa tại chỗ), onGfx(k) (trong trận: áp dụng ngay), inMatch,

@@ -1,9 +1,11 @@
 import { project } from '../render/project.js';
+import { KEYSTONES } from '../data/emblems.js';
 import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
 import { floorAt } from '../render/env/floor.js';
 import { createKillBanner } from './killBanner.js';
 import { createHudExtras } from './hudExtras.js';
+import { on } from '../core/scope.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -42,7 +44,7 @@ export function createHud(canvas, input, portraits = null) {
   let lastFail = -9; // lần hiện chữ castFail gần nhất (giây): bấm liên tục không dồn chữ
   const tags = new Map(), mctx = document.createElement('canvas').getContext('2d'); // nhãn vẽ sẵn (tên tướng, huy hiệu cấp)
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; tags.clear(); };
-  addEventListener('resize', resize); resize();
+  on(window, 'resize', resize); resize();
   /** Nhãn vẽ một lần ra canvas nhỏ rồi chỉ dán (drawImage) mỗi khung: strokeText + fillText cho từng tướng mỗi khung là phần nặng nhất của
    *  lớp HUD trên Safari. Chữ chưa tải xong phông thì không lưu (khỏi giữ mãi nhãn phông dự phòng). */
   function tag(key, font, text, bw, bh, paint) {
@@ -135,6 +137,8 @@ export function createHud(canvas, input, portraits = null) {
   }
 
   return {
+    /** Rời trận: xoá canvas HUD (về 1×1), bỏ nhãn / số bay đang giữ. */
+    dispose() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.width = canvas.height = 1; tags.clear(); floats.length = 0; golds.length = 0; },
     /** Xem trước 6 kiểu số sát thương trên đầu một đơn vị (bảng thử ?debug=1). */
     previewDamage(e) {
       const kinds = ['physical', 'magic', 'true'];
@@ -154,6 +158,7 @@ export function createHud(canvas, input, portraits = null) {
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
         if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
+        if (ev.type === 'emblem' && ev.id === world.__localId && KEYSTONES[ev.key]) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: KEYSTONES[ev.key].name, color: '#ffd36a', size: 13, life: 1.0, drift: 0, tilt: 0 }); // phù hiệu kích hoạt
         if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });
         if (ev.type === 'damage' && e.kind === 'monster') monHit.set(e.id, now());
         if (ev.type === 'death') { monHit.delete(ev.id); monTrail.delete(ev.id); }
@@ -223,6 +228,8 @@ export function createHud(canvas, input, portraits = null) {
           if (e.id === player.id) ccPill = { cc, x: p.x };
         }
         else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
+        else if (isHero && e.statuses.some((s) => s.kind === 'weaken' && s.until > world.tick)) { ctx.fillStyle = '#c89aff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('SUY YẾU', p.x, p.y - 48); } // Bùa Mỏi
+        if (e.structure && world.tick < (e.disabledUntil || 0)) { ctx.fillStyle = '#9ad0ff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('TẮT ĐÈN ' + Math.ceil((e.disabledUntil - world.tick) / 30) + 's', p.x, p.y - 14); } // Tắt Đèn
       }
       if (ccPill) { // ô khống chế của mình: viền + nền màu loại khống chế rút dần, chữ "CHOÁNG 1,2s", nằm dưới chân, kẹp trong màn
         const fp = project(cam, player.pos.x, floorAt(world.map, player.pos.x, player.pos.y), player.pos.y, w, h), [label, ccol] = CC_STYLE[ccPill.cc.kind];

@@ -20,6 +20,7 @@ import { pref, onPref } from '../core/prefs.js';
 import { createAtkTarget } from './atkTarget.js';
 import { pickSkillTarget } from '../sim/skillTypes.js';
 import { isHardCC } from '../sim/status.js';
+import { on } from '../core/scope.js';
 
 /** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
  *  đoạn vừa nâng (fresh) loé sáng một nhịp. */
@@ -164,8 +165,8 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
 
   // bàn phím: J giữ để đánh, K ăn lính, L đẩy trụ, 1/2/3 (hoặc U/I/O) tung chiêu tự ngắm
   const KEYS = { 1: 's1', 2: 's2', 3: 's3', u: 's1', i: 's2', o: 's3' };
-  addEventListener('keydown', (e) => { if (e.repeat) return; const k = e.key.toLowerCase(); if (k === 'j' || k === ' ') attackCmd(true); else if (k === 'k' || k === 'l') attackCmd(true, k === 'k' ? 'minion' : 'tower'); else if (KEYS[k]) cast(KEYS[k], autoAim(KEYS[k])); });
-  addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); if (k === 'j' || k === ' ' || k === 'k' || k === 'l') attackCmd(false); });
+  on(window, 'keydown', (e) => { if (e.repeat) return; const k = e.key.toLowerCase(); if (k === 'j' || k === ' ') attackCmd(true); else if (k === 'k' || k === 'l') attackCmd(true, k === 'k' ? 'minion' : 'tower'); else if (KEYS[k]) cast(KEYS[k], autoAim(KEYS[k])); });
+  on(window, 'keyup', (e) => { const k = e.key.toLowerCase(); if (k === 'j' || k === ' ' || k === 'k' || k === 'l') attackCmd(false); });
 
   return {
     /** Mỗi khung hình: hồi chiêu, mana, nút cộng cấp, chỉ báo ngắm. */

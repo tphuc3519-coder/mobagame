@@ -3,6 +3,7 @@
 // tab "Thuộc tính tướng" (máu, công, phép, giáp, kháng phép hiện tại của từng tướng).
 import { itemIcon } from './icons.js';
 import { ICON } from './uiIcons.js';
+import { on, track } from '../core/scope.js';
 
 const IC = {
   clock: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
@@ -31,7 +32,7 @@ export function createScoreboard({ world, player, portraits }) {
   panel.innerHTML = `<header><nav><button data-tab="info" class="on">Thông số tướng</button><button data-tab="stats">Thuộc tính tướng</button></nav><button class="x" aria-label="Đóng">✕</button></header>
     <div class="bars"><div class="tb bl"></div><div class="vs"><b class="k0"></b><em>VS</em><b class="k1"></b></div><div class="tb rd"></div></div>
     <div class="cols"><div class="col bl"></div><div class="col rd"></div></div>`;
-  document.body.append(top, panel);
+  document.body.append(track(top), track(panel));
   for (const el of [top, panel]) for (const t of ['pointerdown', 'pointerup', 'pointermove']) el.addEventListener(t, (e) => e.stopPropagation());
   const $ = (r, s) => r.querySelector(s);
   const q = { clk: $(top, '.clk b'), k: top.querySelectorAll('.kda b'), bl: $(top, '.sc .bl'), rd: $(top, '.sc .rd') };
@@ -39,7 +40,7 @@ export function createScoreboard({ world, player, portraits }) {
   const setOpen = (v) => { open = v; panel.hidden = !v; sig = ''; };
   top.onclick = () => setOpen(!open);
   $(panel, '.x').onclick = () => setOpen(false);
-  addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); setOpen(!open); } });
+  on(window, 'keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); setOpen(!open); } });
   $(panel, 'nav').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; panel.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b)); sig = ''; };
 
   const my = player.team, foe = 1 - my;

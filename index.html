@@ -7,6 +7,12 @@
 <link rel="icon" href="./assets/ui/app/icon.svg" type="image/svg+xml">
 <link rel="icon" href="./assets/ui/app/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="./assets/ui/app/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Đèn Lồng">
+<meta name="la-build" content="__BUILD__">
 <title>Lantern Arena</title>
 <style>
   /* Be Vietnam Pro (SIL OFL 1.1, assets/fonts/OFL.txt): chữ giao diện — thiết kế cho tiếng Việt, dấu rõ, số đều nhau */
@@ -33,6 +39,8 @@
   body { touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; -webkit-touch-callout: none; }
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   #hud { pointer-events: none; }
+  #world.parked { visibility: hidden; } /* renderer trận đang cất (giữa hai trận, đấu lại trong trang) */
+  @media (display-mode: fullscreen), (display-mode: standalone) { #fs { display: none !important; } } /* đã cài như ứng dụng: luôn toàn màn */
   #fs { position: fixed; right: max(10px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); z-index: 5; background: #171b33cc; color: inherit; border: 1px solid #2a3050; border-radius: 6px; padding: 6px 10px; font: inherit; }
   .sb { position: absolute; border-radius: 50%; border: 2px solid #f3e9d6aa; background: #171b33d9; color: #f3e9d6; font: 700 13px 'Be Vietnam Pro', system-ui, sans-serif; overflow: hidden; touch-action: none; display: grid; place-items: center; padding: 0; }
   .sb.down { transform: scale(0.94); border-color: #ffb84d; }
