@@ -21,18 +21,18 @@ export const MONSTERS = {
     teamReward: { gold: 100, xp: 150 },
     buff: { to: 'team', id: 'uy_ho', name: 'Uy Hổ', duration: 120, mod: { atk: 30, ap: 50, dmgReducePct: 0.08 }, desc: '+30 công, +50 phép, giảm 8% sát thương nhận' },
     desc: 'Thần hổ mang sấm. Hạ được: cả đội nhận Uy Hổ 120s.' },
-  // —— hai mục tiêu cuối trận (phút 15) trên hai mũi đá chìa ra vực ở hai đầu sông ——
+  // —— hai mục tiêu cuối trận (phút 12, 03 §A9) trên hai mũi đá chìa ra vực ở hai đầu sông ——
   than_dieu: { name: 'Thần Điểu', camp: 'Tổ Thần Điểu', boss: true, members: [{ kind: 'bird', x: 0, y: 0 }],
-    stats: { bird: { maxHp: 26000, atk: 320, armor: 110, mr: 110, radius: 180, range: 520 } }, atkSpeed: 0.55, moveSpeed: 0, ranged: 1600, splash: 340, gold: { bird: 200 }, xp: { bird: 400 }, first: 900, respawn: 300,
+    stats: { bird: { maxHp: 26000, atk: 320, armor: 110, mr: 110, radius: 180, range: 520 } }, atkSpeed: 0.55, moveSpeed: 0, ranged: 1600, splash: 340, gold: { bird: 200 }, xp: { bird: 400 }, first: 720, respawn: 300,
     teamReward: { gold: 200, xp: 300 },
     buff: { to: 'team', id: 'loi_vu', name: 'Lôi Vũ', duration: 150, mod: { atkSpeedPct: 0.2, cdr: 0.1, armor: 20, mr: 20 }, desc: '+20% tốc đánh, -10% hồi chiêu, +20 giáp/KP' },
-    desc: 'Chim thần làm tổ ngoài mép vực, xuất hiện phút 15. Hạ được: cả đội nhận Lôi Vũ 150s.' },
+    desc: 'Chim thần làm tổ ngoài mép vực, xuất hiện phút 12. Hạ được: cả đội nhận Lôi Vũ 150s.' },
   ta_than: { name: 'Tà Thần', camp: 'Hang Tà Thần', boss: true, members: [{ kind: 'demon', x: 0, y: 0 }],
-    stats: { demon: { maxHp: 32000, atk: 400, armor: 120, mr: 120, radius: 200, range: 300 } }, atkSpeed: 0.55, moveSpeed: 0, splash: 380, gold: { demon: 250 }, xp: { demon: 450 }, first: 900, respawn: 300,
+    stats: { demon: { maxHp: 32000, atk: 400, armor: 120, mr: 120, radius: 200, range: 300 } }, atkSpeed: 0.55, moveSpeed: 0, splash: 380, gold: { demon: 250 }, xp: { demon: 450 }, first: 720, respawn: 300,
     teamReward: { gold: 250, xp: 300 },
     buff: { to: 'team', id: 'ta_luc', name: 'Tà Lực', duration: 150, mod: { atk: 60, ap: 90, dmgReducePct: 0.12 }, desc: '+60 công, +90 phép, giảm 12% sát thương nhận' },
     pushers: 'golem', // hạ Tà Thần: mỗi đường thêm một Người Đá Đèn của đội hạ, tự đẩy đường (03 §A7)
-    desc: 'Tà thần trong hang tím ngoài mép vực, xuất hiện phút 15. Hạ được: cả đội nhận Tà Lực 150s và mỗi đường có một Người Đá Đèn đẩy đường.' },
+    desc: 'Tà thần trong hang tím ngoài mép vực, xuất hiện phút 12. Hạ được: cả đội nhận Tà Lực 150s và mỗi đường có một Người Đá Đèn đẩy đường.' },
 };
 /** Sức mạnh chung của quái rừng + mục tiêu lớn so với số trong bảng: công −30%, máu −15% (đi rừng đỡ mất máu, hạ nhanh hơn). */
 export const MONSTER_POWER = { hp: 0.85, atk: 0.7 };

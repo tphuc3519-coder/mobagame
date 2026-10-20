@@ -140,7 +140,7 @@ const BOSSES = [ // hai hang lớn NẰM TRÊN TRỤC SÔNG y = x (03 §A7 "trun
   // nằm sát rừng Xanh); bỏ Long Ngư → 50%, dời Long Ngư lên trục → 47%. Xem docs/DECISIONS.md.
   { id: 'long_ngu', type: 'long_ngu', x: 1725, y: 1725, boss: true, back: -2.356 },
   { id: 'ho_loi', type: 'ho_loi', x: 4675, y: 4675, boss: true, back: 0.785 },
-  // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
+  // Hai mục tiêu cuối trận (phút 12, 03 §A9) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
