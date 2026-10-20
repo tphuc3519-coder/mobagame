@@ -1,5 +1,5 @@
 // Túi đồ: mua (tự tiêu thành phần), bán 60%, cộng chỉ số từ đồ + bùa (05 §1, §8).
-import { ITEMS, ITEM_MAX, SELL_RATE, cleanBuild, ITEM_PASSIVE } from '../data/items.js';
+import { ITEMS, ITEM_MAX, ACTIVE_MAX, SELL_RATE, cleanBuild, ITEM_PASSIVE } from '../data/items.js';
 import { CHARM_PAGES, PAGE_BY_ROLE, pageStats } from '../data/charms.js';
 
 const NUMERIC = ['atk', 'ap', 'maxHp', 'maxMana', 'armor', 'mr', 'atkSpeedPct', 'crit', 'lifesteal', 'spellvamp', 'cdr', 'armorPenPct', 'armorPenFlat', 'mrPen', 'moveSpeed', 'moveSpeedPct', 'tenacity', 'regenHp'];
@@ -51,6 +51,7 @@ export function planBuy(e, id) {
   const cost = it.cost - take(id);
   const left = e.items.filter((x, i) => x && !taken.has(i));
   if (left.length >= ITEM_MAX) return { ok: false, reason: 'full', cost, consume };
+  if (it.active && left.filter((x) => ITEMS[x].active).length >= ACTIVE_MAX) return { ok: false, reason: 'active', cost, consume }; // tối đa 2 món có kích hoạt (HUD 2 nút)
   for (const tag of it.tags || []) if (['boots', 'jungle', 'support'].includes(tag) && left.some((x) => ITEMS[x].tags?.includes(tag))) return { ok: false, reason: 'limit', cost, consume };
   return { ok: true, cost, consume };
 }

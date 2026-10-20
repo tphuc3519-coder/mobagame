@@ -8,6 +8,10 @@ export const DIFFICULTY = {
 export const BOT = {
   retreatHp: 0.3, recallHp: 0.45, recallMana: 0.2, safeRange: 1400, fightRange: 900,
   escapeHp: 0.15, itemHp: 0.25, kiteDist: 320, towerMargin: 60, holdBack: 0.55,
+  // đồ kích hoạt (ai/botSkills.js useItems): Xích Giữ khi mình còn ≥ chainSelfHp máu và có đồng minh trong allyNear quanh mục tiêu (hoặc tự dồn
+  // được ≥ chainSoloBurst máu nó); Lọng Che khi một tướng phe mình trong tầm khiên dưới wardAllyHp máu và có tướng địch trong wardFoeNear;
+  // Lụa Gió: thoát khi máu dưới dashEscHp và địch trong 600, đuổi khi kết liễu được và địch ngoài tầm đánh tối đa chaseExtra so với tầm lướt.
+  items: { chainSelfHp: 0.35, chainSoloBurst: 0.6, allyNear: 900, wardAllyHp: 0.4, wardFoeNear: 900, dashEscHp: 0.28, chaseExtra: 120 },
 };
 /** Não đội 5v5 (ai/teamBrain.js). push: giây sau khi hạ mục tiêu lớn vẫn dồn đường, phút bắt đầu dồn khi hơn 2 người,
  *  phút cuối trận dồn khi hơn 1 người, giây giữ một đường đã chọn. */

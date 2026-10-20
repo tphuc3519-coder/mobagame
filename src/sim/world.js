@@ -28,7 +28,7 @@ import { updateSkillEntities } from './skillTypes.js';
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
-  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], tethers: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
+  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], tethers: [], suppressions: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.surrender = (team) => surrender(world, team);
   world.emit = (type, data) => world.events.push({ ...data, type, tick: world.tick }); // loại sự kiện không bị trường cùng tên trong data đè

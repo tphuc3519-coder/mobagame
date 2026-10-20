@@ -156,6 +156,9 @@
   .sb.mini .ico { position: absolute; inset: 0; } .sb.mini .ico .art, .sb.mini .ico .ic { width: 100%; height: 100%; } .sb.mini .cd { z-index: 2; } .sb.mini .cdt { z-index: 3; font-size: 18px; text-shadow: 0 0 4px #000; }
   .xb.on .sb.mini { box-shadow: 0 0 0 3px #8fe8ff, 0 0 14px #8fe8ff; } .xb .prog { position: absolute; left: 0; right: 0; bottom: 0; background: #8fe8ff66; z-index: 2; pointer-events: none; }
   .xb.locked { opacity: 0.4; }
+  .xb[data-k^="itemAct"] { width: clamp(56px, 15vh, 72px); } .xb[data-k^="itemAct"] label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  #extras .xb[data-k="itemAct1"] { position: absolute; right: 0; bottom: calc(clamp(50px, 13vh, 66px) + 24px); } /* nút đồ kích hoạt thứ hai xếp trên nút thứ nhất: hàng nút đáy không dài ra, không đè thanh máu */
+  #skills.cc .sk .art, #skills.cc .atk .art { filter: grayscale(0.85) brightness(0.55); } #extras.cc .sb.mini { filter: grayscale(0.8) brightness(0.6); } /* bị khống chế / áp chế / đang niệm giữ xích */
   .art { display: block; width: 100%; height: 100%; } .pk-spell .art { width: 46px; height: 46px; }
   .hudtip { position: fixed; z-index: 30; background: linear-gradient(180deg, #1c2244f2, #0d1028f2); border: 1px solid #c9b47a; border-radius: 10px; padding: 9px 12px; color: #f3e9d6; font: 13px 'Be Vietnam Pro', system-ui, sans-serif; box-shadow: 0 6px 20px #000c; pointer-events: none; }
   .hudtip[hidden] { display: none; } .hudtip b { display: block; font-size: 15px; color: #ffe08a; } .hudtip small { display: block; color: #8fd8ff; margin-top: 2px; } .hudtip p { margin: 6px 0 0; line-height: 1.4; color: #f3e9d6dd; }

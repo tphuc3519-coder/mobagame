@@ -6,7 +6,7 @@ import { mitigate } from '../sim/damage.js';
 import { isTargetable } from '../sim/targeting.js';
 import { quickBuys } from '../sim/inventory.js';
 import { foeHero, minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
-import { combo, survival } from './botSkills.js';
+import { combo, survival, useItems } from './botSkills.js';
 import { updateLaneBot } from './laneBot.js';
 import { updateTeamBrains } from './teamBrain.js';
 import { dodgeStep } from './dodge.js';
@@ -65,6 +65,7 @@ function think(bot) {
   // mua đồ theo build (bot mua ở bất kỳ đâu như người chơi)
   const qb = quickBuys(e, 1)[0]; if (qb?.ok) world.command(e.id, { type: 'buy', item: qb.id });
   if (survival(bot, foeSeen ? foe : null)) return;
+  if (e.channel && world.tick < e.channel.until) { attack(bot, null); return; } // giữ xích / dây bóng
   if (!e.recall && dodgeStep(bot, move)) { attack(bot, foeSeen && fd < e.stats.range + 150 ? foe : null); return; } // né chiêu
 
   // đang về thành: giữ yên trừ khi địch áp sát
@@ -100,7 +101,7 @@ function think(bot) {
     if (kite) move(bot, { x: e.pos.x - (foe.pos.x - e.pos.x), y: e.pos.y - (foe.pos.y - e.pos.y) });
     else if (fd > pr - 30) move(bot, foe.pos, 10); else move(bot, e.pos);
     attack(bot, foe);
-    combo(bot, foe, 'fight');
+    if (!useItems(bot, foe, 'fight')) combo(bot, foe, 'fight');
     return;
   }
 

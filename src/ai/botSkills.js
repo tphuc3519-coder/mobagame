@@ -3,8 +3,12 @@ import { dist, norm } from '../sim/util.js';
 import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
-import { ready, velocity, hp01 } from './perception.js';
+import { ready, velocity, hp01, burst, canKill } from './perception.js';
 import { pickSkillTarget } from '../sim/skillTypes.js';
+import { pickItemTarget } from '../sim/itemActives.js';
+import { isRooted, isSilenced, cannotDash } from '../sim/status.js';
+import { alliesOf } from '../sim/targeting.js';
+import { canSee } from '../sim/vision.js';
 
 const D2R = Math.PI / 180;
 function rotate(d, deg) { const a = deg * D2R, c = Math.cos(a), s = Math.sin(a); return { x: d.x * c - d.y * s, y: d.x * s + d.y * c }; }
@@ -20,6 +24,7 @@ export function trySkill(bot, slot, t, mode) {
   const { world, e, rng, diff } = bot;
   if (!ready(world, e, slot)) return false;
   const sk = e.data.skills[slot], d = t ? dist(e.pos, t.pos) - (t.radius || 0) : Infinity;
+  if ((sk.type === 'dash' || sk.type === 'targetedDash') && isRooted(e)) return false; // bị trói: không lướt được (04 §3) — dùng chiêu khác
   const err = () => (rng.next() * 2 - 1) * diff.aimErr;
   let aim = null;
   switch (sk.type) {
@@ -56,7 +61,7 @@ export function trySkill(bot, slot, t, mode) {
     case 'targetedDash': case 'targeted': { // khoá mục tiêu: chỉ khi trong tầm có mục tiêu hợp lệ (tướng ưu tiên)
       if (!t || mode === 'farm' || mode === 'escape') return false;
       const pick = pickSkillTarget(world, e, sk, norm(t.pos.x - e.pos.x, t.pos.y - e.pos.y)); if (!pick || (t.isHero && !pick.isHero)) return false;
-      aim = norm(pick.pos.x - e.pos.x, pick.pos.y - e.pos.y); break;
+      aim = { ...norm(pick.pos.x - e.pos.x, pick.pos.y - e.pos.y), id: pick.id }; break; // id: đúng mục tiêu bot đã chọn (hai tướng gần thẳng hàng)
     }
     default: return false;
   }
@@ -76,12 +81,45 @@ export function combo(bot, t, mode) {
   return null;
 }
 
+const heroNear = (world, team, p, r, seenBy = null) => world.entities.some((x) => x.kind === 'hero' && x.alive && x.team === team && dist(x.pos, p) <= r && (seenBy == null || canSee(seenBy, x)));
+
+/** Đồ kích hoạt (06 §4.7; số ở BOT.items). mode 'survive': Sương Đông, Lọng Che, Lụa Gió thoát thân; 'fight': Xích Giữ, Lọng Che, Lụa Gió
+ *  đuổi. Đang niệm giữ xích thì chỉ còn Sương Đông (không tự thả xích bằng món khác). Trả true nếu đã ra lệnh. */
+export function useItems(bot, foe, mode) {
+  const { world, e, cfg } = bot, C = cfg.items, h = hp01(e), foeOk = foe && foe.alive, fd = foeOk ? dist(foe.pos, e.pos) : Infinity;
+  const chan = !!e.channel && world.tick < e.channel.until;
+  for (let slot = 0; slot < e.items.length; slot++) {
+    const id = e.items[slot], act = id && ITEMS[id].active;
+    if (!act || world.tick < (e.itemCd?.[id] || 0) || (chan && act.id !== 'stasis')) continue;
+    let aim = null, go = false;
+    switch (act.id) {
+      case 'stasis': go = mode === 'survive' && h < cfg.itemHp && fd < 500; break;
+      case 'ward': go = [e, ...alliesOf(world, e, act.radius).filter((a) => a.kind === 'hero')].some((a) => hp01(a) < C.wardAllyHp && heroNear(world, 1 - e.team, a.pos, C.wardFoeNear, e.team)); break;
+      case 'dash': {
+        if (isRooted(e) || cannotDash(e) || e.dash) break;
+        if (mode === 'survive' && h < C.dashEscHp && fd < 600) { aim = bot.homeDir(); go = true; break; }
+        const gap = fd - (foe?.radius || 0), R = e.stats.range;
+        if (mode === 'fight' && foeOk && canKill(world, e, foe) && gap > R + 40 && gap < R + act.range + C.chaseExtra) { aim = norm(foe.pos.x - e.pos.x, foe.pos.y - e.pos.y); go = true; }
+        break;
+      }
+      case 'suppress': {
+        if (mode !== 'fight' || !foeOk || h < C.chainSelfHp || isSilenced(e)) break;
+        const t = pickItemTarget(world, e, act, { id: foe.id }); if (!t) break;
+        go = alliesOf(world, e).some((a) => a.kind === 'hero' && dist(a.pos, t.pos) <= C.allyNear) || burst(world, e, t) >= C.chainSoloBurst * t.hp; // có đồng đội dồn, hoặc tự dồn đủ
+        aim = { id: t.id }; break;
+      }
+      default: break;
+    }
+    if (go) { world.command(e.id, { type: 'useItem', slot, aim }); return true; }
+  }
+  return false;
+}
+
 /** Phép bổ trợ và đồ kích hoạt để thoát thân / kết liễu. */
 export function survival(bot, foe) {
   const { world, e } = bot, h = hp01(e), near = foe && foe.alive && dist(foe.pos, e.pos) < 500;
   const sp = e.spell && SPELLS[e.spell.id], spReady = sp && world.tick >= e.spell.ready;
-  const slot = e.items.findIndex((i) => i && ITEMS[i].active);
-  if (slot >= 0 && h < bot.cfg.itemHp && near && world.tick >= (e.itemCd?.[e.items[slot]] || 0)) { world.command(e.id, { type: 'useItem', slot }); return true; }
+  if (useItems(bot, foe, 'survive')) return true;
   if (h < 0.45 && e.restore && world.tick >= e.restore.ready && !e.recall && !(foe && foe.alive && dist(foe.pos, e.pos) < 900)) { world.command(e.id, { type: 'restore' }); return true; } // tướng địch đánh trúng là mất hồi: chỉ dùng khi đã thoát
   if (spReady && sp.id === 'thu_hoach') { // đi rừng: Trừng Trị kết liễu quái (cướp mục tiêu lớn/bùa) khi máu quái ≤ sát thương sét
     const t = smiteTarget(world, e, sp);

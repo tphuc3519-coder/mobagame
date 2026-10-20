@@ -121,7 +121,7 @@ applyPrefs(); onPref((k) => { if (k === 'bright' || k === 'fogFx' || k === 'camD
 const camLook = createCamLook({ minimap, map });
 const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators, camera: cam.camera, input, views }); // camera/input/views: chạm chọn địch + dấu mục tiêu (Cài đặt điều khiển)
-const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators });
+const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators, lockId: buttons.lockId, preview: buttons.preview }); // đồ khoá mục tiêu: dùng chung mục tiêu khoá + dấu xem trước
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
 warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
 preloadMonsters(); // nạp sẵn model quái rừng + lính (lính ra từ giây 20, quái từ giây 30)
@@ -270,7 +270,7 @@ const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay s
   manual = true; loop.pause();
   for (let i = 0; i < Math.round(sec * fps); i++) { acc += 1 / fps; while (acc >= 1 / 30) { acc -= 1 / 30; loop.fastForward(1); } loopRender(acc * 30, 1 / fps, true); }
 };
-window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, get auto() { return auto; }, sun, post, gfx }; // phục vụ kiểm thử tự động
+window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, get auto() { return auto; }, sun, post, gfx, indicators }; // phục vụ kiểm thử tự động
 
 document.addEventListener('visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;

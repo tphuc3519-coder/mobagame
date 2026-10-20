@@ -1,11 +1,12 @@
 import { TICK } from '../core/loop.js';
 import { dist, dirTo, clampToMap } from './util.js';
-import { isRooted, isHardCC } from './status.js';
+import { isRooted, isHardCC, removeStatus, isCcImmune } from './status.js';
 import { skillHit } from './skills.js';
 import { enemiesOf, isTargetable } from './targeting.js';
 
-/** Kết thúc lướt: gọi onEnd(mục tiêu chạm được hoặc null) — chém liên hoàn sau cú lướt, hook trượt của lao khoá mục tiêu. */
-function endDash(e, t) { const d = e.dash; e.dash = null; d?.onEnd?.(t); }
+/** Kết thúc lướt: gọi onEnd(mục tiêu chạm được hoặc null) — chém liên hoàn sau cú lướt, hook trượt của lao khoá mục tiêu. Lướt của chiêu
+ *  `unstoppable` thì cửa sổ không thể cản kết thúc cùng cú lướt. */
+function endDash(e, t) { const d = e.dash; e.dash = null; if (d?.cast?.skill?.unstoppable) removeStatus(e, 'unstoppable'); d?.onEnd?.(t); }
 
 /** Lướt (dash) một tick: dừng khi hết tầm, khi gặp tướng (stopOnHero), khi chạm mục tiêu đã khoá (target) hoặc bị khống chế cứng. */
 function updateDash(world, e) {
@@ -37,6 +38,7 @@ function updateDash(world, e) {
 /** Kéo/đẩy cưỡng bức (móc neo, xoáy nước): đơn vị bị dời thẳng tới điểm đích với tốc độ cố định, mất lượt lướt đang có. */
 export function forceMove(world, t, to, speed) {
   if (!t.alive || t.structure || t.boss) return; // mục tiêu lớn đứng yên trong hang: không bị kéo/hút (trước bị kéo ra, tốc chạy 0 nên kẹt "đang về" mãi — hồi máu liên tục, không đánh trả)
+  if (isCcImmune(t)) return; // miễn khống chế / không thể cản: không bị kéo, đẩy (forceMove chỉ dùng để dời đơn vị khác)
   const d = dist(t.pos, to);
   if (d < 1) return;
   t.dash = null; t.forced = { x: to.x, y: to.y, perTick: speed * TICK };

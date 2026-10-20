@@ -12,7 +12,10 @@ export const DMG_STYLE = {
   magic: { top: '#f0e4ff', bot: '#8f6bff', stroke: '#1c0d4c', burst: '#a64dff', icon: 'spark' },
   true: { top: '#ffffff', bot: '#d4dbef', stroke: '#2a2d3c', burst: '#e8f0ff', icon: 'gem', glow: true },
 };
-const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
+const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30);
+const CC_LABEL = { suppress: 'ÁP CHẾ', stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' };
+/** Lý do không dùng được chiêu / phép / đồ của chính mình (sự kiện castFail) → chữ nổi trên đầu. */
+const FAIL = { noTarget: 'Không có mục tiêu', suppressed: 'Đang bị áp chế', channel: 'Đang giữ chiêu', noDash: 'Không thể lướt', rooted: 'Đang bị trói', cc: 'Đang bị khống chế' }; // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
 
 /** Canvas 2D phủ trên cảnh: joystick, thanh máu trên đầu, số sát thương bay, thanh máu/mana của mình, debug. */
 export function createHud(canvas, input, portraits = null) {
@@ -23,6 +26,7 @@ export function createHud(canvas, input, portraits = null) {
   const extras = createHudExtras({ portraits }); // tướng địch rìa màn hình, thông số mục tiêu, ảnh tung chiêu cuối (hudExtras.js — bật/tắt trong Cài đặt)
   const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
+  let lastFail = -9; // lần hiện chữ castFail gần nhất (giây): bấm liên tục không dồn chữ
   const tags = new Map(), mctx = document.createElement('canvas').getContext('2d'); // nhãn vẽ sẵn (tên tướng, huy hiệu cấp)
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; tags.clear(); };
   addEventListener('resize', resize); resize();
@@ -135,6 +139,7 @@ export function createHud(canvas, input, portraits = null) {
         if (ev.type === 'monsterKill' && ev.boss) kills.boss(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
+        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
         if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });
         if (ev.type === 'damage' && e.kind === 'monster') monHit.set(e.id, now());
         if (ev.type === 'death') { monHit.delete(ev.id); monTrail.delete(ev.id); }
@@ -164,6 +169,7 @@ export function createHud(canvas, input, portraits = null) {
           if (sh > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 + bw * Math.min(1, e.hp / e.stats.maxHp), y0, Math.min(bw, bw * sh / e.stats.maxHp), bh); }
           ctx.fillStyle = 'rgba(8,10,20,0.75)'; for (let v = 250; v < e.stats.maxHp; v += 250) { const tx = x0 + bw * v / e.stats.maxHp; ctx.fillRect(tx, y0, v % 1000 ? 1 : 2, v % 1000 ? bh * 0.55 : bh); }
           ctx.fillStyle = '#4a9cff'; ctx.fillRect(x0, y0 + bh + 1.5, bw * (e.mana / Math.max(1, e.stats.maxMana || 1)), 2.5);
+          if (e.channel && world.tick < e.channel.until) { ctx.fillStyle = '#d8a0ff'; ctx.fillRect(x0, y0 + bh + 5, bw * Math.max(0, (e.channel.until - world.tick) / Math.max(1, e.channel.until - e.channel.start)), 2.5); } // đang niệm giữ xích: thanh tím rút dần
           const hx = x0 - 10, hy = y0 + bh / 2 + 1.5; // huy hiệu cấp
           const lt = levelTag(e.level, col); ctx.drawImage(lt, hx - 12, hy - 12, lt.w, lt.h);
           const nm = e.playerName || e.data.name; // tên người chơi (như Liên Quân); vào thẳng trận không có tên thì hiện tên tướng
@@ -193,8 +199,9 @@ export function createHud(canvas, input, portraits = null) {
         }
         if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - (isHero ? 34 : 10)); }
         // hiệu ứng khống chế trên đầu
-        const cc = e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind));
-        if (cc) { ctx.fillStyle = '#ffd23a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText({ stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' }[cc.kind], p.x, p.y - (isHero ? 48 : 24)); }
+        const cc = e.statuses.find((s) => s.kind === 'suppress') || e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind)); // áp chế ưu tiên cao nhất
+        if (cc) { ctx.fillStyle = cc.kind === 'suppress' ? '#d8a0ff' : '#ffd23a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(CC_LABEL[cc.kind], p.x, p.y - (isHero ? 48 : 24)); }
+        else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
       }
       // số bay
       for (let i = floats.length - 1; i >= 0; i--) {

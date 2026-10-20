@@ -4,6 +4,8 @@
 // dùng; kéo tiếp thì vẫn ngắm như thường); skillNames: tên chiêu dưới K1–K3; cdDecimal: số lẻ khi hồi chiêu dưới 10s (tắt: làm tròn lên giây);
 // atkMode: 'farm' có thêm nút Ăn lính + Đẩy trụ, 'auto' / 'manual' chỉ một nút Đánh (phím K/L vẫn dùng được); preciseAtk (Đánh thường chính xác):
 // kéo nút Đánh về phía một địch (vòng ngắm như kỹ năng) — thả ra thì đánh + khoá nó. Khoá / chạm chọn địch / dấu / luật chọn mục tiêu: atkTarget.js.
+// Chiêu khoá mục tiêu (aim 'target'): chạm nhanh gửi kèm id mục tiêu đang khoá; kéo thì dấu vàng xem trước tướng mô phỏng sẽ chọn (cùng hàm
+// pickSkillTarget) và gửi đúng id đó — mô phỏng dùng nếu còn hợp lệ, không thì tự chọn như thường.
 import { lv } from '../data/heroes/_levels.js';
 import { nearestEnemy } from '../sim/targeting.js';
 import { canLevelSkill } from '../sim/stats.js';
@@ -16,6 +18,8 @@ import { showTip, hideTip } from './tip.js';
 import { skillDesc } from '../ui/skilltext.js';
 import { pref, onPref } from '../core/prefs.js';
 import { createAtkTarget } from './atkTarget.js';
+import { pickSkillTarget } from '../sim/skillTypes.js';
+import { isHardCC } from '../sim/status.js';
 
 /** Viền nấc cấp kỹ năng: vòng tròn chia `max` đoạn (bắt đầu từ đỉnh, theo chiều kim đồng hồ), `level` đoạn đầu sáng vàng;
  *  đoạn vừa nâng (fresh) loé sáng một nhịp. */
@@ -63,10 +67,16 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
     const d = t ? { x: t.pos.x - player.pos.x, y: t.pos.y - player.pos.y } : facingDir();
     const l = Math.hypot(d.x, d.y) || 1;
     if (sp.aim === 'point') { const f = t ? Math.min(l, sp.range) : sp.range * 0.7; return { x: player.pos.x + (d.x / l) * f, y: player.pos.y + (d.y / l) * f }; }
-    if (sp.aim === 'direction' || sp.aim === 'target') return { x: d.x / l, y: d.y / l }; // khoá mục tiêu: hướng để chọn (sim chọn tướng gần hướng nhất)
+    if (sp.aim === 'target') return { x: d.x / l, y: d.y / l, id: tgt.lockId() }; // khoá mục tiêu: mục tiêu đang khoá (nếu hợp lệ), không thì sim chọn tướng gần hướng nhất
+    if (sp.aim === 'direction') return { x: d.x / l, y: d.y / l };
     return null;
   }
   const cast = (slot, aim) => world.command(player.id, { type: 'cast', slot, aim });
+  /** Kéo chiêu khoá mục tiêu: tướng mô phỏng sẽ chọn theo hướng kéo → dấu vàng (mark 0 'pick'). */
+  function previewCand(a, sp) {
+    const c = a.cancel || !player.alive ? null : pickSkillTarget(world, player, sp, a.dir), id = c ? c.id : null;
+    if (id !== a.cand || !a.ownPreview) { a.cand = id; a.ownPreview = true; tgt.preview(id); }
+  }
 
   for (const slot of SLOTS) {
     const el = btn(slot);
@@ -83,6 +93,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
       const dx = e.clientX - a.cx, dy = e.clientY - a.cy, l = Math.hypot(dx, dy), sp = spec(slot);
       if (l > DRAG_MIN && sp.aim !== 'none') { a.aiming = true; a.dir = { x: dx / l, y: dy / l }; a.f = Math.min(1, l / dragMax()); clearTimeout(a.timer); if (a.tip) { a.tip = false; hideTip(); } }
       a.cancel = a.aiming && isCancel(a, e.clientX, e.clientY);
+      if (a.aiming && sp.aim === 'target') previewCand(a, sp);
       if (a.aiming) { shown = a; cancelEl.hidden = !a.cancel || pref('cancelBy') === 'distance'; aimUI(a); } // huỷ theo khoảng cách: chữ "Thả để huỷ" nằm trên vòng ngắm
     });
     const end = (e) => {
@@ -90,11 +101,13 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
       const sp = spec(slot); actives.delete(slot); el.classList.remove('down'); clearTimeout(a.timer);
       if (a.tip) hideTip();
       if (shown === a) hideAim();
+      if (a.ownPreview) { a.ownPreview = false; tgt.preview(null); } // chỉ xoá dấu xem trước do chính lượt kéo này đặt
       if (a.cancel || a.auto || a.tip) return; // huỷ / đã ra chiêu lúc chạm / chỉ xem mô tả
       let aim = null;
       if (!a.aiming) aim = autoAim(slot);
       else if (sp.aim === 'point') aim = { x: player.pos.x + a.dir.x * sp.range * a.f, y: player.pos.y + a.dir.y * sp.range * a.f };
-      else if (sp.aim === 'direction' || sp.aim === 'target') aim = a.dir;
+      else if (sp.aim === 'target') aim = { x: a.dir.x, y: a.dir.y, id: a.cand ?? null }; // đúng tướng đang xem trước
+      else if (sp.aim === 'direction') aim = a.dir;
       if (a.aiming) lastAim.dir = { ...a.dir }; // Chớp Bước chạm nhanh theo hướng chiêu vừa ngắm (flashDir = 'skill')
       cast(slot, aim);
     };
@@ -175,7 +188,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }
         set(el, 'title', `${sk.name}: ${sk.desc || ''}`);
       }
-      if (!player.alive && actives.size) { for (const a of actives.values()) { btn(a.slot).classList.remove('down'); clearTimeout(a.timer); if (a.tip) hideTip(); } actives.clear(); hideAim(); } // chết giữa lúc ngắm: bỏ ngắm
+      if (!player.alive && actives.size) { for (const a of actives.values()) { btn(a.slot).classList.remove('down'); clearTimeout(a.timer); if (a.tip) hideTip(); if (a.ownPreview) tgt.preview(null); } actives.clear(); hideAim(); } // chết giữa lúc ngắm: bỏ ngắm
       if (atkHeld && player.alive && !player.attacking) attackCmd(true, heldMode, atkAim?.cand ?? tgt.lockId()); // giữ nút đánh qua lúc hồi sinh / bị khống chế
       if (atkAim?.aiming) { // kéo nút Đánh: địch gần hướng kéo nhất (dấu vàng); đang giữ thì đánh luôn nó khi nó trong tầm
         const a = atkAim, R = player.stats.range + PRECISE, t = a.cancel || !player.alive ? null : tgt.pickDir(a.dir, R), id = t ? t.id : null;
@@ -184,6 +197,8 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         else { a.aiming = false; aimUI(null, 'atk'); tgt.preview(null); if (!shown?.aiming) indicators.hide(); } // chết giữa lúc kéo
       }
       if (burst && !atkHeld && (player.atkIndex !== burst.n || world.tick > burst.until || !player.alive)) { burst = null; attackCmd(false); }
+      if (shown?.aiming && spec(shown.slot).aim === 'target') previewCand(shown, spec(shown.slot)); // tướng chạy / khuất giữa lúc kéo: cập nhật dấu
+      root.classList.toggle('cc', player.alive && (isHardCC(player) || (!!player.channel && world.tick < player.channel.until))); // bị khống chế / đang niệm giữ xích: nút xám
       if (shown?.aiming) {
         const sp = spec(shown.slot), pt = { x: player.pos.x + shown.dir.x * (sp.range || 0) * shown.f, y: player.pos.y + shown.dir.y * (sp.range || 0) * shown.f };
         indicators.show(sp, player.pos, shown.dir, pt, shown.cancel);
@@ -191,6 +206,9 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
       }
       tgt.update();
     },
+    /** Mục tiêu đang khoá và dấu xem trước (dùng chung với nút đồ kích hoạt khoá mục tiêu — spellButtons.js). */
+    lockId: () => tgt.lockId(),
+    preview: (id) => tgt.preview(id),
   };
 }
 void T;

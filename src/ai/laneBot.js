@@ -12,7 +12,8 @@ import { quickBuys } from '../sim/inventory.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
 import { findPath, lineClear } from '../sim/pathfind.js';
 import { minionsOf, towersOf, fountainOf, hp01, towerCovering, tankedBy, burst, canKill } from './perception.js';
-import { combo, survival } from './botSkills.js';
+import { combo, survival, useItems } from './botSkills.js';
+import { isLocked } from '../sim/status.js';
 import { dodgeStep } from './dodge.js';
 import { orderOf } from './teamBrain.js';
 import { MONSTERS } from '../data/jungle.js';
@@ -87,13 +88,15 @@ function think(bot) {
   const { world, e, cfg, path } = bot;
   if (!e.alive) { bot.state = 'DEAD'; return; }
   const heroesOf = (team) => world.entities.filter((h) => h.kind === 'hero' && h.alive && h.team === team);
-  const foes = heroesOf(1 - e.team).filter((f) => isTargetable(e, f) && canSee(e.team, f) && dist(f.pos, e.pos) < 1500).sort((a, b) => dist(a.pos, e.pos) - dist(b.pos, e.pos));
+  const prio = (f) => dist(f.pos, e.pos) - (isLocked(f) ? 500 : 0) - (f.channel ? 300 : 0); // địch đang bị áp chế / đang niệm giữ xích: đánh trước
+  const foes = heroesOf(1 - e.team).filter((f) => isTargetable(e, f) && canSee(e.team, f) && dist(f.pos, e.pos) < 1500).sort((a, b) => prio(a) - prio(b));
   const allies = heroesOf(e.team).filter((a) => a !== e && dist(a.pos, e.pos) < 1300);
   const foe = foes[0] || null, fd = foe ? dist(foe.pos, e.pos) : Infinity, h = hp01(e);
   const home = bot.home(), atHome = dist(e.pos, home) < 550, me = project(path, e.pos);
 
   const qb = quickBuys(e, 1)[0]; if (qb?.ok) world.command(e.id, { type: 'buy', item: qb.id });
   if (survival(bot, foe)) return;
+  if (e.channel && world.tick < e.channel.until) { attack(bot, null); return; } // giữ xích / dây bóng
   if (!e.recall && dodgeStep(bot, move)) { attack(bot, foe && fd < e.stats.range + 150 ? foe : null); return; } // né chiêu: bước ngang, vẫn đánh nếu địch trong tầm
 
   const foesNear = foes.filter((f) => dist(f.pos, e.pos) < 1000);
@@ -132,7 +135,7 @@ function think(bot) {
     if (kite) move(bot, { x: e.pos.x - (foe.pos.x - e.pos.x), y: e.pos.y - (foe.pos.y - e.pos.y) });
     else if (fd > pr - 30) move(bot, foe.pos, 10); else move(bot, e.pos);
     attack(bot, foe);
-    combo(bot, foe, 'fight');
+    if (!useItems(bot, foe, 'fight')) combo(bot, foe, 'fight');
     return;
   }
 

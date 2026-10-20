@@ -31,5 +31,5 @@ export default hero({
     s3: { id: 'dong_ho_nguoc', name: 'Đồng Hồ Ngược', type: 'selfBuff', aim: 'none', cooldown: [130, 110, 90], cost: [100, 100, 100], params: { rewindSeconds: 4, restorePosition: true, restoreHp: true }, desc: 'Tua ngược 4s: quay lại vị trí và máu của 4 giây trước (không mất máu khi HP hiện tại cao hơn).' },
   },
   ai: { combo: ['s2', 's1', 's3'], preferredRange: 180, engageHpRatio: 0.6, ultRule: 'hpBelow0.25' },
-  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_giap', 'khien_da', 'ao_giap_dong', 'ngoc_binh_an', 'giap_gai', 'mat_na_hoi_sinh'],
+  defaultSpell: 'chop_buoc', recommendedBuild: ['giay_giap', 'khien_da', 'ao_giap_dong', 'long_ho_menh', 'giap_gai', 'mat_na_hoi_sinh'],
 });

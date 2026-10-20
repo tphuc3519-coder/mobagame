@@ -99,7 +99,15 @@ export function createGameSounds({ team, me }) {
       case 'recallStart': { const e = ent(ev.id); if (seen(e)) recalls.set(ev.id, play('recall_start', at(e))); break; }
       case 'recallCancel': recalls.get(ev.id)?.stop(0.15); recalls.delete(ev.id); break;
       case 'recalled': { recalls.delete(ev.id); const e = ent(ev.id); if (seen(e)) play('recall_end', at(e)); break; }
-      case 'itemUse': { const e = ent(ev.id); if (seen(e)) play('arcane_cast', at(e, { vol: 0.7, rate: 1.15 })); break; }
+      case 'itemUse': { // đồ kích hoạt: tiếng theo loại (Xích Giữ dùng tiếng của sự kiện suppress)
+        const e = ent(ev.id); if (!seen(e)) break;
+        if (ev.act === 'stasis') play('shield', at(e, { rate: 1.3 })); else if (ev.act === 'ward') play('shield', at(e)); else if (ev.act === 'dash') play('dash', at(e));
+        else if (ev.act !== 'suppress') play('arcane_cast', at(e, { vol: 0.7, rate: 1.15 }));
+        break;
+      }
+      case 'suppress': { const t = ent(ev.target); if (seen(t)) { play('stun', at(t, { rate: 0.75 })); if (ev.item) play('hit_armor', at(t, { vol: 0.6, rate: 0.7 })); } break; } // áp chế: tiếng khoá trầm (+ tiếng xích kim loại)
+      case 'suppressEnd': { const t = ent(ev.target); if (!ev.ok && seen(t)) play('restore_break', at(t, { vol: 0.5 })); break; } // xích đứt sớm
+      case 'unstoppable': { const e = ent(ev.id); if (seen(e)) play('haste', at(e, { vol: 0.6, rate: 1.25 })); break; }
       // —— của riêng mình (không vị trí) ——
       case 'gold': if (mine(ev.id)) play(ev.amount >= 150 ? 'coins' : 'coin', { vol: ev.amount >= 150 ? 1 : 0.8 }); break;
       case 'levelup': if (mine(ev.id)) play('levelup'); break;

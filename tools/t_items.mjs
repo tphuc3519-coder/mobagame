@@ -20,7 +20,7 @@ function setup(hero = 'hoa_ren', foe = 'hoa_ren') {
 
 { // danh mục
   const ids = Object.keys(ITEMS);
-  ok('đủ 53 món', ids.length === 53, String(ids.length));
+  ok('đủ 56 món', ids.length === 56, String(ids.length));
   ok('công thức hợp lệ và giá ghép ≥ 0', ids.every((i) => (ITEMS[i].from || []).every((c) => ITEMS[c]) && ITEMS[i].cost >= (ITEMS[i].from || []).reduce((a, c) => a + ITEMS[c].cost, 0)));
   const bad = ALPHA.filter((h) => cleanBuild(HEROES[h].recommendedBuild).length < 5);
   ok('mọi tướng có build gợi ý hợp lệ (≥5 món)', bad.length === 0, bad.join());
