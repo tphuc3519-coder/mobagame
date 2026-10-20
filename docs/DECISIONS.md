@@ -653,3 +653,111 @@
 - Khoá bằng mã băm: `tools/premium.lock.json` (35 file: GLB, `hero.art.json`, file gốc, animation viết tay, ảnh thẻ / toàn thân / mặt), kiểm bằng `node tools/t_premium.mjs`. Danh sách tướng nằm ở `tools/premium.mjs`, dùng chung cho test và công cụ.
 - `tools/modelgen/build.mjs` và `tools/uiart/render.cjs` bỏ qua 4 tướng này kể cả khi chạy "dựng tất cả"; chỉ `FORCE_PREMIUM=1` (khi chính chủ dự án gửi bản mới, rồi chạy `node tools/t_premium.mjs --lock`).
 - Đã soát lại hai đợt sửa Giai đoạn 0 / 1: không file nào trong 35 file bị đụng tới (ảnh thẻ mới chỉ thêm cho 14 tướng kia).
+
+## GĐ2 — Khoá mục tiêu, Áp chế, Không thể cản, đồ kích hoạt mới (nhánh gd2-trongtran)
+- **Áp chế (`suppress`) là một SỢI XÍCH, không chỉ là trạng thái** (`sim/suppress.js`, `world.suppressions`). Sợi xích giữ trạng thái
+  `suppress` trên mục tiêu (thời lượng + `COMBAT_EXTRA.suppress.pad` 0,2s để không bao giờ hết trước xích; xích tự gỡ) và — mặc định
+  `channel` — giữ luôn người gây đứng niệm (`e.channel`, `castUntil`). Không giảm bởi kháng hiệu ứng (cố ý không có trong `TENACITY`), không
+  nằm trong hai danh sách giải khống chế (Giải Trói / Châm Cứu không gỡ), bị chặn bởi miễn khống chế và Sương Đông. Mã sợi xích dùng
+  `world.supSeq` (không dùng `world.nextId` để không xê dịch id đơn vị của các kịch bản cũ).
+- **Xích chỉ đứt khi**: hết giờ (ok = true → hiệu ứng `atEnd` của chiêu), người gây / mục tiêu chết, mục tiêu không còn mang trạng thái,
+  kéo giãn quá `breakRange` (mặc định 115% tầm chiêu; Xích Giữ 650), và — khi niệm — người gây bị câm lặng (gồm mọi khống chế cứng, kể cả
+  bị áp chế / Sương Đông), bị khiêu khích, hoặc bị cắt chiêu (đếm `interrupts`). Kiểm hết giờ trước mỗi tick.
+- **Người niệm giữ**: không đi, không đánh thường (`castUntil`), không tung chiêu (`castSkill` → `channel`); được dùng phép / đồ / Biến về
+  nhưng làm vậy là thả xích trước (`cancelChannel`, ok = false). Hồi Máu được dùng, không thả xích. **Không phát sự kiện `cast` / không có
+  hoạt cảnh** cho lúc niệm — để không đụng đường hoạt cảnh (và 4 model cao cấp); người niệm chỉ đứng yên trong lúc xích vẽ.
+- **Một cửa chặn duy nhất cho người bị khoá** (`commands.js`): bị áp chế hoặc Sương Đông thì `cast`, `spell`, `restore`, `useItem`, `recall`
+  đều bị từ chối (castFail `suppressed`) — thay cho các chỗ hở rải rác cũ (Giải Trói dùng được khi bị khống chế cứng, đồ không kiểm khống chế,
+  Hồi Máu không kiểm). Lúc bắt đầu áp chế mục tiêu bị cắt chiêu (mất lượt vung, dừng lướt, huỷ Biến về).
+- **Tướng dùng áp chế: Bóng Đèn** (Nghệ Nhân Rối Bóng — "trói cổ rồi choáng" khớp nhất). K2 Trói Bóng: trói 2s → áp chế 1,25s (niệm),
+  choáng cuối 0,8s giữ nguyên, hồi chiêu [12..9,5] → [13..10,5] vì tổng khoá cứng tăng từ 0,8s lên 2,05s nhưng người gây cũng bị giữ chân.
+  Sát thương / mana / tầm không đổi; chỉ đổi dữ liệu `bong_den.js`. Loại: Trạng Nhí K3 (bộ chiêu là sát thương chuẩn), Lưỡng Cực K3 (vùng
+  câm lặng + chậm, không phải niệm).
+- **Hai đường vào áp chế từ chiêu** (`skill.suppress: { duration?, channel?, breakRange? }`): type `tether` — cả sợi dây là một lần áp chế
+  (sợi xích chạy cả nhịp sát thương chia đều lẫn hiệu ứng cuối; không áp được vì miễn khống chế / Sương Đông thì quay về dây trói thường);
+  type khác — `skillHit` áp chế một lần mỗi lượt tung lên tướng trúng đầu tiên.
+- **Không thể cản (`unstoppable: giây`)**: `castSkill` áp `ccImmune` id `unstoppable` ngay sau khi trả mana (trước lúc vung), phát sự kiện
+  `unstoppable`; chiêu lướt thì cửa sổ hết đúng lúc cú lướt dừng (`endDash`). Dữ liệu: Bà Năm K3 Dép Bay 0,5s (≈ thời gian lao), Kiếm Thuỷ K3
+  Nhật Vũ 0,35s (13 nhát chém sau đó vốn đã không thể bị chọn). Không đụng dữ liệu 4 tướng cao cấp.
+- **Miễn khống chế giờ chặn cả dời chỗ / cắt chiêu** trên toàn engine: `applyInstant` bỏ qua đẩy / hút / cắt chiêu của địch lên người miễn
+  khống chế, `forceMove` không dời người miễn khống chế — nên Giải Trói và cú bay của Mèo cũng chống được đẩy / hút (chủ ý).
+- **Khoá mục tiêu**: lệnh chiêu `aim: 'target'` có thể mang `id`. `pickSkillTarget` dùng `world.byId(aim.id)` nếu qua đúng bộ lọc cũ (địch,
+  không phải công trình, chọn được, thấy được, `heroOnly`, tầm tính bán kính, `canTarget`), không thì chấm điểm như cũ (không bất ngờ báo
+  "không có mục tiêu"). HUD gửi id mục tiêu đang khoá khi chạm nhanh, id tướng đang xem trước khi kéo; bot gửi id nó đã chọn — mọi dữ liệu
+  vào mô phỏng qua lệnh, vẫn tất định.
+- **Đạn khoá mục tiêu của chiêu trượt** (onEnd → `onSkillMiss`) nếu mục tiêu thành không thể chọn / Sương Đông giữa đường; đạn đánh thường giữ
+  như cũ. **Sương Đông chặn mọi hiệu ứng của địch** (`applyStatus` trả null khi mục tiêu đang stasis và nguồn là địch) — kể cả dấu / tầng như
+  Manh Mối (chủ ý: bất tử là không bị đụng tới).
+- **Bị trói không tung được chiêu lướt** (04 §3; `castSkill` → `rooted`; bot bỏ qua chiêu lướt khi bị trói để khỏi bấm hỏng liên tục). Luật
+  chống khoá chết của 04 §3 (> 3s khống chế cứng → 50% trong 2s) **vẫn chưa làm** (ngoài phạm vi).
+- **Đồ kích hoạt**: tối đa 2 món mỗi túi (`ACTIVE_MAX`, `planBuy` → `active`) nên HUD có tối đa 2 nút. Hồi chiêu không giảm bởi giảm hồi
+  chiêu (như cũ), chỉ tính khi kích hoạt thành công (không có mục tiêu / mục tiêu miễn khống chế → castFail, không mất hồi). Dùng thành công
+  thì huỷ Biến về. Bị khống chế cứng thì không dùng được (`cc`) trừ món `inCC` (chỉ Bình Sương Đông — giữ hành vi cũ); bị áp chế / Sương Đông
+  thì chặn ở cửa lệnh. Mỗi loại kích hoạt một hàm trong `sim/itemActives.js` theo `active.id` — hệ thống không gọi tên món nào.
+- **Ba món mới (tên riêng, không lấy từ game thương mại)**:
+  - **Xích Đồng** (`xich_dong`, Phòng thủ, 2300 = Túi Hạt + Áo Lụa + Áo Da + 1400; +450 HP, +30 Giáp, +30 KP) — *Xích Giữ*: khoá mục tiêu,
+    áp chế 1,25s tướng địch chỉ định (không thì gần nhất tính bán kính, thấy được, chọn được, không miễn khống chế; hình nộm cũng được) trong
+    450, đứt quá 650, hồi 80s. Người dùng niệm giữ; bị câm lặng thì không dùng được.
+  - **Lọng Hộ Mệnh** (`long_ho_menh`, Phòng thủ, 2200 = Hạt Nắng + Áo Da + 1500; +300 HP, +30 Giáp, +10% GHC) — *Lọng Che*: khiên 80
+    (+12 mỗi cấp tướng) + 5% HP tối đa người dùng trong 2,5s cho mình và tướng đồng minh trong 600, hồi 70s. Khiên id `ward_<người dùng>`
+    (dùng lại thì làm mới, hai người dùng thì cộng); Đèn Soi Đường +15% áp qua `addShield`. Chọn "Lọng" (lọng che nghi lễ) thay cho
+    "Đèn Hộ Mệnh" được gợi ý vì cửa hàng đã có Đèn Đồng Hành, Đèn Soi Đường, Đèn Hồn Lam, Giáp Đèn Lồng.
+  - **Dải Lụa Gió** (`dai_lua_gio`, Tấn công, 2200 = Găng Tay Da + Kiếm Sắt + 1650; +40 Công, +20% TĐ, +5% tốc chạy) — *Lụa Gió*: lướt
+    thật 320 (tốc 1700, dừng ở tường / khi bị khống chế cứng) theo hướng kéo, không thì hướng đang chạy, không thì hướng nhìn (như Chớp Bước),
+    +25% tốc chạy 1,5s, hồi 45s. Bị trói / khống chế cứng → `cc`, trong kết giới → `noDash`, đang lướt → `busy`.
+  - Bình Sương Đông thêm `aim: 'none', inCC: true` (hành vi không đổi). Danh mục 53 → 56 món.
+- **Bot mua món mới qua `recommendedBuild`** (chỉ tướng không cao cấp): Phù Đổng Ngọc Bình An → Xích Đồng; Mèo Thần Tài Ngọc Bình An → Lọng
+  Hộ Mệnh; Long Đăng Khiên Đá → Lọng Hộ Mệnh; Nhãn Sư Áo Giáp Nhẹ → Dải Lụa Gió. Mọi build vẫn ≤ 2 món kích hoạt, ≥ 5 món hợp lệ.
+- **Luật bot dùng đồ** (số ở `data/ai.js BOT.items`, Sương Đông vẫn `BOT.itemHp` 0,25): xem 06 §4.7. Đang niệm giữ xích thì bot chỉ được dùng
+  Sương Đông và bỏ phần còn lại của lượt nghĩ (giữ xích). Bot 5v5 ưu tiên đánh kẻ đang bị áp chế (−500 điểm) và kẻ đang niệm giữ xích (−300).
+- **Chữ / hình / tiếng**: chữ trên đầu `ÁP CHẾ` (#d8a0ff, ưu tiên nhất) và `KHÔNG THỂ CẢN` (#ffcf6a, chỉ khi không có chữ khống chế); chữ nổi
+  lý do castFail của chính mình (6 lý do); cửa hàng lý do `active`. Phím E = nút đồ 1, Q = nút đồ 2. Hiệu ứng chỉ dùng hình có sẵn (xích, vòng
+  ký tự, vòng, kén, cột sáng — không shader mới) ở `render/vfx/extra.js` (không đụng `library.js` 493 dòng), tiếng chỉ dùng id có sẵn trong
+  sprite (`stun`, `hit_armor`, `restore_break`, `haste`, `shield`, `dash`) — không dựng lại `assets/audio`. Icon 3 món mới dùng hình vẽ SVG dự
+  phòng của `icons.js` theo loại kích hoạt (xích, lọng, cánh) — không thêm vào `itemArt.js` (đã 643 dòng).
+- **Nút đồ thứ hai xếp TRÊN nút thứ nhất** (`position: absolute` trong `#extras`) thay vì nối dài hàng nút đáy: ở 844×390 hàng đáy đã sát cụm
+  kỹ năng và thanh máu vẽ trên canvas.
+- **Nút phép / đồ có hướng: giữ hơi lâu rồi mới kéo vẫn ngắm được** (`spellButtons.js`): trước đây giữ quá 0,35s là nút khoá vào chế độ "xem
+  mô tả" và kéo sau đó bị bỏ qua (thả ra không dùng). Giờ kéo quá ngưỡng thì tắt mô tả và ngắm — giống nút kỹ năng. Lộ ra khi đo Lụa Gió trên
+  máy kiểm thử không GPU (mỗi khung vài giây nên đồng hồ 0,35s luôn chạy trước lượt kéo đầu).
+- **Cân bằng Bóng Đèn sau khi đổi K2 sang áp chế** (bot thường vs bot thường, 1v1, 6 đối thủ × 4 seed, đổi phe xen kẽ): thắng 1/24 → 5/24.
+  Tướng vẫn yếu ở 1v1 bot (bộ chiêu dựa vào đồng đội); không chỉnh thêm số.
+
+## GĐ2 — Khoá mục tiêu, Áp chế, Không thể cản, đồ kích hoạt mới
+- **Áp chế (`suppress`) là một liên kết**, không chỉ là trạng thái: `sim/suppress.js` giữ `world.suppressions`. Mục tiêu mang trạng thái
+  `suppress` (sống lâu hơn liên kết 0,2 s để không hết trước), người gây thường **niệm giữ** (`e.channel`). Áp chế **không bị kháng hiệu
+  ứng rút ngắn, Giải Trói không gỡ**; chỉ hết khi: hết giờ, một trong hai chết, mục tiêu mất trạng thái, kéo giãn quá xa (tầm chiêu × 1,15;
+  đồ: 650), hoặc người niệm bị câm / khống chế cứng / khiêu khích / cắt chiêu.
+- Người đang niệm: không đi, không đánh, không tung chiêu; dùng phép / đồ / Biến về thì **thôi niệm** trước; Hồi Máu được dùng và không cắt.
+- Người bị áp chế (hoặc đang Sương Đông): lệnh `cast/spell/restore/useItem/recall` bị chặn ở **một cửa** (`applyCommand`, lý do `suppressed`).
+- **Không thể cản** = tham số chiêu `unstoppable: giây`: lúc tung chiêu người gây nhận `ccImmune` (id `unstoppable`), hết khi cú lướt kết thúc.
+  `ccImmune` chặn cả hiệu ứng tức thời của địch (đẩy, hút, cắt chiêu). Gắn cho Bà Năm K3 (0,5 s) và Kiếm Thuỷ K3 (0,35 s).
+- **Bóng Đèn K2 Trói Bóng** dùng áp chế 1,25 s (thay trói 2 s) rồi choáng 0,8 s; hồi chiêu +1 s vì tổng thời gian khống chế cứng dài hơn.
+  Không đụng dữ liệu 4 tướng có model cao cấp.
+- Chiêu khoá mục tiêu: lệnh tung có thể mang `aim.id`; còn hợp lệ (địch, nhìn thấy, chọn được, trong tầm) thì nhắm đúng tướng đó, không thì
+  chọn như cũ. Đạn chiêu bám mục tiêu trượt khi mục tiêu thành không chọn được giữa đường. Đang bị trói thì không lướt được (04 §3).
+- **Tối đa 2 món có kích hoạt** mỗi người (`ACTIVE_MAX`), HUD có 2 nút đồ. Hồi chiêu đồ không giảm theo giảm hồi chiêu và chỉ tính khi
+  kích hoạt thành công (không có mục tiêu → không mất hồi chiêu).
+- Đồ mới (tên gốc): **Xích Đồng** (áp chế tướng địch gần nhất trong 450 trong 1,25 s, hồi 80 s), **Lọng Hộ Mệnh** (khiên cho đồng minh
+  trong 600, hồi 70 s — không gọi "Đèn Hộ Mệnh" vì cửa hàng đã có 4 món tên Đèn), **Dải Lụa Gió** (lướt 320 + tăng tốc chạy, hồi 45 s).
+  Bot mua qua `recommendedBuild` của Phù Đổng, Mèo Thần Tài, Long Đăng, Nhãn Sư; quy tắc dùng ở `data/ai.js` `BOT.items`.
+- Chưa làm: luật chống khống chế liên tiếp (> 3 s khống chế cứng → 50% trong 2 s, 04 §3).
+
+## GĐ2 — Tín hiệu, mua nhanh 2 món, thanh khống chế, Quét Sạch
+- **Tín hiệu là lệnh của mô phỏng** (`{ type: 'ping', kind, x, y, target? }`, `sim/pings.js`), người chơi và bot dùng chung — bot đồng đội
+  đọc `world.pings` nên vẫn tất định. 4 loại (tên gốc): Tấn công, Tập hợp, Rút lui, Cẩn thận (mất dấu địch). Chỉ có ở 5v5. Lúc chết vẫn
+  ra tín hiệu được. Giới hạn: tối đa 3 tín hiệu / 6 s, cách nhau ≥ 0,6 s; mỗi đội tối đa 8 tín hiệu sống. Số ở `data/signals.js`.
+- Tấn công chỉ bám mục tiêu khi đội mình đang thấy nó (không lộ thông tin trong sương mù); lính không đánh dấu được.
+- **Bot làm theo tín hiệu của người chơi, bỏ qua tín hiệu của bot**: Tấn công → tối đa 3 bot gần nhất (trong 7000, máu ≥ 50%), Tập hợp →
+  tối đa 4 bot (trong 8000, máu ≥ 40%); Rút lui mới hơn gần đó (2500) huỷ hai loại này; Rút lui làm bot trong 1800 lùi (trừ khi hạ được
+  ngay); Cẩn thận làm bot cùng đường / trong 4000 đứng lùi 700, không đẩy trụ, không trao đổi chiêu, chỉ đánh khi chắc thắng.
+  Lần đầu có bot nhận, dòng chữ báo "Đang tới!" / "Tới ngay!".
+- **Bot cũng ra tín hiệu** (Tập hợp khi não đội gọi đánh mục tiêu lớn, Tấn công khi đổi đường dồn) — chỉ khi đội có người chơi, tối đa mỗi 25 s,
+  nên trận toàn bot không đổi.
+- Âm thanh tín hiệu dùng lại tiếng có sẵn (không dựng lại bộ âm thanh). Màn tín hiệu: nút cờ cạnh bản đồ nhỏ → 4 lựa chọn; chạm bản đồ nhỏ
+  hoặc mặt đất để đặt; chạm lại lựa chọn đang chọn = tín hiệu tại chỗ mình; chạm đúp bản đồ nhỏ = tín hiệu nhanh; máy tính G + Z/X/C/V.
+- **Mua nhanh 2 món**: món thứ hai là món tiếp theo trong bộ đồ đề cử (giá tính trên túi đồ thật); màn thấp (< 560 px) món thứ hai chỉ hiện
+  biểu tượng + giá. Bot vẫn chỉ đọc món đầu.
+- **Thanh khống chế**: mỗi hiệu ứng ghi lúc áp (`t0`); trên đầu tướng hiện loại khống chế cứng mạnh nhất (áp chế > hất tung > choáng >
+  khiêu khích > trói > câm lặng) kèm dải thời gian rút dần; tướng mình có thêm ô "CHOÁNG 1,2s" dưới chân.
+- **Quét Sạch** do mô phỏng phát (`sim/match.js` `checkAce`): cả đội (≥ 2 tướng) cùng nằm, báo đúng một lần mỗi lần bị hạ hết; chỉ 5v5.

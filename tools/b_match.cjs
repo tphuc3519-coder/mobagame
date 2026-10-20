@@ -45,7 +45,9 @@ const center = async (page, sel) => { const r = await page.locator(sel).bounding
 async function drag(page, sel, dx, dy, hold = 0, check = null) {
   const c = await center(page, sel); await page.mouse.move(c.x, c.y); await page.mouse.down();
   for (let i = 1; i <= 8; i++) { await page.mouse.move(c.x + (dx * i) / 8, c.y + (dy * i) / 8); await sleep(30); }
-  await sleep(hold); const seen = check ? await check() : null; await page.mouse.up(); return seen;
+  await sleep(hold); const seen = check ? await check() : null;
+  const tipped = await page.evaluate(() => { const t = document.querySelector('.hudtip'); return !!t && !t.hidden; });
+  await page.mouse.up(); return check ? seen : { tipped };
 }
 /** Chờ fn() (trong trang) đúng, tối đa `ticks` tick mô phỏng (máy kiểm thử không GPU chạy chậm hơn thời gian thật); trả số tick đã chờ, -1 nếu hết. */
 const waitFor = async (page, fn, ticks = 60) => { const t0 = await page.evaluate(() => window.__game.world.tick), d0 = Date.now(); for (;;) { const [v, t] = await page.evaluate((f) => [!!(0, eval)(f)(), window.__game.world.tick], `(${fn})`); if (v) return t - t0; if (t - t0 > ticks || Date.now() - d0 > 120000) return -1; await sleep(60); } };
@@ -62,7 +64,7 @@ async function items(browser) {
       if (!p.items.includes('xich_dong') && !p.items.includes('dai_lua_gio')) { w.command(p.id, { type: 'buy', item: 'xich_dong' }); w.command(p.id, { type: 'buy', item: 'long_ho_menh' }); }
       else { p.items = ['xich_dong', 'long_ho_menh', null, null, null, null]; p.bonus = computeBonus(p); }
     });
-    await waitFor(page, () => { const e = document.querySelector('#extras [data-k="itemAct1"]'); return e && !e.hidden; }, 90);
+    await waitFor(page, () => { const q = (k) => document.querySelector(`#extras [data-k="${k}"]`); return q('itemAct1') && !q('itemAct1').hidden && q('itemAct0').querySelector('label').textContent === 'Xích Giữ'; }, 90);
     const L = await page.evaluate(() => {
       const r = (el) => { const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, vis: !el.hidden && b.width > 0 && getComputedStyle(el).display !== 'none' }; };
       const q = (s) => document.querySelector(s), W = innerWidth, H = innerHeight;
@@ -99,8 +101,10 @@ async function items(browser) {
     const lbl = await page.evaluate(() => document.querySelector('#extras [data-k="itemAct0"] label').textContent);
     const p0 = await page.evaluate(() => { const { foe, place, c } = window.__t, p = window.__game.player; place(p, c.x, c.y); place(foe, c.x + 2500, c.y); return { x: p.pos.x, y: p.pos.y }; });
     const s0 = await screenOf(page, p0.x, p0.y), s1 = await screenOf(page, p0.x + 300, p0.y), k = 80 / Math.hypot(s1.x - s0.x, s1.y - s0.y);
-    await drag(page, '#extras [data-k="itemAct0"] button', (s1.x - s0.x) * k, (s1.y - s0.y) * k); // kéo đúng hướng +x của bản đồ trên màn hình
-    await waitFor(page, () => window.__game.player.itemCd?.dai_lua_gio > 0 && !window.__game.player.dash, 40);
+    const sel0 = '#extras [data-k="itemAct0"] button', ddx = (s1.x - s0.x) * k, ddy = (s1.y - s0.y) * k; // kéo đúng hướng +x của bản đồ trên màn hình
+    const dr = await drag(page, sel0, ddx, ddy);
+    const used = await waitFor(page, () => window.__game.player.itemCd?.dai_lua_gio > 0 && !window.__game.player.dash, 40);
+    if (used < 0 && dr.tipped) console.log('  (lúc thả nút còn đang hiện mô tả: kéo không chuyển sang ngắm)');
     const m = await page.evaluate((p0) => { const p = window.__game.player; return { dx: p.pos.x - p0.x, dy: p.pos.y - p0.y, pad: document.querySelector('.aimpad')?.hidden ?? true }; }, p0);
     ok(`${tag}: kéo nút Lụa Gió → lướt ~320 theo hướng kéo, vòng ngắm tắt`, lbl === 'Lụa Gió' && Math.abs(m.dx - 320) < 45 && Math.abs(m.dy) < 45 && m.pad, `${lbl} Δ ${m.dx.toFixed(0)},${m.dy.toFixed(0)}`);
   }

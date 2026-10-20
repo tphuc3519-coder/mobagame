@@ -27,6 +27,12 @@
 | `tether` | Nối dây với mục tiêu trúng, hiệu ứng khi hết thời gian nếu còn trong tầm | hướng |
 | `recast` | Cho dùng lại N lần trong `recastWindow` giây, mỗi lần có thể là type khác | tuỳ |
 
+Trường chung thêm ở GĐ2 (mọi type): `suppress: { duration?, channel?, breakRange? }` — chiêu áp chế tướng trúng đầu tiên (type `tether`:
+cả sợi dây là một lần áp chế; type khác: áp chế một lần mỗi lượt tung), hết giờ không đứt thì áp các hiệu ứng `atEnd`; `unstoppable: giây`
+(hoặc mảng theo cấp) — người tung miễn khống chế, không bị đẩy / hút / cắt chiêu ngay từ lúc tung; chiêu lướt thì cửa sổ hết cùng cú lướt.
+Chiêu khoá mục tiêu (`targetedDash`, `targeted`): lệnh có thể mang `aim.id` (mục tiêu đang khoá trên HUD / đang xem trước khi kéo / bot chọn) —
+dùng nếu còn hợp lệ, không thì chọn như cũ.
+
 **Chế độ ngắm trên mobile:**
 - **Chạm nhanh** (không kéo quá 15px): tự nhắm, ưu tiên tướng địch gần nhất trong tầm, rồi lính gần nhất. `aoeSelf`/`selfBuff` dùng luôn.
 - **Kéo:** hiện chỉ báo theo hướng/điểm kéo. Thả để tung chiêu. Kéo vào vùng **Huỷ** để huỷ.
@@ -53,8 +59,11 @@
 | `armorShred{pct}` / `mrShred{pct}` | Giảm giáp / KP | – |
 | `mark{key}` | Dấu hiệu cho cơ chế tướng | – |
 | `statMod{...}` | Tăng/giảm chỉ số tuỳ ý | – |
+| `suppress` (áp chế) | Không di chuyển / đánh / chiêu / phép / đồ / Hồi Máu / Biến về; người gây thường đứng niệm giữ (không đi, không đánh, không tung chiêu) — đứt khi người gây bị khống chế cứng, câm lặng, khiêu khích, bị cắt chiêu, chết, kéo giãn quá xa hoặc tự dùng phép / đồ. Giải Trói / Châm Cứu không gỡ | Không |
+| `ccImmune` (miễn khống chế) | Không dính khống chế mới, không bị đẩy / hút / cắt chiêu. Nguồn: Giải Trói, cửa sổ `unstoppable` ("KHÔNG THỂ CẢN") của chiêu | – |
+| `stasis` (Sương Đông) | Bất động, bất tử; hiệu ứng của địch không bám | – |
 
-Quy tắc: **Tốc chạy tối thiểu 150**. Tổng thời gian khống chế cứng liên tiếp lên một mục tiêu > 3s thì các hiệu ứng mới giảm 50% trong 2s tiếp theo (chống khoá chết).
+Quy tắc: **Tốc chạy tối thiểu 150**. Tổng thời gian khống chế cứng liên tiếp lên một mục tiêu > 3s thì các hiệu ứng mới giảm 50% trong 2s tiếp theo (chống khoá chết — *chưa làm*, xem DECISIONS GĐ2). Bị trói (`root`) không tung được chiêu lướt (`dash` / `targetedDash`).
 
 ## 4. Hook cơ chế riêng
 Khai báo trong file tướng, engine gọi đúng lúc:
@@ -325,7 +334,7 @@ Cơ chế lấy từ các đấu thủ của repo autobattle, nhưng **tên, ngo
 - **Nội tại – Chiêu Chảo:** Mỗi đòn đánh trúng +4% tỉ lệ chí mạng (tối đa +36%, giữ 6s); chí mạng gây 210% sát thương.
 - **S1 – Đập Chảo** (`cone`, CD 6→4s): Vung chảo hình quạt, làm chậm 25% trong 1s.
 - **S2 – Mắng Xối** (`aoeSelf`, CD 16→11s): 5 đợt sóng xung kích trong 1s; đạn bay chạm sóng bị phản ngược về phía địch.
-- **S3 – Dép Bay** (`targetedDash`, CD 45→35s): Lao đá vào mục tiêu đã khoá: choáng 1s, tích thêm 3 chí mạng.
+- **S3 – Dép Bay** (`targetedDash`, CD 45→35s): Lao đá vào mục tiêu đã khoá — không thể bị cản 0,5s (miễn khống chế, không bị đẩy) khi đang lao: choáng 1s, tích thêm 3 chí mạng.
 - Build: `giay_chien, kiem_nhanh, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
 
 ### 8.4 Cầu Mây — "Chàng Đá Cầu Xóm Đình"
@@ -338,7 +347,7 @@ Cơ chế lấy từ các đấu thủ của repo autobattle, nhưng **tên, ngo
 ### 8.5 Bóng Đèn — "Nghệ Nhân Rối Bóng"
 - **Nội tại – Bóng Sau Lưng:** Sát thương gây từ sau lưng mục tiêu +30%. Đứng yên 2s hồi 4% mana mỗi giây.
 - **S1 – Phi Tiêu Bóng** (`skillshot`, CD 5→3.5s): Hai phi tiêu, mỗi cái kèm chảy máu 3s.
-- **S2 – Trói Bóng** (`tether`, CD 12→9.5s): Bóng quấn cổ 2s (trói, sát thương theo thời gian) rồi choáng 0.8s nếu còn trong tầm.
+- **S2 – Trói Bóng** (`tether` + `suppress`, CD 13→10.5s): Bóng quấn cổ tướng trúng đầu tiên: áp chế 1,25s (sát thương chia nhịp; Bóng Đèn đứng niệm giữ dây), giữ đủ thì choáng thêm 0,8s. Bóng Đèn bị khống chế cứng / câm lặng / bị cắt chiêu / chết / tự dùng phép, đồ thì dây đứt.
 - **S3 – Lãnh Địa Bóng** (`zone`, CD 70→54s): Vùng rối bóng 5s: địch bên trong chậm 40% và không thể lướt.
 - Build: `giay_phap_su, truong_song, mu_sam, sach_pha_gioi, binh_suong_dong, ngoc_bang`
 
@@ -381,7 +390,7 @@ Cơ chế lấy từ các đấu thủ của repo autobattle, nhưng **tên, ngo
 - **Nội tại – Thế Thuỷ:** Mỗi kỹ năng chuyển sang thế kế tiếp: Sông (+15% tốc chạy), Thác (+20% sát thương đòn kế), Xoáy (làm chậm 20% 1s). Kỹ năng trúng tướng +1 Ấn (tối đa 5).
 - **S1 – Nhát Sông** (`line`, CD 5→3.5s): Hai nhát chém liên tiếp theo hướng.
 - **S2 – Bánh Xe Nước** (`aoeSelf`, CD 9→6.5s): Xoay kiếm quanh mình, hất lùi nhẹ.
-- **S3 – Nhật Vũ Mười Ba Thức** (`dash`, CD 60→40s): Cần đủ 5 Ấn: lướt và chém 13 nhát liên hoàn, nhát cuối gây thêm 50%.
+- **S3 – Nhật Vũ Mười Ba Thức** (`dash`, CD 60→40s): Cần đủ 5 Ấn: lướt (không thể bị cản 0,35s khi lướt) và chém 13 nhát liên hoàn, nhát cuối gây thêm 50%.
 - Build: `giay_chien, kiem_nhanh, huyet_kiem, khien_da, thuong_pha_giap, mat_na_hoi_sinh`
 
 ### 8.12 Lưỡng Cực — "Đạo Sĩ Âm Dương"

@@ -81,8 +81,8 @@ export function createShop(root, { world, player }) {
   // Mua nhanh: món kế tiếp theo build gợi ý
   const qb = $('qb');
   function renderQb() {
-    qb.innerHTML = quickBuys(player, 1).map((q) => { const it = ITEMS[q.goal], line = (it.note || statLines(it).join(', ')).replace(/^Duy nhất:\s*/, '').split(/[.;]/)[0];
-      return `<button class="q ${q.ok ? 'ready' : ''}" data-i="${q.id}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span><span class="qn"><b>${ITEMS[q.id].name}</b><small>${q.id !== q.goal ? '→ ' + it.name : line}</small></span></button>`; }).join('');
+    qb.innerHTML = quickBuys(player, 2).map((q, k) => { const it = ITEMS[q.goal], line = (it.note || statLines(it).join(', ')).replace(/^Duy nhất:\s*/, '').split(/[.;]/)[0]; // mua nhanh 2 món (07 §9): món thứ hai gọn hơn trên màn thấp
+      return `<button class="q ${k ? 'q2 ' : ''}${q.ok ? 'ready' : ''}" data-i="${q.id}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span><span class="qn"><b>${ITEMS[q.id].name}</b><small>${q.id !== q.goal ? '→ ' + it.name : line}</small></span></button>`; }).join('');
   }
   qb.onclick = (e) => { const b = e.target.closest('.q'); if (!b) return; cmd({ type: 'buy', item: b.dataset.i }); sig = ''; };
 
@@ -94,7 +94,7 @@ export function createShop(root, { world, player }) {
       const g = Math.floor(player.gold);
       // dựng lại DOM chỉ khi thứ nhìn thấy đổi (không phải mỗi lần vàng nhích), để chạm không bị mất giữa chừng
       const afford = (id) => { const p = planBuy(player, id); return p.ok && player.gold >= Math.ceil(p.cost) ? 1 : 0; };
-      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 1).map((q) => q.id + (q.ok ? 1 : 0)).join();
+      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 2).map((q) => q.id + (q.ok ? 1 : 0)).join();
       const s = [player.items.join(), open, tab, sel, bits].join('|');
       if (g !== this.lastGold) { // vàng nhích vài lần mỗi giây: chỉ đổi chữ số (dựng lại cả hình giỏ SVG mỗi lần làm Safari tính lại bố cục)
         this.lastGold = g; const gp = $('goldPill'), sg = $('shopGold');

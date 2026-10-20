@@ -175,6 +175,14 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - Mỗi nút kỹ năng: icon, lớp phủ hồi chiêu quét tròn + số giây, mờ khi thiếu mana, ổ khoá khi chưa học.
 - **Chỉ báo ngắm** vẽ trong cảnh 3D, sát mặt đất (02 §13.7): mũi tên (skillshot/dash), vòng tròn + điểm (aoeCircle/zone/blink), hình nón (cone), vòng tầm bắn quanh tướng. Màu ngọc lam; chuyển đỏ khi kéo vào vùng Huỷ.
 - **Nút phụ**: Biến về, Hồi Máu (hồi 15% HP trong 3s, hồi chiêu 60s, tướng địch đánh trúng thì mất hiệu ứng — hiện "Mất hồi máu"), phép bổ trợ.
+- **Đồ kích hoạt: tối đa 2 nút** (chỉ hiện khi có món), nút thứ hai xếp trên nút thứ nhất (hàng nút đáy không dài ra, không đè thanh máu);
+  phím **E** = nút 1, **Q** = nút 2. Đồ có hướng (Lụa Gió) kéo để ngắm như Chớp Bước; đồ khoá mục tiêu (Xích Giữ) giữ nút thì hiện vòng tầm +
+  dấu vàng ở tướng sẽ bị xích. Giữ yên ~0,35s xem mô tả. Bị khống chế / áp chế / đang niệm giữ xích: các nút xám lại.
+- **Chiêu khoá mục tiêu**: chạm nhanh dùng mục tiêu đang khoá (dấu đỏ); kéo thì dấu vàng xem trước đúng tướng sẽ bị chọn và thả ra gửi đúng
+  tướng đó.
+- **Chữ trên đầu**: `ÁP CHẾ` (tím, ưu tiên nhất), `CHOÁNG` / `HẤT TUNG` / `TRÓI` / `KHIÊU KHÍCH` / `CÂM` (vàng), `KHÔNG THỂ CẢN` (vàng cam,
+  khi không có khống chế). Đang niệm giữ xích: thanh tím rút dần dưới thanh mana. Bấm chiêu / đồ không được: chữ nổi lý do trên đầu mình
+  (Không có mục tiêu · Đang bị áp chế · Đang giữ chiêu · Không thể lướt · Đang bị trói · Đang bị khống chế).
 - **Ping và chat nhanh**: nút ping mở vòng tròn 4 lệnh: Tấn công / Rút lui / Tập hợp / Cẩn thận. Chat nhanh: danh sách câu soạn sẵn.
 - **Thông báo hạ gục giữa phía trên** (`hud/killBanner.js`, như Liên Quân): mọi lần tướng chết — đội ta hạ (dải xanh) hay đội địch hạ
   (dải đỏ). Vệt sáng quét ngang mở màn → dải: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),

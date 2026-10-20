@@ -13,7 +13,7 @@ export function applyStatus(world, target, spec, src) {
   if (CC.has(kind) && target.statuses.some((x) => x.kind === 'ccImmune')) return null;
   if (src && src.team !== target.team && kind !== 'stasis' && target.statuses.some((x) => x.kind === 'stasis')) return null; // Sương Đông: hiệu ứng của địch không bám
   const dur = TENACITY.has(kind) ? (spec.duration ?? 0) * (1 - (target.stats?.tenacity || 0)) : spec.duration ?? 0; // kháng hiệu ứng rút ngắn khống chế
-  const s = { ...spec, kind, id, src: src?.id, until: world.tick + T(dur) };
+  const s = { ...spec, kind, id, src: src?.id, t0: world.tick, until: world.tick + T(dur) }; // t0: lúc áp (thanh thời gian khống chế trên HUD)
   delete s.status;
   const i = target.statuses.findIndex((x) => x.id === id);
   if (i >= 0) {

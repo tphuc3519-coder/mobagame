@@ -12,10 +12,23 @@ export const DMG_STYLE = {
   magic: { top: '#f0e4ff', bot: '#8f6bff', stroke: '#1c0d4c', burst: '#a64dff', icon: 'spark' },
   true: { top: '#ffffff', bot: '#d4dbef', stroke: '#2a2d3c', burst: '#e8f0ff', icon: 'gem', glow: true },
 };
-const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30);
-const CC_LABEL = { suppress: 'ÁP CHẾ', stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' };
+const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
+/** Chữ khống chế trên đầu (áp chế ưu tiên cao nhất, màu tím riêng). */
+const CC_STYLE = { suppress: ['ÁP CHẾ', '#c77dff'], knockup: ['HẤT TUNG', '#ffe066'], stun: ['CHOÁNG', '#ffc83a'], taunt: ['KHIÊU KHÍCH', '#ff7a3d'], root: ['TRÓI', '#5fe08a'], silence: ['CÂM LẶNG', '#7fb2ff'] };
+const CC_ORDER = Object.keys(CC_STYLE); // thứ tự ưu tiên hiện: áp chế > hất tung > choáng > khiêu khích > trói > câm
+/** Khống chế cứng mạnh nhất đang dính (cùng loại thì cái còn lâu nhất): { kind, left (giây), frac (0..1 phần còn lại) } hoặc null. */
+export function hardCc(e, tick) {
+  let best = null;
+  for (const s of e.statuses) {
+    const r = CC_ORDER.indexOf(s.kind); if (r < 0 || s.until <= tick) continue;
+    if (!best || r < best.r || (r === best.r && s.until > best.s.until)) best = { r, s };
+  }
+  if (!best) return null;
+  const s = best.s, total = Math.max(1, s.until - (s.t0 ?? s.until - (s.duration || 1) * 30));
+  return { kind: s.kind, left: (s.until - tick) / 30, frac: Math.max(0, Math.min(1, (s.until - tick) / total)) };
+}
 /** Lý do không dùng được chiêu / phép / đồ của chính mình (sự kiện castFail) → chữ nổi trên đầu. */
-const FAIL = { noTarget: 'Không có mục tiêu', suppressed: 'Đang bị áp chế', channel: 'Đang giữ chiêu', noDash: 'Không thể lướt', rooted: 'Đang bị trói', cc: 'Đang bị khống chế' }; // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
+const FAIL = { noTarget: 'Không có mục tiêu', suppressed: 'Đang bị áp chế', channel: 'Đang giữ chiêu', noDash: 'Không thể lướt', rooted: 'Đang bị trói', cc: 'Đang bị khống chế' };
 
 /** Canvas 2D phủ trên cảnh: joystick, thanh máu trên đầu, số sát thương bay, thanh máu/mana của mình, debug. */
 export function createHud(canvas, input, portraits = null) {
@@ -137,6 +150,7 @@ export function createHud(canvas, input, portraits = null) {
         }
         extras.handle(ev, world, world.__localId);
         if (ev.type === 'monsterKill' && ev.boss) kills.boss(ev, world, world.__localId, world.__localTeam);
+        if (ev.type === 'ace') kills.ace(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
         if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
@@ -157,6 +171,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
       ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      let ccPill = null; // khống chế đang dính trên tướng mình: vẽ thêm ô đếm giờ to dưới chân
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
         const p = project(cam, e.pos.x, (e.kind === 'hero' ? HERO_BAR_Y : e.kind === 'dummy' ? 230 : e.height) + floorAt(world.map, e.pos.x, e.pos.y), e.pos.y, w, h); if (!p.visible) continue; // đứng trên bệ trại quái: thanh máu nâng theo
@@ -199,9 +214,25 @@ export function createHud(canvas, input, portraits = null) {
         }
         if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - (isHero ? 34 : 10)); }
         // hiệu ứng khống chế trên đầu
-        const cc = e.statuses.find((s) => s.kind === 'suppress') || e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind)); // áp chế ưu tiên cao nhất
-        if (cc) { ctx.fillStyle = cc.kind === 'suppress' ? '#d8a0ff' : '#ffd23a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(CC_LABEL[cc.kind], p.x, p.y - (isHero ? 48 : 24)); }
+        const cc = hardCc(e, world.tick); // khống chế cứng mạnh nhất: chữ + (tướng) dải thời gian rút dần dưới thanh năng lượng
+        if (cc) {
+          const [label, ccol] = CC_STYLE[cc.kind];
+          ctx.fillStyle = ccol; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(label, p.x, p.y - (isHero ? 48 : 24));
+          if (isHero) { const bw = 86, x0 = p.x - bw / 2 + 8, yb = p.y - 14 + 8 + (e.channel && world.tick < e.channel.until ? 8 : 5), th = e.id === player.id ? 5 : 4;
+            ctx.fillStyle = 'rgba(8,10,20,0.85)'; ctx.fillRect(x0 - 1, yb - 1, bw + 2, th + 2); ctx.fillStyle = ccol; ctx.fillRect(x0, yb, bw * cc.frac, th); }
+          if (e.id === player.id) ccPill = { cc, x: p.x };
+        }
         else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
+      }
+      if (ccPill) { // ô khống chế của mình: viền + nền màu loại khống chế rút dần, chữ "CHOÁNG 1,2s", nằm dưới chân, kẹp trong màn
+        const fp = project(cam, player.pos.x, floorAt(world.map, player.pos.x, player.pos.y), player.pos.y, w, h), [label, ccol] = CC_STYLE[ccPill.cc.kind];
+        const pw = 132, ph = 24, px = Math.max(8, Math.min(w - pw - 8, fp.x - pw / 2)), py = Math.max(8, Math.min(h - ph - 40, fp.y + 16));
+        ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = 'rgba(10,12,24,0.85)'; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(px, py, Math.max(ph, pw * ccPill.cc.frac), ph, 12); ctx.fillStyle = ccol + '80'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = ccol; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${label} ${ccPill.cc.left.toFixed(1).replace('.', ',')}s`, px + pw / 2, py + ph / 2 + 0.5); ctx.restore();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       }
       // số bay
       for (let i = floats.length - 1; i >= 0; i--) {

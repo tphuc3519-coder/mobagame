@@ -7,6 +7,9 @@
 - Có tuỳ chọn **Tự mua đồ** (mặc định tắt cho người chơi, luôn bật cho bot).
 - Chỉ được có **1 đôi giày** và **1 món đi rừng**.
 - Nội tại "duy nhất" (ghi *Duy nhất*) không cộng dồn khi có 2 món cùng nội tại.
+- **Đồ kích hoạt: tối đa 2 món mỗi túi** (`ACTIVE_MAX`, HUD có 2 nút; mua món thứ ba báo "Chỉ mang tối đa 2 món có kích hoạt"). Hồi chiêu
+  riêng từng món, không giảm bởi giảm hồi chiêu, chỉ tính khi kích hoạt thành công (không có mục tiêu → không mất hồi). Không dùng được khi bị
+  khống chế cứng (trừ Bình Sương Đông) hoặc khi bị áp chế / đang Sương Đông. Dùng được thì huỷ Biến về.
 
 Ký hiệu chỉ số: Công, Phép, HP, Mana, Giáp, KP (kháng phép), TĐ (tốc đánh %), CM (tỉ lệ chí mạng), HM (hút máu), HMP (hút máu phép), GHC (giảm hồi chiêu), XG (xuyên giáp), XKP (xuyên kháng phép), Chạy (tốc chạy phẳng), KHU (kháng hiệu ứng).
 
@@ -49,6 +52,7 @@ Ký hiệu chỉ số: Công, Phép, HP, Mana, Giáp, KP (kháng phép), TĐ (t�
 | dao_trang_khuyet | Dao Trăng Khuyết | 2300 | kiem_sat + dao_nho + 1700 | +70 Công, +25% CM | *Duy nhất:* sát thương chí mạng +50% |
 | bua_than_ren | Búa Thần Rèn | 2200 | kiem_sat + tui_hat + gang_tay_da + 1350 | +35 Công, +20% TĐ, +400 HP | *Duy nhất:* đòn đánh +2% HP tối đa mục tiêu VL |
 | mat_na_hoi_sinh | Mặt Nạ Hồi Sinh | 2600 | riu_dong + ao_da + 1850 | +45 Công, +30 Giáp | *Duy nhất:* khi nhận sát thương chí tử, bất tử 2s và hồi 20% HP (CD 120s) |
+| dai_lua_gio | Dải Lụa Gió | 2200 | gang_tay_da + kiem_sat + 1650 | +40 Công, +20% TĐ, +5% tốc chạy | *Kích hoạt (Lụa Gió):* lướt 320 theo hướng kéo (chạm nhanh: theo Hướng tốc biến), +25% tốc chạy 1,5s (CD 45s). Bị trói / khống chế cứng / trong kết giới thì không lướt được |
 
 ### Phép
 | id | Tên | Giá | Công thức | Chỉ số | Nội tại |
@@ -68,6 +72,8 @@ Ký hiệu chỉ số: Công, Phép, HP, Mana, Giáp, KP (kháng phép), TĐ (t�
 | ao_choang_suong | Áo Choàng Sương | 2000 | ao_lua + tui_hat + 1400 | +55 KP, +450 HP | *Duy nhất:* hồi 2% HP/s khi vừa nhận sát thương phép trong 3s |
 | tim_co_thu | Tim Cổ Thụ | 2500 | tui_hat + tui_hat + 1900 | +1000 HP | *Duy nhất:* hồi 1.5% HP tối đa/s khi 5s không nhận sát thương |
 | giap_den_long | Giáp Đèn Lồng | 2100 | hat_nang + ao_lua + 1400 | +350 HP, +35 KP, +10% GHC | *Duy nhất:* đồng minh trong 700 +10 Giáp và KP |
+| xich_dong | Xích Đồng | 2300 | tui_hat + ao_lua + ao_da + 1400 | +450 HP, +30 Giáp, +30 KP | *Kích hoạt (Xích Giữ, khoá mục tiêu):* áp chế tướng địch đang khoá (không thì gần nhất) trong 450 — cả hai cùng đứng yên 1,25s; đứt khi người dùng bị khống chế cứng / câm lặng / bị cắt chiêu / chết / dùng phép, đồ khác hoặc kéo giãn quá 650 (CD 80s) |
+| long_ho_menh | Lọng Hộ Mệnh | 2200 | hat_nang + ao_da + 1500 | +300 HP, +30 Giáp, +10% GHC | *Kích hoạt (Lọng Che):* bạn và tướng đồng minh trong 600 nhận khiên 80 (+12 mỗi cấp tướng) + 5% HP tối đa của bạn trong 2,5s (CD 70s) |
 
 ### Hỗ trợ và đi rừng (mỗi loại tối đa 1)
 | id | Tên | Giá | Chỉ số | Nội tại |
@@ -75,7 +81,8 @@ Ký hiệu chỉ số: Công, Phép, HP, Mana, Giáp, KP (kháng phép), TĐ (t�
 | den_dong_hanh | Đèn Đồng Hành | 400 | +200 HP, +5% GHC | *Hỗ trợ:* khi có đồng minh trong 800, được chia vàng khi đồng minh kết liễu lính (bản thân không nhận vàng lính). Sau khi tích 600 vàng từ nội tại, tự nâng thành **Đèn Soi Đường** (+400 HP, +10% GHC, hồi máu và khiên cho người khác +15%) |
 | nanh_thu_rung | Nanh Thú Rừng | 400 | +10 Công, +10 Phép | *Đi rừng:* sát thương lên quái +30%, hồi 30 HP mỗi đòn lên quái; nhận thêm 30% vàng và KN từ quái. Tự nâng sau khi hạ 20 bãi: +25 Công/Phép và +20% sát thương lên quái. **Chỉ mua được khi mang phép Thu Hoạch.** |
 
-Tổng: 12 thành phần + 5 giày + 18 đồ hoàn chỉnh + 2 đồ hỗ trợ/đi rừng + 1 đồ nâng tự động (Đèn Soi Đường) = **38 món**.
+Tổng: 12 thành phần + 5 giày + 18 đồ hoàn chỉnh + 2 đồ hỗ trợ/đi rừng + 1 đồ nâng tự động (Đèn Soi Đường) = **38 món** (bảng gốc; code
+hiện có **56 món** — `data/items.js` là nguồn đúng; GĐ2 thêm 3 món kích hoạt Xích Đồng, Lọng Hộ Mệnh, Dải Lụa Gió ở bảng trên).
 
 ### Build có ghi "nanh_thu_rung (nếu Rừng)"
 Khi tướng mang Thu Hoạch, `nanh_thu_rung` được thêm vào đầu build. Nếu không, bỏ qua. Engine xử lý bằng trường `buildJungle` riêng trong file tướng.

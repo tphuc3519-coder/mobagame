@@ -326,3 +326,47 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 - **1v1 không hoà mãi**: tướng hồi máu / đỡ đòn đấu nhau từng kéo 40 phút (14/50 trận bot hoà). Từ phút 18 đội đã phá trụ địch có siêu lính,
   từ phút 30 công trình nhận gấp đôi sát thương và thôi hồi máu; bot lao phá trụ khi đối thủ còn chết ≥ 6 s. Đo lại: 50/50 trận kết thúc, TB 20,4 phút.
 - Kiểm thử mới: `node tools/t_heroes.mjs` (cơ chế từng tướng + 14 trận bot 90 s), `node tools/t_rules5v5.mjs`. Toàn bộ `tools/t_*.mjs` đạt.
+
+## GĐ2 (nhánh gd2-trongtran): chiêu khoá mục tiêu, Áp chế, Không thể cản, 3 đồ kích hoạt mới (20/10)
+- **Áp chế** (`sim/suppress.js`): sợi xích nối người gây và mục tiêu — mục tiêu không đi / đánh / chiêu / phép / đồ / Hồi Máu / Biến về,
+  không giảm bởi kháng hiệu ứng, Giải Trói không gỡ; người gây đứng niệm giữ, đứt khi bị khống chế cứng / câm lặng / khiêu khích / bị cắt chiêu
+  / chết / tự dùng phép, đồ. Một cửa chặn lệnh duy nhất ở `sim/commands.js`. Bóng Đèn K2 Trói Bóng: áp chế 1,25s rồi choáng 0,8s (hồi 13→10,5s).
+- **Không thể cản** (`unstoppable`): Bà Năm K3 Dép Bay 0,5s, Kiếm Thuỷ K3 Nhật Vũ 0,35s — miễn khống chế, không bị đẩy / hút / cắt chiêu (hết
+  cùng cú lướt). Miễn khống chế (cả Giải Trói, cú bay của Mèo) giờ chặn luôn đẩy / hút / cắt chiêu. Bị trói không lướt được.
+- **Chiêu khoá mục tiêu**: lệnh mang `aim.id` — chạm nhanh dùng mục tiêu đang khoá, kéo thì dấu vàng xem trước đúng tướng sẽ bị chọn và gửi đúng
+  tướng đó; bot gửi đúng tướng nó chọn. Đạn khoá mục tiêu trượt khi mục tiêu vào Sương Đông / không thể chọn giữa đường; Sương Đông chặn mọi
+  hiệu ứng của địch.
+- **Đồ kích hoạt** (`sim/itemActives.js`): tối đa 2 món / túi, HUD 2 nút (nút 2 xếp trên nút 1; phím E / Q), mờ khi không có mục tiêu, xám khi bị
+  khống chế. Món mới: **Xích Đồng** (Xích Giữ — áp chế 1,25s), **Lọng Hộ Mệnh** (Lọng Che — khiên cả nhóm), **Dải Lụa Gió** (Lụa Gió — lướt
+  320). Danh mục 56 món. Bot dùng theo `BOT.items` (06 §4.7), bot 5v5 đánh trước kẻ bị áp chế / đang niệm.
+- Chữ trên đầu `ÁP CHẾ` / `KHÔNG THỂ CẢN`, thanh niệm tím, chữ lý do khi bấm hỏng; hiệu ứng (xích, vòng ký tự, kén băng, vòng lọng, vệt lụa) và
+  tiếng chỉ dùng hình / id có sẵn (không dựng lại `assets/audio`, không đụng `render/vfx/library.js`).
+- Kiểm thử mới: `node tools/t_suppress.mjs` (37 mục), `node tools/t_actives.mjs` (41), `node tools/t_lockon.mjs` (16); `t_items` (56 món),
+  `t_heroes` (Bóng Đèn) cập nhật. Toàn bộ bộ nhanh + `t_arena` + `t_bot` (50/50 trận kết thúc, TB 20,1 phút, kẹt lâu nhất 2,2s) đạt;
+  `t_premium` đạt (35 file của 4 model cao cấp không đổi).
+- **Dấu vân tay mô phỏng mới** (`node tools/t_determinism.mjs`, hai lần chạy trùng nhau): 5v5 `748f8cd9 60ce391c c9a30571 83d4ef8a e4036f30
+  102485c6 778d3ec2 18041c25`; 1v1 `baae542e 454d9a52 170c06b7 bc096c4e 5925c156 34c07f7e bb44540f aedd9e61` (1v1 không đổi so với trước; 5v5
+  khác từ phút 2 vì Bóng Đèn có trong đội hình bot).
+- **Kiểm thử trình duyệt**: `node tools/b_match.cjs <PORT> [--only=items,lockon,suppress]` (trận 5v5 thật `?hero=<id>&mode=5v5`, 844×390 rồi
+  1280×720): 2 nút đồ không đè nút khác / thanh máu / mép màn, chạm Xích Giữ áp chế địch, giữ nút Lọng xem mô tả, phím Q dùng Lọng, kéo Lụa Gió
+  lướt ~320, kéo K3 Trạng Nhí hiện dấu vàng và gửi đúng `aim.id`, chạm K2 Bóng Đèn áp chế; không lỗi trang / console.
+- Thử trên điện thoại: 2 nút đồ ở 844×390 (mua Xích Đồng + Lọng Hộ Mệnh), chạm Xích Giữ cạnh tướng địch, kéo Lụa Gió theo nhiều hướng, Bóng Đèn
+  K2, chữ `ÁP CHẾ` / `KHÔNG THỂ CẢN`, giữ nút đồ xem mô tả rồi kéo tiếp.
+
+## GĐ2 — Khoá mục tiêu, Áp chế, Không thể cản, đồ kích hoạt mới
+- `src/sim/suppress.js` (áp chế + niệm giữ), `src/sim/itemActives.js` (Xích Giữ, Lọng Che, Lụa Gió, Sương Đông), cửa chặn lệnh khi bị
+  áp chế / Sương Đông trong `sim/commands.js`, `unstoppable` trong `sim/skills.js` + `movement.js`, chiêu khoá mục tiêu nhận `aim.id`.
+- HUD: 2 nút đồ kích hoạt, chữ trên đầu "ÁP CHẾ" / "KHÔNG THỂ CẢN", chữ báo lỗi tung chiêu; hiệu ứng xích / lọng / lụa (`render/vfx/extra.js`).
+- Kiểm thử: `node tools/t_suppress.mjs`, `node tools/t_actives.mjs`, `node tools/t_lockon.mjs`; trình duyệt `node tools/b_match.cjs <port>`.
+- Thử trên điện thoại: mua Xích Đồng + Lọng Hộ Mệnh → 2 nút đồ không đè nút nào ở 844×390; chạm Xích Giữ cạnh tướng địch; kéo Lụa Gió;
+  Bóng Đèn K2 giữ được tướng địch, Giải Trói của địch không gỡ được.
+
+## GĐ2 — Tín hiệu, mua nhanh 2 món, thanh khống chế, Quét Sạch
+- Mô phỏng: `src/sim/pings.js` (lệnh `ping`, giới hạn tần suất, `pingMood`), `checkAce` trong `sim/match.js`, `t0` của hiệu ứng.
+- Bot: `ai/teamBrain.js` giao lệnh `ping` theo tín hiệu người chơi + bot tự ra tín hiệu khi đội có người chơi; `ai/laneBot.js` đi theo,
+  Rút lui / Cẩn thận.
+- HUD: `src/hud/pings.js` (nút cờ, vòng 4 lựa chọn, vẽ vòng + huy hiệu trên đất và bản đồ nhỏ, dòng chữ), `src/hud/pingText.js` (tên chỗ),
+  `killBanner.js` thêm Quét Sạch, `hud.js` thanh khống chế, `shop.js` mua nhanh 2 món.
+- Kiểm thử: `node tools/t_pings.mjs`.
+- Thử trên điện thoại: chạm nút cờ cạnh bản đồ nhỏ → chọn Tập hợp → chạm hang Long Ngư trên bản đồ nhỏ: dòng chữ hiện, bot đồng đội báo
+  "Tới ngay!" và kéo tới; Rút lui gần bot thì bot lùi; bị choáng thấy ô "CHOÁNG 1,2s" dưới chân; mua nhanh hiện 2 món không đè cần di chuyển.

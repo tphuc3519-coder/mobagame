@@ -92,9 +92,10 @@ export function createSpellButtons(root, { world, player, indicators, lockId = (
     });
     b.addEventListener('pointermove', (e) => {
       const press = presses.get(k);
-      if (!press || e.pointerId !== press.id || aimOf(k) !== 'direction' || press.tip || !player.alive) return;
+      if (!press || e.pointerId !== press.id || aimOf(k) !== 'direction' || !player.alive) return;
       const dx = e.clientX - press.cx, dy = e.clientY - press.cy, l = Math.hypot(dx, dy);
-      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / dragMax()); clearTimeout(press.timer); }
+      // kéo quá DRAG_MIN: ngắm — kể cả khi đã giữ lâu tới mức hiện mô tả (tắt mô tả, như nút kỹ năng): giữ hơi lâu rồi mới kéo vẫn dùng được
+      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / dragMax()); clearTimeout(press.timer); if (press.tip) { press.tip = false; hideTip(); } }
       if (press.dir) { press.cancel = isCancel(press, e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }, owner(k)); }
     });
     const end = (e, cancel) => {

@@ -7,6 +7,8 @@ import { T, dist } from '../sim/util.js';
 import { canSee } from '../sim/vision.js';
 import { MONSTERS } from '../data/jungle.js';
 import { BRAIN } from '../data/ai.js';
+import { PING, PING_KINDS } from '../data/signals.js';
+import { livePings } from '../sim/pings.js';
 const PUSH = BRAIN.push;
 
 const BOSS_RANK = { ta_than: 4, than_dieu: 3, ho_loi: 2, long_ngu: 1 };
@@ -27,6 +29,9 @@ function think(world, team, prev) {
   const orders = new Map(), taken = new Set(), minute = world.tick / 1800;
   const nearest = (p, n, filter = () => true) => bots.filter((b) => !taken.has(b.id) && filter(b)).sort((a, b) => dist(a.pos, p) - dist(b.pos, p)).slice(0, n);
   const give = (list, order) => { for (const b of list) { taken.add(b.id); orders.set(b.id, order); } };
+  // bot tự ra tín hiệu (chỉ khi đội có người chơi — trận toàn bot không đổi; bot không làm theo tín hiệu của bot), tối đa mỗi PING.botGap giây
+  let botPingTick = prev.botPingTick ?? -1e9;
+  const botPing = (b, kind, p) => { if (!heroes.some((h) => h.team === team && !h.bot) || world.tick - botPingTick < T(PING.botGap)) return; botPingTick = world.tick; world.command(b.id, { type: 'ping', kind, x: Math.round(p.x), y: Math.round(p.y) }); };
 
   // 1. thủ trụ / nhà chính đang bị tướng địch đánh
   for (const s of world.entities) {
@@ -35,6 +40,21 @@ function think(world, team, prev) {
     if (!raiders.length) continue;
     const helpers = nearest(s.pos, Math.min(4, raiders.length + 1), (b) => dist(b.pos, s.pos) < 4500 + (s.kind === 'core' ? 4000 : 0));
     give(helpers, { kind: 'defend', id: s.id, x: s.pos.x, y: s.pos.y, until: world.tick + T(6) });
+  }
+
+  // 1b. tín hiệu của người chơi cùng đội (07 §9): Tấn công → tối đa 3 bot gần nhất đi đánh, Tập hợp → tối đa 4 bot tới; Rút lui mới hơn
+  //     gần đó huỷ hai loại này. Bot đã nhận một tín hiệu thì giữ (không đổi người giữa chừng). Lần đầu có bot nhận → sự kiện pingAck.
+  const crews = {}, acked = prev.acked || [];
+  const asks = livePings(world, team).filter((p) => p.kind === 'attack' || p.kind === 'gather').slice(-2);
+  const retreats = livePings(world, team, 'retreat');
+  for (const p of asks) {
+    if (retreats.some((r) => r.tick > p.tick && dist(r, p) < PING.cancelBy)) continue;
+    const cfg = PING[p.kind], keep = (prev.crews?.[p.id] || []).map((id) => bots.find((b) => b.id === id)).filter((b) => b && !taken.has(b.id));
+    const crew = [...keep, ...nearest(p, cfg.bots, (b) => !keep.includes(b) && dist(b.pos, p) < cfg.range && hp01(b) >= cfg.hp)].slice(0, cfg.bots);
+    if (!crew.length) continue;
+    give(crew, { kind: 'ping', mode: p.kind, ping: p.id, x: p.x, y: p.y, target: p.target, until: p.tick + T(PING_KINDS[p.kind].hold) });
+    crews[p.id] = crew.map((b) => b.id);
+    if (!acked.includes(p.id)) { acked.push(p.id); world.emit('pingAck', { id: crew[0].id, ping: p.id, team, kind: p.kind, bots: crews[p.id] }); }
   }
 
   // 2. mục tiêu lớn: hơn người, hoặc địch còn ít người sống, hoặc đang đánh dở
@@ -53,6 +73,7 @@ function think(world, team, prev) {
       const jungler = free.find((b) => b.role === 'jungle'), crew = nearest(boss, 4, (b) => dist(b.pos, boss) < 7000);
       if (jungler && !crew.includes(jungler) && !taken.has(jungler.id)) crew.splice(3, 1, jungler);
       if (crew.length >= 3) give(crew, { kind: 'boss', camp: boss.id, x: boss.x, y: boss.y });
+      if (crew.length >= 3 && boss.id !== prev.boss) botPing(crew[0], 'gather', boss); // đội có người chơi: bot ra tín hiệu Tập hợp ở mục tiêu lớn
       else boss = null;
     }
   }
@@ -74,8 +95,9 @@ function think(world, team, prev) {
     }).sort((a, b) => a.score - b.score);
     push = prev.push != null && world.tick < (prev.pushUntil || 0) && lanes.find((l) => l.i === prev.push && l.score < Infinity) ? prev.push : lanes[0].i;
     give(freeNow, { kind: 'push', lane: push, why, until: world.tick + T(PUSH.hold) });
+    if (push !== prev.push) { const tgt = world.entities.filter((s) => s.structure && !s.noTarget && s.alive && s.team !== team && !s.invulnerable).sort((a, b) => dist(a.pos, freeNow[0].pos) - dist(b.pos, freeNow[0].pos))[0]; if (tgt) botPing(freeNow[0], 'attack', tgt.pos); }
   }
-  return { orders, boss: boss?.id ?? null, push, pushUntil: push == null ? 0 : prev.push === push && prev.pushUntil > world.tick ? prev.pushUntil : world.tick + T(PUSH.hold) };
+  return { orders, crews, acked: acked.slice(-16), botPingTick, boss: boss?.id ?? null, push, pushUntil: push == null ? 0 : prev.push === push && prev.pushUntil > world.tick ? prev.pushUntil : world.tick + T(PUSH.hold) };
 }
 
 /** Lệnh hiện tại của bot (hoặc null). */

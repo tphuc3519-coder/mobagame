@@ -1,4 +1,5 @@
 import { T, dist } from './util.js';
+import { checkAce } from './match.js';
 import { removeStatus, isStealthed, isInvulnerable, applyStatus } from './status.js';
 import { onKill, respawnSeconds } from './economy.js';
 import { tryRevive, onMagicTaken } from './items.js';
@@ -119,6 +120,7 @@ function kill(world, src, tgt) {
     if (!world.firstBlood) { world.firstBlood = { tick: world.tick, killer: killer.id, victim: tgt.id }; ev.first = true; }
   }
   world.emit('death', ev);
+  checkAce(world, tgt, ev.killer); // Quét Sạch
 }
 
 /** Hồi máu nhận thêm và khiên tặng đồng minh (không tính cho chính mình) — chỉ số "hồi/khiên" của điểm trận (08 §2). */
