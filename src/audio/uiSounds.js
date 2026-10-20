@@ -3,7 +3,7 @@
 // tướng, đếm giây, VS, kết quả) gọi thẳng sfx() ở màn đó.
 import { sfx, music } from './audio.js';
 
-const SCREEN_MUSIC = { home: 'lobby', room: 'lobby', pick: 'lobby', lineup: 'lobby', loading: null };
+const SCREEN_MUSIC = { home: 'lobby', room: 'lobby', pick: 'lobby', draft: 'lobby', lineup: 'lobby', loading: null };
 const CONFIRM = new Set(['go', 'again', 'quick', 'normal', 'ranked', 'accept', 'invite']);
 const OPEN = new Set(['settings', 'heroes', 'items', 'bag', 'friends', 'mail', 'missions', 'leader', 'history', 'event', 'profile', 'modes', 'gems', 'chat', 'spell', 'stats']);
 
@@ -12,7 +12,7 @@ export function hookUiSounds() {
     const ui = document.getElementById('ui'); if (!ui || ui.hidden) return; // trong trận #ui ẩn: tiếng do HUD / gameSounds.js lo
     const b = e.target.closest('button, [data-a], .hc, [data-tab], [data-t], [data-inv], [data-sp]'); if (!b || !ui.contains(b) || b.disabled) return;
     const a = b.dataset.a;
-    if (a === 'lock') return; // khoá tướng: tiếng riêng trong pick.js (cả lúc hết giờ tự khoá)
+    if (a === 'lock' || a === 'ban' || a === 'skip') return; // khoá / cấm / bỏ cấm: tiếng riêng trong pick.js / draft.js (cả lúc hết giờ tự khoá)
     if (a === 'claim') sfx('ui_reward');
     else if (b.matches('.ui-back') || a === 'back' || a === 'home') sfx('ui_back');
     else if (CONFIRM.has(a)) sfx('ui_confirm');

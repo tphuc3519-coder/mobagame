@@ -36,7 +36,7 @@ import { PLAYER_POS } from './render/env/foliage.js';
 import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
 import { createScoreboard } from './hud/scoreboard.js';
-import { STARTER, ITEMS } from './data/items.js';
+import { STARTER, ITEMS, starterFor } from './data/items.js';
 import { createGameSounds } from './audio/gameSounds.js';
 import { sfx, music } from './audio/audio.js';
 import { prefs, onPref } from './core/prefs.js';
@@ -45,7 +45,8 @@ import { SPELLS } from './data/spells.js';
 import { CHARM_PAGES } from './data/charms.js';
 import { computeBonus } from './sim/inventory.js';
 /**
- * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), allies/foes (5v5: id tướng), spellId, charmId, difficulty, seed,
+ * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), allies/foes (5v5: id tướng), playerRole/allyRoles/foeRoles (5v5:
+ * vị trí chốt ở màn chọn — data/roles.js), spellId, charmId, difficulty, seed,
  * bot=true, dummies (1v1: 3 hình nộm), names: [{ heroId → tên người chơi } đội 0, đội 1], onGameOver({ world, player, winner }) }
  * Không có onGameOver (vào thẳng bằng ?hero=): hiện bảng THẮNG/THUA đơn giản, Chơi lại = tải lại trang.
  * Tham số URL dành cho kiểm thử: ?mode=5v5, ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
@@ -63,7 +64,7 @@ const map = arena ? ARENA : DUEL;
 const world = createWorld({ map, seed });
 let player, enemy = null;
 if (arena) {
-  const lineup = setupTeams(world, { heroId, difficulty: opts.difficulty || 'normal', allies: opts.allies, foes: opts.foes });
+  const lineup = setupTeams(world, { heroId, difficulty: opts.difficulty || 'normal', allies: opts.allies, foes: opts.foes, playerRole: opts.playerRole, allyRoles: opts.allyRoles, foeRoles: opts.foeRoles });
   player = lineup.player;
 } else {
   player = world.spawnHero(heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.road.y });
@@ -125,7 +126,7 @@ const spells = createSpellButtons(document.getElementById('extras'), { world, pl
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
 warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
 preloadMonsters(); // nạp sẵn model quái rừng + lính (lính ra từ giây 20, quái từ giây 30)
-for (const id of STARTER[HEROES[heroId].roles[0]] || []) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vai (05 §5)
+for (const id of starterFor(HEROES[heroId], player.role, player.spell?.id)) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vị trí / vai (05 §5)
 if (q.has('shop')) shop.open(true);
 
 // bảng thử (chỉ khi ?debug=1)

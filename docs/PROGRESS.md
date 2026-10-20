@@ -326,3 +326,27 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 - **1v1 không hoà mãi**: tướng hồi máu / đỡ đòn đấu nhau từng kéo 40 phút (14/50 trận bot hoà). Từ phút 18 đội đã phá trụ địch có siêu lính,
   từ phút 30 công trình nhận gấp đôi sát thương và thôi hồi máu; bot lao phá trụ khi đối thủ còn chết ≥ 6 s. Đo lại: 50/50 trận kết thúc, TB 20,4 phút.
 - Kiểm thử mới: `node tools/t_heroes.mjs` (cơ chế từng tướng + 14 trận bot 90 s), `node tools/t_rules5v5.mjs`. Toàn bộ `tools/t_*.mjs` đạt.
+
+## GĐ2 (20/10) — chọn vị trí + cấm/chọn đấu hạng
+- **Phòng chờ 5v5**: nút vị trí dưới ô của mình ("Chọn vị trí" nhấp nháy khi chưa chọn) → hộp Vị trí chính (Đền / Giữa / Sông / Rừng / Trợ
+  thủ / Tuỳ ý) + Vị trí phụ; Bắt đầu khi chưa chọn thì mở hộp trước. Đấu hạng ghi luật "Cấm/chọn Cơ bản · 4 cấm / Đầy đủ · 6 cấm". Tìm thấy
+  trận: chia vị trí (85% vị trí chính), hộp chấp nhận ghi "Vị trí của bạn: Đi rừng (vị trí phụ)".
+- **Đấu thường (chọn ẩn) có vị trí**: mỗi dòng đội ghi vị trí, lưới xếp tướng hợp vị trí lên đầu + nhãn "Đề cử", máy chọn tướng hợp vị trí,
+  đối thủ chọn ẩn theo vị trí của họ; đi rừng chọn sẵn Trừng Trị.
+- **Đấu hạng → Cấm/chọn** (`src/ui/draft.js`): hàng ô cấm hai bên, đồng hồ lượt, cột Xanh / Đỏ (vị trí, "Đang cấm… / Đang chọn…", tướng đã
+  chọn), lưới lọc Tất cả / Đề cử / theo vị trí, Cấm / Bỏ qua / Khoá tướng; dưới Hải Đăng 2 cấm mỗi bên, từ Hải Đăng đủ 3 (07 §7.3). Xong:
+  15 s chuẩn bị (tướng trên sân khấu, phép bổ trợ, bảng bùa, Sẵn sàng) → đội hình (có vị trí) → tải trận (máy đi rừng hiện Trừng Trị) → trận.
+- **Vị trí vào trận**: `startMatch` nhận `playerRole / allyRoles / foeRoles`; mỗi tướng đứng đúng ô đã chia; người chơi đi rừng có Trừng Trị +
+  Nanh Thú Rừng. Gọi không có vị trí: y như cũ (băm `t_determinism 8 1` trước/sau trùng nhau).
+- File mới: `src/data/roles.js`, `src/data/draft.js`, `src/ui/roles.js`, `src/ui/draftRules.js`, `src/ui/roleSelect.js`, `src/ui/pickLoadout.js`,
+  `src/ui/draft.js`, `src/ui/cssDraft.js`; sửa nhỏ `sim/lineup.js` (ghim ô), `game.js`, `main.js`, `data/items.js` (`starterFor`), `ui/room.js`,
+  `ui/pick.js`, `ui/flow.js`, `ui/lineup.js`, `ui/loading.js`, `ui/profile.js`, `audio/uiSounds.js`.
+- Kiểm thử: `node tools/t_draft.mjs` (thứ tự lượt, 3000 ván máy: không trùng / không chọn tướng bị cấm / không tự cấm tướng được bảo vệ, 98,7%
+  tướng máy chọn hợp vị trí, tất định theo seed, chia vị trí 85%, tướng tủ bị cấm ~50%), `node tools/t_lineup_roles.mjs` (vị trí vào sim, đường
+  cũ giữ nguyên 20 seed, trùng tướng hai đội, đồ khởi đầu, 2 phút trận người chơi đi rừng), trình duyệt `node tools/b_flow.cjs <cổng>` (cần máy
+  chủ tĩnh) hoặc `node tools/t_ui_draft.mjs [cổng]` (tự mở máy chủ): Sảnh → Đấu hạng → Phòng chờ → Tìm trận → Chấp nhận → Cấm/chọn → Chuẩn
+  bị → Đội hình → Tải → Trận ở 844×390 (lite) và 1280×720 (full), Đấu thường ở cả hai cỡ, hộp chọn vị trí; đo trong khung nhìn, không cuộn
+  ngang, không lỗi trang / console.
+- Danh sách thử trên điện thoại: 19,5:9 ngang + máy tính bảng 16:9 — Sảnh → Đấu hạng → Phòng chờ (nút Vị trí) → Tìm trận → Chấp nhận (hiện vị
+  trí) → Cấm/chọn (Cơ bản ở Đèn Dầu, Đầy đủ ở Hải Đăng) → Chuẩn bị → Đội hình → Tải → Trận (đúng đường; đi rừng có Trừng Trị + Nanh Thú Rừng) →
+  Kết quả → Đấu lại về phòng chờ, vị trí vẫn giữ.

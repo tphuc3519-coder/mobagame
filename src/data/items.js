@@ -90,6 +90,13 @@ export const STARTER = {
   tank: ['ao_da', 'tui_hat'], fighter: ['kiem_sat', 'tui_hat'], assassin: ['kiem_sat', 'tui_hat'],
   mage: ['ngoc_trang', 'ngoc_luu_ly'], marksman: ['dao_nho', 'gang_tay_da'], support: ['den_dong_hanh'],
 };
+/** Đồ khởi đầu theo vị trí 5v5 (đi rừng chỉ khi mang đúng phép — Nanh Thú Rừng cần Trừng Trị); vị trí khác: theo lớp tướng. */
+export const STARTER_LANE = { jungle: { items: ['nanh_thu_rung', 'tui_hat'], needSpell: 'thu_hoach' }, support: { items: STARTER.support } };
+export function starterFor(hero, lane, spellId) {
+  const L = STARTER_LANE[lane];
+  if (L && (!L.needSpell || L.needSpell === spellId)) return L.items;
+  return STARTER[hero.roles[0]] || [];
+}
 
 // Tên đồ trong build gợi ý của tướng port chưa có trong bảng chính thức → quy về đồ hợp lệ gần nghĩa nhất.
 const ALIAS = { kiem_nhanh: 'luoi_huyet_nguyet', giay_xa_thu: 'giay_toc_chien', ao_giap_nhe: 'ao_choang_suong', nhan_bao_kich: 'dao_trang_khuyet', ngoc_binh_an: 'giap_den_long', giay_giap: 'giay_chien', ao_giap_dong: 'tim_co_thu' };

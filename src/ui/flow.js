@@ -12,18 +12,19 @@ import { stageDispose } from './stage.js';
 import { openHome } from './home.js';
 import { openRoom } from './room.js';
 import { openPick } from './pick.js';
+import { openDraft } from './draft.js';
 import { openLineup } from './lineup.js';
 import { openLoading } from './loading.js';
 import { openPostgame } from './postgame.js';
 import { screenSound } from '../audio/uiSounds.js';
 
-const SCREENS = { home: openHome, room: openRoom, pick: openPick, lineup: openLineup, loading: openLoading };
+const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading };
 const NEXT = 'la.next';
 const ui = () => document.getElementById('ui');
 let cur = null;
 
 export const nav = {
-  /** Mở màn `name` (home | room | pick | lineup | loading), đóng màn đang mở. */
+  /** Mở màn `name` (home | room | pick | draft (cấm/chọn đấu hạng) | lineup | loading), đóng màn đang mở. */
   go(name, args = {}) {
     const prev = cur; cur = null;
     try { prev?.close?.(); } catch (e) { console.warn(e); }
@@ -45,6 +46,7 @@ export const nav = {
     startMatch({
       mode: M.map, heroId: P.heroId, enemyId: P.foeHeroes[0] || null, allies: M.map === '5v5' ? P.allyHeroes : undefined, foes: M.map === '5v5' ? P.foeHeroes : undefined,
       spellId: P.spellId, charmId: P.charmId, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
+      ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       onGameOver: gameOver,
     });

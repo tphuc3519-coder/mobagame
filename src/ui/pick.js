@@ -1,12 +1,18 @@
 // Chọn tướng (sau khi chấp nhận trận): lưới tướng bên trái, tướng 3D giữa (vuốt xoay, chạm đúp xem động tác), tên + vai trò, cột kỹ năng,
 // đồng hồ 30 giây, cột đội mình bên phải (đồng đội máy chọn dần, tướng đồng đội đã khoá thì mình không chọn được), phép bổ trợ + bảng
 // bùa, nút Khoá. Hết giờ tự khoá tướng đang xem. Cả đội khoá xong → đếm 3 giây → màn đội hình. Luyện tập: không giới hạn giờ,
-// chọn đối thủ (ngẫu nhiên / một tướng / hình nộm).
+// chọn đối thủ (ngẫu nhiên / một tướng / hình nộm). 5v5 (đấu thường, chọn ẩn): mỗi dòng có vị trí đã chia lúc ghép trận, lưới xếp tướng hợp
+// vị trí của mình lên đầu (nhãn "Đề cử"), máy chọn tướng hợp vị trí của nó; đối thủ chọn ẩn theo vị trí của họ.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
-import { SPELLS, SPELL_LIST_1V1 } from '../data/spells.js';
+import { SPELLS } from '../data/spells.js';
 import { CHARM_PAGES, PAGE_BY_ROLE } from '../data/charms.js';
+import { ROLE_INFO } from '../data/roles.js';
+import { DRAFT } from '../data/draft.js';
+import { mulberry32 } from '../core/rng.js';
 import { spellArt } from '../hud/art.js';
-import { icon, face, cardSrc, toast, dialog } from './kit.js';
+import { icon, face, cardSrc, toast } from './kit.js';
+import { fit, recommend, choose, teamPicks, roleTag } from './roles.js';
+import { spellList, initialSpell, saveSpell, openSpellPicker, nextPage } from './pickLoadout.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
 import { profile, saveProfile } from './profile.js';
 import { botLabel, pickHeroes } from './people.js';
@@ -23,13 +29,18 @@ export function openPick(nav, { mode = S.mode } = {}) {
   const p = profile(), M = MODES[mode] || MODES.normal, training = mode === 'training';
   S.mode = mode;
   if (!S.match) S.match = { seed: (Math.random() * 1e9) | 0, allies: [], foes: [{ name: 'Máy', stars: p.stars }] };
-  const spells = M.map === '1v1' ? SPELL_LIST_1V1 : Object.keys(SPELLS);
+  const spells = spellList(M.map), myRole = M.map === '5v5' ? (S.match.role || null) : null;
+  const rng = mulberry32(((S.match.seed ^ DRAFT.seedSalt) + 1) >>> 0); // máy chọn: ngẫu nhiên theo seed trận
   const team = S.match.allies.map((a) => ({ ...a, hero: null, locked: false, at: 3 + Math.random() * (PICK_SEC - 12) }));
-  const st = { sel: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature, locked: false, spell: spells.includes(p.spell) ? p.spell : 'chop_buoc',
+  let ids = Object.keys(HEROES).sort((a, b) => (ALPHA.includes(b) - ALPHA.includes(a)) || ALPHA.indexOf(a) - ALPHA.indexOf(b));
+  if (myRole) ids = recommend(myRole, ids); // tướng hợp vị trí lên đầu
+  const first = ALPHA.includes(p.lastHero) ? p.lastHero : p.feature;
+  const st = { sel: myRole && fit(myRole, first) < 1 ? ids[0] : first, locked: false, spell: initialSpell(p, M.map, myRole),
     page: CHARM_PAGES[p.page] ? p.page : null, foe: null, left: training ? Infinity : PICK_SEC, ready: -1 };
+  if (myRole && st.spell !== p.spell) toast(`${ROLE_INFO[myRole].name}: đã mang ${SPELLS[st.spell].name}`);
   const taken = () => team.filter((t) => t.locked).map((t) => t.hero);
   const pageOf = () => st.page || PAGE_BY_ROLE[HEROES[st.sel].roles[0]] || 'dps';
-  const ids = Object.keys(HEROES).sort((a, b) => (ALPHA.includes(b) - ALPHA.includes(a)) || ALPHA.indexOf(a) - ALPHA.indexOf(b));
+  const bestFree = () => { const free = ALPHA.filter((h) => !taken().includes(h)); return (myRole ? recommend(myRole, free) : free)[0]; };
 
   const el = document.createElement('div'); el.id = 'pick'; el.className = 'scr';
   document.getElementById('ui').append(el);
@@ -51,7 +62,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
     const g = $('.pk-grid'), tk = taken();
     if (!g.firstChild) g.innerHTML = ids.map((id) => {
       const h = HEROES[id], ok = ALPHA.includes(id);
-      return `<button type="button" class="hc ${ok ? '' : 'lock'}" data-id="${id}">${ok ? `<img src="${cardSrc(id)}" alt="" draggable="false">` : face(id)}<span><b>${h.name}</b><small>${ROLE_VI[h.roles[0]] || ''}</small></span>${ok ? '' : '<em>Sắp có</em>'}</button>`;
+      return `<button type="button" class="hc ${ok ? '' : 'lock'}" data-id="${id}">${ok ? `<img src="${cardSrc(id)}" alt="" draggable="false">` : face(id)}<span><b>${h.name}</b><small>${ROLE_VI[h.roles[0]] || ''}</small></span>${ok ? '' : '<em>Sắp có</em>'}${myRole && fit(myRole, id) === 2 ? '<em class="rec">Đề cử</em>' : ''}</button>`;
     }).join('');
     for (const b of g.children) { b.classList.toggle('on', b.dataset.id === st.sel); b.classList.toggle('taken', tk.includes(b.dataset.id)); }
   }
@@ -72,8 +83,8 @@ export function openPick(nav, { mode = S.mode } = {}) {
     };
   }
   function renderTeam() {
-    const meRow = `<div class="tm me ${st.locked ? '' : 'picking'}">${face(st.sel)}<div><b>${p.name}</b><small class="${st.locked ? 'ok' : ''}">${st.locked ? 'Đã khoá · ' + HEROES[st.sel].name : 'Đang chọn…'}</small></div></div>`;
-    const rows = team.map((t) => `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="qm">?</i>'}<div><b>${t.name} ${botLabel}</b><small class="${t.locked ? 'ok' : ''}">${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : 'Đang chọn…'}</small></div></div>`);
+    const meRow = `<div class="tm me ${st.locked ? '' : 'picking'}">${face(st.sel)}<div><b>${p.name}</b><small class="${st.locked ? 'ok' : ''}">${roleTag(myRole)}${st.locked ? 'Đã khoá · ' + HEROES[st.sel].name : 'Đang chọn…'}</small></div></div>`;
+    const rows = team.map((t) => `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="qm">?</i>'}<div><b>${t.name} ${botLabel}</b><small class="${t.locked ? 'ok' : ''}">${roleTag(t.role)}${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : 'Đang chọn…'}</small></div></div>`);
     let foe = '';
     if (M.size === 1) {
       const f = training ? (st.foe === 'dummy' ? null : st.foe) : null;
@@ -102,9 +113,10 @@ export function openPick(nav, { mode = S.mode } = {}) {
   function botPick(t) {
     const tk = [...taken(), ...(st.locked ? [st.sel] : [])];
     let opts = ALPHA.filter((h) => !tk.includes(h));
-    if (opts.length > 1) opts = opts.filter((h) => h !== st.sel);
-    t.hero = opts[Math.floor(Math.random() * opts.length)] || ALPHA[0]; t.locked = true; sfx('ui_select', { vol: 0.45 });
-    if (!st.locked && t.hero === st.sel) { const alt = ALPHA.find((h) => !taken().includes(h)); if (alt) { st.sel = alt; show.show(alt); toast(`${HEROES[t.hero].name} đã được đồng đội chọn`); } }
+    if (t.role) t.hero = choose(t.role, opts, rng.next, { avoid: [st.sel] }) || ALPHA[0]; // máy chọn tướng hợp vị trí của nó
+    else { if (opts.length > 1) opts = opts.filter((h) => h !== st.sel); t.hero = opts[Math.floor(Math.random() * opts.length)] || ALPHA[0]; }
+    t.locked = true; sfx('ui_select', { vol: 0.45 });
+    if (!st.locked && t.hero === st.sel) { const alt = bestFree(); if (alt) { st.sel = alt; show.show(alt); toast(`${HEROES[t.hero].name} đã được đồng đội chọn`); } }
     refresh(); checkAll();
   }
   function lock() {
@@ -125,7 +137,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
     for (const t of team) if (!t.locked && el2 >= t.at) botPick(t);
     if (st.left <= 0) {
       for (const t of team) if (!t.locked) botPick(t);
-      if (!st.locked) { if (taken().includes(st.sel)) st.sel = ALPHA.find((h) => !taken().includes(h)); show.show(st.sel); lock(); }
+      if (!st.locked) { if (taken().includes(st.sel)) st.sel = bestFree(); show.show(st.sel); lock(); }
     }
     renderTimer();
   }, 200);
@@ -134,11 +146,12 @@ export function openPick(nav, { mode = S.mode } = {}) {
     if (done) return; done = true; clearInterval(tick);
     const heroId = st.sel;
     let foeHeroes, dummies = false;
-    if (M.size === 5) foeHeroes = pickHeroes(5);
+    if (M.size === 5) foeHeroes = myRole ? teamPicks(S.match.foes.map((f) => f.role), [], rng.next) : pickHeroes(5); // chọn ẩn: đối thủ có thể trùng tướng đội mình
     else if (training && st.foe === 'dummy') { foeHeroes = []; dummies = true; }
     else foeHeroes = [training && st.foe ? st.foe : pickHeroes(1, [heroId])[0]];
-    S.pick = { heroId, spellId: st.spell, charmId: pageOf(), allyHeroes: team.map((t) => t.hero), foeHeroes, dummies };
-    p.lastHero = heroId; p.spell = st.spell; p.page = st.page; saveProfile();
+    S.pick = { heroId, spellId: st.spell, charmId: pageOf(), allyHeroes: team.map((t) => t.hero), foeHeroes, dummies,
+      role: myRole, allyRoles: team.map((t) => t.role || null), foeRoles: M.size === 5 ? S.match.foes.map((f) => f.role || null) : [] };
+    p.lastHero = heroId; saveSpell(p, myRole, st.spell); p.page = st.page; saveProfile();
     nav.go('lineup');
   }
 
@@ -154,12 +167,9 @@ export function openPick(nav, { mode = S.mode } = {}) {
     }
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'lock') lock();
-    else if (a === 'charm') { const k = Object.keys(CHARM_PAGES); st.page = k[(k.indexOf(pageOf()) + 1) % k.length]; renderBottom(); toast(`Bảng bùa: ${CHARM_PAGES[st.page].name}`); }
+    else if (a === 'charm') { st.page = nextPage(pageOf()); renderBottom(); toast(`Bảng bùa: ${CHARM_PAGES[st.page].name}`); }
     else if (a === 'foe') { const opts = [null, ...ALPHA, 'dummy']; st.foe = opts[(opts.indexOf(st.foe) + 1) % opts.length]; renderTeam(); renderBottom(); }
-    else if (a === 'spell') {
-      const d = dialog({ title: 'Phép bổ trợ', html: `<div class="pk-spells">${spells.map((id) => `<button type="button" data-sp="${id}" class="${id === st.spell ? 'on' : ''}">${spellArt(id)}<b>${SPELLS[id].name}</b><small>${SPELLS[id].desc}</small></button>`).join('')}</div>`, buttons: [{ text: 'Đóng' }] });
-      d.el.querySelector('.pk-spells').onclick = (ev) => { const b = ev.target.closest('[data-sp]'); if (!b) return; st.spell = b.dataset.sp; renderBottom(); d.close(); };
-    }
+    else if (a === 'spell') openSpellPicker(spells, st.spell, (id) => { st.spell = id; renderBottom(); });
   };
   window.__pick = { st, team, lock, finish };
   return () => { clearInterval(tick); removeEventListener('resize', place); el.remove(); delete window.__pick; };

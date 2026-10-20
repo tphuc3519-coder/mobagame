@@ -653,3 +653,56 @@
 - Khoá bằng mã băm: `tools/premium.lock.json` (35 file: GLB, `hero.art.json`, file gốc, animation viết tay, ảnh thẻ / toàn thân / mặt), kiểm bằng `node tools/t_premium.mjs`. Danh sách tướng nằm ở `tools/premium.mjs`, dùng chung cho test và công cụ.
 - `tools/modelgen/build.mjs` và `tools/uiart/render.cjs` bỏ qua 4 tướng này kể cả khi chạy "dựng tất cả"; chỉ `FORCE_PREMIUM=1` (khi chính chủ dự án gửi bản mới, rồi chạy `node tools/t_premium.mjs --lock`).
 - Đã soát lại hai đợt sửa Giai đoạn 0 / 1: không file nào trong 35 file bị đụng tới (ảnh thẻ mới chỉ thêm cho 14 tướng kia).
+
+## GĐ2 — chọn vị trí + cấm/chọn (20/10)
+- **Vị trí = 5 ô của mô phỏng** (`temple`, `mid`, `river`, `jungle`, `support` — `data/roles.js`, trùng `SLOTS` trong `sim/lineup.js`) cộng
+  `fill` (Tuỳ ý) chỉ có ở giao diện. Tên hiện: Đường Đền / Đường Giữa / Đường Sông / Đi rừng / Trợ thủ / Tuỳ ý (không đặt tên đường theo mục tiêu lớn).
+- **Chọn vị trí ở phòng chờ 5v5** (đấu thường + đấu hạng): nút dưới ô của mình mở hộp "Vị trí chính" (5 + Tuỳ ý) và "Vị trí phụ" (không bắt
+  buộc; khoá khi chính là Tuỳ ý hoặc trùng chính). Lưu hồ sơ (`rolePri`, `roleSec`). Bấm Bắt đầu khi chưa chọn → mở hộp trước rồi mới tìm.
+  1v1 / luyện tập không có vị trí.
+- **Chia vị trí lúc tìm thấy trận** (giao diện, `Math.random`): 85% vị trí chính (`ROLE_PRI_ODDS`), còn lại vị trí phụ nếu có; Tuỳ ý = một vị
+  trí ngẫu nhiên. Đồng đội nhận 4 vị trí còn lại (xáo), đối thủ một hoán vị đủ 5. Hộp "Đã tìm thấy trận" ghi vị trí. Bạn bè trong phòng là
+  máy nên nhận vị trí còn lại như máy.
+- **Vị trí vào mô phỏng chỉ như dữ liệu dựng trận**: `startMatch({ playerRole, allyRoles, foeRoles })` → `setupTeams` → `assignSlots(ids,
+  fixed)` ghim tướng vào ô trước, ô sai / thiếu thì phân theo đường ưu tiên như cũ → gọi không có vị trí (t_determinism, t_arena_batch,
+  `?hero=`) giống từng bit (đã đo băm trước/sau: trùng). Có `playerRole` hợp lệ thì nhận ra người chơi theo **ô**, không theo id tướng
+  (đối thủ có thể trùng tướng ở đấu thường). `?role=` trên đường `?hero=&mode=5v5` để thử thẳng.
+- **Độ hợp tướng ↔ vị trí** (`ui/roles.js fit`): 2 nếu `lanes` có vị trí đó ("Đề cử"), 1 nếu **lớp chính** (`roles[0]`) nằm trong
+  `ROLE_CLASS_FIT` (Đền: đấu sĩ/đỡ đòn, Giữa: pháp sư, Sông: xạ thủ, Rừng: sát thủ/đấu sĩ, Trợ thủ: trợ thủ/đỡ đòn), còn lại 0 — cần vì chỉ 2
+  tướng ghi `lanes` đi rừng. Lưới xếp độ hợp giảm dần; máy chọn theo `FIT_WEIGHT [0,5,10]` + nhiễu 0..3.
+- **Đấu hạng luôn qua cấm/chọn**, kể cả dưới Hải Đăng (tiêu chí xong của lộ trình yêu cầu Đấu hạng → Cấm/chọn cho mọi người chơi; hồ sơ mới
+  là Đèn Dầu). Luật bậc của 07 §7.3 giữ ở **kích thước** thứ tự: dưới Hải Đăng `lite` (2 cấm mỗi bên, 1 pha cấm, chọn rắn 1-2-2-2-2-1, 14
+  tướng), từ Hải Đăng `full` đúng 07 §7.3 (3 cấm, 2 pha cấm, 16 tướng ≤ 20). Đấu thường vẫn chọn ẩn (có vị trí).
+- **Người chơi luôn ở đội Xanh** (chọn trước — trùng mô phỏng: người chơi là đội 0). Ghế chọn `S.match.seat` ngẫu nhiên 0..4, đè được bằng
+  `?seat=N` (kiểm thử). Lượt cấm thứ k của một đội do ghế k làm → người chơi chỉ cấm khi ghế < số lượt cấm (thật, vẫn thấy pha cấm). Muốn ai
+  cũng được cấm thì chỉ sửa ánh xạ ghế trong `draftRules.startTurn`.
+- **Đấu hạng: mỗi tướng chỉ cấm hoặc chọn một lần cho cả hai đội**; đối thủ chọn hiện ngay ở cột đỏ, vị trí đối thủ chỉ hiện sau khi họ chọn.
+  Đấu thường chọn ẩn: chỉ không trùng trong đội, đối thủ có thể trùng tướng đội mình (như trước).
+- **Giờ** (`data/draft.js`): cấm 20 s, chọn 30 s (07 §7.3), chuẩn bị **15 s** (07 ghi 20 s cho đổi tướng + bùa; offline đồng đội là máy nên
+  không có đổi tướng), nghỉ 0,7 s giữa lượt, máy nghĩ 2–6 s khi cùng lượt với người chơi, 1,2–3,5 s khi chỉ có máy (cả ván lite ~45–60 s).
+  Hết giờ: lượt cấm → bỏ lượt (ghi null, báo "Hết giờ: bỏ lượt cấm"); lượt chọn → tướng đang xem nếu còn, không thì tướng hợp vị trí nhất. Có
+  nút "Bỏ qua" lượt cấm.
+- **Máy cấm** (`draftRules.botBan`, tất định theo rnd): đối thủ xem `heroMain(lịch sử)` — ≥ 5 trận, tướng ≥ 2 trận thắng ≥ 60% → cấm với
+  tỉ lệ 50% (06 §6); còn lại bốc theo trọng số `1 + BAN_BIAS[id] + 2` (nếu tướng đúng vị trí đội kia còn thiếu). `BAN_BIAS` để trống
+  (điền sau khi đo tỉ lệ thắng). Một đội **không bao giờ cấm** tướng đúng vị trí cuối cùng (≤ `protectMin` 1) của vị trí mình chưa chọn;
+  hết lựa chọn thì bỏ lượt. Đồng đội máy không cấm tướng mình đang xem, tướng quen dùng, và **tướng Đề cử cho vị trí của mình** (thêm khi chạy
+  thật: máy đồng đội từng cấm mất 1 trong 2 tướng đi rừng Đề cử của người chơi).
+- **Máy chọn** (`draftRules.botPick`): điểm `FIT_WEIGHT[độ hợp] + nhiễu − 2` nếu tướng là lựa chọn đúng vị trí cuối cùng của **đồng đội khác**
+  chưa chọn. *Khác spec:* spec chỉ phạt khi độ hợp của chính máy < 2; đo được máy Đường Đền vẫn lấy Kiếm Thuỷ (Đền + Rừng) — tướng đi rừng
+  cuối cùng của đồng đội — 64/400 lần, nên phạt mọi trường hợp (phạt 2 < khoảng cách giữa hai mức hợp 5 nên chỉ đổi thứ tự trong cùng mức):
+  còn 0/400. Máy đồng đội tránh tướng người chơi đang xem tới khi người chơi khoá.
+- **Ngẫu nhiên cấm/chọn ở giao diện nhưng có seed**: `mulberry32((seed trận ^ DRAFT.seedSalt) >>> 0)`; máy chọn ở chọn ẩn dùng seed + 1. Node
+  dựng lại được từng ván; mô phỏng không đụng tới. Thời điểm máy bấm (2–6 s) dùng `Math.random` (chỉ là nhịp hình).
+- **Luật cấm/chọn là module thuần `src/ui/draftRules.js`** (cùng `ui/roles.js`), không đặt ở `src/ai/draftBot.js` như 02 gợi ý: cấm/chọn không
+  bao giờ chạy trong mô phỏng, để ở `ai/` dễ kéo theo import mô phỏng.
+- **Đi rừng mang sẵn Trừng Trị**: vị trí có `ROLE_SPELL` (đi rừng) thì chọn tướng / cấm chọn chọn sẵn phép đó (báo "Đi rừng: đã mang Trừng
+  Trị"); nhớ riêng ở `profile.spellJungle` để trận không đi rừng vẫn giữ `profile.spell`. Đồ khởi đầu người chơi theo vị trí qua
+  `starterFor(hero, lane, spellId)` (`data/items.js`): đi rừng (chỉ khi mang Trừng Trị) Nanh Thú Rừng + Túi Hạt, trợ thủ đồ trợ thủ, còn lại
+  theo lớp tướng. Máy dùng đúng hàm đó (đồ y như cũ) — mô phỏng hết ghi cứng id đồ / phép.
+- **Pha chuẩn bị** sau lượt chọn cuối (15 s): ẩn lưới, tướng mình đứng trên sân khấu 3D dùng chung (`stage()`, không tạo ngữ cảnh WebGL thứ
+  hai), đổi phép / bảng bùa, "Sẵn sàng" kết thúc sớm → đội hình → tải → trận như cũ.
+- **CSS mới ở `src/ui/cssDraft.js`** (tự chèn `<style>`), không thêm vào `css.js` (đã 414 dòng). Nhãn vị trí dùng `em.rl` (không đặt lớp `.rl`
+  chung: `.pn-detail .rl` của bảng tướng đã dùng tên đó cho một `<p>`).
+- **Âm thanh**: không thêm file — cấm `ui_lock` (nhỏ, trầm), mình khoá `ui_lock`, máy chọn `ui_select`, tới lượt `ui_confirm`, 5 s cuối `ui_tick`;
+  `ban` / `skip` / `lock` bỏ khỏi bộ nghe chung (draft.js tự phát).
+- **Hộp thoại phép / bùa tách ra `src/ui/pickLoadout.js`** (không đặt tên `loadout.js` như spec — tên đó để dành cho module dữ liệu của cụm kế).

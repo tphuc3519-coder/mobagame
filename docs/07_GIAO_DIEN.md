@@ -60,6 +60,11 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 > 30 giây; luyện tập chọn tự do) → Đội hình → Tải trận → Trận → Kết quả (3 màn: đội, cá nhân, bảng tỉ số). Code `src/ui/flow.js` và các
 > màn trong `src/ui/`. Khác thiết kế: đếm ngược sau khi cả đội khoá 3 giây (thay 10), chưa có màn Mùa giải và Nhận thưởng riêng (phần
 > thưởng hiện ở màn kết quả cá nhân), chưa có cấm/chọn.
+>
+> **Cập nhật GĐ2 (20/10):** 5v5 (đấu thường + đấu hạng) có **chọn vị trí** ở phòng chờ (vị trí chính / phụ / Tuỳ ý — `ui/roleSelect.js`),
+> lúc tìm thấy trận chia vị trí cho cả 10 người; chọn tướng thường ghi vị trí từng dòng, xếp tướng Đề cử lên đầu. **Đấu hạng luôn qua màn
+> Cấm/chọn** (`ui/draft.js`, luật thuần `ui/draftRules.js`): dưới Hải Đăng thứ tự rút gọn 2 cấm mỗi bên, từ Hải Đăng đủ 3 cấm như §7.3;
+> sau lượt chọn cuối 15 giây chuẩn bị (phép bổ trợ, bảng bùa). Vị trí đi thẳng vào dựng đội trong trận (`sim/lineup.js`).
 
 ```
 Khởi động → Tạo hồ sơ (lần đầu) → SẢNH CHÍNH
@@ -145,6 +150,10 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - Người đang tới lượt có viền sáng chạy và đồng hồ riêng.
 - Tướng bị cấm: gạch chéo đỏ trong lưới, không chọn được.
 - Offline: mọi người khác là bot (`draftBot.js`).
+- **Đã làm (GĐ2):** đấu hạng mọi bậc đều cấm/chọn; dưới Hải Đăng dùng thứ tự rút gọn: cấm `X1, Đ1, X2, Đ2`, chọn `X1 | Đ1 Đ2 | X2 X3 |
+  Đ3 Đ4 | X4 X5 | Đ5` (2 cấm mỗi bên, chọn rắn 1-2-2-2-2-1, 14 tướng), từ Hải Đăng đúng bảng trên (3 cấm, 16 tướng). Người chơi luôn ở đội Xanh (chọn trước), ghế ngẫu nhiên;
+  lượt cấm thứ k của một đội do ghế k làm. Không đổi tướng trong đội (đồng đội là máy) — pha chuẩn bị 15 giây chỉ đổi phép / bùa. Máy cấm/chọn
+  ở `ui/draftRules.js` (thay cho `draftBot.js`), số liệu ở `data/draft.js`.
 
 ## 8. Màn tải trận
 - 2 hàng thẻ dọc (Xanh trên / Đỏ dưới; 1v1: 1 thẻ mỗi bên đối diện nhau), mỗi thẻ: splash cắt dọc của tướng, tên người chơi, bậc hạng, phép bổ trợ, **% tải**.
