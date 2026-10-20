@@ -109,8 +109,8 @@ export function castSpell(world, e, aim) {
       world.emit('towerOff', { id: e.id, target: tgt.id, x: tgt.pos.x, y: tgt.pos.y, dur: sp.disable });
       break;
     case 'flashStun': // Loá Mắt: choáng mọi tướng địch trong vùng
-      for (const t of tgt) applyStatus(world, t, { status: 'stun', id: 'loamat', duration: sp.stun }, e);
-      world.emit('flashBang', { id: e.id, x: e.pos.x, y: e.pos.y, r: sp.radius, hits: tgt.map((t) => t.id) });
+      { const hits = tgt.filter((t) => applyStatus(world, t, { status: 'stun', id: 'loamat', duration: sp.stun }, e)); // miễn khống chế: không tính là trúng
+        world.emit('flashBang', { id: e.id, x: e.pos.x, y: e.pos.y, r: sp.radius, hits: hits.map((t) => t.id) }); }
       break;
     case 'warDrum': { // Trống Trận: bản thân mạnh hơn đồng minh (id khác nhau nên buff của mình không bị bản yếu đè)
       applyStatus(world, e, { status: 'statMod', id: 'trongtran', ...sp.self, duration: sp.duration }, e);

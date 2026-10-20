@@ -118,7 +118,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
   q.spell = { id: 'giai_troi', ready: 0 }; w.command(q.id, { type: 'spell' }); step(1);
   ok('Giải Trói gỡ Bùa Mỏi', !q.statuses.some((s) => s.id === 'buamoi') && near(hit(), 100));
   // kháng hiệu ứng rút ngắn
-  applyStatus(w, q, { status: 'statMod', id: 'tn', tenacity: 0.5, duration: 9 }, q); step(1);
+  applyStatus(w, q, { status: 'statMod', id: 'tn', tenacity: 0.5, duration: 9 }, q); step(31); // chờ hết 1 giây miễn khống chế của Giải Trói
   p.spell.ready = 0; w.command(p.id, { type: 'spell' }); step(1);
   const st = q.statuses.find((s) => s.id === 'buamoi');
   ok('kháng 50%: Bùa Mỏi ~45 nhịp', st && Math.abs(st.until - t - 45) <= 1, st ? String(st.until - t) : 'không có');

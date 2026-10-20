@@ -30,8 +30,8 @@ export function itemIcon(id) {
   return `<i class="ic" style="background:linear-gradient(160deg,${c},#1b1f38);border-color:${TIER_RING[it.tier] || TIER_RING[1]};--h:${hue}deg">${svg(G[glyph])}${second ? `<svg class="sub" viewBox="0 0 24 24"><path d="${G[second]}" fill="#ffe08a" stroke="#000" stroke-width="1.5" paint-order="stroke"/></svg>` : ''}</i>`;
 }
 
-const SPELL_GLYPH = { chop_buoc: 'arrow', hoi_phuc: 'plus', tram_hon: 'cross', thu_hoach: 'leaf', gio_luot: 'wing', giai_troi: 'ring' };
-const SPELL_COLOR = { chop_buoc: '#4fb3d9', hoi_phuc: '#4fbf7a', tram_hon: '#d05a4a', thu_hoach: '#c9a13a', gio_luot: '#8a7ad8', giai_troi: '#d99a4f' };
+const SPELL_GLYPH = { chop_buoc: 'arrow', hoi_phuc: 'plus', tram_hon: 'cross', thu_hoach: 'leaf', gio_luot: 'wing', giai_troi: 'ring', tat_den: 'hour', loa_mat: 'star', trong_tran: 'bolt', bua_moi: 'drop' };
+const SPELL_COLOR = { chop_buoc: '#4fb3d9', hoi_phuc: '#4fbf7a', tram_hon: '#d05a4a', thu_hoach: '#c9a13a', gio_luot: '#8a7ad8', giai_troi: '#d99a4f', tat_den: '#6a7898', loa_mat: '#d8c040', trong_tran: '#d8743a', bua_moi: '#9a6ad8' };
 export function spellIcon(id) {
   return `<i class="ic round" style="background:linear-gradient(160deg,${SPELL_COLOR[id] || '#888'},#1b1f38)">${svg(G[SPELL_GLYPH[id]] || G.gem)}</i>`;
 }

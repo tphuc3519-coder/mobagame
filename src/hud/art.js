@@ -68,6 +68,8 @@ const SPELL_ART = {
   chop_buoc: ['blink', '#5fd0ff', '#0d3a6a', '#fff8c0', '#e8f8ff'], hoi_phuc: ['heal', '#7af0a0', '#0e4a2c', '#ffffff', '#3fcf6a'],
   tram_hon: ['execute', '#ff7a5a', '#4a0e10', '#fff0e8', '#ff5a3a'], thu_hoach: ['smite', '#ffd25a', '#4a320a', '#fff6d0', '#e8a82a'],
   gio_luot: ['haste', '#b8a8ff', '#2a1a5a', '#ffffff', '#d8d0ff'], giai_troi: ['cleanse', '#ffc87a', '#4a2a0a', '#ffffff', '#ffd89a'],
+  tat_den: ['lantern', '#7a86a8', '#14182c', '#c8d0e8', '#5a6688'], loa_mat: ['meteor', '#fff2a0', '#5a4a0a', '#ffffff', '#ffe060'],
+  trong_tran: ['stomp', '#ff8a4a', '#4a160a', '#ffe0c0', '#ff6a2a'], bua_moi: ['vortex', '#c890ff', '#2a0e4a', '#ffffff', '#a060ff'],
 };
 export function spellArt(id) {
   const pt = typeof document !== 'undefined' && paintedSpell(id); if (pt) return pt;

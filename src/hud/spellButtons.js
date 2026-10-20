@@ -3,7 +3,7 @@
 // Phép có hướng (Chớp Bước): kéo để ngắm như nút kỹ năng — vòng ngắm quanh nút, kéo ngón vào ô X góc phải rồi thả để huỷ (độ nhạy / tâm vòng /
 // cách huỷ theo Cài đặt, aimPad.js). Chạm nhanh không kéo: hướng theo Cài đặt "Hướng tốc biến" (flashDir, tapDir dưới đây).
 // Số giây hồi: số lẻ dưới 10s khi bật cdDecimal (như cũ), tắt thì làm tròn lên giây.
-import { smiteTarget, smiteDamage } from '../sim/spells.js';
+import { spellTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { ITEMS } from '../data/items.js';
 import { ECON } from '../data/economy.js';
@@ -98,9 +98,9 @@ export function createSpellButtons(root, { world, player, indicators }) {
     update() {
       const s = sp(), left = Math.max(0, (player.spell.ready - world.tick) / 30);
       overlay(spellEl, left, s.cooldown);
-      if (s.id === 'thu_hoach') { // Trừng Trị: mờ khi không có mục tiêu trong tầm, loé vàng khi đủ kết liễu quái
-        const t = left <= 0 && player.alive ? smiteTarget(world, player, s) : null;
-        spellEl.classList.toggle('notarget', !t && left <= 0); spellEl.classList.toggle('killable', !!t && t.kind === 'monster' && t.hp <= smiteDamage(player, s));
+      if (s.needTarget) { // phép cần mục tiêu (Trừng Trị, Tắt Đèn, Loá Mắt, Bùa Mỏi): mờ khi không có mục tiêu trong tầm; Trừng Trị loé vàng khi đủ kết liễu quái
+        const t0 = left <= 0 && player.alive ? spellTarget(world, player, s) : null, t = Array.isArray(t0) ? t0[0] || null : t0;
+        spellEl.classList.toggle('notarget', !t && left <= 0); spellEl.classList.toggle('killable', s.kind === 'smite' && !!t && t.kind === 'monster' && t.hp <= smiteDamage(player, s));
       }
       overlay(restoreEl, Math.max(0, ((player.restore?.ready || 0) - world.tick) / 30), RESTORE.cooldown);
       spellEl.classList.toggle('locked', !!(s.disabledIn1v1 && world.map.id === 'duel1v1'));

@@ -84,5 +84,29 @@ export function createExtraFx(api) {
       if (big) sh.pillar(p.x, p.z, 70, 320, { color: th.col, top: 0xffffff, life: 0.5 });
       if (ev.kind === 'chong_chong') { dust(p.x, p.z, 90, 10); const h = headOf(e.id); if (h) burst(A, h.x, h.y, h.z, { n: 10, speed: [120, 260], up: [0, 60], life: [0.4, 0.7], size: [30, 10], color: [0xfff6c0, th.col], tile: TILE.feather, spinR: 14, drag: 2 }); }
     },
+    // —— phép bổ trợ mới (sim/spells.js) ——
+    /** Tắt Đèn: cột khói xám phủ đỉnh trụ, đèn trụ tối đi (trụ ngừng bắn — vòng tầm trụ do towerRange.js lo). */
+    towerOff(ev) {
+      sh.pillar(ev.x, ev.y, 140, 900, { color: 0x5a6688, top: 0xc8d0e8, life: 0.8 });
+      sh.ring(ev.x, ev.y, 60, 360, { color: 0x8a96b8, width: 0.12, life: 0.6 });
+      burst(A, ev.x, 520, ev.y, { n: 18, speed: [60, 200], up: [80, 260], life: [0.8, 1.4], size: [80, 140], color: [0x8a92a8, 0x2a2e3a], alpha: [0.7, 0], drag: 1.5 });
+    },
+    /** Loá Mắt: chớp trắng vàng quanh người tung + vòng sáng nở ra; người trúng loé sao trên đầu. */
+    flashBang(ev) {
+      flash(ev.x, 120, ev.y, ev.r * 1.2, 0xfff2a0, 0.18); sh.ring(ev.x, ev.y, 30, ev.r, { color: 0xffe060, width: 0.16, life: 0.35 });
+      sparks(ev.x, 120, ev.y, 0xffffff, 18, 1.2);
+      for (const id of ev.hits || []) { const h = headOf(id); if (h) sparks(h.x, h.y + 40, h.z, 0xffe060, 8, 0.8); }
+    },
+    /** Trống Trận: ba vòng sóng đỏ cam theo nhịp trống quanh người tung, đồng minh nhận ánh cam. */
+    warDrum(ev) {
+      for (let k = 0; k < 3; k++) setTimeout(() => sh.ring(ev.x, ev.y, 40, ev.r * (0.5 + k * 0.25), { color: 0xff7a3a, width: 0.1, life: 0.4 }), k * 160);
+      for (const id of [ev.id, ...(ev.allies || [])]) { const p = rootOf(id); if (p) sh.pillar(p.x, p.z, 60, 260, { color: 0xff8a4a, top: 0xffe0c0, life: 0.45 }); }
+    },
+    /** Bùa Mỏi: lá bùa tím xoáy dán lên mục tiêu. */
+    hex(ev) {
+      const p = rootOf(ev.target); if (!p) return;
+      sh.ring(p.x, p.z, 20, 140, { color: 0xa060ff, width: 0.18, life: 0.5 }); const h = headOf(ev.target);
+      if (h) burst(A, h.x, h.y + 30, h.z, { n: 12, speed: [40, 140], up: [40, 160], life: [0.5, 0.9], size: [26, 8], color: [0xe0c0ff, 0x7a30d0], drag: 2 });
+    },
   };
 }
