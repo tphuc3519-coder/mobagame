@@ -447,7 +447,7 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
 
 ## Tổng kết lộ trình kiểm toán (21/10) — cả 4 giai đoạn đã code xong, chưa gộp vào `main`
 
-Kế hoạch gốc: trang "Kiểm toán Lantern Arena" (báo cáo 19/10, mục 4 — Lộ trình nâng cấp). Toàn bộ nằm trên nhánh
+Kế hoạch gốc + bảng hoàn thiện từng mục: `docs/KIEM_TOAN.md` (báo cáo 19/10, mục 4 — Lộ trình nâng cấp). Toàn bộ nằm trên nhánh
 `claude/kiem-toan-lien-quan` (19 commit trước `main`, chưa có PR) ⇒ **trang chơi trên GitHub Pages vẫn là bản 17/10** cho tới khi gộp vào `main`
 (workflow tự deploy khi có commit lên `main`).
 
