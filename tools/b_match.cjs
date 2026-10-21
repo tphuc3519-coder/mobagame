@@ -172,7 +172,10 @@ async function pings(browser) {
     const inView = btns.every((r) => r.l >= 0 && r.t >= 0 && r.r <= W && r.b <= H), clash = btns.filter((r) => hit(r, mm) || skills.some((k) => hit(r, k))).length;
     ok(`${tag}: vòng 4 tín hiệu nằm trong màn, không đè bản đồ nhỏ / nút kỹ năng`, btns.length === 4 && inView && !clash, `${btns.length} nút, đè ${clash}`);
     await shot(page, `pings_wheel_${tag}.png`);
-    await tap(page, '#pingWheel button[data-k="gather"]');
+    // máy không GPU: chụp ảnh / page.tap mất vài giây ⇒ vòng đã tự đóng sau 4 s không thao tác (hud/pings.js). Mở lại nếu cần, rồi chọn
+    // Tập hợp và chạm bản đồ nhỏ liền tay (pointerdown thật vào nút + chạm toạ độ thật, không chờ "đứng yên")
+    if (await page.evaluate(() => document.querySelector('#pingWheel').hidden)) { await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 }); }
+    await page.evaluate(() => document.querySelector('#pingWheel button[data-k="gather"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })));
     const c = mm && { x: (mm.l + mm.r) / 2, y: (mm.t + mm.b) / 2 };
     await page.touchscreen.tap(c.x, c.y);
     const t = await waitFor(page, () => window.__game.world.pings.some((p) => p.kind === 'gather' && p.src === window.__game.player.id), 60);
