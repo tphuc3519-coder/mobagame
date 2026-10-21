@@ -459,7 +459,7 @@ Kế hoạch gốc + bảng hoàn thiện từng mục: `docs/KIEM_TOAN.md` (bá
 | 3 — kết thúc trận, đấu lại, PWA | cài được, chơi không mạng, Đấu lại < 3 s | ✅ về phòng chờ 0,17–0,29 s · cài được · không mạng vẫn đánh trọn trận 1v1 |
 
 Còn lại:
-- Chạy lại đợt 50 trận bot trên bản cuối (lần đo cuối trước GĐ3; GĐ3 không đụng mô phỏng) và kịch bản tín hiệu `b_match.cjs --only=pings`
-  (lần trước hỏng vì vòng tín hiệu tự đóng sau 4 s trên máy không GPU — đã sửa test, đang chạy lại).
+- ✅ Đã chạy lại trên bản cuối (21/10): 50 trận bot 50/50 kết thúc, trung vị 16,4 phút, Xanh 46%, 4,18 mục tiêu lớn / trận, 0 lỗi;
+  `b_match.cjs --only=pings` 10/10, `b_flow.cjs` 7 kịch bản × 2 cỡ màn, `t_*.mjs`, `t_premium` đều đạt.
 - Gộp nhánh vào `main` (PR) ⇒ Pages tự deploy bản mới.
 - Thử trên điện thoại thật: danh sách ở mục GĐ3 ngay trên.

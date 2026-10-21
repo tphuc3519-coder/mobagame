@@ -314,9 +314,9 @@ Bộ kiểm thử `tools/t_premium.mjs` + `tools/premium.lock.json` giữ 35 fil
 
 ## Còn lại
 - **Gộp nhánh `claude/kiem-toan-lien-quan` vào `main`** (PR). Pages tự deploy bản mới.
-- **Chạy lại trên bản cuối:**
-  - đợt đo 50 trận bot: lần đo cuối là trước GĐ3, mà GĐ3 không đụng mô phỏng;
-  - kịch bản tín hiệu `b_match.cjs --only=pings`: lần trước 9/10 mục đạt, mục còn lại hỏng oan vì bot còn trong nhà ngoài tầm Tập hợp. Đã sửa test.
+- ✅ **Đã chạy lại trên bản cuối (21/10):**
+  - 50 trận bot: 50/50 kết thúc, trung vị 16,4 phút, Xanh thắng 46%, 4,18 mục tiêu lớn / trận, 0 lỗi;
+  - `b_match.cjs --only=pings` 10/10 mục đạt, `b_flow.cjs` 7 kịch bản × 2 cỡ màn đạt, bộ `t_*.mjs` đạt, 4 model cao cấp nguyên vẹn.
 - **Thử trên điện thoại thật:**
   - Android Chrome: Thêm vào màn hình chính → mở toàn màn ngang; chế độ máy bay vẫn đánh được trận 5v5.
   - iPhone Safari: Chia sẻ → Thêm vào MH chính; mở một lần khi có mạng rồi thử không mạng.
