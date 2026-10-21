@@ -18,6 +18,7 @@
 | `09_HINH_ANH.md` | Hướng nghệ thuật, bảng màu, mô tả ngoại hình từng tướng, quy trình làm asset |
 | `10_LO_TRINH.md` | 14 mốc phát triển, tiêu chí hoàn thành, prompt mẫu |
 | `11_HUONG_DAN_MODEL_3D.md` | Hướng dẫn từng bước có model 3D đẹp: mua, tạo bằng AI, thuê hoạ sĩ; Blender, gắn xương, xuất GLB, nén, kiểm tra, giấy phép |
+| `KIEM_TOAN.md` | Báo cáo kiểm toán 19/10/2026 + lộ trình nâng cấp GĐ0–3 (kế hoạch gốc) và phần đã hoàn thiện, số đo theo tiêu chí từng giai đoạn |
 
 ## Quy tắc bắt buộc cho AI coding
 
