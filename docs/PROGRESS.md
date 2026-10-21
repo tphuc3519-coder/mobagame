@@ -444,3 +444,22 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
   bật chế độ máy bay → mở game, đánh một trận 5v5; iPhone Safari → Chia sẻ → Thêm vào MH chính, mở một lần khi có mạng rồi thử không mạng;
   "Đấu lại" về phòng chờ dưới 3 s; cuối trận thấy nhà chính nổ phía trên băng-rôn ở màn 844×390.
 
+
+## Tổng kết lộ trình kiểm toán (21/10) — cả 4 giai đoạn đã code xong, chưa gộp vào `main`
+
+Kế hoạch gốc: trang "Kiểm toán Lantern Arena" (báo cáo 19/10, mục 4 — Lộ trình nâng cấp). Toàn bộ nằm trên nhánh
+`claude/kiem-toan-lien-quan` (19 commit trước `main`, chưa có PR) ⇒ **trang chơi trên GitHub Pages vẫn là bản 17/10** cho tới khi gộp vào `main`
+(workflow tự deploy khi có commit lên `main`).
+
+| Giai đoạn | Tiêu chí "xong khi" | Đo được |
+|---|---|---|
+| 0 — sửa lỗi đã đo | mỗi lỗi một kiểm thử, 1 siêu lính / đợt | ✅ đạt (`t_fixes.mjs` 25 kiểm tra, deploy tự động khi lên `main`) |
+| 1 — lối chơi 5v5 | 50 trận bot: trung vị 12–18 phút, Xanh 45–55 %, mục tiêu lớn ≥ 2 / trận | ✅ trung vị 15,9–16,4 phút · Xanh 46–54 % · 3,6–4,2 mục tiêu lớn / trận · 20/20 tướng |
+| 2 — UI/UX chuẩn Liên Quân | Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả không lỗi ở 19,5:9 và 16:9 | ✅ `b_flow.cjs` 7 kịch bản × 2 cỡ màn đạt hết trên bản cuối (21/10) |
+| 3 — kết thúc trận, đấu lại, PWA | cài được, chơi không mạng, Đấu lại < 3 s | ✅ về phòng chờ 0,17–0,29 s · cài được · không mạng vẫn đánh trọn trận 1v1 |
+
+Còn lại:
+- Chạy lại đợt 50 trận bot trên bản cuối (lần đo cuối trước GĐ3; GĐ3 không đụng mô phỏng) và kịch bản tín hiệu `b_match.cjs --only=pings`
+  (lần trước hỏng vì vòng tín hiệu tự đóng sau 4 s trên máy không GPU — đã sửa test, đang chạy lại).
+- Gộp nhánh vào `main` (PR) ⇒ Pages tự deploy bản mới.
+- Thử trên điện thoại thật: danh sách ở mục GĐ3 ngay trên.
