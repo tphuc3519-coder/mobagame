@@ -165,7 +165,8 @@ async function pings(browser) {
   for (const [W, H] of SIZES) {
     const tag = `${W}x${H}`;
     await page.setViewportSize({ width: W, height: H }); await sleep(400);
-    await page.evaluate(() => { const g = window.__game; g.world.pings.length = 0; g.player.pingLog = []; });
+    // hai bot đồng đội đứng trong tầm Tập hợp (PING.gather.range 8000): đầu trận bot còn trong nhà, cách giữa bản đồ ~10.200 ⇒ đúng luật là không ai nhận
+    await page.evaluate(() => { const g = window.__game, c = window.__t.c; g.world.pings.length = 0; g.player.pingLog = []; let i = 0; for (const e of g.world.entities) if (e.kind === 'hero' && e.team === g.player.team && e !== g.player && i < 2) window.__t.place(e, c.x - 2500 - 400 * i, c.y + 600 * i++); });
     await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 });
     const btns = await page.evaluate(() => [...document.querySelectorAll('#pingWheel button')].map((b) => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
     const mm = await box('#minimap'), skills = await page.evaluate(() => [...document.querySelectorAll('#skills [data-k], #skills button')].map((b) => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
