@@ -3,6 +3,7 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
 import { openSettings as openSettingsModal } from './settingsModal.js';
+import { openExport, openImport } from './saveDialogs.js';
 import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
@@ -184,7 +185,8 @@ export function openBag() {
 
 /** Cài đặt (sảnh): bảng Cài đặt kiểu Liên Quân dùng chung với trong trận (ui/settingsModal.js) — đổi là lưu, áp dụng khi vào trận. */
 export function openSettings() {
-  const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); } });
+  const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu. Muốn giữ lại thì vào Dữ liệu → Xuất mã lưu trước.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); },
+    onSave: (k) => { close(); (k === 'export' ? openExport : openImport)(); } });
 }
 
 /** Sự kiện Lễ Hội Đèn Lồng: điểm danh 7 ngày, mỗi ngày nhận một phần quà vàng. */

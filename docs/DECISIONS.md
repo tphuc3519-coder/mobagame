@@ -902,3 +902,6 @@
 ## GĐ4 (26/10) — mở sẵn cả 20 tướng
 - 08 §5 cho người chơi mới 6 tướng khởi đầu, phần còn lại mở bằng Xu Đèn hoặc tuần miễn phí. **Chủ dự án chốt: mở sẵn cả 20 tướng** cho mọi hồ
   sơ (game chơi với máy, khoá tướng chỉ làm hụt nội dung). Xu Đèn chỉ dùng cho rương, bùa, trang phục; không có tuần miễn phí, không giá tướng.
+- **Mã lưu (GĐ4a)** là chuỗi chữ để dán / gửi qua tin nhắn — không cần máy chủ, chạy được cả khi chơi không mạng.
+  - Tổng kiểm FNV-1a 32 bit chỉ để bắt chép thiếu / dán nhầm, **không chống sửa**. Game chơi với máy, không có gì để gian lận.
+  - Nhập mã thì tải lại trang thay vì vá từng màn đang mở: đơn giản và chắc chắn mọi màn đọc lại hồ sơ mới.

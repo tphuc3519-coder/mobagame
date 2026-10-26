@@ -335,7 +335,7 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 
 > **Chủ dự án chốt (26/10): mở sẵn cả 20 tướng** — không khoá tướng theo Xu Đèn / tuần miễn phí như 08 §5. Xu Đèn dùng cho rương, bùa và trang phục.
 
-### 4a — Lưu dữ liệu
+### 4a — Lưu dữ liệu ✅ (26/10 — `t_save.mjs` 25 mục, `b_prog.cjs` save844 / save1280)
 - Hồ sơ có số phiên bản + chuỗi chuyển đổi bản cũ; hồ sơ hỏng thì giữ bản sao lưu rồi dựng hồ sơ mới.
 - **Xuất / Nhập mã lưu** (Cài đặt → Dữ liệu): mã có tổng kiểm, nhập thì kiểm + chuyển đổi bản cũ, xem tóm tắt trước khi thay.
 

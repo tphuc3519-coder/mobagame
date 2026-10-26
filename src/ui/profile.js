@@ -3,6 +3,7 @@
 // Sao Mai (mỗi bậc chia phân hạng, mỗi phân hạng vài sao) → Nguyệt Quang (tích sao không giới hạn) → Thái Dương (từ 30 sao Nguyệt Quang).
 // Luật cộng/trừ sao: xem applyResult.
 import { ALPHA } from '../data/heroes/index.js';
+import { migrateProfile, SAVE_VER } from './save.js';
 
 const KEY = 'la.profile';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -19,8 +20,14 @@ let P = null;
 /** Hồ sơ hiện tại (đọc một lần, sửa trực tiếp rồi gọi saveProfile). Không đọc/ghi được bộ nhớ (chế độ riêng tư) thì dùng bản tạm. */
 export function profile() {
   if (P) return P;
-  let raw = null; try { raw = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { raw = null; }
-  P = { ...DEF(), ...(raw && typeof raw === 'object' ? raw : {}) };
+  let raw = null, text = null;
+  try { text = localStorage.getItem(KEY); raw = JSON.parse(text || 'null'); } catch (_) { raw = null; }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    // hồ sơ hỏng (ghi dở, sửa tay): cất bản gốc vào la.profile.bak rồi bắt đầu hồ sơ mới — không mất hẳn dữ liệu cũ
+    if (text) try { localStorage.setItem(KEY + '.bak', text); } catch (_) { /* riêng tư */ }
+    raw = null;
+  }
+  P = migrateProfile({ ...DEF(), ...(raw || {}) }, raw ? raw.version : SAVE_VER); // GĐ4a: bản cũ chuyển sang bản hiện tại (ui/save.js)
   if (!ALPHA.includes(P.feature)) P.feature = 'hoa_ren';
   if (!ALPHA.includes(P.avatar)) P.avatar = P.feature;
   if (!P.daily || P.daily.day !== today()) P.daily = { day: today(), played: 0, won: 0, kills: 0, claimed: [] };

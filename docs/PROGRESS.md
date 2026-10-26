@@ -463,3 +463,21 @@ Còn lại:
   `b_match.cjs --only=pings` 10/10, `b_flow.cjs` 7 kịch bản × 2 cỡ màn, `t_*.mjs`, `t_premium` đều đạt.
 - Gộp nhánh vào `main` (PR) ⇒ Pages tự deploy bản mới.
 - Thử trên điện thoại thật: danh sách ở mục GĐ3 ngay trên.
+
+## GĐ4a (26/10) — hồ sơ có phiên bản + Xuất / Nhập mã lưu
+- `src/ui/save.js`:
+  - hồ sơ mang `version` (hiện 2); bản cũ chưa có số chạy qua chuỗi chuyển đổi `MIGRATE[n]`;
+  - bản 1 → 2 làm sạch kiểu dữ liệu (số âm / NaN, mảng / đối tượng hỏng, sao cao nhất < sao hiện tại);
+  - hồ sơ từ bản game mới hơn thì giữ nguyên.
+- Hồ sơ hỏng (JSON ghi dở / không phải đối tượng) được cất nguyên văn vào `la.profile.bak`, rồi mở hồ sơ mới (`ui/profile.js`).
+- **Mã lưu**:
+  - định dạng `LA1-` + base64url(JSON { v, t, d }) + `-` + FNV-1a 8 hex;
+  - gói `la.profile`, `la.prefs`, `la.gfx`; mã sai / thiếu / sửa / bản mới hơn đều bị từ chối, kèm câu báo rõ;
+  - hồ sơ đầy đủ (20 trận, 10 trang bùa) ≈ 6.500 ký tự.
+- **Cài đặt → Dữ liệu** (chỉ ở sảnh) có thêm hai nút (`ui/saveDialogs.js`):
+  - **Xuất mã lưu**: Sao chép / Tải tệp .txt;
+  - **Nhập mã lưu**: dán hoặc chọn tệp → tóm tắt hồ sơ → Nhập và tải lại; hồ sơ đang có được cất ở `la.profile.bak`.
+- Hộp Xoá dữ liệu nhắc xuất mã lưu trước.
+- Kiểm thử:
+  - `node tools/t_save.mjs` — 25 mục;
+  - trình duyệt `node tools/b_prog.cjs <cổng> save844 save1280`: máy A xuất → máy B trống nhập. Mã thiếu bị báo; hồ sơ + cài đặt sang đúng; bản cũ được cất; các hộp nằm trọn màn hình; không lỗi console.
