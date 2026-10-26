@@ -592,3 +592,9 @@ Còn lại:
 - **Tải theo nhu cầu:** màn khởi động bỏ 20 ảnh thẻ tướng + ảnh phòng chờ (tải nền sau khi vào Sảnh).
 - **Deploy:** `tools/build_site.mjs` dùng chung cho `pages.yml`, `netlify.toml`, `vercel.json`; bỏ 10 thư mục model tướng cũ khỏi bản đem lên.
 - **Mở lần hai vào Sảnh:** `b_pwa.cjs` đo trung vị 2,3 s (2 087 / 2 319 / 2 343 ms, máy thử không GPU) — dưới 3 s.
+- **Lỗi thật bắt được khi chạy lại cả bộ:** chú thích `//` thêm ở GĐ5b nuốt mất phần sau của một dòng trong `ui/home.js` ⇒ nút Đấu thường / Đấu hạng /
+  Chọn chế độ ở sảnh không bấm được (chưa lên bản deploy). Đã sửa; `b_flow.cjs` đạt 91 mục.
+- **Kiểm thử trình duyệt cả bộ:** `b_pwa`, `b_perf`, `b_flow`, `b_gd3`, `b_match`, `b_prog` đạt (cập nhật `b_prog`: Rương tuần có ngọc; tải lại trang chờ
+  tới 120 s — sảnh tải nền 20 model tướng chặn luồng chính vài giây trên máy không GPU, bản `main` cũng vậy: 38,7 s). Đấu lại về phòng chờ 1,2 / 2,9 s
+  (CPU giả lập chậm 4×): phần JS dọn trận + dựng phòng chờ chỉ vài ms, còn lại là chờ GPU giả lập xả hàng đợi khung hình khi đổi cỡ khung vẽ
+  (`readPixels` sau khi màn kết quả đã dừng vẽ vẫn chờ ~10 s) — không có trên máy có GPU.

@@ -213,7 +213,7 @@ async function season(browser, vp) {
   ok(`${label}: ảnh đại diện ở sảnh có viền khung`, /box-shadow/.test(await page.getAttribute('#home .hm-me .av', 'style') || ''));
   // đổi giờ thiết bị sang mùa S2 rồi mở lại game
   await page.clock.setFixedTime(new Date(2027, 1, 2, 10, 0));
-  await page.reload({ waitUntil: 'domcontentloaded' }); await home(page);
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: T(120) }) /* sảnh đang tải nền 20 model tướng: máy không GPU chặn luồng chính vài giây */; await home(page);
   await page.waitForSelector('#rewardScr .tl', { timeout: T(20) }); await page.waitForTimeout(900);
   const E = await page.evaluate(() => ({ title: document.querySelector('#rewardScr h2').textContent, items: window.__rewards.items }));
   ok(`${label}: mở lại sau ngày hết mùa → "Kết thúc mùa S1 2026" với thưởng của Sao Mai (1600 vàng, 15 Mảnh, Khung Sao Mai)`, /Kết thúc mùa S1 2026/.test(E.title) && E.items.some((x) => x.k === 'gold' && x.n === 1600) && E.items.some((x) => x.k === 'manh' && x.n === 15) && E.items.some((x) => x.k === 'frame' && x.id === 'sao_mai'), JSON.stringify(E.items));
@@ -224,7 +224,7 @@ async function season(browser, vp) {
   const P2 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
   ok(`${label}: reset mềm đúng bảng — Hải Đăng II → Đèn Trời III, sang mùa 2`, /Hải Đăng II → Đèn Trời III/.test(dlg) && P2.season === 2 && P2.stars === 51 && P2.seasonWins === 0 && P2.gold === 100 + 1600, dlg.slice(0, 120));
   await page.click('.ui-dlg .btns button'); await page.waitForTimeout(200);
-  await page.reload({ waitUntil: 'domcontentloaded' }); await home(page); await page.waitForTimeout(500);
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: T(120) }) /* sảnh đang tải nền 20 model tướng: máy không GPU chặn luồng chính vài giây */; await home(page); await page.waitForTimeout(500);
   ok(`${label}: mở lại lần nữa — không thưởng hết mùa lần hai`, !(await page.$('#rewardScr')));
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
   await ctx.close();
