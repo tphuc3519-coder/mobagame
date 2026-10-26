@@ -28,7 +28,7 @@ const MIGRATE = {
     p.charmPages = arr(p.charmPages);
     p.bag = Object.fromEntries(Object.entries(obj(p.bag)).map(([k, v]) => [k, int(v)]).filter(([, v]) => v > 0));
     for (const k of ['heroPage', 'emblems']) p[k] = obj(p[k]);
-    const d = obj(p.daily); p.daily = { day: str(d.day), played: int(d.played), won: int(d.won), kills: int(d.kills), claimed: arr(d.claimed).filter((x) => typeof x === 'string') };
+    for (const k of ['daily', 'weekly', 'event']) p[k] = p[k] && typeof p[k] === 'object' && !Array.isArray(p[k]) ? p[k] : null; // nhiệm vụ: ui/profile.js cycle() tự kiểm + dựng lại
     return p;
   },
 };

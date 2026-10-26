@@ -1,20 +1,20 @@
 // Hồ sơ người chơi (lưu trong máy, localStorage): tên, ảnh đại diện, tướng đứng ở sảnh, vàng, ngọc, cấp/kinh nghiệm, sao hạng, thống kê,
-// nhiệm vụ ngày, thư, túi đồ, lịch sử trận. Bậc hạng theo 08 §1 (tên tự đặt): Đèn Dầu → Đèn Lồng → Đèn Kéo Quân → Đèn Trời → Hải Đăng →
+// nhiệm vụ ngày / tuần / sự kiện, thư, túi đồ, rương, lịch sử trận. Bậc hạng theo 08 §1 (tên tự đặt): Đèn Dầu → Đèn Lồng → Đèn Kéo Quân → Đèn Trời → Hải Đăng →
 // Sao Mai (mỗi bậc chia phân hạng, mỗi phân hạng vài sao) → Nguyệt Quang (tích sao không giới hạn) → Thái Dương (từ 30 sao Nguyệt Quang).
 // Luật cộng/trừ sao: xem applyResult.
-import { ALPHA } from '../data/heroes/index.js';
+import { ALPHA, HEROES } from '../data/heroes/index.js';
+import { RESET_HOUR, DAILY_N, DAILY_POOL, WEEKLY, WEEK_BONUS, EVENT } from '../data/missions.js';
 import { migrateProfile, SAVE_VER } from './save.js';
 import { BAG, CHEST, SHARD_SHOP } from '../data/rewards.js';
 import { seasonAt } from '../data/seasons.js';
 
 const KEY = 'la.profile';
-const today = () => new Date().toISOString().slice(0, 10);
 const DEF = () => ({
   name: 'Hiệp Sĩ Đèn', avatar: 'hoa_ren', feature: 'hoa_ren', gold: 1500, gems: 0, level: 1, exp: 0, stars: 0, best: 0,
   games: 0, wins: 0, ranked: 0, rankedWins: 0, kills: 0, deaths: 0, assists: 0, streak: 0, mvp: 0, scoreSum: 0, courage: 0, history: [], diff: 'normal',
   bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua) — không hạn (vật phẩm không hạn đếm ở bag, có hạn ở timed)
   timed: [], manh: 0, gao: 0, chestN: 0, chests: 0, x2Armed: false, // GĐ4d: vật phẩm có hạn [{ id, exp }], Mảnh Tướng, Gạo Hội, rương
-  daily: { day: today(), played: 0, won: 0, kills: 0, claimed: [] }, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
+  daily: null, weekly: null, event: null, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
   charmPages: [], heroPage: {}, emblems: {}, // trang bùa riêng (u1..u10), trang nhớ theo tướng, phù hiệu theo tướng — ui/loadout.js
 });
@@ -33,7 +33,6 @@ export function profile() {
   P = migrateProfile({ ...DEF(), ...(raw || {}) }, raw ? raw.version : SAVE_VER); // GĐ4a: bản cũ chuyển sang bản hiện tại (ui/save.js)
   if (!ALPHA.includes(P.feature)) P.feature = 'hoa_ren';
   if (!ALPHA.includes(P.avatar)) P.avatar = P.feature;
-  if (!P.daily || P.daily.day !== today()) P.daily = { day: today(), played: 0, won: 0, kills: 0, claimed: [] };
   pruneBag();
   return P;
 }
@@ -74,20 +73,66 @@ export const rankDifficulty = (total) => ['easy', 'easy', 'normal', 'normal', 'h
 /** Kinh nghiệm cần để lên cấp kế tiếp. */
 export const expNeed = (lv) => 80 + lv * 40;
 
-// —— Nhiệm vụ ngày ——
-export const MISSIONS = [
-  { id: 'play1', name: 'Tham gia 1 trận bất kỳ', goal: 1, key: 'played', gold: 80 },
-  { id: 'win1', name: 'Giành chiến thắng 1 trận', goal: 1, key: 'won', gold: 120 },
-  { id: 'play3', name: 'Tham gia 3 trận', goal: 3, key: 'played', gold: 150, item: 'giu_sao_mvp' },
-  { id: 'kill10', name: 'Hạ gục 10 tướng địch', goal: 10, key: 'kills', gold: 150 },
-];
-export function missionState(m) { const p = profile(), v = Math.min(m.goal, p.daily[m.key] || 0); return { v, done: v >= m.goal, claimed: p.daily.claimed.includes(m.id) }; }
-export function claimMission(id) {
-  const p = profile(), m = MISSIONS.find((x) => x.id === id); if (!m) return 0;
-  const st = missionState(m); if (!st.done || st.claimed) return 0;
-  p.daily.claimed.push(id); p.gold += m.gold; if (m.item) addItem(m.item); saveProfile(); return m.gold;
+// —— Nhiệm vụ ngày / tuần / sự kiện tích luỹ (08 §6, GĐ4e — số liệu: data/missions.js) ——
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** Khoá ngày / tuần theo giờ thiết bị, làm mới lúc 04:00 (tuần: thứ Hai 04:00). */
+export const dayKey = (now = Date.now()) => ymd(new Date(now - RESET_HOUR * 3600000));
+export function weekKey(now = Date.now()) { const d = new Date(now - RESET_HOUR * 3600000); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ymd(d); }
+/** 3 nhiệm vụ ngày bốc theo seed của ngày (mọi lần mở trong ngày ra cùng 3 nhiệm vụ), tối đa 1 nhiệm vụ "thắng với vai…". */
+export function dailyIds(key) {
+  let a = 2166136261; for (const ch of key) { a ^= ch.charCodeAt(0); a = Math.imul(a, 16777619) >>> 0; }
+  const rnd = () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), a | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const pool = DAILY_POOL.slice(), out = [];
+  while (out.length < DAILY_N && pool.length) { const m = pool.splice(Math.floor(rnd() * pool.length), 1)[0]; if (!(m.key.startsWith('win_') && out.some((x) => x.key.startsWith('win_')))) out.push(m); }
+  return out.map((m) => m.id);
 }
-export const missionsReady = () => MISSIONS.filter((m) => { const s = missionState(m); return s.done && !s.claimed; }).length;
+const okBox = (o, k, v) => o && typeof o === 'object' && o[k] === v && o.c && typeof o.c === 'object' && Array.isArray(o.claimed);
+/** Sang ngày / tuần mới thì dựng lại bảng nhiệm vụ tương ứng. */
+function cycle(now) {
+  const p = profile(), d = dayKey(now), w = weekKey(now);
+  if (!okBox(p.daily, 'day', d) || !Array.isArray(p.daily.ids)) p.daily = { day: d, ids: dailyIds(d), c: {}, claimed: [] };
+  if (!okBox(p.weekly, 'week', w)) p.weekly = { week: w, c: {}, claimed: [], bonus: false };
+  if (!p.event || p.event.week !== w || !Number.isFinite(p.event.n)) p.event = { week: w, n: 0, claimed: false };
+  return p;
+}
+const state = (box, m) => { const v = Math.min(m.goal, box.c[m.key] || 0); return { ...m, v, done: v >= m.goal, claimed: box.claimed.includes(m.id) }; };
+/** Danh sách nhiệm vụ: scope 'daily' | 'weekly' → [{ ...nhiệm vụ, v, done, claimed }]. */
+export function missionList(scope, now = Date.now()) {
+  const p = cycle(now);
+  return scope === 'weekly' ? WEEKLY.map((m) => state(p.weekly, m)) : p.daily.ids.map((id) => DAILY_POOL.find((m) => m.id === id)).filter(Boolean).map((m) => state(p.daily, m));
+}
+const giveAll = (r, now) => { const p = profile(), out = []; // r: { gold, item, chest, gao } → cộng vào hồ sơ, trả danh sách quà cho màn Nhận thưởng
+  if (r.gold) { p.gold += r.gold; out.push({ k: 'gold', n: r.gold }); }
+  if (r.gao) { p.gao = (p.gao || 0) + r.gao; out.push({ k: 'gao', n: r.gao }); }
+  if (r.item) { addItem(r.item, 1, now); out.push({ k: 'item', id: r.item, n: 1 }); }
+  if (r.chest) { p.chests = (p.chests || 0) + r.chest; out.push({ k: 'chest', n: r.chest }); }
+  saveProfile(); return out;
+};
+/** Nhận thưởng một nhiệm vụ (đã xong, chưa nhận). Trả về danh sách quà hoặc null. */
+export function claimMission(scope, id, now = Date.now()) {
+  const p = cycle(now), box = scope === 'weekly' ? p.weekly : p.daily, m = missionList(scope, now).find((x) => x.id === id);
+  if (!m || !m.done || m.claimed) return null;
+  box.claimed.push(id); return giveAll(m, now);
+}
+/** Rương tuần: xong (đã nhận) cả 4 nhiệm vụ tuần. */
+export const weekBonusReady = (now = Date.now()) => { const p = cycle(now); return !p.weekly.bonus && WEEKLY.every((m) => p.weekly.claimed.includes(m.id)); };
+export function claimWeekBonus(now = Date.now()) { const p = cycle(now); if (!weekBonusReady(now)) return null; p.weekly.bonus = true; return giveAll(WEEK_BONUS, now); }
+/** Sự kiện tích luỹ: { n, goal, done, claimed }. */
+export function eventState(now = Date.now()) { const p = cycle(now), n = Math.min(EVENT.goal, p.event.n); return { ...EVENT, n, done: n >= EVENT.goal, claimed: !!p.event.claimed }; }
+export function claimEvent(now = Date.now()) { const p = cycle(now), e = eventState(now); if (!e.done || e.claimed) return null; p.event.claimed = true; return giveAll({ gao: EVENT.gao }, now); }
+/** Số phần thưởng đang chờ nhận (huy hiệu ở sảnh). */
+export function missionsReady(now = Date.now()) {
+  const n = ['daily', 'weekly'].reduce((a, sc) => a + missionList(sc, now).filter((m) => m.done && !m.claimed).length, 0), e = eventState(now);
+  return n + (weekBonusReady(now) ? 1 : 0) + (e.done && !e.claimed ? 1 : 0);
+}
+/** Cộng tiến độ sau một trận (không tính luyện tập). ctx: { won, kills, assists, towers, ranked, mvp, heroId }. */
+function missionProgress(ctx, now) {
+  const p = cycle(now), add = { played: 1, won: ctx.won ? 1 : 0, kills: ctx.kills || 0, assists: ctx.assists || 0, towers: ctx.towers || 0, ranked: ctx.ranked ? 1 : 0, rankedWon: ctx.ranked && ctx.won ? 1 : 0, mvp: ctx.mvp ? 1 : 0 };
+  if (ctx.won) for (const r of HEROES[ctx.heroId]?.roles || []) add['win_' + r] = 1;
+  for (const box of [p.daily, p.weekly]) for (const [k, v] of Object.entries(add)) if (v) box.c[k] = (box.c[k] || 0) + v;
+  p.event.n++;
+}
 
 // —— Túi đồ (08 §3, GĐ4d): vật phẩm không hạn đếm ở p.bag, có hạn là từng chiếc trong p.timed [{ id, exp }] (dùng chiếc sắp hết hạn trước) ——
 export const BAG_ITEMS = BAG;
@@ -140,7 +185,7 @@ export function shardBuy(id, now = Date.now()) {
 export function mailbox() {
   const p = profile();
   if (!p.mail.some((m) => m.id === 'welcome')) p.mail.push({ id: 'welcome', title: 'Chào mừng tới Lantern Arena!', body: 'Đèn lồng đã thắp, đấu trường đã mở. Nhận chút lộ phí để bắt đầu hành trình nhé.', gold: 500, got: false });
-  const d = today();
+  const d = dayKey();
   if (!p.mail.some((m) => m.id === 'login-' + d)) p.mail.push({ id: 'login-' + d, title: 'Quà đăng nhập hằng ngày', body: 'Cảm ơn bạn đã ghé đấu trường hôm nay.', gold: 100, got: false });
   if (p.mail.length > 12) p.mail = p.mail.slice(-12);
   return p.mail;
@@ -163,7 +208,7 @@ const MODE_GOLD = { normal: 1, ranked: 1, solo: 0.7 };
  * Trả về phần thưởng cho màn kết quả: { gold, exp, stars (±), notes: [lý do], courage: { gain, now, used } (điểm tích luỹ), rankBefore, rankAfter, levelUp, level,
  *   chest (vừa được 1 rương), chestLeft (số trận nữa tới rương kế) }. now: thời điểm (ms) — kiểm thử truyền vào.
  */
-export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null, now = Date.now() }) {
+export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null, towers = 0, now = Date.now() }) {
   const p = profile(), before = rankOf(p.stars);
   const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level, chest: false, chestLeft: 0 };
   if (mode === 'training') return out;
@@ -172,7 +217,7 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
   out.exp = Math.round((win ? 60 : 30) + score * 2);
   p.games++; if (win) p.wins++; p.kills += kills; p.deaths += deaths; p.assists += assists; p.streak = win ? Math.max(1, p.streak + 1) : Math.min(-1, p.streak - 1);
   p.scoreSum = (p.scoreSum || 0) + score; if (mvp) p.mvp = (p.mvp || 0) + 1;
-  p.daily.played++; if (win) p.daily.won++; p.daily.kills += kills;
+  missionProgress({ won: win, kills, assists, towers, ranked: mode === 'ranked', mvp, heroId }, now);
   if (mode === 'ranked') {
     p.ranked++; if (win) p.rankedWins++;
     const gain = Math.round(win ? 10 + score : score / 2); let cg = Math.min(COURAGE_MAX, (p.courage || 0) + gain), used = false;

@@ -7,7 +7,8 @@ import { openExport, openImport } from './saveDialogs.js';
 import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
-import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail, BAG_ITEMS } from './profile.js';
+import { profile, saveProfile, rankOf, expNeed, missionList, claimMission, weekBonusReady, claimWeekBonus, eventState, claimEvent, mailbox, claimMail, BAG_ITEMS } from './profile.js';
+import { WEEK_BONUS } from '../data/missions.js';
 import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
 import { skillDesc } from './skilltext.js';
@@ -121,16 +122,35 @@ export function openMail(onChange) {
   body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMail(b.dataset.m); render(); onChange?.(); if (g) showRewards([{ k: 'gold', n: g }], { onDone: render }); };
 }
 
-export function openMissions(onChange) {
-  css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ hằng ngày', right: gold(p.gold) });
+export function openMissions(onChange, tab0 = 'daily') {
+  css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ', right: gold(p.gold) });
+  let tab = tab0;
+  const rew = (m) => [m.gold ? `${m.gold} vàng` : '', m.gao ? `${m.gao} Gạo Hội` : '', m.item ? '1 ' + BAG_ITEMS[m.item].name : '', m.chest ? `${m.chest} rương` : ''].filter(Boolean).join(' + ');
+  const row = (m, data) => `<div class="pn-row">${icon(m.done ? 'chest' : 'scroll')}<div><b>${m.name}</b><small>${m.v}/${m.goal} · thưởng ${rew(m)}</small><span class="pbar"><i style="width:${(m.v / m.goal) * 100}%"></i></span></div><button type="button" class="btn-gold go" ${data} ${m.done && !m.claimed ? '' : 'disabled'}>${m.claimed ? 'Đã nhận' : m.done ? 'Nhận' : 'Chưa xong'}</button></div>`;
   const render = () => {
-    body.innerHTML = MISSIONS.map((m) => { const s = missionState(m); return `<div class="pn-row">${icon(s.done ? 'chest' : 'scroll')}<div><b>${m.name}</b><small>${s.v}/${m.goal} · thưởng ${m.gold} vàng${m.item ? ' + 1 ' + BAG_ITEMS[m.item].name : ''}</small><span class="pbar"><i style="width:${(s.v / m.goal) * 100}%"></i></span></div><button type="button" class="btn-gold go" data-m="${m.id}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? 'Đã nhận' : s.done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')
-      + '<p class="pn-note">Nhiệm vụ làm mới mỗi ngày.</p>';
+    const tabs = `<div class="pn-tabs">${[['daily', 'Ngày'], ['weekly', 'Tuần'], ['event', 'Sự kiện']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+    if (tab === 'event') {
+      const e = eventState();
+      body.innerHTML = tabs + row({ ...e, v: e.n }, 'data-ev') + `<p class="pn-note">Sự kiện tích luỹ làm mới mỗi thứ Hai 04:00: tham gia ${e.goal} trận bất kỳ (trừ luyện tập) nhận ${e.gao} Gạo Hội.</p>`;
+    } else {
+      const L = missionList(tab), wk = tab === 'weekly' ? (() => { const all = L.every((m) => m.claimed), ready = weekBonusReady(), got = all && !ready;
+        return `<div class="pn-row" style="background:linear-gradient(90deg,rgba(110,70,20,.8),rgba(40,24,6,.6))">${icon('chest')}<div><b>${WEEK_BONUS.name}</b><small>Xong cả ${L.length} nhiệm vụ tuần · thưởng ${rew(WEEK_BONUS)}</small></div><button type="button" class="btn-gold go" data-wb ${ready ? '' : 'disabled'}>${got ? 'Đã nhận' : ready ? 'Nhận' : 'Chưa xong'}</button></div>`; })() : '';
+      body.innerHTML = tabs + L.map((m) => row(m, `data-m="${m.id}"`)).join('') + wk
+        + `<p class="pn-note">${tab === 'weekly' ? 'Nhiệm vụ tuần làm mới mỗi thứ Hai 04:00.' : 'Nhiệm vụ ngày làm mới mỗi ngày lúc 04:00.'}</p>`;
+    }
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
   render();
-  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const m = MISSIONS.find((x) => x.id === b.dataset.m), g = claimMission(b.dataset.m); render(); onChange?.();
-    if (g) showRewards([{ k: 'gold', n: g }, ...(m?.item ? [{ k: 'item', id: m.item, n: 1 }] : [])], { onDone: render }); };
+  body.onclick = (e) => {
+    const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; render(); return; }
+    let got = null;
+    const b = e.target.closest('[data-m]'); if (b) got = claimMission(tab, b.dataset.m);
+    if (e.target.closest('[data-wb]')) got = claimWeekBonus();
+    if (e.target.closest('[data-ev]')) got = claimEvent();
+    if (!got) return;
+    render(); onChange?.(); showRewards(got, { onDone: render });
+  };
+  window.__missions = { render, tab: (k) => { tab = k; render(); } };
 }
 
 /** Danh sách tướng: tướng chơi được (6) + tướng sắp có; chạm tướng xem kỹ năng, đặt làm tướng đứng ở sảnh. */

@@ -115,6 +115,17 @@ async function ranked(browser, vp, stars) {
   ok(`${label}: tướng bị cấm không có trong trận, hai đội không trùng tướng`, !m.pick.bans.flat().some((h) => m.ids0.includes(h) || m.ids1.includes(h)) && !m.ids0.some((h) => m.ids1.includes(h)));
   if (m.role === 'jungle') ok(`${label}: đi rừng mang Trừng Trị + Nanh Thú Rừng`, m.spell === 'thu_hoach' && m.items.includes('nanh_thu_rung'), `${m.spell} ${m.items.join(',')}`);
   await endMatch(page, label);
+  // GĐ4f: Kết quả → Nhận thưởng → Phòng chờ (Mốc 12)
+  const rw = await page.evaluate(() => window.__flow.result.rewards);
+  await page.waitForFunction(() => !!window.__post, null, { timeout: T(30) });
+  await page.evaluate(() => window.__post.o.onAgain());
+  await page.waitForSelector('#rewardScr .tl', { timeout: T(30) }); await page.waitForTimeout(900); await shot(page, label + '_rewards');
+  const R = await page.evaluate(() => ({ screen: window.__flow.nav.screen, items: window.__rewards.items }));
+  const gotGold = R.items.find((x) => x.k === 'gold')?.n, gotExp = R.items.find((x) => x.k === 'exp')?.n;
+  ok(`${label}: rời màn kết quả → màn Nhận thưởng (vàng + kinh nghiệm của trận) trên Phòng chờ`, R.screen === 'room' && gotGold === rw.gold && gotExp === rw.exp, JSON.stringify(R.items));
+  const L3 = await layout(page, ['#rewardScr h2', '#rewardScr .tl', '#rewardScr .go']); ok(`${label}: màn Nhận thưởng nằm trọn trong màn hình`, !L3.out.length, L3.out.slice(0, 3).join(' ; '));
+  await page.mouse.click(6, 6); await page.waitForTimeout(250);
+  ok(`${label}: chạm khoảng trống → về Phòng chờ bấm được`, !(await page.$('#rewardScr')) && !!(await page.$('#room [data-a="go"]')));
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 4).join(' || '));
   await ctx.close();
 }

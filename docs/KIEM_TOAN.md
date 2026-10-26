@@ -360,13 +360,13 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - **Vật phẩm mới:** Bùa Giữ Sao (thua bất kỳ), Thẻ Nhân Đôi Sao (7 ngày). Nhãn **"Có hạn"**, hết hạn tự xoá.
 - **Cửa hàng mảnh:** đổi Mảnh Tướng lấy vật phẩm / trang phục.
 
-### 4e — Nhiệm vụ
+### 4e — Nhiệm vụ ✅ (26/10 — `t_missions.mjs` 27 mục, `b_prog.cjs` miss844 / miss1280)
 - Ngày: 3 nhiệm vụ bốc theo seed ngày, làm mới 04:00.
 - Tuần: 4 nhiệm vụ, làm mới thứ Hai.
 - Sự kiện tích luỹ: 0/3 trận → Gạo Hội.
 - Bảng nhiệm vụ có thẻ Ngày / Tuần / Mùa.
 
-### 4f — Màn Nhận thưởng (07 §11) — 🚧 màn đã có (rương, nhiệm vụ, thư, điểm danh); còn nối vào sau trận
+### 4f — Màn Nhận thưởng (07 §11) ✅ (26/10 — sau trận, rương, nhiệm vụ, thư, điểm danh; `b_flow.cjs` ranked có bước Nhận thưởng)
 - Hàng ô quà bật vào lần lượt 120 ms.
 - Chạm một ô thì hiện tooltip: tên, hiện sở hữu, mô tả, thời hạn.
 - Dưới cùng ghi "Chạm vào khoảng trống để tiếp tục".

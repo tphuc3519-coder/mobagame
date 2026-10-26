@@ -18,7 +18,7 @@ store.set('la.profile', JSON.stringify({ name: 'Cũ', gold: 4321, stars: 17, bes
 M = await fresh(); p = M.profile();
 ok('hồ sơ bản 1 (chưa có số phiên bản) → bản hiện tại, giữ số liệu', p.version === SAVE_VER && p.name === 'Cũ' && p.gold === 4321 && p.stars === 17 && p.games === 40 && p.wins === 25 && p.level === 9 && p.history.length === 1 && p.charmPages[0].id === 'u1');
 ok('chuyển đổi sửa luôn chỗ lệch: sao cao nhất ≥ sao hiện tại', p.best === 17, p.best);
-ok('trường mới thêm sau này (mặc định) vẫn có sẵn', Array.isArray(p.mail) && p.daily && typeof p.spell === 'string');
+ok('trường mới thêm sau này (mặc định) vẫn có sẵn', Array.isArray(p.mail) && Array.isArray(p.timed) && p.chests === 0 && typeof p.spell === 'string');
 
 store.clear(); store.set('la.profile', '{"name":"hỏng", "gold": 12');
 M = await fresh(); p = M.profile();
@@ -29,7 +29,7 @@ ok('hồ sơ không phải đối tượng: cũng cất bản sao lưu', store.g
 
 const junk = migrateProfile({ gold: NaN, gems: -5, level: 0, exp: 'x', stars: 3.7, best: 1, games: 2, wins: 9, streak: 'a', name: 42, history: 'không', mail: [{ id: 'a' }, 5, null], bag: { giu_sao_mvp: -2, x: 3 }, daily: null, heroPage: [1], emblems: 'x' });
 ok('dữ liệu rác: số âm / NaN / sai kiểu được làm sạch', junk.gold === 0 && junk.gems === 0 && junk.level === 1 && junk.exp === 0 && junk.stars === 4 && junk.best === 4 && junk.wins === 2 && junk.streak === 0 && junk.name === 'Hiệp Sĩ Đèn', JSON.stringify({ g: junk.gold, l: junk.level, s: junk.stars, b: junk.best, w: junk.wins }));
-ok('dữ liệu rác: mảng / đối tượng hỏng được dựng lại', Array.isArray(junk.history) && !junk.history.length && junk.mail.length === 1 && junk.bag.x === 3 && !('giu_sao_mvp' in junk.bag) && junk.daily.claimed.length === 0 && !Array.isArray(junk.heroPage) && typeof junk.emblems === 'object');
+ok('dữ liệu rác: mảng / đối tượng hỏng được dựng lại', Array.isArray(junk.history) && !junk.history.length && junk.mail.length === 1 && junk.bag.x === 3 && !('giu_sao_mvp' in junk.bag) && junk.daily === null && !Array.isArray(junk.heroPage) && typeof junk.emblems === 'object');
 const newer = migrateProfile({ version: SAVE_VER + 3, futureField: 7 }, SAVE_VER + 3);
 ok('hồ sơ từ bản game mới hơn: giữ nguyên, không xoá trường lạ', newer.version === SAVE_VER + 3 && newer.futureField === 7);
 

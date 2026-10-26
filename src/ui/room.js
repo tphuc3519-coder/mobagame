@@ -4,7 +4,7 @@
 // lúc tìm thấy trận chia vị trí (vị trí chính / phụ) cho mình, đồng đội và đối thủ.
 import { DIFFICULTY } from '../data/ai.js';
 import { ICON, icon, face, rankBadge, stars, toast } from './kit.js';
-import { profile, rankOf, missionState, MISSIONS } from './profile.js';
+import { profile, rankOf, eventState } from './profile.js';
 import { FRIENDS, statusText, chatLine, botNames, nearStars } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
 import { stageOn } from './stage.js';
@@ -53,7 +53,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
         <button type="button" data-inv="${f.id}" ${can ? '' : 'disabled'} aria-label="Mời">${inP ? ICON.check() : ICON.plus()}</button></div>`;
     }).join('');
   };
-  const goal = MISSIONS.find((m) => m.id === 'win1'), gs = missionState(goal);
+  const ev = eventState(); // banner sự kiện tích luỹ (08 §6)
   const r = rankOf(p.stars);
   el.innerHTML = `
     <div class="rm-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2 class="gt">${M.name}</h2></div>
@@ -61,7 +61,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     <div class="rm-slots"></div>
     <aside class="rm-side">
       <div class="rm-tabs"><button type="button" data-tab="fr" class="on">${icon('friends')}<span>Bạn bè</span></button><button type="button" data-tab="chat">${icon('chat')}<span>Trò chuyện</span></button></div>
-      <div class="rm-ev">${icon('target')}<span>${goal.name}</span><b>${gs.done ? 'Đã xong ✓' : `+${goal.gold} vàng`}</b></div>
+      <div class="rm-ev">${icon('target')}<span>${ev.name} ${ev.n}/${ev.goal}</span><b>${ev.done ? (ev.claimed ? 'Đã nhận ✓' : 'Nhận ở Nhiệm vụ') : `+${ev.gao} Gạo Hội`}</b></div>
       <div class="rm-list"></div>
       <div class="rm-btns"><button type="button" class="btn-ghost" data-a="quick" ${M.size > 1 ? '' : 'disabled'}>Mời nhanh</button><button type="button" class="btn-ghost" data-a="clear" ${M.size > 1 ? '' : 'disabled'}>Giải tán</button></div>
       <button type="button" class="btn-gold rm-go" data-a="go">Bắt đầu</button>

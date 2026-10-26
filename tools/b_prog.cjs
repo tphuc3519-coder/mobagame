@@ -1,16 +1,17 @@
 // Kiểm thử trình duyệt GĐ4 (tiến trình tài khoản + lưu dữ liệu), Playwright + Chromium phần mềm. Cần máy chủ tĩnh ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 (mặc định: tất cả)
+//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 (mặc định: tất cả)
 // save: máy A (hồ sơ có sẵn) → Cài đặt → Dữ liệu → Xuất mã lưu; máy B (trình duyệt trống) → Nhập mã lưu: mã sai bị báo lỗi, mã đúng hiện tóm tắt
 //   → Nhập và tải lại → hồ sơ + cài đặt y như máy A, hồ sơ cũ của B được cất làm bản sao lưu; hộp thoại nằm trọn màn hình.
 // bag: Túi đồ → mở rương → màn Nhận thưởng (ô quà, chạm ô xem mô tả, chạm khoảng trống đóng) → mua rương, đổi mảnh, bật Thẻ Nhân Đôi Sao;
 //   nhận nhiệm vụ cũng hiện màn Nhận thưởng; mọi thứ nằm trọn màn hình.
+// miss: Nhiệm vụ ba thẻ Ngày / Tuần / Sự kiện, nhận Rương tuần, nhận sự kiện → Gạo Hội, Phòng chờ hiện tiến độ sự kiện tích luỹ.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['save844', 'save1280', 'bag844', 'bag1280'];
+const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -96,8 +97,8 @@ async function save(browser, vp) {
 async function bag(browser, vp) {
   const label = `bag${vp}`;
   console.log(`— ${label}: Túi đồ → rương → màn Nhận thưởng → mua rương / đổi mảnh / Thẻ Nhân Đôi Sao; nhận nhiệm vụ`);
-  const day = new Date().toISOString().slice(0, 10), exp = Date.now() + 5 * 86400000;
-  const { ctx, page, errs } = await openPage(browser, vp, { 'la.profile': { gold: 1000, manh: 40, chests: 1, bag: { giu_sao_mvp: 2 }, timed: [{ id: 'the_x2_sao', exp }], daily: { day, played: 3, won: 1, kills: 0, claimed: [] } } });
+  const day = ((d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date(Date.now() - 4 * 3600000)), exp = Date.now() + 5 * 86400000;
+  const { ctx, page, errs } = await openPage(browser, vp, { 'la.profile': { gold: 1000, manh: 40, chests: 1, bag: { giu_sao_mvp: 2 }, timed: [{ id: 'the_x2_sao', exp }], version: 2, daily: { day, ids: ['d_play2', 'd_win1', 'd_kill10'], c: { played: 3, won: 1 }, claimed: [] } } });
   ok(`${label}: nút Túi đồ có huy hiệu rương`, (await page.textContent('#home .hm-nav [data-a="bag"] .badge').catch(() => '')) === '1');
   await page.click('#home .hm-nav [data-a="bag"]'); await page.waitForSelector('.ui-panel [data-a="open"]', { timeout: T(10) }); await page.waitForTimeout(300);
   const lim = await page.textContent('.ui-panel .ui-body');
@@ -132,10 +133,46 @@ async function bag(browser, vp) {
   ok(`${label}: Cửa hàng mảnh nằm trọn màn hình`, !out3.length, out3.slice(0, 3).join(' ; '));
   await page.evaluate(() => window.__rewards.close());
   await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
-  await page.click('#home [data-a="missions"]'); await page.waitForSelector('.ui-panel [data-m="play1"]', { timeout: T(10) });
-  await page.click('.ui-panel [data-m="play1"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  await page.click('#home [data-a="missions"]'); await page.waitForSelector('.ui-panel [data-m="d_play2"]', { timeout: T(10) });
+  await page.click('.ui-panel [data-m="d_play2"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
   ok(`${label}: nhận nhiệm vụ → màn Nhận thưởng`, (await page.evaluate(() => window.__rewards.items[0])).k === 'gold');
   await page.evaluate(() => window.__rewards.close());
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
+  await ctx.close();
+}
+
+const dKey = (t = Date.now()) => { const d = new Date(t - 4 * 3600000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const wKey = (t = Date.now()) => { const d = new Date(t - 4 * 3600000); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+async function missions(browser, vp) {
+  const label = `miss${vp}`;
+  console.log(`— ${label}: Nhiệm vụ Ngày / Tuần / Sự kiện, Rương tuần, Gạo Hội, banner Phòng chờ`);
+  const W = ['w_play15', 'w_win8', 'w_kill40', 'w_rwin5'];
+  const { ctx, page, errs } = await openPage(browser, vp, { 'la.profile': { version: 2, bag: {},
+    daily: { day: dKey(), ids: ['d_play2', 'd_win1', 'd_kill10'], c: { played: 1 }, claimed: [] },
+    weekly: { week: wKey(), c: { played: 15, won: 8, kills: 40, rankedWon: 5 }, claimed: W, bonus: false }, event: { week: wKey(), n: 3, claimed: false } } });
+  ok(`${label}: huy hiệu Sứ mệnh đếm Rương tuần + sự kiện`, (await page.textContent('#home [data-a="missions"] .badge').catch(() => '')) === '2');
+  await page.click('#home [data-a="missions"]'); await page.waitForSelector('.ui-panel .pn-tabs [data-t="weekly"]', { timeout: T(10) });
+  const daily = await page.evaluate(() => [...document.querySelectorAll('.ui-panel [data-m]')].map((b) => b.dataset.m));
+  ok(`${label}: thẻ Ngày có đúng 3 nhiệm vụ của hôm nay`, daily.join() === 'd_play2,d_win1,d_kill10', daily.join());
+  const o1 = await inView(page, ['.ui-panel .pn-row button', '.ui-panel .pn-tabs button']); ok(`${label}: thẻ Ngày nằm trọn màn hình`, !o1.length, o1.slice(0, 3).join(' ; '));
+  await page.click('.ui-panel [data-t="weekly"]'); await page.waitForSelector('.ui-panel [data-wb]', { timeout: T(5) });
+  await shot(page, label + '_weekly');
+  const hz = await page.evaluate(() => [...document.querySelectorAll('.ui-panel .pn-row')].filter((r) => r.getBoundingClientRect().right > innerWidth + 0.5).length);
+  await page.evaluate(() => document.querySelector('.ui-panel [data-wb]').scrollIntoView({ block: 'nearest' })); await page.waitForTimeout(150);
+  const o2 = await inView(page, ['.ui-panel [data-wb]']); ok(`${label}: thẻ Tuần không tràn ngang, cuộn tới được Rương tuần`, !hz && !o2.length, o2.slice(0, 3).join(' ; '));
+  await page.click('.ui-panel [data-wb]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  const wb = await page.evaluate(() => window.__rewards.items.map((x) => x.k + (x.id ? ':' + x.id : '')));
+  ok(`${label}: Rương tuần → vàng + Bùa Giữ Sao + rương`, wb.join() === 'gold,item:bua_giu_sao,chest', wb.join());
+  await page.evaluate(() => window.__rewards.close());
+  await page.click('.ui-panel [data-t="event"]'); await page.waitForSelector('.ui-panel [data-ev]', { timeout: T(5) });
+  await page.click('.ui-panel [data-ev]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  const ev = await page.evaluate(() => ({ items: window.__rewards.items, gao: JSON.parse(localStorage.getItem('la.profile')).gao }));
+  ok(`${label}: sự kiện tích luỹ → 8 Gạo Hội`, ev.items[0].k === 'gao' && ev.items[0].n === 8 && ev.gao === 8);
+  await page.evaluate(() => window.__rewards.close());
+  await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
+  await page.click('#home [data-a="normal"]'); await page.waitForFunction(() => window.__flow.nav.screen === 'room' && document.querySelector('#room .rm-ev'), null, { timeout: T(20) });
+  const banner = await page.textContent('#room .rm-ev');
+  ok(`${label}: Phòng chờ hiện "Tham gia sự kiện tích luỹ 3/3 · Đã nhận"`, /sự kiện tích luỹ 3\/3/.test(banner) && /Đã nhận/.test(banner), banner);
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
   await ctx.close();
 }
@@ -149,6 +186,8 @@ async function bag(browser, vp) {
       else if (k === 'save1280') await save(browser, 1280);
       else if (k === 'bag844') await bag(browser, 844);
       else if (k === 'bag1280') await bag(browser, 1280);
+      else if (k === 'miss844') await missions(browser, 844);
+      else if (k === 'miss1280') await missions(browser, 1280);
     }
   } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   await browser.close();

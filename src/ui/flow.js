@@ -5,6 +5,7 @@
 import { HEROES } from '../data/heroes/index.js';
 import { startMatch } from '../game.js';
 import { profile, applyResult } from './profile.js';
+import { showRewards } from './rewards.js';
 import { scoreMatch } from './score.js';
 import { botLabel, FRIENDS } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
@@ -58,13 +59,16 @@ export const nav = {
 function gameOver({ world, player, winner }) {
   const heroes = world.entities.filter((e) => e.kind === 'hero');
   const rows = scoreMatch(heroes, winner), me = rows.find((r) => r.id === player.id);
-  const rewards = applyResult({ mode: S.mode, win: winner === player.team, heroId: player.heroId, kills: me.k, deaths: me.d, assists: me.a, score: me.score, mvp: me.mvp, kda: me.kda });
+  const towers = world.entities.filter((e) => e.kind === 'tower' && e.team !== player.team && !e.alive).length; // nhiệm vụ "Phá 3 trụ"
+  const rewards = applyResult({ mode: S.mode, win: winner === player.team, heroId: player.heroId, kills: me.k, deaths: me.d, assists: me.a, score: me.score, mvp: me.mvp, towers });
   const names = {}; for (const h of heroes) names[h.id] = h === player ? profile().name : `${h.playerName || HEROES[h.heroId].name} ${botLabel}`;
+  // Kết quả → Nhận thưởng → Phòng chờ (07 §11, Mốc 12): quà của trận hiện ở màn Nhận thưởng ngay khi rời màn kết quả
+  const got = [{ k: 'gold', n: rewards.gold }, { k: 'exp', n: rewards.exp }, ...(rewards.chest ? [{ k: 'chest', n: 1 }] : [])];
   openPostgame({
     rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: S.mode, modeName: MODES[S.mode].name, rewards,
     surrender: world.over?.surrender === undefined ? null : world.over.surrender === player.team ? 'Đội ta đầu hàng' : 'Đối thủ đầu hàng',
-    onHome: () => leave({ to: 'home' }),
-    onAgain: () => leave({ to: MODES[S.mode].room ? 'room' : 'pick', mode: S.mode, party: S.party.map((f) => f.id) }),
+    onHome: () => leave({ to: 'home', rewards: got }),
+    onAgain: () => leave({ to: MODES[S.mode].room ? 'room' : 'pick', mode: S.mode, party: S.party.map((f) => f.id), rewards: got }),
   });
   window.__flow.result = { rows, rewards };
 }
@@ -81,6 +85,7 @@ function leave(next) {
     ensureStageDom();
     nav.go(next.to, { mode: next.mode || S.mode });
     window.__flow.backMs = Math.round(performance.now() - t0); // kiểm thử: thời gian từ bấm tới màn kế
+    showRewards(next.rewards);
     pwaLobby(); // có bản mới đang chờ thì hỏi ở Sảnh / Phòng chờ
   } catch (e) { console.warn('Dọn trận lỗi — tải lại trang', e); hardLeave(next); }
 }
@@ -103,5 +108,6 @@ export function enter(next) {
   if (next?.party) S.party = FRIENDS.filter((f) => next.party.includes(f.id));
   if (next?.mode && MODES[next.mode]) S.mode = next.mode;
   nav.go(next?.to || 'home', { mode: next?.mode || S.mode });
+  if (next?.rewards) showRewards(next.rewards); // quà của trận vừa xong khi rời màn kết quả bằng tải lại trang
 }
 window.__flow = { nav, S, seen: [] };

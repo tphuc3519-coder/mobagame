@@ -508,3 +508,17 @@ Còn lại:
 - Kiểm thử:
   - `node tools/t_bag.mjs` — 31 mục;
   - trình duyệt `node tools/b_prog.cjs <cổng> bag844 bag1280`: Túi đồ → mở rương → Nhận thưởng → mua rương → Thẻ Nhân Đôi Sao → đổi mảnh → nhận nhiệm vụ; mọi thứ nằm trọn màn hình, không lỗi console.
+
+## GĐ4e + 4f (26/10) — nhiệm vụ ngày / tuần / sự kiện, màn Nhận thưởng sau trận
+- **Nhiệm vụ** (`src/data/missions.js`, `ui/profile.js`):
+  - Ngày: 3 nhiệm vụ bốc từ 14 mẫu theo seed của ngày (tối đa 1 nhiệm vụ "thắng với vai…"), làm mới 04:00 giờ thiết bị.
+  - Tuần: 4 nhiệm vụ, làm mới thứ Hai 04:00; nhận đủ cả 4 thì mở **Rương tuần** (vàng + Bùa Giữ Sao + 1 rương).
+  - Sự kiện tích luỹ: 3 trận trong tuần → 8 Gạo Hội.
+  - Bộ đếm cộng sau mỗi trận (trừ luyện tập): trận, thắng, hạ gục, hỗ trợ, trụ địch bị phá, đấu hạng, thắng hạng, MVP, thắng theo vai.
+  - Bảng Nhiệm vụ có thẻ **Ngày / Tuần / Sự kiện**; Phòng chờ hiện "Tham gia sự kiện tích luỹ n/3"; huy hiệu ở sảnh đếm mọi phần thưởng chờ nhận.
+- **Kết quả → Nhận thưởng → Phòng chờ** (Mốc 12): rời màn kết quả (Đấu lại / Về sảnh) thì màn Nhận thưởng hiện vàng + kinh nghiệm của trận, cùng rương nếu vừa được.
+  Rời bằng tải lại trang (mỗi 12 trận) vẫn hiện, quà mang qua `sessionStorage`.
+- Kiểm thử:
+  - `node tools/t_missions.mjs` — 27 mục;
+  - `b_prog.cjs miss844 miss1280`;
+  - `b_flow.cjs ranked844 ranked1280` thêm bước Nhận thưởng: Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ, đạt ở 844×390 và 1280×720.
