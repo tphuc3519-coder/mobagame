@@ -4,13 +4,16 @@
 // Luật cộng/trừ sao: xem applyResult.
 import { ALPHA } from '../data/heroes/index.js';
 import { migrateProfile, SAVE_VER } from './save.js';
+import { BAG, CHEST, SHARD_SHOP } from '../data/rewards.js';
+import { seasonAt } from '../data/seasons.js';
 
 const KEY = 'la.profile';
 const today = () => new Date().toISOString().slice(0, 10);
 const DEF = () => ({
   name: 'Hiệp Sĩ Đèn', avatar: 'hoa_ren', feature: 'hoa_ren', gold: 1500, gems: 0, level: 1, exp: 0, stars: 0, best: 0,
   games: 0, wins: 0, ranked: 0, rankedWins: 0, kills: 0, deaths: 0, assists: 0, streak: 0, mvp: 0, scoreSum: 0, courage: 0, history: [], diff: 'normal',
-  bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua)
+  bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua) — không hạn (vật phẩm không hạn đếm ở bag, có hạn ở timed)
+  timed: [], manh: 0, gao: 0, chestN: 0, chests: 0, x2Armed: false, // GĐ4d: vật phẩm có hạn [{ id, exp }], Mảnh Tướng, Gạo Hội, rương
   daily: { day: today(), played: 0, won: 0, kills: 0, claimed: [] }, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
   charmPages: [], heroPage: {}, emblems: {}, // trang bùa riêng (u1..u10), trang nhớ theo tướng, phù hiệu theo tướng — ui/loadout.js
@@ -31,6 +34,7 @@ export function profile() {
   if (!ALPHA.includes(P.feature)) P.feature = 'hoa_ren';
   if (!ALPHA.includes(P.avatar)) P.avatar = P.feature;
   if (!P.daily || P.daily.day !== today()) P.daily = { day: today(), played: 0, won: 0, kills: 0, claimed: [] };
+  pruneBag();
   return P;
 }
 export function saveProfile() { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (_) { /* không lưu được thì thôi */ } }
@@ -85,12 +89,52 @@ export function claimMission(id) {
 }
 export const missionsReady = () => MISSIONS.filter((m) => { const s = missionState(m); return s.done && !s.claimed; }).length;
 
-// —— Túi đồ (08 §3) ——
-export const BAG_ITEMS = {
-  giu_sao_mvp: { name: 'Bùa Giữ Sao (MVP thua)', desc: 'Tự dùng sau trận đấu hạng thua khi bạn là MVP đội thua: không bị trừ sao.' },
-};
-export const itemCount = (id) => profile().bag?.[id] || 0;
-export function addItem(id, n = 1) { const p = profile(); p.bag = { ...(p.bag || {}) }; p.bag[id] = Math.max(0, (p.bag[id] || 0) + n); }
+// —— Túi đồ (08 §3, GĐ4d): vật phẩm không hạn đếm ở p.bag, có hạn là từng chiếc trong p.timed [{ id, exp }] (dùng chiếc sắp hết hạn trước) ——
+export const BAG_ITEMS = BAG;
+const alive = (now) => (t) => t.exp > now;
+/** Số chiếc còn dùng được (không hạn + có hạn chưa hết). */
+export function itemCount(id, now = Date.now()) { const p = profile(); return (p.bag?.[id] || 0) + (p.timed || []).filter((t) => t.id === id && t.exp > now).length; }
+/** Thêm n chiếc (n âm: dùng bớt). Vật phẩm có ttl / hạn mùa thì mỗi chiếc mang hạn riêng tính từ lúc nhận. */
+export function addItem(id, n = 1, now = Date.now()) {
+  if (n < 0) { for (let i = 0; i < -n; i++) useItem(id, now); return; }
+  const p = profile(), d = BAG[id];
+  if (d?.ttl || d?.season) { const exp = d.ttl ? now + d.ttl * 3600000 : seasonAt(now).end; for (let i = 0; i < n; i++) p.timed.push({ id, exp }); }
+  else { p.bag = { ...(p.bag || {}) }; p.bag[id] = (p.bag[id] || 0) + n; }
+}
+/** Dùng 1 chiếc: chiếc có hạn sắp hết trước, rồi mới tới chiếc không hạn. Trả về true nếu có để dùng. */
+export function useItem(id, now = Date.now()) {
+  const p = profile(), T = (p.timed || []).filter((t) => t.id === id && t.exp > now).sort((a, b) => a.exp - b.exp);
+  if (T.length) { p.timed.splice(p.timed.indexOf(T[0]), 1); return true; }
+  if ((p.bag?.[id] || 0) > 0) { p.bag = { ...p.bag }; p.bag[id]--; if (!p.bag[id]) delete p.bag[id]; return true; }
+  return false;
+}
+/** Bỏ chiếc đã hết hạn. Trả về số chiếc bị bỏ. */
+export function pruneBag(now = Date.now()) { const p = P || profile(), before = (p.timed || []).length; p.timed = (p.timed || []).filter(alive(now)); return before - p.timed.length; }
+/** Danh sách túi đồ: [{ id, n, timed (số chiếc có hạn), exp (hạn gần nhất | null) }]. */
+export function bagList(now = Date.now()) {
+  const p = profile(), ids = [...new Set([...Object.keys(p.bag || {}), ...(p.timed || []).map((t) => t.id)])].filter((id) => BAG[id]);
+  return ids.map((id) => { const T = p.timed.filter((t) => t.id === id && t.exp > now); return { id, n: itemCount(id, now), timed: T.length, exp: T.length ? Math.min(...T.map((t) => t.exp)) : null }; }).filter((x) => x.n > 0);
+}
+/** Dùng Thẻ Nhân Đôi Sao: trận đấu hạng kế tiếp thắng được +2 sao (thua thì mất thẻ). */
+export function armX2(now = Date.now()) { const p = profile(); if (p.x2Armed || !useItem('the_x2_sao', now)) return false; p.x2Armed = true; saveProfile(); return true; }
+
+// —— Rương (08 §5) + cửa hàng mảnh ——
+const roll = (rng, [a, b]) => a + Math.floor(rng() * (b - a + 1));
+/** Mở 1 rương: vàng, Mảnh Tướng, có tỉ lệ ra Bùa Giữ Sao (MVP thua). Trả về danh sách quà [{ k, id?, n }] hoặc null nếu không còn rương. */
+export function openChest(rng = Math.random, now = Date.now()) {
+  const p = profile(); if (!(p.chests > 0)) return null;
+  p.chests--; const gold = roll(rng, CHEST.gold), manh = roll(rng, CHEST.manh), out = [{ k: 'gold', n: gold }, { k: 'manh', n: manh }];
+  p.gold += gold; p.manh += manh;
+  if (rng() < CHEST.itemOdds) { addItem(CHEST.item, 1, now); out.push({ k: 'item', id: CHEST.item, n: 1 }); }
+  saveProfile(); return out;
+}
+/** Mua 1 rương bằng vàng. */
+export function buyChest() { const p = profile(); if (p.gold < CHEST.price) return false; p.gold -= CHEST.price; p.chests++; saveProfile(); return true; }
+/** Đổi Mảnh Tướng lấy vật phẩm ở cửa hàng mảnh. */
+export function shardBuy(id, now = Date.now()) {
+  const p = profile(), it = SHARD_SHOP.find((x) => x.id === id); if (!it || p.manh < it.cost) return false;
+  p.manh -= it.cost; addItem(id, 1, now); saveProfile(); return true;
+}
 
 // —— Thư (quà chào mừng + quà đăng nhập mỗi ngày) ——
 export function mailbox() {
@@ -116,11 +160,12 @@ const MODE_GOLD = { normal: 1, ranked: 1, solo: 0.7 };
 
 /**
  * Ghi kết quả trận vào hồ sơ. r: { mode: 'normal'|'ranked'|'solo'|'training', win, heroId, kills, deaths, assists, score, mvp ('gold'|'silver'|null) }.
- * Trả về phần thưởng cho màn kết quả: { gold, exp, stars (±), notes: [lý do], courage: { gain, now, used } (điểm tích luỹ), rankBefore, rankAfter, levelUp, level }.
+ * Trả về phần thưởng cho màn kết quả: { gold, exp, stars (±), notes: [lý do], courage: { gain, now, used } (điểm tích luỹ), rankBefore, rankAfter, levelUp, level,
+ *   chest (vừa được 1 rương), chestLeft (số trận nữa tới rương kế) }. now: thời điểm (ms) — kiểm thử truyền vào.
  */
-export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null }) {
+export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null, now = Date.now() }) {
   const p = profile(), before = rankOf(p.stars);
-  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level };
+  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level, chest: false, chestLeft: 0 };
   if (mode === 'training') return out;
   const mult = MODE_GOLD[mode] || 1;
   out.gold = Math.round(((win ? 100 : 50) + score * 6 + (mvp ? 30 : 0)) * mult);
@@ -137,13 +182,18 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
       if (cg >= COURAGE_MAX) { out.stars++; cg = 0; used = true; out.notes.push('Điểm tích luỹ đầy: +1 sao'); }
     } else if (TIERS[before.tier]?.safe) out.notes.push(`${before.short}: thua không mất sao`);
     else if (before.tier < HAI_DANG && p.stars <= before.start) out.notes.push(`Sàn bậc ${before.short}: không rớt bậc`);
-    else if (mvp && itemCount('giu_sao_mvp') > 0) { addItem('giu_sao_mvp', -1); out.notes.push('Dùng Bùa Giữ Sao (MVP thua): không mất sao'); }
+    else if (mvp && useItem('giu_sao_mvp', now)) out.notes.push('Dùng Bùa Giữ Sao (MVP thua): không mất sao');
+    else if (useItem('bua_giu_sao', now)) out.notes.push('Dùng Bùa Giữ Sao: không mất sao');
     else if (cg >= COURAGE_MAX) { cg = 0; used = true; out.notes.push('Điểm tích luỹ đầy: giữ sao'); }
     else out.stars = -1;
+    if (p.x2Armed) { p.x2Armed = false; if (win) { out.stars++; out.notes.push('Thẻ Nhân Đôi Sao: +1 sao'); } else out.notes.push('Thẻ Nhân Đôi Sao đã dùng (thua)'); }
     p.courage = cg; out.courage = { gain, now: cg, used };
     p.stars = Math.max(0, p.stars + out.stars); p.best = Math.max(p.best, p.stars);
     out.rankAfter = rankOf(p.stars);
   }
+  p.chestN = (p.chestN || 0) + 1; // rương: cứ CHEST.every trận (trừ luyện tập) được 1 rương
+  if (p.chestN >= CHEST.every) { p.chestN = 0; p.chests = (p.chests || 0) + 1; out.chest = true; }
+  out.chestLeft = CHEST.every - p.chestN;
   p.gold += out.gold; p.exp += out.exp;
   while (p.exp >= expNeed(p.level)) { p.exp -= expNeed(p.level); p.level++; out.levelUp = true; }
   out.level = p.level;

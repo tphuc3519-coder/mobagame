@@ -1,14 +1,16 @@
 // Kiểm thử trình duyệt GĐ4 (tiến trình tài khoản + lưu dữ liệu), Playwright + Chromium phần mềm. Cần máy chủ tĩnh ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 (mặc định: tất cả)
+//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 (mặc định: tất cả)
 // save: máy A (hồ sơ có sẵn) → Cài đặt → Dữ liệu → Xuất mã lưu; máy B (trình duyệt trống) → Nhập mã lưu: mã sai bị báo lỗi, mã đúng hiện tóm tắt
 //   → Nhập và tải lại → hồ sơ + cài đặt y như máy A, hồ sơ cũ của B được cất làm bản sao lưu; hộp thoại nằm trọn màn hình.
+// bag: Túi đồ → mở rương → màn Nhận thưởng (ô quà, chạm ô xem mô tả, chạm khoảng trống đóng) → mua rương, đổi mảnh, bật Thẻ Nhân Đôi Sao;
+//   nhận nhiệm vụ cũng hiện màn Nhận thưởng; mọi thứ nằm trọn màn hình.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['save844', 'save1280'];
+const ALL = ['save844', 'save1280', 'bag844', 'bag1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -91,6 +93,53 @@ async function save(browser, vp) {
   await B.ctx.close();
 }
 
+async function bag(browser, vp) {
+  const label = `bag${vp}`;
+  console.log(`— ${label}: Túi đồ → rương → màn Nhận thưởng → mua rương / đổi mảnh / Thẻ Nhân Đôi Sao; nhận nhiệm vụ`);
+  const day = new Date().toISOString().slice(0, 10), exp = Date.now() + 5 * 86400000;
+  const { ctx, page, errs } = await openPage(browser, vp, { 'la.profile': { gold: 1000, manh: 40, chests: 1, bag: { giu_sao_mvp: 2 }, timed: [{ id: 'the_x2_sao', exp }], daily: { day, played: 3, won: 1, kills: 0, claimed: [] } } });
+  ok(`${label}: nút Túi đồ có huy hiệu rương`, (await page.textContent('#home .hm-nav [data-a="bag"] .badge').catch(() => '')) === '1');
+  await page.click('#home .hm-nav [data-a="bag"]'); await page.waitForSelector('.ui-panel [data-a="open"]', { timeout: T(10) }); await page.waitForTimeout(300);
+  const lim = await page.textContent('.ui-panel .ui-body');
+  ok(`${label}: Thẻ Nhân Đôi Sao có nhãn "Có hạn · còn N ngày"`, /Thẻ Nhân Đôi Sao ×1Có hạn · còn [45] ngày/.test(lim.replace(/\s+/g, ' ').replace(/ ?Có hạn/, 'Có hạn')), lim.match(/Thẻ Nhân Đôi Sao[^.]{0,40}/)?.[0]);
+  const out1 = await inView(page, ['.ui-panel .pn-row button', '.ui-panel .ui-hr .cur']);
+  ok(`${label}: Túi đồ — nút và tiền tệ nằm trọn màn hình`, !out1.length, out1.slice(0, 3).join(' ; '));
+  await shot(page, label + '_bag');
+  const g0 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).gold);
+  await page.click('.ui-panel [data-a="open"]');
+  await page.waitForSelector('#rewardScr .tl', { timeout: T(10) }); await page.waitForTimeout(1200);
+  const R = await page.evaluate(() => ({ title: document.querySelector('#rewardScr h2').textContent, n: document.querySelectorAll('#rewardScr .tl').length, items: window.__rewards.items, foot: document.querySelector('#rewardScr .go').textContent }));
+  ok(`${label}: mở rương → "Nhận thưởng thành công" với ô vàng + Mảnh Tướng`, /Nhận thưởng thành công/.test(R.title) && R.n >= 2 && R.items[0].k === 'gold' && R.items[1].k === 'manh' && /Chạm vào khoảng trống/.test(R.foot), JSON.stringify(R.items));
+  const out2 = await inView(page, ['#rewardScr h2', '#rewardScr .tl', '#rewardScr .go']);
+  ok(`${label}: màn Nhận thưởng nằm trọn màn hình`, !out2.length, out2.slice(0, 3).join(' ; '));
+  await page.click('#rewardScr .tl[data-i="1"]'); await page.waitForTimeout(200);
+  const tip = await page.evaluate(() => { const t = document.querySelector('#rewardScr .tip'); if (!t) return null; const r = t.getBoundingClientRect(); return { txt: t.textContent, in: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight }; });
+  ok(`${label}: chạm ô → bảng tên + hiện sở hữu + mô tả, nằm trong màn`, tip && /Mảnh Tướng/.test(tip.txt) && /Hiện sở hữu: \d+/.test(tip.txt) && tip.in, tip?.txt);
+  await shot(page, label + '_reward');
+  await page.mouse.click(8, Math.round((await page.evaluate(() => innerHeight)) / 2)); await page.waitForTimeout(250);
+  const after = await page.evaluate(() => ({ open: !!document.getElementById('rewardScr'), p: JSON.parse(localStorage.getItem('la.profile')), hr: document.querySelector('.ui-panel .ui-hr')?.textContent }));
+  ok(`${label}: chạm khoảng trống đóng màn, vàng / mảnh cộng đúng, còn 0 rương`, !after.open && after.p.gold === g0 + R.items[0].n && after.p.manh === 40 + R.items[1].n && after.p.chests === 0, JSON.stringify({ g: after.p.gold, m: after.p.manh }));
+  await page.click('.ui-panel [data-a="buy"]'); await page.waitForTimeout(200);
+  ok(`${label}: mua rương bằng vàng`, (await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).chests)) === 1);
+  await page.click('.ui-panel [data-use="the_x2_sao"]'); await page.waitForTimeout(200);
+  ok(`${label}: Dùng Thẻ Nhân Đôi Sao → bật cho trận hạng kế tiếp`, await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).x2Armed === true && /Nhân Đôi Sao đang bật/.test(document.querySelector('.ui-panel .ui-body').textContent)));
+  await page.click('.ui-panel [data-t="shop"]'); await page.waitForSelector('.ui-panel [data-buy]', { timeout: T(5) });
+  const m0 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).manh);
+  await page.click('.ui-panel [data-buy="bua_giu_sao"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  const sh = await page.evaluate(() => ({ items: window.__rewards.items, p: JSON.parse(localStorage.getItem('la.profile')) }));
+  ok(`${label}: đổi mảnh lấy Bùa Giữ Sao → màn Nhận thưởng, trừ mảnh`, sh.items[0].id === 'bua_giu_sao' && sh.p.manh === m0 - 24 && sh.p.timed.some((t) => t.id === 'bua_giu_sao'));
+  const out3 = await inView(page, ['.ui-panel .pn-row button']);
+  ok(`${label}: Cửa hàng mảnh nằm trọn màn hình`, !out3.length, out3.slice(0, 3).join(' ; '));
+  await page.evaluate(() => window.__rewards.close());
+  await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
+  await page.click('#home [data-a="missions"]'); await page.waitForSelector('.ui-panel [data-m="play1"]', { timeout: T(10) });
+  await page.click('.ui-panel [data-m="play1"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  ok(`${label}: nhận nhiệm vụ → màn Nhận thưởng`, (await page.evaluate(() => window.__rewards.items[0])).k === 'gold');
+  await page.evaluate(() => window.__rewards.close());
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
+  await ctx.close();
+}
+
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const t0 = Date.now();
@@ -98,6 +147,8 @@ async function save(browser, vp) {
     for (const k of want.length ? want : ALL) {
       if (k === 'save844') await save(browser, 844);
       else if (k === 'save1280') await save(browser, 1280);
+      else if (k === 'bag844') await bag(browser, 844);
+      else if (k === 'bag1280') await bag(browser, 1280);
     }
   } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   await browser.close();

@@ -1,4 +1,4 @@
-// Các bảng mở từ sảnh: hồ sơ, bạn bè, thư, nhiệm vụ, tướng, trang bị, túi đồ, cài đặt, sự kiện. Bảng phủ toàn màn kiểu Liên Quân.
+// Các bảng mở từ sảnh: hồ sơ, bạn bè, thư, nhiệm vụ, tướng, trang bị, cài đặt, sự kiện (túi đồ: ui/bagPanel.js). Bảng phủ toàn màn kiểu Liên Quân.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
@@ -11,6 +11,7 @@ import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMis
 import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
 import { skillDesc } from './skilltext.js';
+import { showRewards } from './rewards.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
@@ -75,6 +76,7 @@ const STYLE = `
 `;
 let styled = false;
 const css = () => { if (styled) return; styled = true; const s = document.createElement('style'); s.textContent = STYLE; document.head.append(s); };
+export const panelCss = css; // dùng chung cho bảng ở file khác (ui/bagPanel.js)
 const gold = (n) => `<span class="cur">${icon('coin')}<b>${fmt(n)}</b></span>`;
 
 export function openProfile(onChange) {
@@ -116,7 +118,7 @@ export function openMail(onChange) {
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
   render();
-  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMail(b.dataset.m); if (g) toast(`+${g} vàng`); render(); onChange?.(); };
+  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMail(b.dataset.m); render(); onChange?.(); if (g) showRewards([{ k: 'gold', n: g }], { onDone: render }); };
 }
 
 export function openMissions(onChange) {
@@ -127,7 +129,8 @@ export function openMissions(onChange) {
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
   render();
-  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMission(b.dataset.m); if (g) toast(`+${g} vàng`); render(); onChange?.(); };
+  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const m = MISSIONS.find((x) => x.id === b.dataset.m), g = claimMission(b.dataset.m); render(); onChange?.();
+    if (g) showRewards([{ k: 'gold', n: g }, ...(m?.item ? [{ k: 'item', id: m.item, n: 1 }] : [])], { onDone: render }); };
 }
 
 /** Danh sách tướng: tướng chơi được (6) + tướng sắp có; chạm tướng xem kỹ năng, đặt làm tướng đứng ở sảnh. */
@@ -177,12 +180,6 @@ export function openItems() {
   };
 }
 
-export function openBag() {
-  css(); const p = profile(); const { body } = panel({ title: 'Túi đồ' });
-  body.innerHTML = Object.entries(p.bag || {}).filter(([id, n]) => n > 0 && BAG_ITEMS[id]).map(([id, n]) => `<div class="pn-row">${icon('star')}<div><b>${BAG_ITEMS[id].name} ×${n}</b><small>${BAG_ITEMS[id].desc}</small></div></div>`).join('') + `<div class="pn-row">${icon('scroll')}<div><b>Thẻ đổi tên</b><small>Đổi tên miễn phí ở mục Hồ sơ.</small></div></div>
-    <div class="pn-row">${icon('lantern')}<div><b>Đèn lồng may mắn ×3</b><small>Dùng trong sự kiện Lễ Hội Đèn Lồng (sắp mở).</small></div></div>`;
-}
-
 /** Cài đặt (sảnh): bảng Cài đặt kiểu Liên Quân dùng chung với trong trận (ui/settingsModal.js) — đổi là lưu, áp dụng khi vào trận. */
 export function openSettings() {
   const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu. Muốn giữ lại thì vào Dữ liệu → Xuất mã lưu trước.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); },
@@ -204,7 +201,7 @@ export function openEvent(onChange) {
   body.onclick = (e) => {
     if (!e.target.closest('[data-a="claim"]')) return;
     const got = p.checkin || 0; if (p.checkinDay === today || got >= 7) return;
-    p.gold += REW[got]; p.checkin = got + 1; p.checkinDay = today; saveProfile(); toast(`+${REW[got]} vàng`); render(); onChange?.();
+    p.gold += REW[got]; p.checkin = got + 1; p.checkinDay = today; saveProfile(); render(); onChange?.(); showRewards([{ k: 'gold', n: REW[got] }], { onDone: render });
   };
 }
 

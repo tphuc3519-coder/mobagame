@@ -905,3 +905,8 @@
 - **Mã lưu (GĐ4a)** là chuỗi chữ để dán / gửi qua tin nhắn — không cần máy chủ, chạy được cả khi chơi không mạng.
   - Tổng kiểm FNV-1a 32 bit chỉ để bắt chép thiếu / dán nhầm, **không chống sửa**. Game chơi với máy, không có gì để gian lận.
   - Nhập mã thì tải lại trang thay vì vá từng màn đang mở: đơn giản và chắc chắn mọi màn đọc lại hồ sơ mới.
+- **Tiền tệ GĐ4d:** vàng ở sảnh giữ tên "vàng" nhưng đóng vai Xu Đèn của 08 §5. Mọi màn đã gọi là vàng; đổi tên sẽ lẫn với vàng trong trận.
+  Hai tiền tệ mới: Mảnh Tướng, Gạo Hội.
+- **2 Bùa Giữ Sao (MVP thua) quà tân thủ không có hạn** — hồ sơ cũ đã có sẵn. Bùa nhận từ nay (nhiệm vụ, rương, đổi mảnh) có hạn 24 giờ như 08 §3.
+- **Thứ tự giữ sao khi thua:** vật phẩm có hạn dùng trước Điểm tích luỹ, vì thanh tích luỹ không hết hạn.
+- **Thẻ Nhân Đôi Sao:** bấm Dùng là tiêu thẻ ngay, gắn cho đúng một trận hạng kế tiếp (thua cũng mất). Giá cửa hàng mảnh tự đặt: 8 / 24 / 30.

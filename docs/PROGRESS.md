@@ -481,3 +481,30 @@ Còn lại:
 - Kiểm thử:
   - `node tools/t_save.mjs` — 25 mục;
   - trình duyệt `node tools/b_prog.cjs <cổng> save844 save1280`: máy A xuất → máy B trống nhập. Mã thiếu bị báo; hồ sơ + cài đặt sang đúng; bản cũ được cất; các hộp nằm trọn màn hình; không lỗi console.
+
+## GĐ4d (26/10) — tiền tệ, rương, vật phẩm có hạn, cửa hàng mảnh + màn Nhận thưởng
+- **Số liệu** nằm ở `src/data/rewards.js` (tiền tệ, vật phẩm, rương, cửa hàng mảnh) và `src/data/seasons.js` (mùa 120 ngày, mùa 1 bắt đầu 01/10/2026 —
+  để tính hạn "hết mùa"; phần thưởng mùa / reset mềm làm ở 4b).
+- **Hai tiền tệ mới:** Mảnh Tướng, Gạo Hội. Vàng ở sảnh đóng vai Xu Đèn.
+- **Vật phẩm có hạn** (từng chiếc mang hạn riêng ở `p.timed`; dùng chiếc sắp hết hạn trước; mở hồ sơ thì tự bỏ chiếc hết hạn):
+
+  | Vật phẩm | Hạn |
+  |---|---|
+  | Bùa Giữ Sao (MVP thua) | 24 giờ |
+  | Bùa Giữ Sao (thua bất kỳ) | hết mùa |
+  | Thẻ Nhân Đôi Sao | 7 ngày |
+
+- **Thứ tự giữ sao khi thua trận hạng:** bảo vệ Đèn Dầu / Đèn Lồng → sàn bậc → bùa MVP (nếu là MVP) → Bùa Giữ Sao → Điểm tích luỹ đầy.
+- **Thẻ Nhân Đôi Sao:** bấm Dùng ở Túi đồ → trận hạng kế tiếp thắng +2 sao; thua thì mất thẻ.
+- **Rương:**
+  - cứ 3 trận (trừ luyện tập) được 1 rương; mua thêm 300 vàng;
+  - mở ra vàng 50–200, Mảnh 1–5, 15% Bùa Giữ Sao (MVP thua);
+  - nút Túi đồ ở sảnh có huy hiệu số rương.
+- **Cửa hàng mảnh** (thẻ thứ hai của Túi đồ): Bùa Giữ Sao MVP 8 · Bùa Giữ Sao 24 · Thẻ Nhân Đôi Sao 30 mảnh.
+- **Màn "Nhận thưởng thành công"** (`src/ui/rewards.js`, 07 §11):
+  - ô quà bật lần lượt 120 ms, nhãn "Có hạn";
+  - chạm ô → bảng tên / hiện sở hữu / mô tả / hạn; chạm khoảng trống để tiếp tục;
+  - dùng cho mở rương, đổi mảnh, nhận nhiệm vụ, thư, điểm danh.
+- Kiểm thử:
+  - `node tools/t_bag.mjs` — 31 mục;
+  - trình duyệt `node tools/b_prog.cjs <cổng> bag844 bag1280`: Túi đồ → mở rương → Nhận thưởng → mua rương → Thẻ Nhân Đôi Sao → đổi mảnh → nhận nhiệm vụ; mọi thứ nằm trọn màn hình, không lỗi console.

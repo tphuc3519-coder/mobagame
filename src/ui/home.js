@@ -9,7 +9,8 @@ import { stage, stageOn, backdrop } from './stage.js';
 import { openModes } from './modes.js';
 import { openLoadout } from './loadoutPanel.js';
 import { ALPHA } from '../data/heroes/index.js';
-import { openProfile, openFriends, openMail, openMissions, openHeroes, openItems, openBag, openSettings, openEvent, openLeaderboard, openHistory } from './panels.js';
+import { openProfile, openFriends, openMail, openMissions, openHeroes, openItems, openSettings, openEvent, openLeaderboard, openHistory } from './panels.js';
+import { openBag } from './bagPanel.js';
 
 export function openHome(nav) {
   const p = profile();
@@ -49,7 +50,7 @@ export function openHome(nav) {
         <button type="button" data-a="heroes">${icon('helmet')}<span>Tướng</span></button>
         <button type="button" data-a="items">${icon('items')}<span>Trang bị</span></button>
         <button type="button" data-a="loadout">${icon('book')}<span>Bảng Bùa</span></button>
-        <button type="button" data-a="bag">${icon('bag')}<span>Túi đồ</span></button>
+        <button type="button" data-a="bag">${icon('bag')}<span>Túi đồ</span>${p.chests ? `<i class="badge">${p.chests}</i>` : ''}</button>
         <button type="button" data-a="friends">${icon('friends')}<span>Bạn bè</span></button>
       </nav>
       <div class="chatln" data-a="chat">${icon('chat')}<span></span></div>
@@ -70,7 +71,7 @@ export function openHome(nav) {
   const A = {
     profile: () => openProfile(render), friends: () => openFriends(), mail: () => openMail(render), settings: () => openSettings(),
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard(), history: () => openHistory(),
-    bag: () => openBag(), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
+    bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
     chat: () => openFriends(), gems: () => toast('Cửa hàng ngọc sắp mở'), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };

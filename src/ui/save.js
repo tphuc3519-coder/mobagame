@@ -18,7 +18,8 @@ const str = (v, d = '') => (typeof v === 'string' ? v : d);
 const MIGRATE = {
   // bản 1 (chưa có số phiên bản, trước GĐ4): chuẩn hoá kiểu dữ liệu — hồ sơ sửa tay / ghi dở không làm hỏng sảnh
   1(p) {
-    for (const k of ['gold', 'gems', 'exp', 'stars', 'best', 'games', 'wins', 'ranked', 'rankedWins', 'kills', 'deaths', 'assists', 'mvp', 'scoreSum', 'courage']) p[k] = int(p[k]);
+    for (const k of ['gold', 'gems', 'exp', 'stars', 'best', 'games', 'wins', 'ranked', 'rankedWins', 'kills', 'deaths', 'assists', 'mvp', 'scoreSum', 'courage', 'manh', 'gao', 'chestN', 'chests']) p[k] = int(p[k]);
+    p.timed = arr(p.timed).filter((t) => t && typeof t.id === 'string' && Number.isFinite(t.exp)); p.x2Armed = !!p.x2Armed; // GĐ4d
     p.level = int(p.level, 1, 1); p.best = Math.max(p.best, p.stars); p.wins = Math.min(p.wins, p.games); p.rankedWins = Math.min(p.rankedWins, p.ranked);
     p.streak = Number.isFinite(p.streak) ? Math.round(p.streak) : 0;
     p.name = str(p.name, 'Hiệp Sĩ Đèn').slice(0, 24) || 'Hiệp Sĩ Đèn';

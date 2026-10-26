@@ -354,7 +354,7 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - **Bảng 100 người chơi ảo** theo seed mùa (quanh 2800, σ 300). **Thiên Hà** = top 50 Thái Dương.
 - **Đấu Đỉnh Cao:** chỉ mở 19:00–24:00, cần Nguyệt Quang, cấm/chọn đầy đủ, máy Ác mộng, Hào Quang ×1,5.
 
-### 4d — Tiền tệ, rương, vật phẩm
+### 4d — Tiền tệ, rương, vật phẩm ✅ (26/10 — `t_bag.mjs` 31 mục, `b_prog.cjs` bag844 / bag1280)
 - **Ba tiền tệ:** Xu Đèn, Mảnh Tướng, Gạo Hội.
 - **Rương:** cứ 3 trận được 1 rương (Xu 50–200, Mảnh 1–5, 15% Bùa Giữ Sao MVP thua). Sảnh ghi "Đấu tiếp N trận sẽ nhận được rương".
 - **Vật phẩm mới:** Bùa Giữ Sao (thua bất kỳ), Thẻ Nhân Đôi Sao (7 ngày). Nhãn **"Có hạn"**, hết hạn tự xoá.
@@ -366,7 +366,7 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - Sự kiện tích luỹ: 0/3 trận → Gạo Hội.
 - Bảng nhiệm vụ có thẻ Ngày / Tuần / Mùa.
 
-### 4f — Màn Nhận thưởng (07 §11)
+### 4f — Màn Nhận thưởng (07 §11) — 🚧 màn đã có (rương, nhiệm vụ, thư, điểm danh); còn nối vào sau trận
 - Hàng ô quà bật vào lần lượt 120 ms.
 - Chạm một ô thì hiện tooltip: tên, hiện sở hữu, mô tả, thời hạn.
 - Dưới cùng ghi "Chạm vào khoảng trống để tiếp tục".
