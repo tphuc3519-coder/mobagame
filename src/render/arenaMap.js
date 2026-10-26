@@ -212,7 +212,7 @@ export function buildArena(scene, map, level = 'mid', opts = {}) {
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
 
   const flies = buildFireflies(map, Math.round(420 * dens)); g.add(flies.object);
-  chunkStatic(g, { instances: false, cell: 1600, minTris: 500 }); freezeStatic(g); const cull = createInstanceCuller(g); // khối gộp cả bản đồ → ô 3 200 (chỉ vẽ ô trong khung nhìn); cảnh đứng yên: thôi tính lại ma trận mỗi khung
+  chunkStatic(g, { instances: false, cell: 1600, minTris: 500 }); freezeStatic(g); const cull = createInstanceCuller(g); // khối gộp cả bản đồ → ô 1 600, cây cỏ lọc từng bản sao (env/cull.js) — chỉ vẽ thứ trong khung nhìn; cảnh đứng yên: thôi tính lại ma trận mỗi khung
   scene.add(g);
   return {
     group: g, cull,

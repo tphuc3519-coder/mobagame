@@ -83,7 +83,8 @@ export function openHome(nav) {
     profile: () => openProfile(render), friends: () => openFriends(), mail: () => openMail(render), settings: () => openSettings(),
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard('season', render), history: () => openHistory(),
     bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
-    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), // trang phục vừa mặc: dựng lại tướng ở sảnh để phủ màu modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
+    // cửa hàng ngọc: đóng lại thì dựng lại tướng ở sảnh để phủ màu trang phục vừa mặc
+    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };
