@@ -569,3 +569,8 @@ Còn lại:
   và soi bảy màn: sảnh, phòng chờ, cấm/chọn, chuẩn bị, trong trận, kết quả, nhận thưởng — không nút nào được lấn vùng an toàn (phần bị khung cuộn che thì bỏ qua).
   Bắt được một lỗi thật: nút **Đẩy trụ** thò ra ngoài khung nút kỹ năng ~10 px (và **Ăn lính** ~1 px dưới đáy) nên lấn vào tai thỏ / thanh vuốt —
   kẹp vị trí ≥ 0 trong `index.html` (`.amode`).
+
+## GĐ5a (26/10) — chống khoá chết khống chế (04 §3)
+- `sim/status.js`: chuỗi khống chế cứng liên tiếp > 3 s ⇒ khống chế mới giảm 50% trong 2 s tiếp theo; HUD hiện "Kháng 50%".
+- Kiểm thử: `node tools/t_ccchain.mjs` — 11 mục (nối chuỗi, khoảng nghỉ cắt chuỗi, một choáng dài, hất tung / áp chế không giảm, hiệu ứng đồng minh,
+  tất định); `t_determinism`, `t_suppress`, `t_combat`, `t_heroes`, `t_spells`, `t_lockon`, `t_fixes`, `t_actives`, `t_kills`, `t_jungle`, `t_target` vẫn đạt.

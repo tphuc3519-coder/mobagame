@@ -1,4 +1,5 @@
 import { T } from './util.js';
+import { COMBAT_EXTRA } from '../data/economy.js';
 
 // Hiệu ứng (04 §3). Mỗi status: { id, kind, until, ...dữ liệu }. Thời gian theo tick.
 const HARD = new Set(['stun', 'knockup', 'stasis', 'suppress']); // stasis: bất động, không hành động (05 §8); suppress: áp chế (Giải Trói không gỡ)
@@ -6,6 +7,11 @@ const HARD = new Set(['stun', 'knockup', 'stasis', 'suppress']); // stasis: bấ
 // weaken: giảm sát thương gây ra (Bùa Mỏi) — là khống chế (miễn khống chế chặn, Giải Trói gỡ, kháng hiệu ứng rút ngắn) nhưng KHÔNG phải khống chế cứng
 const CC = new Set(['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'suppress', 'weaken']);
 const TENACITY = new Set(['stun', 'root', 'slow', 'silence', 'taunt', 'weaken']); // cố ý không có 'suppress': áp chế giữ đủ thời gian (04 §3)
+// chống khoá chết (04 §3): CHAIN_COUNT cộng vào chuỗi khống chế cứng liên tiếp (stasis là của chính mình — không tính); CHAIN_CUT bị giảm khi chuỗi đã
+// quá ngưỡng. Hất tung (gắn với chuyển động / hoạt ảnh) và áp chế (giữ đủ thời gian) chỉ tính vào chuỗi, không bị giảm.
+const CHAIN_COUNT = new Set(['stun', 'knockup', 'suppress']), CHAIN_CUT = new Set(['stun', 'root', 'silence', 'taunt']);
+/** Cửa sổ giảm khống chế đang mở của mục tiêu (tick bắt đầu chuỗi + ngưỡng → + cửa sổ). */
+const chainWindow = (e, now) => { const c = e.ccChain, C = COMBAT_EXTRA.ccChain; return c && c.end - c.start > T(C.max) && now >= c.start + T(C.max) && now < c.start + T(C.max + C.window); };
 /** Khống chế gỡ được (Giải Trói, kỹ năng giải khống chế): hất tung đang diễn ra và áp chế thì giữ nguyên (05 §6). */
 export const CLEANSE_KINDS = ['stun', 'root', 'slow', 'silence', 'taunt', 'noDash', 'blind', 'weaken'];
 
@@ -15,8 +21,14 @@ export function applyStatus(world, target, spec, src) {
   const kind = spec.status, id = spec.id || kind;
   if (CC.has(kind) && target.statuses.some((x) => x.kind === 'ccImmune')) return null;
   if (src && src.team !== target.team && kind !== 'stasis' && target.statuses.some((x) => x.kind === 'stasis')) return null; // Sương Đông: hiệu ứng của địch không bám
-  const dur = TENACITY.has(kind) ? (spec.duration ?? 0) * (1 - (target.stats?.tenacity || 0)) : spec.duration ?? 0; // kháng hiệu ứng rút ngắn khống chế
-  const s = { ...spec, kind, id, src: src?.id, t0: world.tick, until: world.tick + T(dur) }; // t0: lúc áp (thanh thời gian khống chế trên HUD)
+  let dur = TENACITY.has(kind) ? (spec.duration ?? 0) * (1 - (target.stats?.tenacity || 0)) : spec.duration ?? 0; // kháng hiệu ứng rút ngắn khống chế
+  const now = world.tick, hostile = !src || src.team !== target.team;
+  if (hostile && CHAIN_CUT.has(kind) && chainWindow(target, now)) { dur *= COMBAT_EXTRA.ccChain.mul; world.emit('ccResist', { id: target.id, kind }); }
+  const s = { ...spec, kind, id, src: src?.id, t0: now, until: now + T(dur) }; // t0: lúc áp (thanh thời gian khống chế trên HUD)
+  if (hostile && CHAIN_COUNT.has(kind) && dur > 0) { // chuỗi liên tiếp: nối khi khống chế mới bắt đầu lúc khống chế cứng trước chưa hết
+    const c = target.ccChain;
+    if (c && now <= c.end) c.end = Math.max(c.end, s.until); else target.ccChain = { start: now, end: s.until };
+  }
   delete s.status;
   const i = target.statuses.findIndex((x) => x.id === id);
   if (i >= 0) {

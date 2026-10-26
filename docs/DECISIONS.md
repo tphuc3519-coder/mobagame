@@ -925,3 +925,13 @@
   - Người ảo trên bảng coi như đều ở Thái Dương, nên Thiên Hà = 50 dòng đầu bảng. Bằng điểm thì người chơi đứng trên.
   - Bảng ảo **đứng yên cả mùa** (08 §1 "cố định theo seed mùa") — muốn bảng nhích theo ngày thì sửa `virtualBoard`.
   - Thưởng hết mùa cho Thiên Hà (3000 vàng, 150 ngọc, Khung Thiên Hà) là số tự đặt, nhỉnh hơn Thái Dương một bậc.
+
+## GĐ5 (26/10) — phần còn lại của lộ trình 1.0
+- **Chống khoá chết (04 §3, GĐ5a):** chuỗi khống chế cứng (choáng / hất tung / áp chế) nối nhau không khoảng nghỉ lên một mục tiêu quá 3 s ⇒ trong
+  2 s kể từ mốc 3 s, choáng / trói / câm lặng / khiêu khích mới chỉ còn 50%. Số ở `COMBAT_EXTRA.ccChain`.
+  - **Hất tung và áp chế tính vào chuỗi nhưng không bị giảm**: hất tung gắn với chuyển động / hoạt ảnh bay lên, áp chế được thiết kế giữ đủ thời gian
+    (cùng lý do nó không ăn kháng hiệu ứng).
+  - **Làm chậm, mù, suy yếu không bị giảm** — không phải khống chế cứng.
+  - Chỉ hiệu ứng **của địch** (khác đội) mới tính và mới bị giảm.
+  - Hiệu ứng làm chuỗi vượt ngưỡng vẫn đủ thời gian; chỉ hiệu ứng áp trong cửa sổ sau đó mới giảm.
+  - HUD hiện "Kháng 50%" trên đầu tướng của mình hoặc tướng địch khi bị giảm.
