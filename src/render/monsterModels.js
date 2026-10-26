@@ -184,7 +184,7 @@ export function buildMinionModel(type, team) {
   const obj = cloneSkinned(g.scene), mat = monsterMaterial(id, team), k = { giant: 1.85, siege: 1.7 }[type] || 1.6; // to hơn (theo yêu cầu): ngang tầm tướng đã phóng 1.35
   obj.scale.setScalar(100 * k); body.add(obj);
   const B = {};
-  obj.traverse((o) => { if (o.isBone) { o.userData.q0 = o.quaternion.clone(); B[o.name] = o; } if (o.isMesh) { o.material = mat; o.frustumCulled = false; o.castShadow = true; } });
+  obj.traverse((o) => { if (o.isBone) { o.userData.q0 = o.quaternion.clone(); B[o.name] = o; } if (o.isMesh) { o.material = mat; o.frustumCulled = false; o.castShadow = false; } }); // lính chỉ bóng tròn (02 §13.6)
   const s = { body, k, kind: type, gait: type === 'giant' ? 5.5 : 8 }, anim = type === 'siege' ? ANIM_MINION.siege : ANIM_MINION.human;
   let t = Math.random() * 10;
   return { object: root, update(dt, moving, atk) { t += dt; anim(B, t, dt, moving, atk || 0, s); } };

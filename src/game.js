@@ -319,7 +319,7 @@ function disposeMatch() {
   holdMaterials([...c.materials, ...postMats]); rend.park();
   if (window.__game === api) window.__game = null; delete window.__fxdbg;
 }
-const api = window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
+const api = window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, env, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
 
 on(document, 'visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;

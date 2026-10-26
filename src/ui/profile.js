@@ -7,7 +7,9 @@ import { RESET_HOUR, DAILY_N, DAILY_POOL, WEEKLY, WEEK_BONUS, EVENT } from '../d
 import { migrateProfile, SAVE_VER } from './save.js';
 import { BAG, CHEST, SHARD_SHOP } from '../data/rewards.js';
 import { seasonAt } from '../data/seasons.js';
-import { seasonFields, rollSeason, seasonTrack, journeyList, journeyTake, chooseSkinHero, toggleSkin } from './season.js';
+import { seasonFields, rollSeason, seasonTrack, journeyList, journeyTake, chooseSkinHero, toggleSkin, ownsCostume, wearCostume } from './season.js';
+import { COSTUMES, GEM_SHOP, GEM_FROM, costumeOf } from '../data/shop.js';
+import { SKIN_LOCKED } from '../data/seasons.js';
 import { hqFields, hqApply, rankFull, peakState } from './haoQuang.js';
 
 const KEY = 'la.profile';
@@ -17,6 +19,7 @@ const DEF = () => ({
   bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua) — không hạn (vật phẩm không hạn đếm ở bag, có hạn ở timed)
   timed: [], manh: 0, gao: 0, chestN: 0, chests: 0, x2Armed: false, // GĐ4d: vật phẩm có hạn [{ id, exp }], Mảnh Tướng, Gạo Hội, rương
   season: null, seasonPeak: 0, seasonWins: 0, mastery: {}, journey: [], frames: [], frame: null, skins: [], skinHero: null, skinOn: {}, // GĐ4b: mùa giải (ui/season.js)
+  costumes: [], // GĐ5b: trang phục cửa hàng ngọc 'tướng:màu'
   hq: null, hqBest: 0, hqTitle: 0, galaxyPeak: false, // GĐ4c: Điểm Hào Quang (null: chưa vào Nguyệt Quang), Thiên Hà (ui/haoQuang.js)
   daily: null, weekly: null, event: null, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
@@ -239,7 +242,8 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
   if (p.chestN >= CHEST.every) { p.chestN = 0; p.chests = (p.chests || 0) + 1; out.chest = true; }
   out.chestLeft = CHEST.every - p.chestN;
   p.gold += out.gold; p.exp += out.exp;
-  while (p.exp >= expNeed(p.level)) { p.exp -= expNeed(p.level); p.level++; out.levelUp = true; }
+  let ups = 0; while (p.exp >= expNeed(p.level)) { p.exp -= expNeed(p.level); p.level++; ups++; out.levelUp = true; }
+  if (ups) out.unlocks.push(...grant({ gems: ups * GEM_FROM.levelUp }, now)); // GĐ5b: mỗi lần lên cấp +ngọc
   out.level = p.level;
   p.history = [{ t: Date.now(), mode, win, heroId, k: kills, d: deaths, a: assists, score, mvp: mvp || null }, ...(p.history || [])].slice(0, 20);
   saveProfile();
@@ -255,3 +259,25 @@ export function claimJourney(tier, now = Date.now()) { const r = journeyTake(pro
 export function chooseSkin(hero, now = Date.now()) { const r = chooseSkinHero(profile(), hero); if (r === false) return false; if (r === true) { saveProfile(); return true; } return grant(r, now); }
 export function setSkinOn(hero, season) { const ok = toggleSkin(profile(), hero, season); if (ok) saveProfile(); return ok; }
 export function equipFrame(id) { const p = profile(); if (id && !p.frames.some((f) => f.id === id)) return false; p.frame = id || null; saveProfile(); return true; }
+
+// —— Cửa hàng ngọc (GĐ5b, data/shop.js) ——
+/** Mua trang phục phối màu: trừ ngọc, mặc luôn. Trả về danh sách quà (màn Nhận thưởng) hoặc { err }. */
+export function buyCostume(hero, look) {
+  const p = profile(), c = costumeOf(look);
+  if (!c || !ALPHA.includes(hero) || SKIN_LOCKED.includes(hero)) return { err: 'Tướng này không có trang phục' };
+  if (ownsCostume(p, hero, look)) return { err: 'Đã có trang phục này' };
+  if ((p.gems || 0) < c.price) return { err: `Thiếu ${c.price - (p.gems || 0)} ngọc` };
+  p.gems -= c.price; p.costumes.push(`${hero}:${look}`); wearCostume(p, hero, look); saveProfile();
+  return [{ k: 'costume', id: hero, look, n: 1 }];
+}
+/** Mặc (look) / cởi (null) trang phục đã mua. */
+export function wearShopCostume(hero, look) { const ok = wearCostume(profile(), hero, look); if (ok) saveProfile(); return ok; }
+/** Đổi ngọc lấy vật phẩm GEM_SHOP. Trả về danh sách quà hoặc { err }. */
+export function buyGemItem(id, now = Date.now()) {
+  const p = profile(), it = GEM_SHOP.find((x) => x.id === id);
+  if (!it) return { err: 'Không có món này' };
+  if ((p.gems || 0) < it.price) return { err: `Thiếu ${it.price - (p.gems || 0)} ngọc` };
+  p.gems -= it.price; return grant(it.give, now);
+}
+export { COSTUMES, GEM_SHOP };
+

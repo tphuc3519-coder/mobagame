@@ -63,7 +63,7 @@ dùng nếu còn hợp lệ, không thì chọn như cũ.
 | `ccImmune` (miễn khống chế) | Không dính khống chế mới, không bị đẩy / hút / cắt chiêu. Nguồn: Giải Trói, cửa sổ `unstoppable` ("KHÔNG THỂ CẢN") của chiêu | – |
 | `stasis` (Sương Đông) | Bất động, bất tử; hiệu ứng của địch không bám | – |
 
-Quy tắc: **Tốc chạy tối thiểu 150**. Tổng thời gian khống chế cứng liên tiếp lên một mục tiêu > 3s thì các hiệu ứng mới giảm 50% trong 2s tiếp theo (chống khoá chết — *chưa làm*, xem DECISIONS GĐ2). Bị trói (`root`) không tung được chiêu lướt (`dash` / `targetedDash`).
+Quy tắc: **Tốc chạy tối thiểu 150**. Tổng thời gian khống chế cứng liên tiếp lên một mục tiêu > 3s thì các hiệu ứng mới giảm 50% trong 2s tiếp theo (chống khoá chết — đã làm GĐ5a, `sim/status.js`, xem DECISIONS). Bị trói (`root`) không tung được chiêu lướt (`dash` / `targetedDash`).
 
 ## 4. Hook cơ chế riêng
 Khai báo trong file tướng, engine gọi đúng lúc:

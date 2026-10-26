@@ -49,13 +49,15 @@ if (q.has('hero')) {
   await bootRun([
     { w: 1, run: () => Promise.all([...['500', '600', '700', '800'].map((w) => `${w} 16px "Be Vietnam Pro"`), '700 16px "Barlow Condensed"', 'italic 800 16px "Barlow Condensed"'].map((f) => document.fonts?.load?.(f, 'ĐẤU HẠNG'))) },
     { w: 2, run: () => Promise.all([...new Set([...ALPHA, ...FRIENDS.map((f) => f.avatar)])].map((id) => loadImg(faceSrc(id)))) },
-    { w: 2, run: () => Promise.all(ALPHA.map((id) => loadImg(cardSrc(id)))) },
-    { w: 2, run: () => Promise.all(['./assets/ui/lobby.jpg', './assets/ui/lobby_soft.jpg', './assets/ui/room.jpg', './assets/ui/keyart.jpg'].map(loadImg)) },
+    { w: 2, run: () => Promise.all(['./assets/ui/lobby.jpg', './assets/ui/lobby_soft.jpg', './assets/ui/keyart.jpg'].map(loadImg)) }, // chỉ ảnh Sảnh cần (Mốc 14: tải theo nhu cầu)
     { w: 1, run: () => Promise.all([...ICONS, 'rank_' + rankOf(p.stars).id].map((n) => loadImg(iconSrc(n)))) },
     { w: 6, run: () => loadHero(p.feature, { showcase: true }), part: () => Math.max(heroProgress(p.feature, { showcase: true }), heroProgress(p.feature)) },
   ]);
   enter(next);
   bootDone();
+  // ảnh thẻ tướng (chọn tướng / màn tải / sau trận / chiêu cuối) + ảnh phòng chờ: Sảnh không dùng nên không bắt màn khởi động chờ — tải nền
+  // sau khi vào Sảnh (Tiết kiệm dữ liệu: bỏ, tải khi màn cần)
+  if (!prefs().saveData) setTimeout(() => { for (const src of [...ALPHA.map(cardSrc), './assets/ui/room.jpg']) loadImg(src).catch(() => {}); }, 800);
   // model trong trận của các tướng: tải dần lúc người chơi còn ở sảnh để màn tải trận nhanh (Cài đặt → Dữ liệu → Tiết kiệm dữ liệu: bỏ)
   if (!prefs().saveData) setTimeout(() => { ALPHA.reduce((pr, id) => pr.then(() => loadHero(id)), Promise.resolve()); warmHeroes(ALPHA, LITE); }, 2500); // + nhờ service worker lưu để chơi không mạng
 }

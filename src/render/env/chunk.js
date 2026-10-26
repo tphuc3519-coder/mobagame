@@ -7,14 +7,14 @@ import * as THREE from 'three';
 /** Chia mesh tĩnh trải rộng trong root thành ô cell×cell (đơn vị thế giới). Chỉ chia khi đáng: phủ ≥ 2 ô và trung bình mỗi ô
  *  ≥ minTris tam giác (khối thưa như mặt đất thì để nguyên — thêm lệnh vẽ không bõ). Bỏ qua mesh có xương, trong suốt, nhiều vật liệu,
  *  morph, thuộc tính xen kẽ, hoặc đánh dấu userData.noChunk / frustumCulled = false. Trả về số mesh đã chia. */
-export function chunkStatic(root, { cell = 3200, minTris = 1500 } = {}) {
+export function chunkStatic(root, { cell = 3200, minTris = 1500, instances = true } = {}) { // instances: false — để InstancedMesh cho env/cull.js lọc từng bản sao
   root.updateMatrixWorld(true);
   const list = [], users = new Map();
   root.traverse((o) => {
     if (!o.isMesh) return;
     users.set(o.geometry, (users.get(o.geometry) || 0) + 1);
     const g = o.geometry, m = o.material;
-    if (o.isSkinnedMesh || o.isBatchedMesh || o.frustumCulled === false || o.userData.noChunk || Array.isArray(m) || m.transparent) return;
+    if (o.isSkinnedMesh || o.isBatchedMesh || o.frustumCulled === false || o.userData.noChunk || Array.isArray(m) || m.transparent || (o.isInstancedMesh && !instances)) return;
     if (Object.keys(g.morphAttributes).length || Object.values(g.attributes).some((a) => a.isInterleavedBufferAttribute)) return;
     list.push(o);
   });

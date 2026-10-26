@@ -27,4 +27,6 @@ export const ECON_5V5 = {
 export const econOf = (map) => (map && map.id !== 'duel1v1' && map.lanes?.length > 1 ? { ...ECON, ...ECON_5V5 } : ECON);
 // suppress (áp chế, 04 §3): pad = số giây hiệu ứng trên mục tiêu sống lâu hơn sợi xích (xích tự gỡ hiệu ứng khi kết thúc);
 // breakMult × tầm chiêu = khoảng cách đứt mặc định.
-export const COMBAT_EXTRA = { critBase: 1.75, cdrCap: 0.4, tenacityCap: 0.8, penCap: 0.8, suppress: { pad: 0.2, breakMult: 1.15 } };
+export const COMBAT_EXTRA = { critBase: 1.75, cdrCap: 0.4, tenacityCap: 0.8, penCap: 0.8, suppress: { pad: 0.2, breakMult: 1.15 },
+  // chống khoá chết (04 §3): khống chế cứng (choáng / hất tung / áp chế) liên tiếp lên một mục tiêu quá `max` giây → khống chế mới giảm `mul` trong `window` giây tiếp theo
+  ccChain: { max: 3, window: 2, mul: 0.5 } };

@@ -4,10 +4,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import validator from 'gltf-validator';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/heroes');
+const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '../../assets/heroes'), mon = path.resolve(here, '../../assets/monsters');
 let bad = 0;
-for (const id of fs.readdirSync(root)) {
-  const f = path.join(root, id, `${id}.glb`);
+const files = [...fs.readdirSync(root).map((id) => [id, path.join(root, id, `${id}.glb`)]), ...fs.readdirSync(mon).filter((f) => f.endsWith('.glb')).map((f) => [f.slice(0, -4), path.join(mon, f)])]; // tướng + lính / quái
+for (const [id, f] of files) {
   if (!fs.existsSync(f)) continue;
   const r = await validator.validateBytes(new Uint8Array(fs.readFileSync(f)), { uri: f });
   const { numErrors, numWarnings, numInfos } = r.issues;

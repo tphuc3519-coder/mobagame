@@ -16,6 +16,7 @@ import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js
 import { fbm, rngFor } from './env/noise.js';
 import { lanePath, project, pointAt } from '../sim/lanes.js';
 import { chunkStatic, freezeStatic } from './env/chunk.js';
+import { createInstanceCuller } from './env/cull.js';
 
 export { FOG_COLOR };
 const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
@@ -211,10 +212,10 @@ export function buildArena(scene, map, level = 'mid', opts = {}) {
   // (bỏ đèn lồng dọc đường theo góp ý người chơi)
 
   const flies = buildFireflies(map, Math.round(420 * dens)); g.add(flies.object);
-  chunkStatic(g); freezeStatic(g); // khối gộp cả bản đồ → ô 3 200 (chỉ vẽ ô trong khung nhìn); cảnh đứng yên: thôi tính lại ma trận mỗi khung
+  chunkStatic(g, { instances: false, cell: 1600, minTris: 500 }); freezeStatic(g); const cull = createInstanceCuller(g); // khối gộp cả bản đồ → ô 1 600, cây cỏ lọc từng bản sao (env/cull.js) — chỉ vẽ thứ trong khung nhìn; cảnh đứng yên: thôi tính lại ma trận mỗi khung
   scene.add(g);
   return {
-    group: g,
-    update(t, dt, camera, viewH) { WIND.value = t; LAIR_T.value = t; river.update(t); abyss.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
+    group: g, cull,
+    update(t, dt, camera, viewH) { cull.update(camera); WIND.value = t; LAIR_T.value = t; river.update(t); abyss.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
   };
 }

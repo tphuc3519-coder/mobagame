@@ -4,7 +4,7 @@ import { loadHero, instantiate } from './assets.js';
 import { createAnimator } from './animator.js';
 import { createCapsule } from './placeholder/capsule.js';
 import { createDummy } from './placeholder/dummy.js';
-import { createBlobShadow } from './shadows.js';
+import { createBlobLayer } from './shadows.js';
 import { prepareUnitMaterials } from './materials.js';
 import { createTower, createCore, createFountain, createMinion } from './structures.js';
 import { canSee, bushAt } from '../sim/vision.js';
@@ -29,8 +29,9 @@ const SNAP = 0.09; // giây quay mặt nhanh về hướng đòn / chiêu khi b�
 const BIG_MONSTER = 80; // quái có bán kính từ đây trở lên tính là quái lớn (khựng + giật khi trúng đòn tướng)
 /** Tướng trong trận to hơn tỉ lệ gốc (bớt cảm giác chibi khi nhìn từ camera trên cao); bán kính va chạm mô phỏng giữ nguyên. */
 export const HERO_SCALE = 1.5;
-/** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không. */
-const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
+/** Nhân vật đổ bóng thật (khi bật bóng ở mức Vừa/Cao); vật trong suốt/cộng sáng thì không, lớp mặt (mắt / miệng dán trên đầu — đầu đã đổ bóng),
+ *  lớp phát sáng (<tướng>_glow: lửa đèn, vệt sáng vũ khí — vật phát sáng không đổ bóng) và vật liệu ẩn cũng không (mỗi lớp là một lượt vẽ bóng thừa — ngân sách 02 §2). */
+const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.name !== 'face' && !/_glow$/.test(m.material?.name || '') && m.material?.visible !== false && m.material?.depthWrite !== false && m.material?.blending !== THREE.AdditiveBlending && m.material?.side !== THREE.BackSide) m.castShadow = true; });
 
 /** Entity mô phỏng ↔ object 3D. Render chỉ đọc trạng thái (nội suy prevPos → pos). */
 /** floor(x, z): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn): đơn vị đứng lên trên bệ thay vì lút chân. */
@@ -39,9 +40,13 @@ const castShadows = (obj) => obj.traverse((m) => { if (m.isMesh && m.material?.d
 export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedMesh) o.skeleton?.dispose(); }); }
 /** Bán kính cầu xét "trong khung nhìn" quanh chân đơn vị: đủ trùm thân + bóng đổ (nắng xiên ~0,8 × chiều cao) + camera trượt 1 khung. */
 const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.max(380, e.radius * 4) : 560);
-const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
+const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere(), camDir = new THREE.Vector3();
+/** Hoạt ảnh thưa (02 §2 + §13.6): chỉ ANIM_FULL đơn vị có xương gần tâm màn hình nhất (theo xếp hạng khung trước) cập nhật mỗi khung; còn
+ *  lại trong khung nhìn ~30 lần/giây, tướng xa tâm màn hình quá ANIM_FAR ~15 lần/giây, tướng ngoài khung nhìn / trong sương mù thì dừng (dồn
+ *  thời gian lại, hiện ra cập nhật bù một lần). Tướng mình luôn mỗi khung (rung camera theo tư thế chạm). */
+const ANIM_FULL = 12, ANIM_THIN = 1 / 30, ANIM_SLOW = 1 / 15, ANIM_FAR2 = 2500 * 2500;
 export function createUnitViews(scene, localTeam, localId, { floor = null, anisotropy = 1, localTint = null } = {}) { // localTint: trang phục mùa của tướng người chơi (ui/season.js skinTint — không bao giờ có cho 4 model cao cấp) // anisotropy: lọc xiên texture tướng (renderer.capabilities)
-  const views = new Map(), aliveIds = new Set();
+  const views = new Map(), aliveIds = new Set(), blobs = createBlobLayer(scene), rankBuf = [], stats = { full: 0, thin: 0 };
   let dead = false; // đã dọn (rời trận): bỏ các lần tải model đang chờ
   // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
   // xương đặt frustumCulled = false (khối bao không theo động tác) nên trước đây cả bản đồ ~70 đơn vị đều vẽ mỗi khung, kể cả lượt bóng.
@@ -52,7 +57,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
     scene.add(root);
     const v = { root, animator: null, mats: null, angle: e.facing, lift: null, flash: 0, ghost: false, art: null, part: null, fall: 0 };
     views.set(e.id, v);
-    if (!e.structure) { v.blob = createBlobShadow(e.kind === 'hero' ? e.radius * 1.25 : e.radius); scene.add(v.blob); } // bóng tiếp đất: không xoay theo nhân vật
+    if (!e.structure) v.blob = blobs.add(e.kind === 'hero' ? e.radius * 1.25 : e.radius); // bóng tiếp đất: không xoay theo nhân vật
     if (e.kind === 'tower' || e.kind === 'core' || e.kind === 'fountain') {
       v.part = e.kind === 'tower' ? createTower(e.team) : e.kind === 'core' ? createCore(e.team) : createFountain(e.team, Math.min(1, (world.map.fountain?.healRadius || 650) / 650));
       if (e.kind === 'fountain') { const m = world.map, a = Math.atan2(m.h / 2 - e.pos.y, m.w / 2 - e.pos.x); v.part.object.rotation.y = -a + Math.PI / 2; } // lối vào quay ra giữa bản đồ
@@ -107,10 +112,12 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
   let W = null; // trận của lần update gần nhất (handle chạy trước update trong cùng khung)
   return {
     get: (id) => views.get(id),
+    /** Khung vừa vẽ: số đơn vị có xương cập nhật hoạt ảnh đủ (mỗi khung) / thưa (02 §2: đủ ≤ 12). */
+    animStats: () => ({ ...stats }),
     /** Gốc hình của mọi đơn vị (kể cả lính / quái đang được gỡ khỏi cảnh vì ở xa) — để dọn bộ nhớ GPU khi rời trận. */
-    roots() { const out = []; for (const v of views.values()) { out.push(v.root); if (v.blob) out.push(v.blob); } return out; },
+    roots() { const out = [blobs.mesh]; for (const v of views.values()) out.push(v.root); return out; },
     /** Rời trận: gỡ mọi đơn vị khỏi cảnh, trả khung xương. */
-    dispose() { dead = true; for (const v of views.values()) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); releaseSkeletons(v.root); } views.clear(); },
+    dispose() { dead = true; for (const v of views.values()) { scene.remove(v.root); releaseSkeletons(v.root); } views.clear(); blobs.dispose(); },
     /** Vẽ công trình như đã đổ (chỉ phần nhìn; mô phỏng không đổi) — nhà chính bên đầu hàng lúc kết thúc trận. */
     down(id) { const v = views.get(id); if (v) v.forced = true; },
     /** kick(dx, dz, độ): giật camera khi chiêu của người chơi tới tư thế chạm (game.js gắn camera.kick). */
@@ -138,6 +145,16 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
       if (camera) { pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); } // khung của lần vẽ trước
       const inView = (e, x, y, z) => { if (!camera) return true; const r = cullR(e); sph.center.set(x, y + r * 0.35, z); sph.radius = r; return frustum.intersectsSphere(sph); };
       const alive = aliveIds; alive.clear(); // dùng lại một Set (đỡ rác bộ nhớ mỗi khung)
+      let cx = 0, cz = 0, nFull = 0, nThin = 0; const ranked = rankBuf; ranked.length = 0;
+      if (camera) { camera.getWorldDirection(camDir); const t = camDir.y < -1e-3 ? -camera.position.y / camDir.y : 0; cx = camera.position.x + camDir.x * t; cz = camera.position.z + camDir.z * t; }
+      const animDt = (v, rx, rz, local) => { // thời gian cần cập nhật hoạt ảnh khung này; -1: bỏ qua (đã dồn lại)
+        const d2 = (rx - cx) ** 2 + (rz - cz) ** 2; ranked.push(v); v.animD2 = d2;
+        v.animAcc = (v.animAcc || 0) + dt;
+        const every = local || v.animFull ? 0 : d2 > ANIM_FAR2 ? ANIM_SLOW : ANIM_THIN;
+        if (every && v.animAcc + 1e-6 < every) return -1;
+        const d = v.animAcc; v.animAcc = 0; if (every) nThin++; else nFull++; return d;
+      };
+      const hold = (v) => { v.animAcc = Math.min(5, (v.animAcc || 0) + dt); }; // ngoài khung nhìn: dồn thời gian (trần 5 giây)
       for (const e of world.entities) {
         alive.add(e.id);
         const v = views.get(e.id) || spawn(e, world);
@@ -150,18 +167,18 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
           const j = v.jt < 0.025 ? v.jt / 0.025 : (1 - Math.min(1, (v.jt - 0.025) / 0.09)) ** 2;
           v.root.position.x += v.jx * v.ja * j; v.root.position.z += v.jz * v.ja * j; if (v.jt > 0.12) v.jt = null;
         }
-        if (v.blob) { const l = v.animator?.lunge || 0; v.blob.position.set(v.root.position.x + Math.cos(v.angle) * l, v.gy || 0, v.root.position.z + Math.sin(v.angle) * l); v.blob.visible = e.alive && v.root.visible !== false; const k = 1 - Math.min(0.5, y / 400); v.blob.scale.setScalar(k); } // bóng theo cả bước lao tới của lớp thân
+        if (v.blob) { const l = v.animator?.lunge || 0; const b = v.blob; b.x = v.root.position.x + Math.cos(v.angle) * l; b.y = v.gy || 0; b.z = v.root.position.z + Math.sin(v.angle) * l; b.visible = e.alive && v.root.visible !== false; b.k = 1 - Math.min(0.5, y / 400); } // bóng theo cả bước lao tới của lớp thân
         if (e.structure) { v.part?.update(dt, e.hp / e.stats.maxHp, !e.alive || !!v.forced); continue; } // forced: đầu hàng — nhà chính vẫn sống trong mô phỏng nhưng vẽ đổ
         v.angle = lerpAngle(v.angle, e.facing, 1 - Math.exp(-(v.snap > 0 ? 55 : 18) * dt)); if (v.snap > 0) v.snap -= dt; // ra đòn: quay phắt về hướng đòn trong ~2 khung
         v.root.rotation.y = -v.angle + Math.PI / 2; // model nhìn +Z (02 §13.1)
         const seen = canSee(localTeam, e), shown = inView(e, rx, v.root.position.y, rz); // sương mù / bụi cỏ: địch ngoài tầm nhìn không vẽ
         if (e.kind === 'monster') {
           v.root.visible = seen; park(v, shown); if (v.atk > 0) { v.atk += dt / 0.7; if (v.atk >= 1) v.atk = 0; }
-          if (shown && seen) v.part?.update(dt, e.speed > 1, v.atk);
+          if (shown && seen && v.part) { const d = animDt(v, rx, rz, false); if (d >= 0) v.part.update(d, e.speed > 1, v.atk); }
           if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 1.5); v.root.scale.setScalar(1 - v.fall * 0.95); v.root.position.y -= v.fall * 60; }
           continue;
         }
-        if (e.kind === 'minion') { v.root.visible = seen; park(v, shown); if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } if (shown && seen) v.part?.update(dt, e.speed > 1, v.atk); if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
+        if (e.kind === 'minion') { v.root.visible = seen; park(v, shown); if (v.atk > 0) { v.atk += dt / 0.6; if (v.atk >= 1) v.atk = 0; } if (shown && seen && v.part) { const d = animDt(v, rx, rz, false); if (d >= 0) v.part.update(d, e.speed > 1, v.atk); } if (!e.alive) { v.fall = Math.min(1, v.fall + dt * 3); v.root.scale.setScalar(1 - v.fall * 0.9); v.root.rotation.z = v.fall * 1.2; } continue; }
         if (v.mats) {
           v.flash = Math.max(0, v.flash - dt); v.mats.setFlash(v.flash > 0 ? 0.6 : v.ghost ? 0.14 : 0); v.mats.update(dt); // trong bụi: sáng lên chút để không chìm vào màu bụi tối; update: chớp mắt
           const inBush = e.team === localTeam && !!world.map.vision && !!bushAt(world.map, e.pos); // mình đứng trong bụi: mờ đi như Liên Quân
@@ -169,10 +186,13 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
           if (ghost !== v.ghost) { v.ghost = ghost; v.mats.setGhost(ghost); }
           v.root.visible = seen && !(hide && e.team !== localTeam) && shown;
         }
-        v.animator?.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, dt, v.art);
+        if (v.animator) { const local = e.id === localId; if (!local && (!shown || v.root.visible === false)) hold(v); else { const d = animDt(v, rx, rz, local); if (d >= 0) v.animator.update(e.speed > 1 ? 'Run' : 'Idle', e.speed, d, v.art); } }
         if (this.kick && e.id === localId && v.animator?.struck) this.kick(Math.cos(e.facing), Math.sin(e.facing), v.animator.struck); // chiêu của mình vừa tới tư thế chạm
       }
-      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) scene.remove(v.blob); views.delete(id); releaseSkeletons(v.root); }
+      for (const [id, v] of views) if (!alive.has(id)) { scene.remove(v.root); if (v.blob) blobs.remove(v.blob); views.delete(id); releaseSkeletons(v.root); }
+      blobs.update();
+      ranked.sort((a, b) => a.animD2 - b.animD2); for (let i = 0; i < ranked.length; i++) ranked[i].animFull = i < ANIM_FULL; // xếp hạng cho khung sau
+      stats.full = nFull; stats.thin = nThin;
     },
   };
 }

@@ -925,3 +925,48 @@
   - Người ảo trên bảng coi như đều ở Thái Dương, nên Thiên Hà = 50 dòng đầu bảng. Bằng điểm thì người chơi đứng trên.
   - Bảng ảo **đứng yên cả mùa** (08 §1 "cố định theo seed mùa") — muốn bảng nhích theo ngày thì sửa `virtualBoard`.
   - Thưởng hết mùa cho Thiên Hà (3000 vàng, 150 ngọc, Khung Thiên Hà) là số tự đặt, nhỉnh hơn Thái Dương một bậc.
+
+## GĐ5 (26/10) — phần còn lại của lộ trình 1.0
+- **Chống khoá chết (04 §3, GĐ5a):** chuỗi khống chế cứng (choáng / hất tung / áp chế) nối nhau không khoảng nghỉ lên một mục tiêu quá 3 s ⇒ trong
+  2 s kể từ mốc 3 s, choáng / trói / câm lặng / khiêu khích mới chỉ còn 50%. Số ở `COMBAT_EXTRA.ccChain`.
+  - **Hất tung và áp chế tính vào chuỗi nhưng không bị giảm**: hất tung gắn với chuyển động / hoạt ảnh bay lên, áp chế được thiết kế giữ đủ thời gian
+    (cùng lý do nó không ăn kháng hiệu ứng).
+  - **Làm chậm, mù, suy yếu không bị giảm** — không phải khống chế cứng.
+  - Chỉ hiệu ứng **của địch** (khác đội) mới tính và mới bị giảm.
+  - Hiệu ứng làm chuỗi vượt ngưỡng vẫn đủ thời gian; chỉ hiệu ứng áp trong cửa sổ sau đó mới giảm.
+  - HUD hiện "Kháng 50%" trên đầu tướng của mình hoặc tướng địch khi bị giảm.
+- **Cửa hàng ngọc (GĐ5b):** ngọc vốn ghi "dành cho trang phục" nên cửa hàng bán **trang phục phối màu vĩnh viễn** (4 màu × 16 tướng thường, 60 ngọc) cộng
+  vài vật phẩm (rương, Bùa Giữ Sao, Thẻ Nhân Đôi Sao, vàng). **Không có nạp tiền** — ngọc kiếm trong game: +10 mỗi lần lên cấp, +20 ở Rương tuần, thưởng mùa
+  từ Nguyệt Quang, Hành trình đỉnh cao. Giá và màu là số tự đặt.
+  - Trang phục mùa và trang phục cửa hàng dùng **chung một chỗ mặc** (`skinOn[tướng]`: số mùa hoặc id màu) — mỗi tướng chỉ mặc một bộ.
+  - 4 model cao cấp không bán, không phủ (cùng chốt chặn `SKIN_LOCKED`).
+- **Mốc 14 (GĐ5c) — ngân sách vẽ đo thật rồi mới sửa.** `tools/b_perf.cjs`: 10 tướng + đợt lính đụng nhau ở giữa đường, camera theo tướng mình,
+  mức Vừa (mặc định điện thoại) và Cao. Bản cũ ở mức Vừa: **279 lệnh vẽ, 962k tam giác, 34 mesh có xương** — vượt cả ba mục 02 §2. Nguồn chính là
+  cảnh: cây / đá / cỏ rải bằng InstancedMesh theo ô 3 200 vẽ 437k tam giác mỗi khung trong khi chỉ ~10k nằm trong màn hình. Đã sửa, **hình ảnh
+  không đổi**:
+  - `render/env/cull.js`: gộp InstancedMesh cùng hình + vật liệu thành một mesh cả bản đồ, lọc **từng bản sao** theo khung nhìn mỗi khi camera dịch
+    đáng kể (lọc thô theo ô 1 600 trước; mesh đổ bóng nới thêm tầm bóng hắt 1 200 thay vì xét cả hộp bóng 6 000 × 6 000) — **0,07 ms** một lượt cho
+    15–20 nghìn bản sao trên máy thử (bản đầu xét từng bản sao: 0,4–0,7 ms); khối tĩnh không bản sao chia ô 1 600 thay vì 3 200.
+  - bóng tròn dưới chân: một InstancedMesh cho mọi đơn vị (trước: mỗi đơn vị một lệnh vẽ);
+  - lính không đổ bóng thật nữa (02 §13.6 vốn ghi "Lính chỉ có bóng tròn"; model GLB lính bật nhầm `castShadow`); lớp mặt `face` và lớp phát sáng
+    `<tướng>_glow` của tướng không đổ bóng (đầu / thân đã đổ bóng). Áp ở bước dựng đổ bóng — **không đụng model**, kể cả 4 model cao cấp;
+  - linh hồn đom đóm ở Suối Đèn có khối bao cố định (trước `frustumCulled = false`, cả hai Suối luôn được vẽ);
+  - **hoạt ảnh thưa** đúng 02 §13.6: ≤ 12 đơn vị có xương gần tâm màn hình nhất cập nhật mỗi khung, còn lại ~30 lần/s, tướng xa > 2 500: 15 lần/s,
+    tướng ngoài khung nhìn / trong sương mù: dừng rồi cập nhật bù. "Skinned mesh cập nhật xương đầy đủ" hiểu là hoạt ảnh được tính lại mỗi khung
+    (three.js vẫn dựng ma trận xương mỗi lần vẽ — rẻ, và bỏ qua thì đơn vị đang chạy bị lệch khỏi thân);
+  - "tam giác hiển thị" = lượt vẽ cảnh chính; lượt bóng đổ in riêng (đo được ~105k, gần hết là 10 tướng).
+- **Model lính / quái theo 09 §3.2.** Lính 3,6–4,8k → **2,8–2,9k** tam giác, sói / cóc 6,4–6,5k → **3,8k** (meshoptimizer, `tools/modelgen/lod.mjs`,
+  bảng `RATIO` cập nhật để sinh lại ra đúng mức này); chụp so trước / sau không khác ở cỡ trong trận. Hai **quái bùa** (Linh Thuỷ, Hoả Nham — một con
+  mỗi trại, to gần mục tiêu lớn) không có hàng riêng trong 09 §3.2: trần **10 000** (Hoả Nham giản lược không xuống được vì vết nứt dung nham là ranh
+  giới vùng chất liệu bị khoá). `lod.mjs` giờ tính lại min/max **mọi** accessor (trước chỉ POSITION ⇒ glTF-Validator báo lỗi ở 9 / 12 model quái);
+  `validate.mjs` kiểm cả lính / quái: 0 lỗi.
+- **Tiêu chí kiểm model (`tools/t_models.mjs`, 11 §8).** Chiều cao nhận **1,2–2,6 m** thay vì 1,8–2,6 m: 10 / 16 tướng sinh bằng code có dáng nhỏ cố ý
+  (Trạng Nhí trẻ con 1,35 m, Mèo Thần Tài 1,35 m, Tiểu Anh 1,5 m…); 1,8–2,6 m của 09 §3.1 giữ cho model gửi vào. Không đếm lớp mặt `<id>_face` là vật liệu
+  (face.js thay bằng vật liệu riêng). Lính / quái hoạt ảnh bằng code trên khung xương nên không đòi clip. 4 model cao cấp chỉ **ghi lại** phần vượt
+  (19,9k–31k tam giác, tới 2,98 MB) — luật 11, không sửa.
+- **Bản quyền asset.** `assets/LICENSES.md` thêm dòng cho 4 model cao cấp (chủ dự án gửi), model lính / quái, ảnh sảnh / thẻ tướng / biểu tượng /
+  phông. `tools/t_licenses.mjs` đối chiếu từng tệp đem lên mạng với bảng. 10 thư mục model tướng cũ (không thuộc 20 tướng) không đem lên mạng.
+- **Tải theo nhu cầu.** Màn khởi động chỉ chờ thứ Sảnh dùng (phông, chân dung, ảnh Sảnh, biểu tượng, model tướng trưng bày). 20 ảnh thẻ tướng + ảnh
+  phòng chờ (~750 KB) chuyển sang tải nền 0,8 s sau khi vào Sảnh (Tiết kiệm dữ liệu: tải khi màn cần).
+- **Deploy.** `tools/build_site.mjs` là bước dựng chung; GitHub Pages (bản chính), `netlify.toml`, `vercel.json` cùng gọi nó (sw.js / index.html không
+  giữ đệm, tệp khác đã có `?v=<băm>`). Bọc Capacitor ra APK: chưa làm (tuỳ chọn trong lộ trình).

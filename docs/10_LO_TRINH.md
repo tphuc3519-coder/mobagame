@@ -137,6 +137,11 @@ Việc bạn (hoặc hoạ sĩ) làm song song, theo `11_HUONG_DAN_MODEL_3D.md`:
 
 **Xong khi:** cài được lên màn hình chính điện thoại, chơi offline được; lần mở thứ hai vào sảnh dưới 3s.
 
+> **Trạng thái (26/10, GĐ5c):** xong phần làm được trong repo — PWA + chơi không mạng (GĐ3), tải theo nhu cầu, ngân sách 02 §2 đo lại và đạt
+> (`tools/b_perf.cjs`), lính / quái theo 09 §3.2, kiểm model 11 §8 (`tools/t_models.mjs`), bản quyền (`tools/t_licenses.mjs`), deploy GitHub Pages +
+> cấu hình Netlify / Vercel. **Chưa làm:** model / bản đồ vẽ tay thật thay hàng sinh bằng code (cần người làm 3D), bọc Capacitor ra APK (tuỳ chọn).
+> Chi tiết: `docs/KIEM_TOAN.md` Phần IV.
+
 ---
 
 ## Sau 1.0

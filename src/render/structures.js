@@ -367,7 +367,7 @@ export function createFountain(team, scale = 1) {
   const NS = 70, sp = new Float32Array(NS * 3), seed = Array.from({ length: NS }, (_, i) => ({ a: (i * 2.399) % (Math.PI * 2), r: 120 + ((i * 53) % 330), h: (i * 37) % 600, v: 40 + ((i * 29) % 60) }));
   const spirits = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(sp, 3)),
     new THREE.PointsMaterial({ map: glowTexture(), color: C.clone().lerp(new THREE.Color(0xffffff), 0.35), size: 38, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  spirits.frustumCulled = false; g.add(spirits);
+  spirits.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 360, 0), 560); g.add(spirits); // khối bao cố định trùm quỹ đạo bay (r ≤ 450, cao 60–660): ngoài khung nhìn thì thôi vẽ
   let t = 0;
   return {
     object: root,

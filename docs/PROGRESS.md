@@ -569,3 +569,32 @@ Còn lại:
   và soi bảy màn: sảnh, phòng chờ, cấm/chọn, chuẩn bị, trong trận, kết quả, nhận thưởng — không nút nào được lấn vùng an toàn (phần bị khung cuộn che thì bỏ qua).
   Bắt được một lỗi thật: nút **Đẩy trụ** thò ra ngoài khung nút kỹ năng ~10 px (và **Ăn lính** ~1 px dưới đáy) nên lấn vào tai thỏ / thanh vuốt —
   kẹp vị trí ≥ 0 trong `index.html` (`.amode`).
+
+## GĐ5a (26/10) — chống khoá chết khống chế (04 §3)
+- `sim/status.js`: chuỗi khống chế cứng liên tiếp > 3 s ⇒ khống chế mới giảm 50% trong 2 s tiếp theo; HUD hiện "Kháng 50%".
+- Kiểm thử: `node tools/t_ccchain.mjs` — 11 mục (nối chuỗi, khoảng nghỉ cắt chuỗi, một choáng dài, hất tung / áp chế không giảm, hiệu ứng đồng minh,
+  tất định); `t_determinism`, `t_suppress`, `t_combat`, `t_heroes`, `t_spells`, `t_lockon`, `t_fixes`, `t_actives`, `t_kills`, `t_jungle`, `t_target` vẫn đạt.
+
+## GĐ5b (26/10) — cửa hàng ngọc (sảnh trước đây báo "Cửa hàng ngọc sắp mở")
+- `data/shop.js`, `ui/shopPanel.js` (dấu + cạnh ô ngọc): thẻ **Trang phục** (chọn tướng → 4 màu, mua có hộp xác nhận, Mặc / Cởi; phủ màu ngay ở sảnh và trong trận),
+  **Vật phẩm** (3 rương / Bùa Giữ Sao / Thẻ Nhân Đôi Sao / 800 vàng), **Nhận ngọc** (lên cấp +10, Rương tuần +20, mùa, Hành trình).
+- Kiểm thử: `node tools/t_shop.mjs` — 20 mục; `b_prog.cjs shop844 shop1280` (mua → Nhận thưởng → mặc / cởi → đổi rương → về sảnh số ngọc đúng);
+  `t_missions` cập nhật (Rương tuần có ngọc).
+
+## GĐ5c (26/10) — Mốc 14: ngân sách vẽ, model lính / quái, kiểm model, bản quyền, tải theo nhu cầu, deploy
+- **Ngân sách vẽ (02 §2):** `render/env/cull.js` (gộp InstancedMesh cùng loại + lọc từng bản sao theo khung nhìn), khối tĩnh chia ô 1 600,
+  bóng tròn gom một InstancedMesh (`shadows.js createBlobLayer`), lính không đổ bóng thật, lớp mặt / phát sáng của tướng không đổ bóng, đom đóm Suối
+  có khối bao, hoạt ảnh thưa ≤ 12 đơn vị mỗi khung (`unitView.js`). Kiểm thử `node tools/b_perf.cjs <cổng>`: giao tranh mức Vừa tối đa 131 lệnh vẽ / 254k tam giác hiển thị (trước 279 / 962k), mức Cao 129 / 292k; quét 36 điểm khắp bản đồ tối đa 145 / 342k; 12 đơn vị hoạt ảnh đủ mỗi khung.
+- **Lính / quái (09 §3.2):** giản lược thêm lính / sói / cóc (`tools/modelgen/lod.mjs`, bảng `RATIO`), `lod.mjs --fix` tính lại min/max accessor ⇒
+  glTF-Validator 0 lỗi; `validate.mjs` kiểm cả `assets/monsters`.
+- **Kiểm model (11 §8):** `node tools/t_models.mjs` — clip, hero.art.json, chiều cao 1,2–2,6 m, ngân sách trận; 4 model cao cấp chỉ ghi lại.
+- **Bản quyền:** `assets/LICENSES.md` đủ dòng; `node tools/t_licenses.mjs` (278 tệp đem lên mạng đều có dòng, không dòng thừa).
+- **Tải theo nhu cầu:** màn khởi động bỏ 20 ảnh thẻ tướng + ảnh phòng chờ (tải nền sau khi vào Sảnh).
+- **Deploy:** `tools/build_site.mjs` dùng chung cho `pages.yml`, `netlify.toml`, `vercel.json`; bỏ 10 thư mục model tướng cũ khỏi bản đem lên.
+- **Mở lần hai vào Sảnh:** `b_pwa.cjs` đo trung vị 2,3 s (2 087 / 2 319 / 2 343 ms, máy thử không GPU) — dưới 3 s.
+- **Lỗi thật bắt được khi chạy lại cả bộ:** chú thích `//` thêm ở GĐ5b nuốt mất phần sau của một dòng trong `ui/home.js` ⇒ nút Đấu thường / Đấu hạng /
+  Chọn chế độ ở sảnh không bấm được (chưa lên bản deploy). Đã sửa; `b_flow.cjs` đạt 91 mục.
+- **Kiểm thử trình duyệt cả bộ:** `b_pwa`, `b_perf`, `b_flow`, `b_gd3`, `b_match`, `b_prog` đạt (cập nhật `b_prog`: Rương tuần có ngọc; tải lại trang chờ
+  tới 120 s — sảnh tải nền 20 model tướng chặn luồng chính vài giây trên máy không GPU, bản `main` cũng vậy: 38,7 s). Đấu lại về phòng chờ 1,2 / 2,9 s
+  (CPU giả lập chậm 4×): phần JS dọn trận + dựng phòng chờ chỉ vài ms, còn lại là chờ GPU giả lập xả hàng đợi khung hình khi đổi cỡ khung vẽ
+  (`readPixels` sau khi màn kết quả đã dừng vẽ vẫn chờ ~10 s) — không có trên máy có GPU.
