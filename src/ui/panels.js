@@ -13,6 +13,7 @@ import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
 import { skillDesc } from './skilltext.js';
 import { showRewards } from './rewards.js';
+import { seasonHtml, seasonClick } from './seasonPanel.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
@@ -225,12 +226,20 @@ export function openEvent(onChange) {
   };
 }
 
-/** Bảng xếp hạng bạn bè (theo sao hạng) — có cả mình. */
-export function openLeaderboard() {
-  css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng bạn bè' });
-  const rows = [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars);
-  body.innerHTML = rows.map((r, i) => { const rk = rankOf(r.stars);
-    return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no n${i + 1}">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
+/** Xếp hạng: thẻ Mùa giải (ui/seasonPanel.js) + thẻ Bạn bè (theo sao hạng, có cả mình). */
+export function openLeaderboard(tab0 = 'season', onChange = null) {
+  css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng', onClose: onChange }); // đóng bảng: sảnh vẽ lại (khung ảnh, vàng)
+  let tab = tab0;
+  const friends = () => [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars)
+    .map((r, i) => { const rk = rankOf(r.stars);
+      return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no n${i + 1}">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
+  const render = () => {
+    body.innerHTML = `<div class="pn-tabs">${[['season', 'Mùa giải'], ['friends', 'Bạn bè']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`
+      + (tab === 'season' ? seasonHtml() : friends());
+  };
+  render();
+  body.onclick = (e) => { const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; render(); return; } if (tab === 'season') seasonClick(e, render); };
+  window.__board = { render, tab: (k) => { tab = k; render(); } };
 }
 
 /** Lịch sử đấu + tổng hợp: số trận, tỉ lệ thắng, K/D/A tổng, KDA và điểm trung bình, số lần MVP; từng trận gần nhất (tối đa 20). */

@@ -4,6 +4,8 @@
 import { icon, fmt } from './kit.js';
 import { profile, itemCount, bagList } from './profile.js';
 import { CURRENCY, BAG } from '../data/rewards.js';
+import { FRAMES, skinLook } from '../data/seasons.js';
+import { HEROES } from '../data/heroes/index.js';
 import { sfx } from '../audio/audio.js';
 
 /** Một món quà: { k: 'gold'|'gems'|'manh'|'gao'|'exp'|'chest'|'item', id? (k = 'item'), n }. */
@@ -11,11 +13,18 @@ const INFO = {
   exp: { name: 'Kinh nghiệm', icon: 'bolt', desc: 'Kinh nghiệm tài khoản — đủ thì lên cấp.' },
   chest: { name: 'Rương Đèn', icon: 'chest', desc: 'Mở ở Túi đồ: vàng, Mảnh Tướng, có thể ra Bùa Giữ Sao.' },
 };
-export const rewardInfo = (r) => (r.k === 'item' ? BAG[r.id] : CURRENCY[r.k] || INFO[r.k]) || { name: r.k, icon: 'star', desc: '' };
+export function rewardInfo(r) {
+  if (r.k === 'item') return BAG[r.id];
+  if (r.k === 'frame') return { name: FRAMES[r.id]?.name || 'Khung ảnh', icon: 'trophy', desc: 'Khung ảnh đại diện — đổi ở Xếp hạng → Mùa giải.' };
+  if (r.k === 'skin') return { name: `Trang phục mùa ${skinLook(r.season || 1).name} · ${HEROES[r.id]?.name || ''}`, icon: 'star', desc: 'Phối màu riêng của mùa cho tướng này — bật / tắt ở Xếp hạng → Mùa giải.' };
+  return CURRENCY[r.k] || INFO[r.k] || { name: r.k, icon: 'star', desc: '' };
+}
 function owned(r) {
   const p = profile();
   if (r.k === 'item') return itemCount(r.id);
   if (r.k === 'chest') return p.chests || 0;
+  if (r.k === 'frame') return (p.frames || []).filter((f) => f.id === r.id).length;
+  if (r.k === 'skin') return (p.skins || []).filter((s) => s.hero === r.id).length;
   if (r.k === 'exp') return null;
   return p[r.k] ?? null;
 }

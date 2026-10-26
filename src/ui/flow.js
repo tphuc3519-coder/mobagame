@@ -6,6 +6,7 @@ import { HEROES } from '../data/heroes/index.js';
 import { startMatch } from '../game.js';
 import { profile, applyResult } from './profile.js';
 import { showRewards } from './rewards.js';
+import { skinTint } from './season.js';
 import { scoreMatch } from './score.js';
 import { botLabel, FRIENDS } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
@@ -51,6 +52,7 @@ export const nav = {
       spellId: P.spellId, charmId: P.charmId, loadout: P.charm ? { spellId: P.spellId, charm: P.charm, emblem: P.emblem } : undefined, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
+      skinTint: skinTint(p, P.heroId), // trang phục mùa (GĐ4b)
       onGameOver: gameOver,
     });
   },
@@ -63,7 +65,7 @@ function gameOver({ world, player, winner }) {
   const rewards = applyResult({ mode: S.mode, win: winner === player.team, heroId: player.heroId, kills: me.k, deaths: me.d, assists: me.a, score: me.score, mvp: me.mvp, towers });
   const names = {}; for (const h of heroes) names[h.id] = h === player ? profile().name : `${h.playerName || HEROES[h.heroId].name} ${botLabel}`;
   // Kết quả → Nhận thưởng → Phòng chờ (07 §11, Mốc 12): quà của trận hiện ở màn Nhận thưởng ngay khi rời màn kết quả
-  const got = [{ k: 'gold', n: rewards.gold }, { k: 'exp', n: rewards.exp }, ...(rewards.chest ? [{ k: 'chest', n: 1 }] : [])];
+  const got = [{ k: 'gold', n: rewards.gold }, { k: 'exp', n: rewards.exp }, ...(rewards.chest ? [{ k: 'chest', n: 1 }] : []), ...(rewards.unlocks || []), ...(rewards.seasonEnd?.list || [])];
   openPostgame({
     rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: S.mode, modeName: MODES[S.mode].name, rewards,
     surrender: world.over?.surrender === undefined ? null : world.over.surrender === player.team ? 'Đội ta đầu hàng' : 'Đối thủ đầu hàng',

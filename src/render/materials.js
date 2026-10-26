@@ -94,8 +94,9 @@ function toUnlit(m, u) {
  *  shading (hero.art.json): 'toon' (mặc định, chất vẽ tay), 'pbr' (vật liệu gốc của model có texture, cần envMap ở cảnh không có scene.environment),
  *  'unlit' (chỉ màu texture). Model tô màu theo đỉnh (không phải MeshStandardMaterial) luôn dùng chất vẽ tay. rim: độ viền sáng màu rimHex
  *  (trong trận 0; sảnh dùng nhẹ). anisotropy: lọc texture xiên (model có ảnh) — nét hơn khi nhìn chéo từ camera trên cao. soft (trong trận): normal map nửa độ, kim loại/PBR nhám hơn — bớt lấp lánh. */
-export function prepareUnitMaterials(object, rimHex = '#ffffff', { rim = 0, shading = 'toon', envMap = null, anisotropy = 1, soft = false } = {}) {
+export function prepareUnitMaterials(object, rimHex = '#ffffff', { rim = 0, shading = 'toon', envMap = null, anisotropy = 1, soft = false, tint = null } = {}) {
   const u = { rim: { value: new THREE.Color(rimHex) }, flash: { value: 0 }, rimAmt: { value: rim } };
+  const tc = tint ? new THREE.Color(tint) : null; // trang phục mùa (GĐ4b): nhân màu vật liệu — chỉ đổi uniform, không dịch lại shader; mặt (mắt) giữ nguyên
   const mats = [], faces = [];
   const meshes = [];
   object.traverse((o) => { if (o.isMesh) meshes.push(o); });
@@ -108,6 +109,7 @@ export function prepareUnitMaterials(object, rimHex = '#ffffff', { rim = 0, shad
       for (const t of [c.map, c.normalMap]) if (t && t.anisotropy < anisotropy) { t.anisotropy = anisotropy; t.needsUpdate = true; } // texture dùng chung giữa các bản sao: đặt một lần
       if (soft && c.normalMap) c.normalScale?.multiplyScalar(0.5); // trong trận tướng chỉ cao ~150 px: gờ normal map mịn thành chấm sáng lấp lánh
       if (soft && c.isMeshStandardMaterial) c.roughness = Math.max(c.roughness, 0.6);
+      if (tc && c.color) c.color.multiply(tc);
       mats.push(c); return c;
     });
     o.material = Array.isArray(o.material) ? list : list[0];

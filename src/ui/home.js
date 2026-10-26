@@ -2,8 +2,10 @@
 // + cấp + huy hiệu hạng + thanh kinh nghiệm), cột bạn bè trực tuyến, góc phải trên tiền tệ / thư / toàn màn / cài đặt, cột phải băng sự
 // kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Bảng Bùa / Túi đồ / Bạn bè, dưới phải hai nút pha lê
 // "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc. Đổi tướng đứng ở sảnh: mục Tướng.
-import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast } from './kit.js';
-import { profile, rankOf, expNeed, missionsReady, mailUnread, COURAGE_MAX } from './profile.js';
+import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast, dialog } from './kit.js';
+import { profile, rankOf, expNeed, missionsReady, mailUnread, COURAGE_MAX, seasonCheck } from './profile.js';
+import { FRAMES } from '../data/seasons.js';
+import { showRewards } from './rewards.js';
 import { FRIENDS, chatLine } from './people.js';
 import { stage, stageOn, backdrop } from './stage.js';
 import { openModes } from './modes.js';
@@ -26,7 +28,7 @@ export function openHome(nav) {
   const render = () => {
     const r = rankOf(p.stars), miss = missionsReady(), mail = mailUnread(), ev = Math.min(7, p.checkin || 0);
     el.innerHTML = `
-      <button type="button" class="hm-me" data-a="profile"><span class="av">${face(p.avatar)}<i class="lvb"><b>${p.level}</b></i></span>
+      <button type="button" class="hm-me" data-a="profile"><span class="av"${p.frame && FRAMES[p.frame] ? ` style="box-shadow:0 0 0 3px ${FRAMES[p.frame].col},0 0 14px ${FRAMES[p.frame].col}"` : ''}>${face(p.avatar)}<i class="lvb"><b>${p.level}</b></i></span>
         <span class="who"><b>${p.name}</b><span class="rk">${rankBadge(r, 24)}${r.name}</span><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span></span></button>
       <div class="hm-fr">${friends.map((f) => `<button type="button" data-a="friends" aria-label="${f.name}">${face(f.avatar)}${f.status === 'online' ? '<i class="dot"></i>' : ''}</button>`).join('')}
         <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button></div>
@@ -67,10 +69,16 @@ export function openHome(nav) {
   const chat = () => { const s = el.querySelector('.chatln span'); if (!s) return; const [n, t] = chatLine(ci); s.innerHTML = `<b>[Thế giới] ${n}:</b> ${t}`; };
   const chatT = setInterval(() => { ci++; chat(); }, 4500);
   render();
+  // hết mùa (đồng hồ thiết bị): thưởng theo bậc cao nhất + reset mềm (08 §4) — báo ngay khi về sảnh
+  const end = seasonCheck();
+  if (end) {
+    render();
+    showRewards(end.list, { title: `Kết thúc mùa ${end.name}`, onDone: () => dialog({ title: 'Mùa mới bắt đầu', html: `<p>Bậc cao nhất mùa ${end.name}: <b>${end.peak.name}</b>.</p><p>Reset mềm: ${end.from.name} → <b>${end.to.name}</b>.</p>` }) });
+  }
 
   const A = {
     profile: () => openProfile(render), friends: () => openFriends(), mail: () => openMail(render), settings: () => openSettings(),
-    event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard(), history: () => openHistory(),
+    event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard('season', render), history: () => openHistory(),
     bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
     chat: () => openFriends(), gems: () => toast('Cửa hàng ngọc sắp mở'), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
   };

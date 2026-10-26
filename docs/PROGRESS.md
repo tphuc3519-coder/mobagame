@@ -522,3 +522,25 @@ Còn lại:
   - `node tools/t_missions.mjs` — 27 mục;
   - `b_prog.cjs miss844 miss1280`;
   - `b_flow.cjs ranked844 ranked1280` thêm bước Nhận thưởng: Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ, đạt ở 844×390 và 1280×720.
+
+## GĐ4b (26/10) — mùa giải
+- **Lịch mùa** (`src/data/seasons.js`): mùa 120 ngày theo giờ thiết bị, mùa 1 bắt đầu 01/10/2026, tên `S{n} {năm}`.
+  Bảng Xếp hạng có thẻ **Mùa giải**: tên mùa + đếm ngược "còn N ngày M giờ".
+- **Hết mùa** (`ui/season.js` `rollSeason`, gọi lúc mở sảnh và đầu mỗi trận):
+  - thưởng theo **bậc cao nhất** mùa: 200 → 2500 vàng, Mảnh Tướng, ngọc, khung ảnh từ Hải Đăng trở lên;
+  - **reset mềm** theo **bậc cuối** mùa, đúng bảng 08 §4;
+  - bỏ lỡ nhiều mùa: thưởng một lần, reset thêm mỗi mùa bỏ lỡ;
+  - mùa hết giữa trận: thưởng + reset trước, trận đó tính vào mùa mới;
+  - màn Nhận thưởng "Kết thúc mùa …" rồi hộp "Mùa mới bắt đầu" (bậc cao nhất → bậc mới).
+- **Hành trình đỉnh cao**: 5 mốc quà theo bậc cao nhất (Đèn Kéo Quân → Nguyệt Quang), nhận một lần mỗi mùa.
+- **3 vòng tướng thành thạo**: mỗi vòng = một tướng thắng 5 trận hạng trong mùa; đủ 3 vòng → Khung Thành Thạo.
+- **Trang phục mùa**:
+  - chọn một tướng, thắng 10 trận hạng trong mùa → phối màu riêng của mùa (Hoàng Kim / Băng Nguyệt / Anh Đào / Ngọc Bích);
+  - bật / tắt được;
+  - phủ màu tướng của mình trong trận và ở sảnh — chỉ nhân màu vật liệu, không dịch lại shader, mặt giữ nguyên;
+  - **không chọn được 4 model cao cấp** (`SKIN_LOCKED`), dữ liệu có trang phục cũng không phủ.
+- **Khung ảnh đại diện**: đeo ở thẻ Mùa giải, hiện quanh ảnh đại diện ở sảnh.
+- Kiểm thử:
+  - `node tools/t_season.mjs` — 35 mục;
+  - `b_prog.cjs season844 season1280`: thẻ Mùa giải nằm trọn màn hình, nhận quà Hành trình, đeo khung; **đổi giờ thiết bị sang mùa sau** → Nhận thưởng Sao Mai + reset Hải Đăng II → Đèn Trời III, mở lại không thưởng lần hai;
+  - `b_prog.cjs skin`: trong trận mọi vật liệu thân của Kiếm Thuỷ = bên địch × màu Hoàng Kim; Nguyệt Hạ không đổi.

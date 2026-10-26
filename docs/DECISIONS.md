@@ -910,3 +910,10 @@
 - **2 Bùa Giữ Sao (MVP thua) quà tân thủ không có hạn** — hồ sơ cũ đã có sẵn. Bùa nhận từ nay (nhiệm vụ, rương, đổi mảnh) có hạn 24 giờ như 08 §3.
 - **Thứ tự giữ sao khi thua:** vật phẩm có hạn dùng trước Điểm tích luỹ, vì thanh tích luỹ không hết hạn.
 - **Thẻ Nhân Đôi Sao:** bấm Dùng là tiêu thẻ ngay, gắn cho đúng một trận hạng kế tiếp (thua cũng mất). Giá cửa hàng mảnh tự đặt: 8 / 24 / 30.
+- **Mùa giải GĐ4b — chỗ tự chốt:**
+  - mùa 1 bắt đầu 01/10/2026, tính theo giờ thiết bị (offline, 08 §4) — đổi giờ máy là sang mùa, game chơi với máy nên chấp nhận;
+  - bảng thưởng hết mùa, quà Hành trình đỉnh cao, tên / màu khung là số tự đặt (08 chỉ nêu loại quà);
+  - **trang phục mùa = phối màu**, không phải model mới: dự án chưa có bộ model trang phục, nhân màu vật liệu đổi được ngay mà không phải tải gì thêm.
+    Chỉ phủ tướng của mình (trong trận + sảnh), vì bot không có trang phục.
+  - **4 model cao cấp không có trang phục mùa** (luật 11) — chặn cả ở chỗ chọn lẫn chỗ phủ màu;
+  - bỏ lỡ nhiều mùa thì chỉ thưởng mùa vừa chơi, mỗi mùa bỏ lỡ reset thêm một lượt.

@@ -1,17 +1,20 @@
 // Kiểm thử trình duyệt GĐ4 (tiến trình tài khoản + lưu dữ liệu), Playwright + Chromium phần mềm. Cần máy chủ tĩnh ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 (mặc định: tất cả)
+//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 season844 season1280 skin (mặc định: tất cả)
 // save: máy A (hồ sơ có sẵn) → Cài đặt → Dữ liệu → Xuất mã lưu; máy B (trình duyệt trống) → Nhập mã lưu: mã sai bị báo lỗi, mã đúng hiện tóm tắt
 //   → Nhập và tải lại → hồ sơ + cài đặt y như máy A, hồ sơ cũ của B được cất làm bản sao lưu; hộp thoại nằm trọn màn hình.
 // bag: Túi đồ → mở rương → màn Nhận thưởng (ô quà, chạm ô xem mô tả, chạm khoảng trống đóng) → mua rương, đổi mảnh, bật Thẻ Nhân Đôi Sao;
 //   nhận nhiệm vụ cũng hiện màn Nhận thưởng; mọi thứ nằm trọn màn hình.
+// season: Xếp hạng → Mùa giải (đếm ngược, thành thạo, trang phục mùa, Hành trình đỉnh cao, khung) → ĐỔI GIỜ THIẾT BỊ sang mùa sau, mở lại →
+//   màn "Kết thúc mùa" (thưởng theo bậc cao nhất) + reset mềm đúng bảng 08 §4 (Mốc 13).
+// skin: trận 1v1 cùng tướng hai bên, tướng mình bật trang phục mùa → màu vật liệu = màu bên địch × màu mùa; model cao cấp không bị phủ.
 // miss: Nhiệm vụ ba thẻ Ngày / Tuần / Sự kiện, nhận Rương tuần, nhận sự kiện → Gạo Hội, Phòng chờ hiện tiến độ sự kiện tích luỹ.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280'];
+const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -177,6 +180,81 @@ async function missions(browser, vp) {
   await ctx.close();
 }
 
+async function season(browser, vp) {
+  const label = `season${vp}`;
+  console.log(`— ${label}: Mùa giải → đổi giờ thiết bị sang mùa sau → thưởng hết mùa + reset mềm`);
+  const ctx = await browser.newContext(VP[vp]);
+  const page = await ctx.newPage(), errs = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
+  page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
+  await page.clock.setFixedTime(new Date(2026, 10, 10, 15, 0)); // giữa mùa S1 2026 (mùa 1: 01/10/2026 → 29/01/2027)
+  // Hải Đăng II (sao 81), cao nhất mùa Sao Mai III (sao 101), đã chọn tướng nhận trang phục mùa, 2 vòng thành thạo
+  const prof = { version: 2, name: 'Thử Mùa', gold: 100, stars: 81, best: 101, season: 1, seasonPeak: 101, seasonWins: 9, skinHero: 'kiem_thuy', mastery: { kiem_thuy: 5, trang_nhi: 5, ba_nam: 2 }, bag: {} };
+  await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  ok(`${label}: giữa mùa — không có màn "Kết thúc mùa"`, !(await page.$('#rewardScr')));
+  await page.click('#home [data-a="leader"]'); await page.waitForSelector('.ui-panel .ss-head', { timeout: T(10) }); await page.waitForTimeout(300);
+  const txt = (await page.textContent('.ui-panel .ui-body')).replace(/\s+/g, ' ');
+  ok(`${label}: thẻ Mùa giải: tên mùa + đếm ngược`, /Mùa S1 2026/.test(txt) && /Thời hạn mùa giải: còn 79 ngày/.test(txt), txt.slice(0, 90));
+  ok(`${label}: bậc hiện tại / cao nhất mùa, 2/3 vòng thành thạo, trang phục 9/10`, /Hải Đăng II/.test(txt) && /Cao nhất mùa: Sao Mai III/.test(txt) && (await page.$$('.ss-rings i.done')).length === 2 && /thắng 9\/10/.test(txt));
+  const o1 = await page.evaluate(() => [...document.querySelectorAll('.ui-panel .ss-card, .ui-panel .pn-row, .ui-panel .ss-tbl')].filter((e) => e.getBoundingClientRect().right > innerWidth + 0.5).length);
+  ok(`${label}: thẻ Mùa giải không tràn ngang`, !o1, o1);
+  await shot(page, label + '_season');
+  const open = await page.evaluate(() => [...document.querySelectorAll('.ui-panel [data-jr]')].filter((b) => !b.disabled).map((b) => +b.dataset.jr));
+  ok(`${label}: Hành trình đỉnh cao mở tới Sao Mai (4 quà)`, open.join() === '2,3,4,5', open.join());
+  await page.click('.ui-panel [data-jr="4"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
+  ok(`${label}: nhận quà Hải Đăng → khung Hành Trình`, (await page.evaluate(() => window.__rewards.items[0])).k === 'frame');
+  await page.evaluate(() => window.__rewards.close()); await page.waitForTimeout(150);
+  await page.click('.ui-panel [data-fr="hanh_trinh"]'); await page.waitForTimeout(150);
+  ok(`${label}: đeo khung Hành Trình`, await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).frame === 'hanh_trinh'));
+  await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
+  ok(`${label}: ảnh đại diện ở sảnh có viền khung`, /box-shadow/.test(await page.getAttribute('#home .hm-me .av', 'style') || ''));
+  // đổi giờ thiết bị sang mùa S2 rồi mở lại game
+  await page.clock.setFixedTime(new Date(2027, 1, 2, 10, 0));
+  await page.reload({ waitUntil: 'domcontentloaded' }); await home(page);
+  await page.waitForSelector('#rewardScr .tl', { timeout: T(20) }); await page.waitForTimeout(900);
+  const E = await page.evaluate(() => ({ title: document.querySelector('#rewardScr h2').textContent, items: window.__rewards.items }));
+  ok(`${label}: mở lại sau ngày hết mùa → "Kết thúc mùa S1 2026" với thưởng của Sao Mai (1600 vàng, 15 Mảnh, Khung Sao Mai)`, /Kết thúc mùa S1 2026/.test(E.title) && E.items.some((x) => x.k === 'gold' && x.n === 1600) && E.items.some((x) => x.k === 'manh' && x.n === 15) && E.items.some((x) => x.k === 'frame' && x.id === 'sao_mai'), JSON.stringify(E.items));
+  const oR = await inView(page, ['#rewardScr h2', '#rewardScr .tl', '#rewardScr .go']); ok(`${label}: màn Kết thúc mùa nằm trọn màn hình`, !oR.length, oR.slice(0, 3).join(' ; '));
+  await shot(page, label + '_end');
+  await page.mouse.click(8, Math.round((await page.evaluate(() => innerHeight)) / 2)); await page.waitForSelector('.ui-dlg', { timeout: T(5) });
+  const dlg = (await page.textContent('.ui-dlg')).replace(/\s+/g, ' ');
+  const P2 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
+  ok(`${label}: reset mềm đúng bảng — Hải Đăng II → Đèn Trời III, sang mùa 2`, /Hải Đăng II → Đèn Trời III/.test(dlg) && P2.season === 2 && P2.stars === 51 && P2.seasonWins === 0 && P2.gold === 100 + 1600, dlg.slice(0, 120));
+  await page.click('.ui-dlg .btns button'); await page.waitForTimeout(200);
+  await page.reload({ waitUntil: 'domcontentloaded' }); await home(page); await page.waitForTimeout(500);
+  ok(`${label}: mở lại lần nữa — không thưởng hết mùa lần hai`, !(await page.$('#rewardScr')));
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
+  await ctx.close();
+}
+
+async function skin(browser) {
+  const label = 'skin';
+  console.log(`— ${label}: trang phục mùa phủ màu đúng tướng của mình trong trận (model cao cấp không bị phủ)`);
+  const run = async (hero) => {
+    const { ctx, page, errs } = await openPage(browser, 1280, { 'la.profile': { version: 2, season: 1, bag: {}, skins: [{ hero, season: 1 }], skinOn: { [hero]: 1 }, skinHero: hero } });
+    await page.evaluate((h) => { const F = window.__flow; F.nav.go('room', { mode: 'solo' }); F.S.match = { allies: [], foes: [{ name: 'Máy', stars: 0 }], seed: 3 }; F.S.pick = { heroId: h, spellId: 'chop_buoc', charmId: null, allyHeroes: [], foeHeroes: [h], dummies: false }; F.nav.start(); }, hero);
+    await page.waitForFunction(() => { const g = window.__game; if (!g?.world || g.world.tick < 5) return false; const e = g.world.entities.find((x) => x.kind === 'hero' && x.team === 1); const a = g.views.get(g.player.id), b = e && g.views.get(e.id); return a?.art && b?.art; }, null, { timeout: T(420), polling: 500 });
+    const c = await page.evaluate(() => {
+      const g = window.__game, e = g.world.entities.find((x) => x.kind === 'hero' && x.team === 1);
+      const cols = (v) => { const L = []; v.root.traverse((o) => { if (!o.isMesh) return; for (const m of [].concat(o.material)) if (m.color && m.name !== 'face') L.push([m.color.r, m.color.g, m.color.b]); }); return L; }; // mặt (mắt) cố ý giữ nguyên
+      return { me: cols(g.views.get(g.player.id)), foe: cols(g.views.get(e.id)) };
+    });
+    await ctx.close();
+    return { c, errs };
+  };
+  const lin = (x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4); // THREE.Color đọc mã hex theo sRGB rồi lưu tuyến tính
+  const tint = [0xff, 0xd9, 0x8a].map((x) => lin(x / 255)); // skinLook(1): Hoàng Kim #ffd98a
+  // cùng một tướng hai bên → vật liệu cùng thứ tự; vật liệu nào có màu (bên địch > 0.05) phải ra đúng màu bên địch × màu mùa
+  const pairs = (c) => c.me.map((m, i) => [m, c.foe[i]]).filter(([, f]) => f && f.every((x) => x > 0.05));
+  const a = await run('kiem_thuy'), A = pairs(a.c);
+  const hit = A.filter(([m, f]) => m.every((x, i) => Math.abs(x / f[i] - tint[i]) < 0.01)).length;
+  ok(`${label}: Kiếm Thuỷ của mình phủ màu Hoàng Kim (màu = bên địch × #ffd98a, mọi vật liệu thân)`, a.c.me.length === a.c.foe.length && A.length >= 2 && hit === A.length, `${hit}/${A.length} vật liệu`);
+  const b = await run('nguyet_ha');
+  ok(`${label}: Nguyệt Hạ (model cao cấp) — dữ liệu có trang phục vẫn KHÔNG phủ màu`, b.c.me.length === b.c.foe.length && b.c.me.every((m, i) => m.every((x, j) => Math.abs(x - b.c.foe[i][j]) < 1e-6)), `${b.c.me.length} vật liệu`);
+  ok(`${label}: không lỗi trang / console`, !a.errs.length && !b.errs.length, [...a.errs, ...b.errs].slice(0, 3).join(' || '));
+}
+
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const t0 = Date.now();
@@ -188,6 +266,9 @@ async function missions(browser, vp) {
       else if (k === 'bag1280') await bag(browser, 1280);
       else if (k === 'miss844') await missions(browser, 844);
       else if (k === 'miss1280') await missions(browser, 1280);
+      else if (k === 'season844') await season(browser, 844);
+      else if (k === 'season1280') await season(browser, 1280);
+      else if (k === 'skin') await skin(browser);
     }
   } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   await browser.close();

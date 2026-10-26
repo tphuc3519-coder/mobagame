@@ -339,7 +339,7 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - Hồ sơ có số phiên bản + chuỗi chuyển đổi bản cũ; hồ sơ hỏng thì giữ bản sao lưu rồi dựng hồ sơ mới.
 - **Xuất / Nhập mã lưu** (Cài đặt → Dữ liệu): mã có tổng kiểm, nhập thì kiểm + chuyển đổi bản cũ, xem tóm tắt trước khi thay.
 
-### 4b — Mùa giải
+### 4b — Mùa giải ✅ (26/10 — `t_season.mjs` 35 mục, `b_prog.cjs` season844 / season1280 / skin)
 - Mùa 120 ngày, tên `S{n} {năm}`, đếm ngược theo đồng hồ thiết bị.
 - **Hết mùa:** thưởng theo bậc cao nhất (Xu, khung ảnh, trang phục mùa), rồi **reset mềm** theo bảng 08 §4.
 - **Hành trình đỉnh cao:** quà mở theo bậc, nhận một lần mỗi mùa.

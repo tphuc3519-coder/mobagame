@@ -7,6 +7,7 @@ import { RESET_HOUR, DAILY_N, DAILY_POOL, WEEKLY, WEEK_BONUS, EVENT } from '../d
 import { migrateProfile, SAVE_VER } from './save.js';
 import { BAG, CHEST, SHARD_SHOP } from '../data/rewards.js';
 import { seasonAt } from '../data/seasons.js';
+import { seasonFields, rollSeason, seasonTrack, journeyList, journeyTake, chooseSkinHero, toggleSkin } from './season.js';
 
 const KEY = 'la.profile';
 const DEF = () => ({
@@ -14,6 +15,7 @@ const DEF = () => ({
   games: 0, wins: 0, ranked: 0, rankedWins: 0, kills: 0, deaths: 0, assists: 0, streak: 0, mvp: 0, scoreSum: 0, courage: 0, history: [], diff: 'normal',
   bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua) — không hạn (vật phẩm không hạn đếm ở bag, có hạn ở timed)
   timed: [], manh: 0, gao: 0, chestN: 0, chests: 0, x2Armed: false, // GĐ4d: vật phẩm có hạn [{ id, exp }], Mảnh Tướng, Gạo Hội, rương
+  season: null, seasonPeak: 0, seasonWins: 0, mastery: {}, journey: [], frames: [], frame: null, skins: [], skinHero: null, skinOn: {}, // GĐ4b: mùa giải (ui/season.js)
   daily: null, weekly: null, event: null, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
   charmPages: [], heroPage: {}, emblems: {}, // trang bùa riêng (u1..u10), trang nhớ theo tướng, phù hiệu theo tướng — ui/loadout.js
@@ -33,40 +35,15 @@ export function profile() {
   P = migrateProfile({ ...DEF(), ...(raw || {}) }, raw ? raw.version : SAVE_VER); // GĐ4a: bản cũ chuyển sang bản hiện tại (ui/save.js)
   if (!ALPHA.includes(P.feature)) P.feature = 'hoa_ren';
   if (!ALPHA.includes(P.avatar)) P.avatar = P.feature;
-  pruneBag();
+  pruneBag(); seasonFields(P);
   return P;
 }
 export function saveProfile() { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (_) { /* không lưu được thì thôi */ } }
 
-// —— Bậc hạng (08 §1) ——
-export const TIERS = [
-  { id: 'den_dau', name: 'Đèn Dầu', divs: 3, stars: 3, col: '#d0905c', safe: true },
-  { id: 'den_long', name: 'Đèn Lồng', divs: 4, stars: 4, col: '#ff6a5a', safe: true },
-  { id: 'keo_quan', name: 'Đèn Kéo Quân', divs: 4, stars: 4, col: '#ffb84a' },
-  { id: 'den_troi', name: 'Đèn Trời', divs: 5, stars: 5, col: '#8fd0ff' },
-  { id: 'hai_dang', name: 'Hải Đăng', divs: 5, stars: 5, col: '#7fe6d6' },
-  { id: 'sao_mai', name: 'Sao Mai', divs: 5, stars: 5, col: '#ffd36a' },
-  { id: 'nguyet_quang', name: 'Nguyệt Quang', divs: 0, stars: 0, col: '#d8d0ff' },
-];
-const SUN = { id: 'thai_duong', name: 'Thái Dương', col: '#ff9a3a', from: 30 }; // từ 30 sao Nguyệt Quang
-export const HAI_DANG = 4; // từ bậc này trở lên mới rớt được bậc lớn
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
-/** Sao tổng → { tier (chỉ số 0..7), name ("Đèn Lồng II"), short (tên bậc), star (sao trong phân hạng), max (sao tối đa, 0 = không giới hạn),
- *  col, start (sao tổng ở đầu bậc — "sàn bậc") }. */
-export function rankOf(total) {
-  let s = Math.max(0, total | 0), start = 0;
-  for (let t = 0; t < TIERS.length; t++) {
-    const T = TIERS[t];
-    if (!T.divs) {
-      if (s >= SUN.from) return { tier: t + 1, id: SUN.id, name: SUN.name, short: SUN.name, star: s, max: 0, col: SUN.col, start };
-      return { tier: t, id: T.id, name: T.name, short: T.name, star: s, max: 0, col: T.col, start };
-    }
-    const span = T.divs * T.stars;
-    if (s < span) { const d = Math.floor(s / T.stars); return { tier: t, id: T.id, name: `${T.name} ${ROMAN[T.divs - d]}`, short: T.name, star: s % T.stars, max: T.stars, col: T.col, start }; }
-    s -= span; start += span;
-  }
-  return null;
-}
+// —— Bậc hạng (08 §1): bảng + rankOf ở data/ranks.js (dùng chung với logic mùa giải ui/season.js) ——
+import { TIERS, HAI_DANG, rankOf, starsAt } from '../data/ranks.js';
+export { TIERS, HAI_DANG, rankOf, starsAt };
+
 /** Độ khó máy ở đấu hạng theo bậc (Đèn Dầu: Dễ … Nguyệt Quang / Thái Dương: Ác mộng). */
 export const rankDifficulty = (total) => ['easy', 'easy', 'normal', 'normal', 'hard', 'hard', 'nightmare', 'nightmare'][rankOf(total).tier];
 
@@ -102,13 +79,18 @@ export function missionList(scope, now = Date.now()) {
   const p = cycle(now);
   return scope === 'weekly' ? WEEKLY.map((m) => state(p.weekly, m)) : p.daily.ids.map((id) => DAILY_POOL.find((m) => m.id === id)).filter(Boolean).map((m) => state(p.daily, m));
 }
-const giveAll = (r, now) => { const p = profile(), out = []; // r: { gold, item, chest, gao } → cộng vào hồ sơ, trả danh sách quà cho màn Nhận thưởng
-  if (r.gold) { p.gold += r.gold; out.push({ k: 'gold', n: r.gold }); }
-  if (r.gao) { p.gao = (p.gao || 0) + r.gao; out.push({ k: 'gao', n: r.gao }); }
+/** Cộng một mô tả thưởng { gold, gems, manh, gao, item, chest, frame: { id, season }, skin: { hero, season } } vào hồ sơ; trả danh sách quà cho
+ *  màn Nhận thưởng (ui/rewards.js). Trang phục đã được ui/season.js ghi vào p.skins — ở đây chỉ báo. */
+export function grant(r, now = Date.now()) {
+  const p = profile(), out = [];
+  for (const k of ['gold', 'gems', 'manh', 'gao']) if (r[k]) { p[k] = (p[k] || 0) + r[k]; out.push({ k, n: r[k] }); }
   if (r.item) { addItem(r.item, 1, now); out.push({ k: 'item', id: r.item, n: 1 }); }
   if (r.chest) { p.chests = (p.chests || 0) + r.chest; out.push({ k: 'chest', n: r.chest }); }
+  if (r.frame && !p.frames.some((f) => f.id === r.frame.id && f.season === r.frame.season)) { p.frames.push(r.frame); out.push({ k: 'frame', id: r.frame.id, n: 1 }); }
+  if (r.skin) out.push({ k: 'skin', id: r.skin.hero, season: r.skin.season, n: 1 });
   saveProfile(); return out;
-};
+}
+const giveAll = grant;
 /** Nhận thưởng một nhiệm vụ (đã xong, chưa nhận). Trả về danh sách quà hoặc null. */
 export function claimMission(scope, id, now = Date.now()) {
   const p = cycle(now), box = scope === 'weekly' ? p.weekly : p.daily, m = missionList(scope, now).find((x) => x.id === id);
@@ -209,9 +191,12 @@ const MODE_GOLD = { normal: 1, ranked: 1, solo: 0.7 };
  *   chest (vừa được 1 rương), chestLeft (số trận nữa tới rương kế) }. now: thời điểm (ms) — kiểm thử truyền vào.
  */
 export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null, towers = 0, now = Date.now() }) {
-  const p = profile(), before = rankOf(p.stars);
-  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level, chest: false, chestLeft: 0 };
+  const p = profile();
+  let before = rankOf(p.stars);
+  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level, chest: false, chestLeft: 0, unlocks: [], seasonEnd: null };
   if (mode === 'training') return out;
+  out.seasonEnd = seasonCheck(now); // mùa vừa hết giữa trận: thưởng + reset mềm trước khi tính trận này vào mùa mới
+  if (out.seasonEnd) { before = rankOf(p.stars); out.rankBefore = out.rankAfter = before; }
   const mult = MODE_GOLD[mode] || 1;
   out.gold = Math.round(((win ? 100 : 50) + score * 6 + (mvp ? 30 : 0)) * mult);
   out.exp = Math.round((win ? 60 : 30) + score * 2);
@@ -235,6 +220,7 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
     p.courage = cg; out.courage = { gain, now: cg, used };
     p.stars = Math.max(0, p.stars + out.stars); p.best = Math.max(p.best, p.stars);
     out.rankAfter = rankOf(p.stars);
+    for (const r of seasonTrack(p, { won: win, heroId })) out.unlocks.push(...grant(r, now)); // GĐ4b: bậc cao nhất mùa, thành thạo, trang phục mùa
   }
   p.chestN = (p.chestN || 0) + 1; // rương: cứ CHEST.every trận (trừ luyện tập) được 1 rương
   if (p.chestN >= CHEST.every) { p.chestN = 0; p.chests = (p.chests || 0) + 1; out.chest = true; }
@@ -246,3 +232,13 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
   saveProfile();
   return out;
 }
+
+// —— Mùa giải (GĐ4b, ui/season.js) ——
+/** Kiểm tra sang mùa mới theo đồng hồ thiết bị: thưởng hết mùa + reset mềm. Trả về null hoặc { n, name, peak, from, to, skipped, list (quà) }. */
+export function seasonCheck(now = Date.now()) { const r = rollSeason(profile(), now); if (!r) { return null; } r.list = grant(r.reward, now); return r; }
+export const journey = () => journeyList(profile());
+export function claimJourney(tier, now = Date.now()) { const r = journeyTake(profile(), tier); return r ? grant(r, now) : null; }
+/** Chọn tướng nhận trang phục mùa. Trả về false (không chọn được), true (đã chọn) hoặc danh sách quà (đủ trận thắng → nhận luôn). */
+export function chooseSkin(hero, now = Date.now()) { const r = chooseSkinHero(profile(), hero); if (r === false) return false; if (r === true) { saveProfile(); return true; } return grant(r, now); }
+export function setSkinOn(hero, season) { const ok = toggleSkin(profile(), hero, season); if (ok) saveProfile(); return ok; }
+export function equipFrame(id) { const p = profile(); if (id && !p.frames.some((f) => f.id === id)) return false; p.frame = id || null; saveProfile(); return true; }
