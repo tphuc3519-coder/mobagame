@@ -4,8 +4,8 @@ Hai phần:
 - **Phần I** chép lại nguyên văn báo cáo kiểm toán và lộ trình nâng cấp ngày 19/10/2026, khi repo ở commit `e954d15`.
 - **Phần II** ghi những gì đã hoàn thiện tới 21/10/2026.
 
-Toàn bộ code của Phần II nằm trên nhánh `claude/kiem-toan-lien-quan`. Nhánh này chưa gộp vào `main`, nên trang chơi trên GitHub Pages vẫn là bản 17/10
-cho tới khi gộp. Workflow `pages.yml` tự deploy mỗi khi có commit lên `main`.
+Code của Phần II đã gộp vào `main` qua PR #17 ngày 26/10/2026 và đang chạy trên GitHub Pages (workflow `pages.yml` tự deploy mỗi khi có commit lên `main`).
+Phần III là kế hoạch của giai đoạn tiếp theo (GĐ4).
 
 ---
 
@@ -313,7 +313,7 @@ Bộ kiểm thử `tools/t_premium.mjs` + `tools/premium.lock.json` giữ 35 fil
 - Kiểm thử mới: node `t_share`, `t_scope`, `t_dispose`, `t_endcam`, `t_pwa`; trình duyệt `b_gd3`, `b_pwa`.
 
 ## Còn lại
-- **Gộp nhánh `claude/kiem-toan-lien-quan` vào `main`** (PR). Pages tự deploy bản mới.
+- ✅ **Đã gộp vào `main`** (PR #17, 26/10); Pages tự deploy, lượt chạy 23 thành công — https://tphuc3519-coder.github.io/mobagame/
 - ✅ **Đã chạy lại trên bản cuối (21/10):**
   - 50 trận bot: 50/50 kết thúc, trung vị 16,4 phút, Xanh thắng 46%, 4,18 mục tiêu lớn / trận, 0 lỗi;
   - `b_match.cjs --only=pings` 10/10 mục đạt, `b_flow.cjs` 7 kịch bản × 2 cỡ màn đạt, bộ `t_*.mjs` đạt, 4 model cao cấp nguyên vẹn.
@@ -322,5 +322,60 @@ Bộ kiểm thử `tools/t_premium.mjs` + `tools/premium.lock.json` giữ 35 fil
   - iPhone Safari: Chia sẻ → Thêm vào MH chính; mở một lần khi có mạng rồi thử không mạng.
   - "Đấu lại" về phòng chờ dưới 3 s.
   - Cuối trận thấy nhà chính nổ phía trên băng-rôn ở màn 844×390.
+
+---
+
+# Phần III — Giai đoạn 4: tiến trình tài khoản và lưu dữ liệu (kế hoạch 26/10/2026)
+
+GĐ0–3 phủ xong phần lối chơi, UI/UX và đóng gói. GĐ4 lấy những gì lộ trình gốc (`10_LO_TRINH.md`) còn thiếu:
+- **Mốc 13** (tiến trình và lưu dữ liệu) — gần như chưa làm;
+- **màn Nhận thưởng của Mốc 12** (07 §11).
+
+Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP thua), nhiệm vụ ngày (4 cái cố định), thư, túi đồ, lịch sử 20 trận (`ui/profile.js`).
+
+> **Chủ dự án chốt (26/10): mở sẵn cả 20 tướng** — không khoá tướng theo Xu Đèn / tuần miễn phí như 08 §5. Xu Đèn dùng cho rương, bùa và trang phục.
+
+### 4a — Lưu dữ liệu
+- Hồ sơ có số phiên bản + chuỗi chuyển đổi bản cũ; hồ sơ hỏng thì giữ bản sao lưu rồi dựng hồ sơ mới.
+- **Xuất / Nhập mã lưu** (Cài đặt → Dữ liệu): mã có tổng kiểm, nhập thì kiểm + chuyển đổi bản cũ, xem tóm tắt trước khi thay.
+
+### 4b — Mùa giải
+- Mùa 120 ngày, tên `S{n} {năm}`, đếm ngược theo đồng hồ thiết bị.
+- **Hết mùa:** thưởng theo bậc cao nhất (Xu, khung ảnh, trang phục mùa), rồi **reset mềm** theo bảng 08 §4.
+- **Hành trình đỉnh cao:** quà mở theo bậc, nhận một lần mỗi mùa.
+- **3 vòng tướng thành thạo:** 5 trận hạng thắng với mỗi tướng, 3 tướng khác nhau.
+- **Trang phục mùa** (10/10 trận hạng thắng): phối màu riêng cho một tướng chọn trước mùa. **Không áp cho 4 model cao cấp** (luật 11).
+
+### 4c — Điểm Hào Quang, Thiên Hà, Đấu Đỉnh Cao
+- **Hào Quang:**
+  - bắt đầu 1000 khi vào Nguyệt Quang;
+  - thắng `+15 + (điểm − 8)`, thua `−15 + (điểm − 8)/2`, trần ±25;
+  - mốc 2000 mở danh hiệu + khung.
+- **Bảng 100 người chơi ảo** theo seed mùa (quanh 2800, σ 300). **Thiên Hà** = top 50 Thái Dương.
+- **Đấu Đỉnh Cao:** chỉ mở 19:00–24:00, cần Nguyệt Quang, cấm/chọn đầy đủ, máy Ác mộng, Hào Quang ×1,5.
+
+### 4d — Tiền tệ, rương, vật phẩm
+- **Ba tiền tệ:** Xu Đèn, Mảnh Tướng, Gạo Hội.
+- **Rương:** cứ 3 trận được 1 rương (Xu 50–200, Mảnh 1–5, 15% Bùa Giữ Sao MVP thua). Sảnh ghi "Đấu tiếp N trận sẽ nhận được rương".
+- **Vật phẩm mới:** Bùa Giữ Sao (thua bất kỳ), Thẻ Nhân Đôi Sao (7 ngày). Nhãn **"Có hạn"**, hết hạn tự xoá.
+- **Cửa hàng mảnh:** đổi Mảnh Tướng lấy vật phẩm / trang phục.
+
+### 4e — Nhiệm vụ
+- Ngày: 3 nhiệm vụ bốc theo seed ngày, làm mới 04:00.
+- Tuần: 4 nhiệm vụ, làm mới thứ Hai.
+- Sự kiện tích luỹ: 0/3 trận → Gạo Hội.
+- Bảng nhiệm vụ có thẻ Ngày / Tuần / Mùa.
+
+### 4f — Màn Nhận thưởng (07 §11)
+- Hàng ô quà bật vào lần lượt 120 ms.
+- Chạm một ô thì hiện tooltip: tên, hiện sở hữu, mô tả, thời hạn.
+- Dưới cùng ghi "Chạm vào khoảng trống để tiếp tục".
+- Dùng cho: sau màn kết quả, nhận nhiệm vụ / thư / rương / quà mùa.
+
+*Xong khi* (theo Mốc 12–13):
+- chơi 10 trận hạng, tắt / mở lại trình duyệt, mọi số liệu còn nguyên;
+- đổi giờ thiết bị sang ngày hết mùa → nhận thưởng và reset đúng bảng;
+- Xuất / Nhập mã lưu sang trình duyệt khác thành công;
+- đi hết Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ không lỗi ở 19,5:9 và 16:9, có tai thỏ.
 
 Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `docs/DECISIONS.md`.

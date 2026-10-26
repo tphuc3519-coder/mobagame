@@ -898,3 +898,7 @@
 - iPhone: ứng dụng ở màn hình chính có bộ nhớ riêng với Safari — **mở một lần khi có mạng** rồi mới chơi không mạng được (ghi ở Cài đặt →
   Dữ liệu). Đang ở chế độ ứng dụng thì ẩn nút toàn màn (`#fs`, nút ở Sảnh).
 
+
+## GĐ4 (26/10) — mở sẵn cả 20 tướng
+- 08 §5 cho người chơi mới 6 tướng khởi đầu, phần còn lại mở bằng Xu Đèn hoặc tuần miễn phí. **Chủ dự án chốt: mở sẵn cả 20 tướng** cho mọi hồ
+  sơ (game chơi với máy, khoá tướng chỉ làm hụt nội dung). Xu Đèn chỉ dùng cho rương, bùa, trang phục; không có tuần miễn phí, không giá tướng.
