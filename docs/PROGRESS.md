@@ -584,7 +584,7 @@ Còn lại:
 ## GĐ5c (26/10) — Mốc 14: ngân sách vẽ, model lính / quái, kiểm model, bản quyền, tải theo nhu cầu, deploy
 - **Ngân sách vẽ (02 §2):** `render/env/cull.js` (gộp InstancedMesh cùng loại + lọc từng bản sao theo khung nhìn), khối tĩnh chia ô 1 600,
   bóng tròn gom một InstancedMesh (`shadows.js createBlobLayer`), lính không đổ bóng thật, lớp mặt / phát sáng của tướng không đổ bóng, đom đóm Suối
-  có khối bao, hoạt ảnh thưa ≤ 12 đơn vị mỗi khung (`unitView.js`). Kiểm thử `node tools/b_perf.cjs <cổng>`: __PERF__.
+  có khối bao, hoạt ảnh thưa ≤ 12 đơn vị mỗi khung (`unitView.js`). Kiểm thử `node tools/b_perf.cjs <cổng>`: giao tranh mức Vừa tối đa 131 lệnh vẽ / 254k tam giác hiển thị (trước 279 / 962k), mức Cao 129 / 292k; quét 36 điểm khắp bản đồ tối đa 145 / 342k; 12 đơn vị hoạt ảnh đủ mỗi khung.
 - **Lính / quái (09 §3.2):** giản lược thêm lính / sói / cóc (`tools/modelgen/lod.mjs`, bảng `RATIO`), `lod.mjs --fix` tính lại min/max accessor ⇒
   glTF-Validator 0 lỗi; `validate.mjs` kiểm cả `assets/monsters`.
 - **Kiểm model (11 §8):** `node tools/t_models.mjs` — clip, hero.art.json, chiều cao 1,2–2,6 m, ngân sách trận; 4 model cao cấp chỉ ghi lại.

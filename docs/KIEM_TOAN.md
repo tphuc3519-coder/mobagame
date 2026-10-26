@@ -392,7 +392,7 @@ Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `doc
 
 ### 5c — Mốc 14: đóng gói, hiệu năng, model, bản quyền ✅
 - **Ngân sách vẽ 02 §2** (`b_perf.cjs`, giao tranh 10 tướng + lính, mức Vừa / Cao, và quét cả bản đồ):
-  bản cũ 279 lệnh vẽ · 962k tam giác · 34 mesh có xương ⇒ nay __PERF__.
+  bản cũ 279 lệnh vẽ · 962k tam giác · 34 mesh có xương ⇒ nay mức Vừa: giao tranh tối đa **131 lệnh vẽ · 254k tam giác hiển thị** (+105k bóng đổ) · 12 đơn vị hoạt ảnh đủ; mức Cao: 129 · 292k; quét 36 điểm khắp bản đồ: tối đa 143–145 lệnh vẽ, 302k–342k tam giác (ngân sách ≤ 150 · ≤ 400k · ≤ 12).
 - **Lính / quái theo 09 §3.2:** lính ≤ 3 000, quái nhỏ ≤ 4 000, quái bùa ≤ 10 000, mục tiêu lớn ≤ 25 000 tam giác; glTF-Validator 0 lỗi (cả tướng lẫn quái).
 - **Kiểm model 11 §8** (`t_models.mjs`): 16 tướng sinh bằng code đủ clip, ≤ 15k (đỡ đòn 18k) tam giác, ≤ 60 xương, ≤ 2,5 MB; 4 model cao cấp chỉ ghi lại.
 - **Bản quyền** (`t_licenses.mjs`): mọi tệp đem lên mạng có dòng trong `assets/LICENSES.md`; model thừa không đem lên.

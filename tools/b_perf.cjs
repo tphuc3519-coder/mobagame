@@ -30,6 +30,7 @@ async function measure(browser, q) {
       const a = lead(t0, (e) => e.pos.x - e.pos.y), b = lead(t1, (e) => e.pos.y - e.pos.x); if (a && b) c = { x: (a.pos.x + b.pos.x) / 2, y: (a.pos.y + b.pos.y) / 2 }; }
     const heroes = w.entities.filter((e) => e.kind === 'hero');
     heroes.forEach((e, i) => { const k = e.team === p.team ? -1 : 1, j = i % 5; e.pos.x = e.prevPos.x = c.x + k * (160 + j * 40); e.pos.y = e.prevPos.y = c.y + (j - 2) * 120 - k * 100; e.dash = null; e.forced = null; });
+    const near = w.entities.filter((e) => e.alive && e.kind === 'minion' && Math.hypot(e.pos.x - c.x, e.pos.y - c.y) < 1600).length; // lúc dựng giao tranh
     g.cam.follow(p.pos.x, p.pos.y, 0, 0, 1); // camera tới ngay chỗ giao tranh (không đo quãng camera trượt qua nửa bản đồ)
     // tam giác HIỂN THỊ = lượt vẽ cảnh chính (02 §2); lượt bóng đổ đếm riêng. Lệnh vẽ: mọi lượt (cảnh + bóng + hậu kỳ) như renderer.info.
     const R = g.renderer; let light = null; g.scene.traverse((o) => { if (!light && o.isDirectionalLight && o.castShadow) light = o; });
@@ -59,7 +60,6 @@ async function measure(browser, q) {
     const sw = { n: sweep.length, calls: top('calls'), tris: top('tris'), callsAvg: Math.round(sweep.reduce((a, b) => a + b.calls, 0) / sweep.length), trisAvg: Math.round(sweep.reduce((a, b) => a + b.tris, 0) / sweep.length) };
     const max = (k) => Math.max(...frames.map((x) => x[k])), avg = (k) => Math.round(frames.reduce((a, x) => a + x[k], 0) / frames.length);
     const units = { minion: 0, monster: 0, hero: heroes.length }; for (const e of w.entities) if (e.alive && units[e.kind] != null && e.kind !== 'hero') units[e.kind]++;
-    const near = w.entities.filter((e) => e.alive && e.kind === 'minion' && Math.hypot(e.pos.x - c.x, e.pos.y - c.y) < 1600).length;
     window.__perfFrames = frames.map((x) => x.calls);
     return { seq: frames.map((x) => x.calls).join(','), calls: max('calls'), callsAvg: avg('calls'), tris: max('tris'), trisAvg: avg('tris'), shadow: max('shadow'), all: max('all'), upd: max('upd'), thin: max('thin'), units, near, tick: w.tick, sw, cullMs, cst };
   });
