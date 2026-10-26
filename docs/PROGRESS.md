@@ -578,5 +578,17 @@ Còn lại:
 ## GĐ5b (26/10) — cửa hàng ngọc (sảnh trước đây báo "Cửa hàng ngọc sắp mở")
 - `data/shop.js`, `ui/shopPanel.js` (dấu + cạnh ô ngọc): thẻ **Trang phục** (chọn tướng → 4 màu, mua có hộp xác nhận, Mặc / Cởi; phủ màu ngay ở sảnh và trong trận),
   **Vật phẩm** (3 rương / Bùa Giữ Sao / Thẻ Nhân Đôi Sao / 800 vàng), **Nhận ngọc** (lên cấp +10, Rương tuần +20, mùa, Hành trình).
-- Kiểm thử: `node tools/t_shop.mjs` — 21 mục; `b_prog.cjs shop844 shop1280` (mua → Nhận thưởng → mặc / cởi → đổi rương → về sảnh số ngọc đúng);
+- Kiểm thử: `node tools/t_shop.mjs` — 20 mục; `b_prog.cjs shop844 shop1280` (mua → Nhận thưởng → mặc / cởi → đổi rương → về sảnh số ngọc đúng);
   `t_missions` cập nhật (Rương tuần có ngọc).
+
+## GĐ5c (26/10) — Mốc 14: ngân sách vẽ, model lính / quái, kiểm model, bản quyền, tải theo nhu cầu, deploy
+- **Ngân sách vẽ (02 §2):** `render/env/cull.js` (gộp InstancedMesh cùng loại + lọc từng bản sao theo khung nhìn), khối tĩnh chia ô 1 600,
+  bóng tròn gom một InstancedMesh (`shadows.js createBlobLayer`), lính không đổ bóng thật, lớp mặt / phát sáng của tướng không đổ bóng, đom đóm Suối
+  có khối bao, hoạt ảnh thưa ≤ 12 đơn vị mỗi khung (`unitView.js`). Kiểm thử `node tools/b_perf.cjs <cổng>`: __PERF__.
+- **Lính / quái (09 §3.2):** giản lược thêm lính / sói / cóc (`tools/modelgen/lod.mjs`, bảng `RATIO`), `lod.mjs --fix` tính lại min/max accessor ⇒
+  glTF-Validator 0 lỗi; `validate.mjs` kiểm cả `assets/monsters`.
+- **Kiểm model (11 §8):** `node tools/t_models.mjs` — clip, hero.art.json, chiều cao 1,2–2,6 m, ngân sách trận; 4 model cao cấp chỉ ghi lại.
+- **Bản quyền:** `assets/LICENSES.md` đủ dòng; `node tools/t_licenses.mjs` (278 tệp đem lên mạng đều có dòng, không dòng thừa).
+- **Tải theo nhu cầu:** màn khởi động bỏ 20 ảnh thẻ tướng + ảnh phòng chờ (tải nền sau khi vào Sảnh).
+- **Deploy:** `tools/build_site.mjs` dùng chung cho `pages.yml`, `netlify.toml`, `vercel.json`; bỏ 10 thư mục model tướng cũ khỏi bản đem lên.
+- **Mở lần hai vào Sảnh:** `b_pwa.cjs` đo __OPEN2__.

@@ -255,6 +255,14 @@ Tên clip bắt buộc trong mọi GLB tướng (xem 11 §6):
 - Tướng ngoài khung nhìn: không cập nhật mixer. Tướng xa camera > 2500: cập nhật mixer 15 lần/s thay vì mỗi frame.
 - Mỗi tướng có **LOD**: `LOD0` (đầy đủ, dùng ở sảnh và cận cảnh), `LOD1` (trong trận). File chỉ chứa LOD1 cũng được.
 - Trụ, cây, đá, đèn lồng trang trí: `InstancedMesh`.
+- **Lọc từng bản sao theo khung nhìn** (GĐ5c, `render/env/cull.js`): InstancedMesh cùng hình + cùng vật liệu gộp thành một mesh cả bản đồ, khi camera
+  dịch quá 1/3 lề (80) thì chép các bản sao chạm khung nhìn (hoặc hộp bóng nếu mesh đổ bóng) lên đầu mảng, `count` = số đó, loại nào không còn bản sao
+  thì ẩn. Khối tĩnh không bản sao chia ô 1 600 (`env/chunk.js`). Lúc dịch sẵn shader culler chưa chạy — mọi biến thể vẫn được dịch trước khi vào trận.
+- **Bóng tròn dưới chân** mọi đơn vị: một `InstancedMesh` (`shadows.js createBlobLayer`). Lính chỉ có bóng tròn; lớp mặt và lớp phát sáng của tướng
+  không đổ bóng thật.
+- **Hoạt ảnh thưa** (`unitView.js`): ≤ 12 đơn vị có xương gần tâm màn hình nhất cập nhật mỗi khung, còn lại ~30 lần/s; tướng xa tâm màn hình > 2500:
+  15 lần/s; tướng ngoài khung nhìn / trong sương mù: dừng, hiện lại thì cập nhật bù. Tướng mình luôn mỗi khung.
+- Đo: `node tools/b_perf.cjs <cổng>` — giao tranh 10 tướng + lính ở giữa đường và quét cả bản đồ, mức Vừa / Cao (ngân sách §2).
 - Hạt: `Points` hoặc quad instancing, pool cố định, blending cộng (`AdditiveBlending`).
 - Không tạo `Material` mới trong vòng lặp; dùng `material.clone()` một lần lúc spawn.
 - Đo bằng `renderer.info` trong chế độ `?debug=1` (draw call, tam giác, texture).

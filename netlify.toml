@@ -1,0 +1,17 @@
+# Deploy lên Netlify (tuỳ chọn — bản chính chạy trên GitHub Pages): cùng bước dựng với .github/workflows/pages.yml.
+[build]
+  command = "node tools/build_site.mjs site \"${COMMIT_REF:-dev}\""
+  publish = "site"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# service worker + trang gốc luôn hỏi lại máy chủ (bản mới tới ngay); tệp còn lại đã có ?v=<băm> nên để trình duyệt giữ lâu
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -37,6 +37,15 @@ function buildSite(dir, build) {
     ok(`cài: tải sẵn đủ ${preN} tệp vào bộ nhớ đệm`, cached >= preN, `${cached}/${preN}`);
     await page.reload({ waitUntil: 'domcontentloaded' }); // trang do service worker điều khiển
     await page.waitForFunction(() => !!navigator.serviceWorker.controller && window.__flow?.nav?.screen === 'home', null, { timeout: T(300) });
+    // Mốc 14: mở lần hai (đã có bộ nhớ đệm) vào Sảnh dưới 3 giây — tính từ lúc bắt đầu tải trang tới khi màn khởi động biến mất và Sảnh hiện
+    const open2 = [];
+    for (let i = 0; i < 3; i++) {
+      await page.reload({ waitUntil: 'commit' });
+      await page.waitForFunction(() => window.__flow?.nav?.screen === 'home' && !document.getElementById('boot'), null, { timeout: T(120), polling: 'raf' });
+      open2.push(Math.round(await page.evaluate(() => performance.now())));
+    }
+    open2.sort((a, b) => a - b);
+    ok('mở lần hai (bộ nhớ đệm) vào Sảnh dưới 3 giây (trung vị 3 lần)', open2[1] < 3000, open2.join(' / ') + ' ms');
     // Sảnh nhờ lưu model 20 tướng (sau 2,5 s); chờ tới khi đủ
     let heroes = 0;
     for (let i = 0; i < 300 && heroes < 20; i++) { heroes = await page.evaluate(async () => { const ks = (await (await caches.open('la-files')).keys()).map((r) => r.url); return ks.filter((u) => /assets\/heroes\/([^/]+)\/\1\.glb\?v=/.test(u)).length; }); if (heroes < 20) await sleep(1000); }

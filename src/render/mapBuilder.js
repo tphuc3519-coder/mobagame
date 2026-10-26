@@ -8,6 +8,7 @@ import { buildBushes } from './env/bushes.js';
 import { buildFoliage, WIND } from './env/foliage.js';
 import { buildSky, buildLampGlow, buildFireflies, FOG_COLOR } from './env/sky.js';
 import { chunkStatic, freezeStatic } from './env/chunk.js';
+import { createInstanceCuller } from './env/cull.js';
 
 export { FOG_COLOR };
 const DENSITY = { low: 0.4, mid: 0.7, high: 1 };
@@ -100,10 +101,10 @@ export function buildMap(scene, map, level = 'mid', opts = {}) {
   g.add(pole, lamp, cap, buildLampGlow(posts));
 
   const flies = buildFireflies(map, Math.round(160 * dens)); g.add(flies.object);
-  chunkStatic(g); freezeStatic(g); // như bản 5v5 (arenaMap.js)
+  chunkStatic(g, { instances: false }); freezeStatic(g); const cull = createInstanceCuller(g); // như bản 5v5 (arenaMap.js)
   scene.add(g);
   return {
-    group: g,
-    update(t, dt, camera, viewH) { WIND.value = t; river.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
+    group: g, cull,
+    update(t, dt, camera, viewH) { cull.update(camera); WIND.value = t; river.update(t); flies.update(t, viewH); sky.position.copy(camera.position); },
   };
 }

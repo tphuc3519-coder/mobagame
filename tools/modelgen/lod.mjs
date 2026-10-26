@@ -2,16 +2,18 @@
 // chất liệu đỉnh (_MAT) — chỉ bỏ bớt đỉnh/tam giác. Lưới SDF gốc 8–21 nghìn tam giác cho một con lính cao vài chục điểm ảnh trên màn
 // hình là thừa (lính đông nhất trận, mỗi con vẽ 2 lượt: cảnh + bóng). Ranh giới giữa các vùng chất liệu (phát sáng, màu đội, giáp…) và
 // mép hở của chi tiết bị khoá để màu/hình không lem.
-// Dùng: node lod.mjs [id[=tỉ_lệ] ...]   (không đối số: mọi model theo bảng RATIO). monsters.mjs gọi simplifyGLB() trước khi ghi file.
+// Dùng: node lod.mjs [id[=tỉ_lệ] ...]   (không đối số: mọi model theo bảng RATIO); node lod.mjs --fix: chỉ tính lại min/max accessor. monsters.mjs gọi simplifyGLB() trước khi ghi file.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MeshoptSimplifier as S } from 'meshoptimizer';
 
 /** Tỉ lệ tam giác giữ lại: lính (đông, nhỏ trên màn) giảm mạnh; quái rừng vừa; mục tiêu lớn (to, hay nhìn gần) giảm nhẹ. */
+/** GĐ5c (09 §3.2): lính ≤ 3 000, quái nhỏ ≤ 4 000 tam giác — lính / sói / cóc giảm thêm một nấc (chụp so trước/sau không khác ở cỡ trong
+ *  trận). Hai quái bùa (Linh Thuỷ, Hoả Nham: một con mỗi trại, to) giữ mức cũ, trần riêng 10 000 (tools/t_models.mjs). */
 export const RATIO = {
-  linh_kiem: 0.3, linh_cung: 0.3, linh_den: 0.32, xe_da: 0.45,
-  soi_da: 0.4, coc_reu: 0.4, hoa_nham: 0.45, linh_thuy: 0.42,
+  linh_kiem: 0.22, linh_cung: 0.234, linh_den: 0.165, xe_da: 0.34,
+  soi_da: 0.236, coc_reu: 0.232, hoa_nham: 0.45, linh_thuy: 0.42,
   long_ngu: 0.5, ho_loi: 0.5, than_dieu: 0.5, ta_than: 0.5,
 };
 const SIZE = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }, NCOMP = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
@@ -38,6 +40,21 @@ function view(json, bin, ai) {
   for (let i = 0; i < a.count; i++) for (let k = 0; k < n; k++) { let v = bin[rd](base + i * stride + k * cs); if (a.normalized) v /= MAXV[a.componentType]; out[i * n + k] = v; }
   return { a, bv, n, cs, stride, base, data: out };
 }
+
+/** min/max của mọi accessor có khai báo: tính lại đúng theo dữ liệu (giá trị thô, cùng kiểu componentType — glTF-Validator so đúng cách
+ *  này). Trước đây chỉ POSITION được tính lại sau khi giản lược nên màu / chất liệu / pháp tuyến còn min/max cũ (lỗi ACCESSOR_*_MISMATCH). */
+function fixMinMax(json, bin) {
+  for (const a of json.accessors) {
+    if (!a.min || !a.max || a.bufferView == null) continue;
+    const bv = json.bufferViews[a.bufferView], n = NCOMP[a.type], cs = SIZE[a.componentType], stride = bv.byteStride || n * cs, base = (bv.byteOffset || 0) + (a.byteOffset || 0);
+    const rd = { 5120: 'readInt8', 5121: 'readUInt8', 5122: 'readInt16LE', 5123: 'readUInt16LE', 5125: 'readUInt32LE', 5126: 'readFloatLE' }[a.componentType];
+    const mn = new Array(n).fill(Infinity), mx = new Array(n).fill(-Infinity);
+    for (let i = 0; i < a.count; i++) for (let k = 0; k < n; k++) { const v = bin[rd](base + i * stride + k * cs); if (v < mn[k]) mn[k] = v; if (v > mx[k]) mx[k] = v; }
+    a.min = mn; a.max = mx;
+  }
+}
+/** Sửa min/max tại chỗ cho một GLB (không giản lược). */
+export function fixGLB(buf) { const { json, bin } = parseGLB(Buffer.from(buf)); fixMinMax(json, bin); return writeGLB(json, bin); }
 
 /** Giản lược lưới GLB (một mesh, một primitive có chỉ mục). ratio: tỉ lệ tam giác giữ lại. Trả về Buffer GLB mới + thống kê. */
 export async function simplifyGLB(buf, ratio, { error = 0.02 } = {}) {
@@ -85,13 +102,17 @@ export async function simplifyGLB(buf, ratio, { error = 0.02 } = {}) {
     const pad = (4 - (off % 4)) % 4; if (pad) { parts.push(Buffer.alloc(pad)); off += pad; }
     bv.byteOffset = off; bv.byteLength = data.length; parts.push(data); off += data.length;
   });
-  const nbin = Buffer.concat(parts); json.buffers[0].byteLength = nbin.length;
+  const nbin = Buffer.concat(parts); json.buffers[0].byteLength = nbin.length; fixMinMax(json, nbin);
   return { glb: writeGLB(json, nbin), tris: [indices.length / 3, out.length / 3], verts: [nv, count] };
 }
 
 // —— dòng lệnh: giản lược tại chỗ ——
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/monsters');
+  if (process.argv[2] === '--fix') { // chỉ sửa min/max của mọi model lính / quái (không giản lược)
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.glb'))) { const p = path.join(dir, f); fs.writeFileSync(p, fixGLB(fs.readFileSync(p))); console.log('sửa min/max', f); }
+    process.exit(0);
+  }
   const args = process.argv.slice(2), jobs = args.length ? args.map((a) => { const [id, r] = a.split('='); return [id, r ? +r : RATIO[id]]; }) : Object.entries(RATIO);
   for (const [id, r] of jobs) {
     const f = path.join(dir, id + '.glb'), before = fs.statSync(f).size;

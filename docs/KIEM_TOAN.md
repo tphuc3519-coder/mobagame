@@ -379,3 +379,29 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - ✅ đi hết Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ không lỗi ở 19,5:9 và 16:9, có tai thỏ (`b_flow.cjs ranked844/1280`).
 
 Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `docs/DECISIONS.md`.
+
+---
+
+# Phần IV — Giai đoạn 5: phần còn lại tới 1.0 (26/10/2026)
+
+### 5a — Chống khoá chết khống chế (04 §3) ✅ (`t_ccchain.mjs` 11 mục)
+- Chuỗi khống chế cứng của địch nối nhau quá 3 s ⇒ trong 2 s tiếp theo choáng / trói / câm lặng / khiêu khích mới chỉ còn 50%; HUD hiện "Kháng 50%".
+
+### 5b — Cửa hàng ngọc ✅ (`t_shop.mjs` 20 mục, `b_prog.cjs` shop844 / shop1280)
+- Trang phục phối màu vĩnh viễn (4 màu × 16 tướng thường; không bán cho 4 model cao cấp), vật phẩm đổi ngọc, thẻ "Nhận ngọc". Không có nạp tiền.
+
+### 5c — Mốc 14: đóng gói, hiệu năng, model, bản quyền ✅
+- **Ngân sách vẽ 02 §2** (`b_perf.cjs`, giao tranh 10 tướng + lính, mức Vừa / Cao, và quét cả bản đồ):
+  bản cũ 279 lệnh vẽ · 962k tam giác · 34 mesh có xương ⇒ nay __PERF__.
+- **Lính / quái theo 09 §3.2:** lính ≤ 3 000, quái nhỏ ≤ 4 000, quái bùa ≤ 10 000, mục tiêu lớn ≤ 25 000 tam giác; glTF-Validator 0 lỗi (cả tướng lẫn quái).
+- **Kiểm model 11 §8** (`t_models.mjs`): 16 tướng sinh bằng code đủ clip, ≤ 15k (đỡ đòn 18k) tam giác, ≤ 60 xương, ≤ 2,5 MB; 4 model cao cấp chỉ ghi lại.
+- **Bản quyền** (`t_licenses.mjs`): mọi tệp đem lên mạng có dòng trong `assets/LICENSES.md`; model thừa không đem lên.
+- **Tải theo nhu cầu:** màn khởi động chỉ chờ thứ Sảnh dùng; ảnh thẻ tướng / phòng chờ tải nền sau khi vào Sảnh.
+- **Deploy:** GitHub Pages (bản chính) + `netlify.toml` / `vercel.json` dùng chung `tools/build_site.mjs`.
+
+*Xong khi* (Mốc 14):
+- ✅ cài được lên màn hình chính, chơi không mạng (`b_pwa.cjs`, từ GĐ3);
+- ✅ lần mở thứ hai vào Sảnh dưới 3 s (`b_pwa.cjs`: __OPEN2__).
+
+**Chưa làm, cần người / máy chủ:** model và bản đồ vẽ tay thật thay hàng sinh bằng code; bọc Capacitor ra APK (tuỳ chọn); phần "Sau 1.0"
+(PvP trực tuyến cần máy chủ Node chạy `src/sim/` + WebSocket; mắt (ward), chế độ / tướng mới mỗi mùa).
