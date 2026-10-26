@@ -1,15 +1,20 @@
-// Các bảng mở từ sảnh: hồ sơ, bạn bè, thư, nhiệm vụ, tướng, trang bị, túi đồ, cài đặt, sự kiện. Bảng phủ toàn màn kiểu Liên Quân.
+// Các bảng mở từ sảnh: hồ sơ, bạn bè, thư, nhiệm vụ, tướng, trang bị, cài đặt, sự kiện (túi đồ: ui/bagPanel.js). Bảng phủ toàn màn kiểu Liên Quân.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { ITEMS, SHOP_TABS } from '../data/items.js';
 import { itemArtURL } from '../hud/itemArt.js';
 import { openSettings as openSettingsModal } from './settingsModal.js';
+import { openExport, openImport } from './saveDialogs.js';
 import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
-import { profile, saveProfile, rankOf, expNeed, MISSIONS, missionState, claimMission, mailbox, claimMail, BAG_ITEMS } from './profile.js';
+import { profile, saveProfile, rankOf, rankNow, expNeed, missionList, claimMission, weekBonusReady, claimWeekBonus, eventState, claimEvent, mailbox, claimMail, BAG_ITEMS } from './profile.js';
+import { WEEK_BONUS } from '../data/missions.js';
 import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
 import { skillDesc } from './skilltext.js';
+import { showRewards } from './rewards.js';
+import { seasonHtml, seasonClick } from './seasonPanel.js';
+import { boardHtml } from './boardPanel.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
@@ -74,16 +79,17 @@ const STYLE = `
 `;
 let styled = false;
 const css = () => { if (styled) return; styled = true; const s = document.createElement('style'); s.textContent = STYLE; document.head.append(s); };
+export const panelCss = css; // dùng chung cho bảng ở file khác (ui/bagPanel.js)
 const gold = (n) => `<span class="cur">${icon('coin')}<b>${fmt(n)}</b></span>`;
 
 export function openProfile(onChange) {
-  css(); const p = profile(), r = rankOf(p.stars), best = rankOf(p.best);
+  css(); const p = profile(), r = rankNow(), best = rankOf(p.best);
   const { body } = panel({ title: 'Hồ sơ', right: gold(p.gold) });
   const render = () => {
     const kda = p.deaths ? ((p.kills + p.assists) / p.deaths).toFixed(1) : (p.kills + p.assists).toFixed(1);
     body.innerHTML = `<div class="pn-prof"><div class="av">${face(p.avatar)}</div><div>
       <h3><span class="gt">${p.name}</span><button type="button" class="icb" data-a="name" aria-label="Đổi tên">${ICON.edit()}</button></h3>
-      <div class="rkrow">${rankBadge(r, 60)}<div><b>${r.name}</b><span class="stars">${stars(r)}</span><small>Cao nhất: ${best.name}</small></div></div>
+      <div class="rkrow">${rankBadge(r, 60)}<div><b>${r.name}</b><span class="stars">${stars(r)}</span><small>Cao nhất: ${best.name}${p.hq != null ? ` · Hào Quang ${p.hq}` : ''}${p.hqTitle && p.hqTitle === p.season ? ' · Hào Quang Chói Sáng' : ''}</small></div></div>
       <div class="lvrow">Cấp <b>${p.level}</b><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span><span>${p.exp}/${expNeed(p.level)} KN</span></div>
       <div class="pn-avs">${ALPHA.map((id) => `<button type="button" data-av="${id}" class="${id === p.avatar ? 'on' : ''}">${face(id)}</button>`).join('')}</div></div></div>
       <div class="pn-stats"><div><small>Tổng số trận</small><b>${p.games}</b></div><div><small>Tỉ lệ thắng</small><b>${p.games ? Math.round(p.wins / p.games * 100) : 0}%</b></div>
@@ -115,18 +121,38 @@ export function openMail(onChange) {
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
   render();
-  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMail(b.dataset.m); if (g) toast(`+${g} vàng`); render(); onChange?.(); };
+  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMail(b.dataset.m); render(); onChange?.(); if (g) showRewards([{ k: 'gold', n: g }], { onDone: render }); };
 }
 
-export function openMissions(onChange) {
-  css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ hằng ngày', right: gold(p.gold) });
+export function openMissions(onChange, tab0 = 'daily') {
+  css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ', right: gold(p.gold) });
+  let tab = tab0;
+  const rew = (m) => [m.gold ? `${m.gold} vàng` : '', m.gao ? `${m.gao} Gạo Hội` : '', m.item ? '1 ' + BAG_ITEMS[m.item].name : '', m.chest ? `${m.chest} rương` : ''].filter(Boolean).join(' + ');
+  const row = (m, data) => `<div class="pn-row">${icon(m.done ? 'chest' : 'scroll')}<div><b>${m.name}</b><small>${m.v}/${m.goal} · thưởng ${rew(m)}</small><span class="pbar"><i style="width:${(m.v / m.goal) * 100}%"></i></span></div><button type="button" class="btn-gold go" ${data} ${m.done && !m.claimed ? '' : 'disabled'}>${m.claimed ? 'Đã nhận' : m.done ? 'Nhận' : 'Chưa xong'}</button></div>`;
   const render = () => {
-    body.innerHTML = MISSIONS.map((m) => { const s = missionState(m); return `<div class="pn-row">${icon(s.done ? 'chest' : 'scroll')}<div><b>${m.name}</b><small>${s.v}/${m.goal} · thưởng ${m.gold} vàng${m.item ? ' + 1 ' + BAG_ITEMS[m.item].name : ''}</small><span class="pbar"><i style="width:${(s.v / m.goal) * 100}%"></i></span></div><button type="button" class="btn-gold go" data-m="${m.id}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? 'Đã nhận' : s.done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')
-      + '<p class="pn-note">Nhiệm vụ làm mới mỗi ngày.</p>';
+    const tabs = `<div class="pn-tabs">${[['daily', 'Ngày'], ['weekly', 'Tuần'], ['event', 'Sự kiện']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+    if (tab === 'event') {
+      const e = eventState();
+      body.innerHTML = tabs + row({ ...e, v: e.n }, 'data-ev') + `<p class="pn-note">Sự kiện tích luỹ làm mới mỗi thứ Hai 04:00: tham gia ${e.goal} trận bất kỳ (trừ luyện tập) nhận ${e.gao} Gạo Hội.</p>`;
+    } else {
+      const L = missionList(tab), wk = tab === 'weekly' ? (() => { const all = L.every((m) => m.claimed), ready = weekBonusReady(), got = all && !ready;
+        return `<div class="pn-row" style="background:linear-gradient(90deg,rgba(110,70,20,.8),rgba(40,24,6,.6))">${icon('chest')}<div><b>${WEEK_BONUS.name}</b><small>Xong cả ${L.length} nhiệm vụ tuần · thưởng ${rew(WEEK_BONUS)}</small></div><button type="button" class="btn-gold go" data-wb ${ready ? '' : 'disabled'}>${got ? 'Đã nhận' : ready ? 'Nhận' : 'Chưa xong'}</button></div>`; })() : '';
+      body.innerHTML = tabs + L.map((m) => row(m, `data-m="${m.id}"`)).join('') + wk
+        + `<p class="pn-note">${tab === 'weekly' ? 'Nhiệm vụ tuần làm mới mỗi thứ Hai 04:00.' : 'Nhiệm vụ ngày làm mới mỗi ngày lúc 04:00.'}</p>`;
+    }
     el.querySelector('.ui-hr').innerHTML = gold(p.gold);
   };
   render();
-  body.onclick = (e) => { const b = e.target.closest('[data-m]'); if (!b) return; const g = claimMission(b.dataset.m); if (g) toast(`+${g} vàng`); render(); onChange?.(); };
+  body.onclick = (e) => {
+    const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; render(); return; }
+    let got = null;
+    const b = e.target.closest('[data-m]'); if (b) got = claimMission(tab, b.dataset.m);
+    if (e.target.closest('[data-wb]')) got = claimWeekBonus();
+    if (e.target.closest('[data-ev]')) got = claimEvent();
+    if (!got) return;
+    render(); onChange?.(); showRewards(got, { onDone: render });
+  };
+  window.__missions = { render, tab: (k) => { tab = k; render(); } };
 }
 
 /** Danh sách tướng: tướng chơi được (6) + tướng sắp có; chạm tướng xem kỹ năng, đặt làm tướng đứng ở sảnh. */
@@ -176,15 +202,10 @@ export function openItems() {
   };
 }
 
-export function openBag() {
-  css(); const p = profile(); const { body } = panel({ title: 'Túi đồ' });
-  body.innerHTML = Object.entries(p.bag || {}).filter(([id, n]) => n > 0 && BAG_ITEMS[id]).map(([id, n]) => `<div class="pn-row">${icon('star')}<div><b>${BAG_ITEMS[id].name} ×${n}</b><small>${BAG_ITEMS[id].desc}</small></div></div>`).join('') + `<div class="pn-row">${icon('scroll')}<div><b>Thẻ đổi tên</b><small>Đổi tên miễn phí ở mục Hồ sơ.</small></div></div>
-    <div class="pn-row">${icon('lantern')}<div><b>Đèn lồng may mắn ×3</b><small>Dùng trong sự kiện Lễ Hội Đèn Lồng (sắp mở).</small></div></div>`;
-}
-
 /** Cài đặt (sảnh): bảng Cài đặt kiểu Liên Quân dùng chung với trong trận (ui/settingsModal.js) — đổi là lưu, áp dụng khi vào trận. */
 export function openSettings() {
-  const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); } });
+  const close = openSettingsModal({ gfx: loadGfx(''), onReset: () => { close(); dialog({ title: 'Xoá dữ liệu?', html: 'Vàng, hạng, thống kê sẽ về ban đầu. Muốn giữ lại thì vào Dữ liệu → Xuất mã lưu trước.', buttons: [{ text: 'Huỷ' }, { text: 'Xoá', cls: 'gold', on: () => { try { localStorage.removeItem('la.profile'); } catch (_) { /* riêng tư */ } location.reload(); } }] }); },
+    onSave: (k) => { close(); (k === 'export' ? openExport : openImport)(); } });
 }
 
 /** Sự kiện Lễ Hội Đèn Lồng: điểm danh 7 ngày, mỗi ngày nhận một phần quà vàng. */
@@ -202,16 +223,25 @@ export function openEvent(onChange) {
   body.onclick = (e) => {
     if (!e.target.closest('[data-a="claim"]')) return;
     const got = p.checkin || 0; if (p.checkinDay === today || got >= 7) return;
-    p.gold += REW[got]; p.checkin = got + 1; p.checkinDay = today; saveProfile(); toast(`+${REW[got]} vàng`); render(); onChange?.();
+    p.gold += REW[got]; p.checkin = got + 1; p.checkinDay = today; saveProfile(); render(); onChange?.(); showRewards([{ k: 'gold', n: REW[got] }], { onDone: render });
   };
 }
 
-/** Bảng xếp hạng bạn bè (theo sao hạng) — có cả mình. */
-export function openLeaderboard() {
-  css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng bạn bè' });
-  const rows = [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars);
-  body.innerHTML = rows.map((r, i) => { const rk = rankOf(r.stars);
-    return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no n${i + 1}">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
+/** Xếp hạng: thẻ Mùa giải (ui/seasonPanel.js) + thẻ Bạn bè (theo sao hạng, có cả mình). */
+export function openLeaderboard(tab0 = 'season', onChange = null) {
+  css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng', onClose: onChange }); // đóng bảng: sảnh vẽ lại (khung ảnh, vàng)
+  let tab = tab0;
+  const friends = () => [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars)
+    .map((r, i) => { const rk = r.me ? rankNow() : rankOf(r.stars);
+      return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no n${i + 1}">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
+  const render = () => {
+    body.innerHTML = `<div class="pn-tabs">${[['season', 'Mùa giải'], ['top', 'Top 100'], ['friends', 'Bạn bè']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`
+      + (tab === 'season' ? seasonHtml() : tab === 'top' ? boardHtml() : friends());
+    if (tab === 'top') body.querySelector('.tb-list .me')?.scrollIntoView({ block: 'center' }); // hạng của mình nằm giữa khung
+  };
+  render();
+  body.onclick = (e) => { const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; render(); return; } if (tab === 'season') seasonClick(e, render); };
+  window.__board = { render, tab: (k) => { tab = k; render(); } };
 }
 
 /** Lịch sử đấu + tổng hợp: số trận, tỉ lệ thắng, K/D/A tổng, KDA và điểm trung bình, số lần MVP; từng trận gần nhất (tối đa 20). */

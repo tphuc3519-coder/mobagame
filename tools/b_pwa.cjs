@@ -56,6 +56,7 @@ function buildSite(dir, build) {
     ok('không mạng: trận 1v1 chạy (3 s), không yêu cầu nào hỏng', !failed.length, failed.slice(0, 4).join(', '));
     await page.evaluate(() => window.__game.world.surrender(0)); await page.waitForFunction(() => window.__post, null, { timeout: T(60) });
     await page.evaluate(() => window.__post.o.onHome()); await page.waitForFunction(() => window.__flow.nav.screen === 'home', null, { timeout: T(30) });
+    await page.waitForSelector('#rewardScr .tl', { timeout: T(30) }); await page.evaluate(() => window.__rewards.close()); // GĐ4f: về sảnh có màn Nhận thưởng — chạm để tiếp tục
     await ctx.setOffline(false);
     // bản mới: đổi một dòng kit.js, đánh phiên bản lại, kiểm tra cập nhật → hộp "Có bản mới" ở Sảnh → Cập nhật → tải lại đúng bản mới
     const kitOld = files['src/ui/kit.js'][0];

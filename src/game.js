@@ -108,7 +108,7 @@ const sun = addLights(scene, renderer, { shadow: shadowSize(gfx), on: gfx.shadow
 const env = arena ? buildArena(scene, ARENA, level) : buildMap(scene, DUEL, level);
 env.group.traverse((o) => { if (o.isMesh) o.castShadow = false; }); // bóng cây/đá/tường đã nướng sẵn trên nền (ground.js): lượt bóng thời gian thực chỉ vẽ nhân vật
 const floor = (x, z, r = 0) => floorAt(map, x, z, r); // mặt bệ trại quái / hang mục tiêu lớn (phần nhìn): đơn vị, hiệu ứng, chỉ báo đặt lên trên
-const views = createUnitViews(scene, 0, player.id, { floor, anisotropy: Math.min(4, renderer.capabilities.getMaxAnisotropy()) });
+const views = createUnitViews(scene, 0, player.id, { floor, anisotropy: Math.min(4, renderer.capabilities.getMaxAnisotropy()), localTint: opts.skinTint || null });
 const orbViews = createOrbViews(scene, world, { floor }); // cục máu sau trụ ngoài (sim/orbs.js)
 const indicators = createIndicators(scene, { floor });
 const towerRanges = createTowerRanges(scene);

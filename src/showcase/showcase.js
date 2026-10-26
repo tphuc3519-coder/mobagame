@@ -75,11 +75,13 @@ export function sparkles(n = 220) {
 }
 
 /** Một tướng trên sân khấu trưng bày: bản sao model (đơn vị mét), vật liệu, bộ trộn clip. ctx: { renderer, env } — env map PBR tạo khi cần, dùng chung. */
+let tintOf = () => null; // trang phục mùa (GĐ4b): ui/stage.js đặt hàm tra màu theo tướng — 4 model cao cấp luôn null
+export function setTintResolver(fn) { tintOf = typeof fn === 'function' ? fn : () => null; }
 export function makeHolder(m, id, ctx) {
   const inst = instantiate(m), obj = inst.object; obj.scale.multiplyScalar(0.01); // cm → m cho cảnh trưng bày
   const sh = inst.art.showcaseShading || inst.art.shading; // sảnh có thể dùng kiểu khác trong trận (bản trưng bày chi tiết)
   if (sh === 'pbr' && !ctx.env) ctx.env = makeEnvMap(ctx.renderer);
-  const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: ctx.env, anisotropy: Math.min(8, ctx.renderer?.capabilities.getMaxAnisotropy() ?? 1) }); // sảnh: viền sáng nhẹ theo màu tướng, không viền đen
+  const mats = prepareUnitMaterials(obj, inst.art.rim || '#ffd28a', { rim: 0.35, shading: sh, envMap: ctx.env, anisotropy: Math.min(8, ctx.renderer?.capabilities.getMaxAnisotropy() ?? 1), tint: tintOf(id) }); // sảnh: viền sáng nhẹ theo màu tướng, không viền đen
   const mixer = new THREE.AnimationMixer(obj), acts = {};
   for (const c of inst.animations) acts[c.name] = mixer.clipAction(c);
   const g = new THREE.Group(); g.add(obj);

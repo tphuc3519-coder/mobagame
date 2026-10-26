@@ -24,7 +24,7 @@ export function openDraft(nav, { mode = 'ranked' } = {}) {
   S.mode = mode;
   if (!S.match?.foes?.length) { const rr = assignRoles({ pri: p.rolePri, sec: p.roleSec }); S.match = { seed: (Math.random() * 1e9) | 0, role: rr.me, seat: 0, allies: rr.allies.map((role, i) => ({ name: 'Máy ' + (i + 1), stars: p.stars, role })), foes: rr.foes.map((role, i) => ({ name: 'Máy ' + (i + 5), stars: p.stars, role })) }; }
   const A = S.match, myRole = A.role, seat = A.seat ?? 0;
-  const rnd = mulberry32((A.seed ^ DRAFT.seedSalt) >>> 0).next, seqKey = rankOf(p.stars).tier >= DRAFT.fullFromTier ? 'full' : 'lite';
+  const rnd = mulberry32((A.seed ^ DRAFT.seedSalt) >>> 0).next, seqKey = M.peak || rankOf(p.stars).tier >= DRAFT.fullFromTier ? 'full' : 'lite'; // Đấu Đỉnh Cao: luôn đầy đủ
   const blue = [], allySeat = []; // ghế đội Xanh theo thứ tự chọn (mình ở ghế A.seat); allySeat[k] = ghế của đồng đội A.allies[k]
   for (let s = 0, k = 0; s < 5; s++) { if (s === seat) blue.push({ me: true, name: p.name, role: myRole }); else { allySeat[k] = s; blue.push(A.allies[k++]); } }
   const red = A.foes, D = createDraft({ seq: DRAFT_SEQ[seqKey], roles: [blue.map((r) => r.role), red.map((r) => r.role)], meSeat: seat });

@@ -898,3 +898,30 @@
 - iPhone: ứng dụng ở màn hình chính có bộ nhớ riêng với Safari — **mở một lần khi có mạng** rồi mới chơi không mạng được (ghi ở Cài đặt →
   Dữ liệu). Đang ở chế độ ứng dụng thì ẩn nút toàn màn (`#fs`, nút ở Sảnh).
 
+
+## GĐ4 (26/10) — mở sẵn cả 20 tướng
+- 08 §5 cho người chơi mới 6 tướng khởi đầu, phần còn lại mở bằng Xu Đèn hoặc tuần miễn phí. **Chủ dự án chốt: mở sẵn cả 20 tướng** cho mọi hồ
+  sơ (game chơi với máy, khoá tướng chỉ làm hụt nội dung). Xu Đèn chỉ dùng cho rương, bùa, trang phục; không có tuần miễn phí, không giá tướng.
+- **Mã lưu (GĐ4a)** là chuỗi chữ để dán / gửi qua tin nhắn — không cần máy chủ, chạy được cả khi chơi không mạng.
+  - Tổng kiểm FNV-1a 32 bit chỉ để bắt chép thiếu / dán nhầm, **không chống sửa**. Game chơi với máy, không có gì để gian lận.
+  - Nhập mã thì tải lại trang thay vì vá từng màn đang mở: đơn giản và chắc chắn mọi màn đọc lại hồ sơ mới.
+- **Tiền tệ GĐ4d:** vàng ở sảnh giữ tên "vàng" nhưng đóng vai Xu Đèn của 08 §5. Mọi màn đã gọi là vàng; đổi tên sẽ lẫn với vàng trong trận.
+  Hai tiền tệ mới: Mảnh Tướng, Gạo Hội.
+- **2 Bùa Giữ Sao (MVP thua) quà tân thủ không có hạn** — hồ sơ cũ đã có sẵn. Bùa nhận từ nay (nhiệm vụ, rương, đổi mảnh) có hạn 24 giờ như 08 §3.
+- **Thứ tự giữ sao khi thua:** vật phẩm có hạn dùng trước Điểm tích luỹ, vì thanh tích luỹ không hết hạn.
+- **Thẻ Nhân Đôi Sao:** bấm Dùng là tiêu thẻ ngay, gắn cho đúng một trận hạng kế tiếp (thua cũng mất). Giá cửa hàng mảnh tự đặt: 8 / 24 / 30.
+- **Mùa giải GĐ4b — chỗ tự chốt:**
+  - mùa 1 bắt đầu 01/10/2026, tính theo giờ thiết bị (offline, 08 §4) — đổi giờ máy là sang mùa, game chơi với máy nên chấp nhận;
+  - bảng thưởng hết mùa, quà Hành trình đỉnh cao, tên / màu khung là số tự đặt (08 chỉ nêu loại quà);
+  - **trang phục mùa = phối màu**, không phải model mới: dự án chưa có bộ model trang phục, nhân màu vật liệu đổi được ngay mà không phải tải gì thêm.
+    Chỉ phủ tướng của mình (trong trận + sảnh), vì bot không có trang phục.
+  - **4 model cao cấp không có trang phục mùa** (luật 11) — chặn cả ở chỗ chọn lẫn chỗ phủ màu;
+  - bỏ lỡ nhiều mùa thì chỉ thưởng mùa vừa chơi, mỗi mùa bỏ lỡ reset thêm một lượt.
+- **Hào Quang / Thiên Hà / Đấu Đỉnh Cao GĐ4c — chỗ tự chốt:**
+  - Hào Quang **theo mùa**: 08 §1 ghi "bắt đầu 1000 khi vào Nguyệt Quang", reset mềm đưa mọi người dưới Nguyệt Quang ⇒ mùa mới bắt đầu lại 1000.
+    Danh hiệu + khung ở mốc 2000 cũng theo mùa.
+  - Đỉnh Cao **×1,5 chỉ khi thắng** (thua tính như thường), và nhân **sau** giới hạn ±25 — nhân trước thì gần như không khác (23 → 25).
+  - Đỉnh Cao **tính sao như đấu hạng** (cùng luật sàn, bùa, tích luỹ, thẻ x2) và tính vào nhiệm vụ / thành thạo / trang phục mùa.
+  - Người ảo trên bảng coi như đều ở Thái Dương, nên Thiên Hà = 50 dòng đầu bảng. Bằng điểm thì người chơi đứng trên.
+  - Bảng ảo **đứng yên cả mùa** (08 §1 "cố định theo seed mùa") — muốn bảng nhích theo ngày thì sửa `virtualBoard`.
+  - Thưởng hết mùa cho Thiên Hà (3000 vàng, 150 ngọc, Khung Thiên Hà) là số tự đặt, nhỉnh hơn Thái Dương một bậc.

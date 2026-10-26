@@ -67,7 +67,7 @@ const STYLE = `
 #pg .parts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px 12px; max-width: 640px; } #pg .parts div { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #c8d0ea; white-space: nowrap; } #pg .parts .pbar { height: 4px; }
 #pg .rw { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #pg .rw > span { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 6px; border-radius: 15px; background: rgba(4,7,22,.88); box-shadow: inset 0 0 0 1px rgba(255,214,140,.35); font: 700 15px/1 var(--u-disp); letter-spacing: .03em; white-space: nowrap; }
-#pg .rw img.ui-ic { width: 28px; height: 28px; margin: -4px 0; } #pg .rw .rkb { width: 32px; height: 32px; margin: -4px 0; } #pg .rw .rkb b { display: none; }
+#pg .rw img.ui-ic { width: 28px; height: 28px; margin: -4px 0; } #pg .rw .rkb { width: 32px; height: 32px; margin: -4px 0; } #pg .rw .rkb b { display: none; } #pg .rw .hq { padding-left: 12px; } #pg .rw .hq b { color: #ffe9a8; }
 #pg .rw .up { color: #7dffa8; font-style: normal; } #pg .rw .down { color: #ff8a7a; font-style: normal; } #pg .rw em { font-style: normal; } #pg .rw .note { font: 600 12px var(--u-body); color: #ffe08a; padding: 0 4px; }
 #pg .cg { display: flex; align-items: center; gap: 8px; font: 700 12px/1 var(--u-disp); letter-spacing: .06em; text-transform: uppercase; color: #ffcf8a; } #pg .cg .pbar { width: 150px; height: 5px; } #pg .cg .pbar > i { background: linear-gradient(90deg, #ff6a2a, #ffc85a 70%, #fff0c0); }
 /* C — bảng tỉ số */
@@ -142,9 +142,12 @@ export function openPostgame(o) {
     const med = (k, label, v) => `<div class="md ${medalOf(me, rows, k)}"><i>${icon(MED_ICON[k])}</i><b>${v}</b><small>${label}</small></div>`;
     const parts = PARTS.map(([k, n, max]) => `<div>${n} ${me.parts[k].toFixed(1)}/${max}<span class="pbar"><i style="width:${Math.round((me.parts[k] / max) * 100)}%"></i></span></div>`).join('');
     let rank = '';
-    if (o.mode === 'ranked' && rw.rankAfter) {
+    if ((o.mode === 'ranked' || o.mode === 'peak') && rw.rankAfter) {
       const d = rw.stars, cls = d > 0 ? 'up' : d < 0 ? 'down' : '';
       rank = `<span>${rankBadge(rw.rankAfter, 32)}${rw.rankAfter.name} <i class="stars">${stars(rw.rankAfter)}</i> <em class="${cls}">${d > 0 ? `+${d} sao` : d < 0 ? `${d} sao` : 'giữ sao'}</em></span>`;
+      const h = rw.hq; // GĐ4c: Điểm Hào Quang (Nguyệt Quang trở lên)
+      if (h?.start) rank += `<span class="hq">Hào Quang <b>${h.now}</b> <em class="up">bắt đầu</em></span>`;
+      else if (h && h.now != null && (h.delta || rw.rankBefore?.tier >= 6)) rank += `<span class="hq">Hào Quang <b>${h.now}</b> <em class="${h.delta > 0 ? 'up' : h.delta < 0 ? 'down' : ''}">${h.delta > 0 ? '+' : ''}${h.delta}${o.mode === 'peak' && h.delta > 0 ? ' (×1,5)' : ''}</em></span>`;
     }
     const notes = (rw.notes || []).map((n) => `<span class="note">${n}</span>`).join('');
     const cg = rw.courage ? `<div class="cg">Điểm tích luỹ +${rw.courage.gain}<span class="pbar"><i style="width:${Math.round((rw.courage.now / COURAGE_MAX) * 100)}%"></i></span>${rw.courage.now}/${COURAGE_MAX}</div>` : '';

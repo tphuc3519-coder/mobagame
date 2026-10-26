@@ -20,7 +20,7 @@ const SCALES = [1, 1.25, 1.5, 2], DETAIL = ['low', 'mid', 'high'];
 const CARDS = [['low', 'Ưu tiên độ mượt', 'Mượt, tiết kiệm pin'], ['mid', 'Cân bằng', 'Đẹp vừa, mát máy'], ['high', 'Ưu tiên chất lượng', 'Đồ hoạ cao, hao pin'], ['custom', 'Tuỳ chỉnh', 'Chỉnh từng mục bên dưới']];
 
 /** Các dòng của từng thẻ. Dòng: { t: 'cards'|'slider'|'range'|'radio'|'toggle'|'pill'|'sound'|'note'|'button', … get/set }. */
-function schema({ g, gfxSet, inMatch, onReset }) {
+function schema({ g, gfxSet, inMatch, onReset, onSave }) {
   const P = (k) => ({ get: () => prefs()[k], set: (v) => setPref(k, v), k });
   const radio = (k, label, opts) => ({ t: 'radio', label, opts, ...P(k) });
   const tog = (k, label, desc = '') => ({ t: 'toggle', label, desc, ...P(k) });
@@ -83,6 +83,11 @@ function schema({ g, gfxSet, inMatch, onReset }) {
       tog('saveData', 'Tiết kiệm dữ liệu', 'Không tải trước hình 3D các tướng khi đang ở sảnh — chỉ tải tướng trong trận lúc vào trận (đỡ tốn 3G/4G)'),
       ...(canInstall() ? [{ t: 'button', label: 'Cài game vào máy', text: 'Thêm vào màn hình chính', act: () => promptInstall() }] : []),
       { t: 'note', html: pwaNote() },
+      ...(!inMatch && onSave ? [ // GĐ4a: mã lưu (ui/saveDialogs.js) — chuyển hồ sơ sang trình duyệt / máy khác
+        { t: 'button', label: 'Xuất mã lưu', text: 'Xuất mã lưu', act: () => onSave('export') },
+        { t: 'button', label: 'Nhập mã lưu', text: 'Nhập mã lưu', act: () => onSave('import') },
+        { t: 'note', html: 'Mã lưu chứa hồ sơ, hạng, túi đồ, bảng bùa, phù hiệu và cài đặt. Hồ sơ chỉ lưu trong trình duyệt này — trước khi xoá dữ liệu trình duyệt hay đổi máy, hãy xuất mã lưu.' },
+      ] : []),
       { t: 'note', html: 'Trận đấu với máy chạy ngay trên điện thoại: không cần mạng khi đang đấu; cài vào màn hình chính thì mở game cũng không cần mạng. Trò chuyện, mic chưa có vì chưa có chơi trực tuyến — tín hiệu (ping) cho đồng đội máy thì đã có.' },
     ],
   };
@@ -124,14 +129,15 @@ export function closeSettings() { open?.(); }
 
 /**
  * Mở bảng Cài đặt. o: { gfx (đối tượng cài đặt đồ hoạ — sửa tại chỗ), onGfx(k) (trong trận: áp dụng ngay), inMatch,
- *   surrender, surrenderAfter (giây), now() (giây trận), onReset() (sảnh: xoá dữ liệu), onClose }. Trả về hàm đóng.
+ *   surrender, surrenderAfter (giây), now() (giây trận), onReset() (sảnh: xoá dữ liệu), onSave('export'|'import') (sảnh: mã lưu), onClose }.
+ *   Trả về hàm đóng.
  */
 export function openSettings(o = {}) {
   if (open) return open;
   css();
   const g = o.gfx, inMatch = !!o.inMatch;
   const gfxSet = (patch) => { Object.assign(g, patch); g.preset = presetOf(g); saveGfx(g); o.onGfx?.(Object.keys(patch)[0]); if (!inMatch) hint(); };
-  const rows = schema({ g, gfxSet, inMatch, onReset: (keys) => { resetPrefs(keys); draw(); } });
+  const rows = schema({ g, gfxSet, inMatch, onReset: (keys) => { resetPrefs(keys); draw(); }, onSave: o.onSave });
   let tab = 'gfx'; try { const t = localStorage.getItem(TAB_KEY); if (rows[t]) tab = t; } catch (_) { /* riêng tư */ }
   const wrap = document.createElement('div'); wrap.className = 'lqs-wrap';
   wrap.innerHTML = `<div class="lqs" role="dialog" aria-label="Cài đặt"><header><h2>Cài đặt</h2><button type="button" class="x" aria-label="Đóng">${X}</button></header>

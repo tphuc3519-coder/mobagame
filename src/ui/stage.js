@@ -2,7 +2,10 @@
 // tướng + bệ + đèn bay lên phông dựng sẵn (#showbg: quảng trường đêm ở sảnh, bản mờ ở chọn tướng / đội hình, có thể thêm tia sáng xoay
 // sau lưng tướng); ẩn + ngừng vẽ ở phòng chờ, giải phóng hẳn trước khi vào trận (trận tạo renderer riêng — hai ngữ cảnh cùng lúc dễ làm
 // điện thoại yếu mất đồ hoạ).
-import { createShowcase } from '../showcase/showcase.js';
+import { createShowcase, setTintResolver } from '../showcase/showcase.js';
+import { profile } from './profile.js';
+import { skinTint } from './season.js';
+setTintResolver((id) => skinTint(profile(), id)); // trang phục mùa đang bật
 import { pickLevel } from '../render/quality.js';
 
 let show = null, poll = 0, busy = 0;

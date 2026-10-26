@@ -40,7 +40,7 @@ export function releaseSkeletons(root) { root.traverse((o) => { if (o.isSkinnedM
 /** Bán kính cầu xét "trong khung nhìn" quanh chân đơn vị: đủ trùm thân + bóng đổ (nắng xiên ~0,8 × chiều cao) + camera trượt 1 khung. */
 const cullR = (e) => (e.kind === 'minion' ? 300 : e.kind === 'monster' ? Math.max(380, e.radius * 4) : 560);
 const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
-export function createUnitViews(scene, localTeam, localId, { floor = null, anisotropy = 1 } = {}) { // anisotropy: lọc xiên texture tướng (renderer.capabilities)
+export function createUnitViews(scene, localTeam, localId, { floor = null, anisotropy = 1, localTint = null } = {}) { // localTint: trang phục mùa của tướng người chơi (ui/season.js skinTint — không bao giờ có cho 4 model cao cấp) // anisotropy: lọc xiên texture tướng (renderer.capabilities)
   const views = new Map(), aliveIds = new Set();
   let dead = false; // đã dọn (rời trận): bỏ các lần tải model đang chờ
   // Lính / quái ngoài khung nhìn: tách khỏi cảnh (không vẽ, không vẽ bóng, không tính ma trận xương) và thôi chạy hoạt ảnh. Mesh có
@@ -61,7 +61,7 @@ export function createUnitViews(scene, localTeam, localId, { floor = null, aniso
     }
     if (e.kind === 'minion') { const golem = e.minionType === 'golem'; v.part = createMinion(golem ? 'giant' : e.minionType, e.team); if (golem) v.part.object.scale.multiplyScalar(1.45); root.add(v.part.object); v.atk = 0; return v; } // Người Đá Đèn: thân Lính Đèn Lớn phóng to // lính chỉ bóng tròn: ~20 lính mỗi khung đổ bóng thật = thêm ~20 lượt vẽ có xương
     if (e.kind === 'monster') { v.part = createMonster(e.monsterType, e.member); root.add(v.part.object); castShadows(v.part.object); v.atk = 0; return v; }
-    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, undefined, { shading: art?.shading, anisotropy, soft: true }); castShadows(obj); }; // không viền (02 §13.3)
+    const attach = (obj, art) => { root.add(obj); v.mats = prepareUnitMaterials(obj, undefined, { shading: art?.shading, anisotropy, soft: true, tint: e.id === localId ? localTint : null }); castShadows(obj); }; // không viền (02 §13.3)
     if (e.kind === 'dummy') { attach(createDummy().object); return v; }
     const useCapsule = () => {
       if (v.capsule) return;
