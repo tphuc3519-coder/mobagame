@@ -544,3 +544,28 @@ Còn lại:
   - `node tools/t_season.mjs` — 35 mục;
   - `b_prog.cjs season844 season1280`: thẻ Mùa giải nằm trọn màn hình, nhận quà Hành trình, đeo khung; **đổi giờ thiết bị sang mùa sau** → Nhận thưởng Sao Mai + reset Hải Đăng II → Đèn Trời III, mở lại không thưởng lần hai;
   - `b_prog.cjs skin`: trong trận mọi vật liệu thân của Kiếm Thuỷ = bên địch × màu Hoàng Kim; Nguyệt Hạ không đổi.
+
+## GĐ4c (26/10) — Điểm Hào Quang, bảng Top 100, Thiên Hà, Đấu Đỉnh Cao
+- **Điểm Hào Quang** (`src/data/haoQuang.js`, `ui/haoQuang.js`):
+  - bắt đầu 1000 khi vào Nguyệt Quang (hồ sơ đã ở Nguyệt Quang từ trước cũng có sẵn 1000);
+  - thắng `+15 + (điểm − 8)`, thua `−15 + (điểm − 8)/2`, giới hạn ±25; rớt xuống dưới Nguyệt Quang thì điểm đứng yên;
+  - chạm 2000: danh hiệu **Hào Quang Chói Sáng** + Khung Hào Quang (một lần mỗi mùa, hiện ở màn Nhận thưởng);
+  - sảnh có thanh "Hào Quang n/2000", màn kết quả ghi "Hào Quang n +d", hồ sơ ghi điểm + danh hiệu;
+  - hết mùa thì về lại (reset xong mọi người dưới Nguyệt Quang, vào lại thì bắt đầu 1000).
+- **Bảng Top 100 khu** (thẻ mới trong bảng Xếp hạng): 100 người chơi ảo, điểm phân bố chuẩn quanh 2800 (σ 300), cố định theo seed mùa.
+  Thẻ điểm + hạng của mình dính trên đầu khi cuộn; mở bảng là cuộn tới dòng của mình; ngoài top 100 thì ghi điểm người thứ 100.
+- **Thiên Hà** (bậc 9): Thái Dương lọt top 50 bảng → huy hiệu Thiên Hà ở sảnh / phòng / hồ sơ / màn kết quả (`rankFull`).
+  Huy hiệu mới `assets/ui/icons/rank_thien_ha.webp` dựng bằng `tools/uiart/icons.cjs` (xoáy thiên hà tím). Vào Thiên Hà lúc nào đó trong mùa
+  → thưởng hết mùa riêng (3000 vàng, 150 ngọc, Khung Thiên Hà).
+- **Đấu Đỉnh Cao** (chế độ `peak`):
+  - mở 19:00–24:00 giờ thiết bị, cần Nguyệt Quang; thẻ trong Chọn chế độ khoá kèm giờ mở ("Mở lúc 19:00 (còn 9 giờ)"), chạm thì báo, không vào phòng;
+  - tính sao như đấu hạng, máy Ác mộng, cấm/chọn đầy đủ 6 cấm; thắng ×1,5 Hào Quang;
+  - ngồi phòng tới quá 24:00 thì nút tìm trận báo hết giờ.
+- Kiểm thử:
+  - `node tools/t_haoquang.mjs` — 28 mục (công thức, bắt đầu 1000, mốc 2000 một lần, Đỉnh Cao, bảng ảo, Thiên Hà, hết mùa, 10 trận rồi mở lại còn nguyên, giờ mở);
+  - `b_prog.cjs peak844 peak1280`: sảnh có huy hiệu Thiên Hà + thanh Hào Quang; 10:00 thẻ Đỉnh Cao khoá; 20:00 vào phòng (Ác mộng, 6 cấm, ×1,5) → cấm/chọn → **đánh
+    một trận thắng** → màn kết quả "Hào Quang 3088 +15 (×1,5)" → Nhận thưởng có Khung Hào Quang → bảng Top 100 đúng hạng.
+- **Tai thỏ (Mốc 12):** `b_flow.cjs ranked844` giờ giả lập vùng an toàn (trái / phải 47 px, đáy 21 px — CDP `Emulation.setSafeAreaInsetsOverride`)
+  và soi bảy màn: sảnh, phòng chờ, cấm/chọn, chuẩn bị, trong trận, kết quả, nhận thưởng — không nút nào được lấn vùng an toàn (phần bị khung cuộn che thì bỏ qua).
+  Bắt được một lỗi thật: nút **Đẩy trụ** thò ra ngoài khung nút kỹ năng ~10 px (và **Ăn lính** ~1 px dưới đáy) nên lấn vào tai thỏ / thanh vuốt —
+  kẹp vị trí ≥ 0 trong `index.html` (`.amode`).

@@ -143,8 +143,9 @@
   /* nút Ăn lính (dưới-trái nút Đánh) và Đẩy trụ (trên-phải nút Đánh), như Liên Quân; d = khoảng cách tâm tới tâm nút Đánh */
   .amode { --d: calc(var(--a) * 0.5 + var(--m) * 0.5 + 9px); width: var(--m); height: var(--m); padding: 0; border-radius: 50%; border: 2px solid #d9b866; background: radial-gradient(circle at 50% 30%, #3c4470, #161a34 70%, #0c0f22); box-shadow: 0 0 0 2px #0009, inset 0 2px 6px #ffffff22, 0 3px 10px #000b; display: grid; place-items: center; }
   .amode svg { width: 76%; height: 76%; filter: drop-shadow(0 1px 1px #000c); } .amode.down { background: radial-gradient(circle at 50% 35%, #6a5a2a, #2a2010 75%); border-color: #ffd27a; box-shadow: 0 0 12px #ffd27a; }
-  .amode[data-k="minion"] { right: calc(var(--a) * 0.5 + var(--d) * 0.94 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 - var(--d) * 0.342 - var(--m) * 0.5); }
-  .amode[data-k="tower"] { right: calc(var(--a) * 0.5 - var(--d) * 0.469 - var(--m) * 0.5); bottom: calc(var(--a) * 0.5 + var(--d) * 0.883 - var(--m) * 0.5); }
+  /* kẹp ≥ 0: nút không thò ra ngoài khung #skills — khung đã chừa vùng an toàn (tai thỏ, thanh vuốt), thò ra là lấn vào đó (b_flow ranked844) */
+  .amode[data-k="minion"] { right: calc(var(--a) * 0.5 + var(--d) * 0.94 - var(--m) * 0.5); bottom: max(0px, calc(var(--a) * 0.5 - var(--d) * 0.342 - var(--m) * 0.5)); }
+  .amode[data-k="tower"] { right: max(0px, calc(var(--a) * 0.5 - var(--d) * 0.469 - var(--m) * 0.5)); bottom: calc(var(--a) * 0.5 + var(--d) * 0.883 - var(--m) * 0.5); }
   .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 0 4px #000, 0 0 2px #000; } .sk .nm { display: none; }
   .sk .sknm { display: none; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); z-index: 6; padding: 1px 7px; border-radius: 8px; background: #0b0e1ed9; color: #fff; font: 700 11px/1.3 'Be Vietnam Pro', system-ui, sans-serif; white-space: nowrap; text-shadow: 0 1px 2px #000; pointer-events: none; }
   #skills.names .sk .sknm { display: block; } /* Cài đặt: tên chiêu dưới nút */

@@ -917,3 +917,11 @@
     Chỉ phủ tướng của mình (trong trận + sảnh), vì bot không có trang phục.
   - **4 model cao cấp không có trang phục mùa** (luật 11) — chặn cả ở chỗ chọn lẫn chỗ phủ màu;
   - bỏ lỡ nhiều mùa thì chỉ thưởng mùa vừa chơi, mỗi mùa bỏ lỡ reset thêm một lượt.
+- **Hào Quang / Thiên Hà / Đấu Đỉnh Cao GĐ4c — chỗ tự chốt:**
+  - Hào Quang **theo mùa**: 08 §1 ghi "bắt đầu 1000 khi vào Nguyệt Quang", reset mềm đưa mọi người dưới Nguyệt Quang ⇒ mùa mới bắt đầu lại 1000.
+    Danh hiệu + khung ở mốc 2000 cũng theo mùa.
+  - Đỉnh Cao **×1,5 chỉ khi thắng** (thua tính như thường), và nhân **sau** giới hạn ±25 — nhân trước thì gần như không khác (23 → 25).
+  - Đỉnh Cao **tính sao như đấu hạng** (cùng luật sàn, bùa, tích luỹ, thẻ x2) và tính vào nhiệm vụ / thành thạo / trang phục mùa.
+  - Người ảo trên bảng coi như đều ở Thái Dương, nên Thiên Hà = 50 dòng đầu bảng. Bằng điểm thì người chơi đứng trên.
+  - Bảng ảo **đứng yên cả mùa** (08 §1 "cố định theo seed mùa") — muốn bảng nhích theo ngày thì sửa `virtualBoard`.
+  - Thưởng hết mùa cho Thiên Hà (3000 vàng, 150 ngọc, Khung Thiên Hà) là số tự đặt, nhỉnh hơn Thái Dương một bậc.

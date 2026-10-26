@@ -2,7 +2,7 @@
 // thành thạo, trang phục mùa (10 trận hạng thắng), khung ảnh đại diện. Hàm thuần trên đối tượng hồ sơ p (không import ui/profile.js — profile.js
 // gọi vào đây, tránh vòng import). Thưởng trả về dạng mô tả { gold, gems, manh, item, frame, skin }; profile.js cộng vào hồ sơ.
 import { seasonAt, seasonByN, SOFT_RESET, SEASON_END, JOURNEY, MASTERY, SEASON_SKIN, SKIN_LOCKED, skinLook } from '../data/seasons.js';
-import { rankOf, starsAt } from '../data/ranks.js';
+import { rankOf, starsAt, GALAXY } from '../data/ranks.js';
 
 const int = (v) => (Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
 /** Làm sạch trường mùa giải (hồ sơ cũ / sửa tay). */
@@ -26,10 +26,12 @@ export function rollSeason(p, now = Date.now()) {
   const cur = seasonAt(now);
   if (!Number.isInteger(p.season) || p.season < 1) { p.season = cur.n; p.seasonPeak = Math.max(p.seasonPeak, p.stars | 0); return null; }
   if (p.season >= cur.n) return null;
-  const old = seasonByN(p.season), peak = rankOf(Math.max(p.seasonPeak, p.stars | 0)), from = rankOf(p.stars | 0);
+  const old = seasonByN(p.season), gal = p.galaxyPeak === true, from = rankOf(p.stars | 0);
+  const peak = gal ? { ...rankOf(p.stars | 0), tier: GALAXY.tier, id: GALAXY.id, name: GALAXY.name, short: GALAXY.name, col: GALAXY.col } : rankOf(Math.max(p.seasonPeak, p.stars | 0));
   let stars = p.stars | 0;
   for (let s = p.season; s < cur.n; s++) { const to = SOFT_RESET[rankOf(stars).tier]; if (to) stars = Math.min(stars, starsAt(to[0], to[1])); } // mỗi mùa bỏ lỡ reset thêm một lần (mùa không chơi: không thưởng)
   p.stars = stars; p.season = cur.n; p.seasonPeak = stars; p.seasonWins = 0; p.mastery = {}; p.journey = [];
+  p.hq = null; p.hqBest = 0; p.galaxyPeak = false; // Hào Quang theo mùa: reset xong ai cũng dưới Nguyệt Quang, vào lại thì bắt đầu 1000 (08 §1)
   const reward = { ...SEASON_END[Math.min(peak.tier, SEASON_END.length - 1)] };
   if (reward.frame) reward.frame = { id: reward.frame, season: old.n };
   return { n: old.n, name: old.name, peak, reward, from, to: rankOf(stars), skipped: cur.n - old.n - 1 };

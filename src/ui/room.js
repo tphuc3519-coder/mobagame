@@ -4,7 +4,7 @@
 // lúc tìm thấy trận chia vị trí (vị trí chính / phụ) cho mình, đồng đội và đối thủ.
 import { DIFFICULTY } from '../data/ai.js';
 import { ICON, icon, face, rankBadge, stars, toast } from './kit.js';
-import { profile, rankOf, eventState } from './profile.js';
+import { profile, rankNow, peakNow, eventState } from './profile.js';
 import { FRIENDS, statusText, chatLine, botNames, nearStars } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
 import { stageOn } from './stage.js';
@@ -38,7 +38,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const members = [...S.party.map((f) => ({ kind: 'fr', f })), ...[...pending.keys()].map((f) => ({ kind: 'wait', f }))];
     members.forEach((m, i) => { if (order[i] !== undefined) cells[order[i]] = m; });
     return cells.map((c) => {
-      if (c.kind === 'me') { const r = rankOf(p.stars); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span>${M.map === '5v5' ? roleChip(p) : ''}</div>`; }
+      if (c.kind === 'me') { const r = rankNow(); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span>${M.map === '5v5' ? roleChip(p) : ''}</div>`; }
       if (c.kind === 'fr') return `<div class="seat mate"><div class="box fr blue">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="sn">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 22)}${c.f.rank.name}</span></div>`;
       if (c.kind === 'wait') return `<div class="seat wait"><div class="box fr blue">${face(c.f.avatar)}</div><b class="sn">${c.f.name}</b><span class="rk">Đang mời…</span></div>`;
       return `<div class="seat empty"><div class="box" data-a="invite"><i class="plus">+</i></div><b class="sn">Mời bạn</b></div>`;
@@ -54,10 +54,10 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     }).join('');
   };
   const ev = eventState(); // banner sự kiện tích luỹ (08 §6)
-  const r = rankOf(p.stars);
+  const r = rankNow(), full = M.peak || r.tier >= DRAFT.fullFromTier;
   el.innerHTML = `
     <div class="rm-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2 class="gt">${M.name}</h2></div>
-    <div class="rm-sub"><span>Bản đồ <b>${M.mapName}</b></span><span>Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b></span>${M.ranked ? `<span>${rankBadge(r, 20)}<b>${r.name}</b> <i class="stars">${stars(r)}</i></span><span>Cấm/chọn <b>${DRAFT_NAME[r.tier >= DRAFT.fullFromTier ? 'full' : 'lite']}</b></span>` : ''}</div>
+    <div class="rm-sub"><span>Bản đồ <b>${M.mapName}</b></span><span>Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b></span>${M.ranked ? `<span>${rankBadge(r, 20)}<b>${r.name}</b> <i class="stars">${stars(r)}</i></span><span>Cấm/chọn <b>${DRAFT_NAME[full ? 'full' : 'lite']}</b></span>` : ''}${M.peak ? `<span>Hào Quang <b>${p.hq ?? '—'}</b> · thắng <b>×1,5</b></span>` : ''}</div>
     <div class="rm-slots"></div>
     <aside class="rm-side">
       <div class="rm-tabs"><button type="button" data-tab="fr" class="on">${icon('friends')}<span>Bạn bè</span></button><button type="button" data-tab="chat">${icon('chat')}<span>Trò chuyện</span></button></div>
@@ -137,7 +137,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const k = e.target.closest('[data-kick]'); if (k) { S.party = S.party.filter((f) => f.id !== k.dataset.kick); render(); return; }
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'back') { stopSearch(); nav.go('home'); }
-    else if (a === 'go') (mm ? stopSearch() : startSearch());
+    else if (a === 'go') { if (!mm && M.peak && !peakNow().open) { toast(peakNow().reason); return; } (mm ? stopSearch() : startSearch()); } // Đỉnh Cao: hết giờ trong lúc ngồi phòng
     else if (a === 'role') { if (mm) toast('Đang tìm trận — huỷ tìm để đổi vị trí'); else openRoleDialog({ onDone: render }); }
     else if (a === 'invite') { if (M.size === 1 || mm) return; const f = FRIENDS.find((x) => x.status === 'online' && !S.party.includes(x) && !pending.has(x)); if (f) invite(f); else toast('Không còn bạn nào đang trực tuyến'); }
     else if (a === 'quick') { for (const f of FRIENDS.filter((x) => x.status === 'online' && !S.party.includes(x) && !pending.has(x))) if (room() > 0) invite(f); }

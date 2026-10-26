@@ -23,10 +23,11 @@ export function seasonLeft(now = Date.now()) {
 // Chỉ số bậc theo data/ranks.js: 0 Đèn Dầu · 1 Đèn Lồng · 2 Đèn Kéo Quân · 3 Đèn Trời · 4 Hải Đăng · 5 Sao Mai · 6 Nguyệt Quang · 7 Thái Dương.
 /** Bậc cuối mùa → [bậc mùa sau, phân hạng] (null: giữ nguyên). */
 export const SOFT_RESET = [null, null, null, [2, 'I'], [3, 'III'], [4, 'V'], [5, 'V'], [5, 'V']];
-/** Thưởng hết mùa theo bậc cao nhất đạt được trong mùa. */
+/** Thưởng hết mùa theo bậc cao nhất đạt được trong mùa; ô cuối (chỉ số 8) là Thiên Hà — đã lọt top 50 bảng Hào Quang lúc nào đó trong mùa. */
 export const SEASON_END = [
   { gold: 200 }, { gold: 400 }, { gold: 600 }, { gold: 800, manh: 5 },
   { gold: 1200, manh: 10, frame: 'hai_dang' }, { gold: 1600, manh: 15, frame: 'sao_mai' }, { gold: 2000, gems: 50, frame: 'nguyet_quang' }, { gold: 2500, gems: 100, frame: 'thai_duong' },
+  { gold: 3000, gems: 150, frame: 'thien_ha' },
 ];
 /** Hành trình đỉnh cao: quà mở theo bậc cao nhất trong mùa, nhận một lần mỗi mùa. */
 export const JOURNEY = [
@@ -50,4 +51,5 @@ export const FRAMES = {
   hai_dang: { name: 'Khung Hải Đăng', col: '#7fe6d6' }, sao_mai: { name: 'Khung Sao Mai', col: '#ffd36a' }, nguyet_quang: { name: 'Khung Nguyệt Quang', col: '#d8d0ff' },
   thai_duong: { name: 'Khung Thái Dương', col: '#ff9a3a' }, hanh_trinh: { name: 'Khung Hành Trình', col: '#8fd0ff' }, thanh_thao: { name: 'Khung Thành Thạo', col: '#7dffa8' },
   hao_quang: { name: 'Khung Hào Quang Chói Sáng', col: '#fff1b0' },
+  thien_ha: { name: 'Khung Thiên Hà', col: '#b88aff' },
 };

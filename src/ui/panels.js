@@ -7,13 +7,14 @@ import { openExport, openImport } from './saveDialogs.js';
 import { loadGfx } from '../render/quality.js';
 import { ICON, icon, face, cardSrc, panel, dialog, toast, fmt, rankBadge, stars } from './kit.js';
 import { hasPaintedSkill, paintedSkill } from '../hud/paint.js';
-import { profile, saveProfile, rankOf, expNeed, missionList, claimMission, weekBonusReady, claimWeekBonus, eventState, claimEvent, mailbox, claimMail, BAG_ITEMS } from './profile.js';
+import { profile, saveProfile, rankOf, rankNow, expNeed, missionList, claimMission, weekBonusReady, claimWeekBonus, eventState, claimEvent, mailbox, claimMail, BAG_ITEMS } from './profile.js';
 import { WEEK_BONUS } from '../data/missions.js';
 import { FRIENDS, statusText } from './people.js';
 import { MODES } from './modes.js';
 import { skillDesc } from './skilltext.js';
 import { showRewards } from './rewards.js';
 import { seasonHtml, seasonClick } from './seasonPanel.js';
+import { boardHtml } from './boardPanel.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
@@ -82,13 +83,13 @@ export const panelCss = css; // dùng chung cho bảng ở file khác (ui/bagPan
 const gold = (n) => `<span class="cur">${icon('coin')}<b>${fmt(n)}</b></span>`;
 
 export function openProfile(onChange) {
-  css(); const p = profile(), r = rankOf(p.stars), best = rankOf(p.best);
+  css(); const p = profile(), r = rankNow(), best = rankOf(p.best);
   const { body } = panel({ title: 'Hồ sơ', right: gold(p.gold) });
   const render = () => {
     const kda = p.deaths ? ((p.kills + p.assists) / p.deaths).toFixed(1) : (p.kills + p.assists).toFixed(1);
     body.innerHTML = `<div class="pn-prof"><div class="av">${face(p.avatar)}</div><div>
       <h3><span class="gt">${p.name}</span><button type="button" class="icb" data-a="name" aria-label="Đổi tên">${ICON.edit()}</button></h3>
-      <div class="rkrow">${rankBadge(r, 60)}<div><b>${r.name}</b><span class="stars">${stars(r)}</span><small>Cao nhất: ${best.name}</small></div></div>
+      <div class="rkrow">${rankBadge(r, 60)}<div><b>${r.name}</b><span class="stars">${stars(r)}</span><small>Cao nhất: ${best.name}${p.hq != null ? ` · Hào Quang ${p.hq}` : ''}${p.hqTitle && p.hqTitle === p.season ? ' · Hào Quang Chói Sáng' : ''}</small></div></div>
       <div class="lvrow">Cấp <b>${p.level}</b><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span><span>${p.exp}/${expNeed(p.level)} KN</span></div>
       <div class="pn-avs">${ALPHA.map((id) => `<button type="button" data-av="${id}" class="${id === p.avatar ? 'on' : ''}">${face(id)}</button>`).join('')}</div></div></div>
       <div class="pn-stats"><div><small>Tổng số trận</small><b>${p.games}</b></div><div><small>Tỉ lệ thắng</small><b>${p.games ? Math.round(p.wins / p.games * 100) : 0}%</b></div>
@@ -231,11 +232,12 @@ export function openLeaderboard(tab0 = 'season', onChange = null) {
   css(); const p = profile(); const { body } = panel({ title: 'Xếp hạng', onClose: onChange }); // đóng bảng: sảnh vẽ lại (khung ảnh, vàng)
   let tab = tab0;
   const friends = () => [...FRIENDS.map((f) => ({ name: f.name, avatar: f.avatar, stars: f.stars })), { name: p.name, avatar: p.avatar, stars: p.stars, me: true }].sort((a, b) => b.stars - a.stars)
-    .map((r, i) => { const rk = rankOf(r.stars);
+    .map((r, i) => { const rk = r.me ? rankNow() : rankOf(r.stars);
       return `<div class="pn-row ${r.me ? 'me' : ''}"><span class="no n${i + 1}">${i + 1}</span>${face(r.avatar)}<div><b>${r.name}${r.me ? ' (bạn)' : ''}</b><small>${rk.name} · ${rk.max ? `${rk.star}/${rk.max} sao` : `${rk.star} sao`}</small></div>${rankBadge(rk, 40)}</div>`; }).join('');
   const render = () => {
-    body.innerHTML = `<div class="pn-tabs">${[['season', 'Mùa giải'], ['friends', 'Bạn bè']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`
-      + (tab === 'season' ? seasonHtml() : friends());
+    body.innerHTML = `<div class="pn-tabs">${[['season', 'Mùa giải'], ['top', 'Top 100'], ['friends', 'Bạn bè']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`
+      + (tab === 'season' ? seasonHtml() : tab === 'top' ? boardHtml() : friends());
+    if (tab === 'top') body.querySelector('.tb-list .me')?.scrollIntoView({ block: 'center' }); // hạng của mình nằm giữa khung
   };
   render();
   body.onclick = (e) => { const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; render(); return; } if (tab === 'season') seasonClick(e, render); };

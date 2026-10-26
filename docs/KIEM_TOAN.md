@@ -346,7 +346,7 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - **3 vòng tướng thành thạo:** 5 trận hạng thắng với mỗi tướng, 3 tướng khác nhau.
 - **Trang phục mùa** (10/10 trận hạng thắng): phối màu riêng cho một tướng chọn trước mùa. **Không áp cho 4 model cao cấp** (luật 11).
 
-### 4c — Điểm Hào Quang, Thiên Hà, Đấu Đỉnh Cao
+### 4c — Điểm Hào Quang, Thiên Hà, Đấu Đỉnh Cao ✅ (26/10 — `t_haoquang.mjs` 28 mục, `b_prog.cjs` peak844 / peak1280)
 - **Hào Quang:**
   - bắt đầu 1000 khi vào Nguyệt Quang;
   - thắng `+15 + (điểm − 8)`, thua `−15 + (điểm − 8)/2`, trần ±25;
@@ -372,10 +372,10 @@ Hiện có: bậc hạng 1–8 + sao, Điểm tích luỹ, Bùa Giữ Sao (MVP t
 - Dưới cùng ghi "Chạm vào khoảng trống để tiếp tục".
 - Dùng cho: sau màn kết quả, nhận nhiệm vụ / thư / rương / quà mùa.
 
-*Xong khi* (theo Mốc 12–13):
-- chơi 10 trận hạng, tắt / mở lại trình duyệt, mọi số liệu còn nguyên;
-- đổi giờ thiết bị sang ngày hết mùa → nhận thưởng và reset đúng bảng;
-- Xuất / Nhập mã lưu sang trình duyệt khác thành công;
-- đi hết Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ không lỗi ở 19,5:9 và 16:9, có tai thỏ.
+*Xong khi* (theo Mốc 12–13) — **đạt cả bốn (26/10)**:
+- ✅ chơi 10 trận hạng, tắt / mở lại trình duyệt, mọi số liệu còn nguyên (`t_haoquang.mjs` mục 8);
+- ✅ đổi giờ thiết bị sang ngày hết mùa → nhận thưởng và reset đúng bảng (`b_prog.cjs season844/1280`);
+- ✅ Xuất / Nhập mã lưu sang trình duyệt khác thành công (`b_prog.cjs save844/1280`);
+- ✅ đi hết Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả → **Nhận thưởng** → Phòng chờ không lỗi ở 19,5:9 và 16:9, có tai thỏ (`b_flow.cjs ranked844/1280`).
 
 Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `docs/DECISIONS.md`.

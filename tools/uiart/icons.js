@@ -157,6 +157,7 @@ const TIER = [
   { id: 'sao_mai', m: 'gold', c: '#ffe07a', wings: 2 },
   { id: 'nguyet_quang', m: 'violet', c: '#c8a8ff', wings: 3 },
   { id: 'thai_duong', m: 'gold', c: '#ff8a2a', wings: 3 },
+  { id: 'thien_ha', m: 'violet', c: '#b06aff', wings: 3 }, // GĐ4c: Thái Dương top 50 Hào Quang
 ];
 function wingsOf(x, t, m, n) { // n+2 lông vũ mỗi bên, lông trên dài và vểnh cao, toả ra ngoài hai bên khiên
   const k0 = n + 1;
@@ -181,6 +182,15 @@ function symbol(x, r, i, t, c) {
     fillA(x, P('M-7 0h14v4h-14zM-8 10h16v4h-16z', { cx, cy, s }), 'rgba(200,40,40,0.85)'); glow(x, cx, cy - 12 * s, 9 * s, '#ffffff', 0.9);
   } else if (i === 5) { const p = P(starPath(8, 17, 7), { cx, cy, s }); shine(x, p, c, 10, 0.8); x.fillStyle = rad(x, cx, cy, 18 * s, [[0, '#ffffff'], [0.5, '#fff0b0'], [1, c]]); x.fill(p); }
   else if (i === 6) { const p = P('M6-18A18 18 0 1 0 6 18A14 14 0 1 1 6-18Z', { cx: cx - 2 * s, cy, s }); shine(x, p, c, 10, 0.8); x.fillStyle = rad(x, cx - 8 * s, cy, 20 * s, [[0, '#ffffff'], [0.6, '#e8e0ff'], [1, c]]); x.fill(p); }
+  else if (i === 8) { // thiên hà: xoáy ba nhánh tím quanh lõi sáng, rắc sao nhỏ
+    x.save(); x.globalCompositeOperation = 'lighter';
+    for (let a = 0; a < 3; a++) for (let k = 0; k < 24; k++) {
+      const th = a * 2.094 + k * 0.23, rr = (3 + k * 0.78) * s, px = cx + Math.cos(th) * rr, py = cy + Math.sin(th) * rr * 0.82, w = (5.6 - k * 0.17) * s;
+      x.fillStyle = rad(x, px, py, w, [[0, '#ffffff', 0.8 - k * 0.02], [0.45, k < 8 ? '#e8d8ff' : c, 0.55], [1, c, 0]]); x.beginPath(); x.arc(px, py, w, 0, TAU); x.fill();
+    }
+    x.restore(); glow(x, cx, cy, 14 * s, '#ffffff', 0.9); glow(x, cx, cy, 24 * s, c, 0.5);
+    const g = rngFor(91); x.fillStyle = '#ffffff'; for (let k = 0; k < 14; k++) { const a = g.range(0, TAU), d = g.range(8, 22) * s; x.globalAlpha = g.range(0.5, 1); x.beginPath(); x.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.82, g.range(0.6, 1.4) * s, 0, TAU); x.fill(); } x.globalAlpha = 1;
+  }
   else { rays(x, rngFor(77), cx, cy, { n: 16, r0: 10, len: [10, 16], w: [3, 5], c: ['#ffe08a', '#ff9a40'], alpha: 0.9 }); const p = P(circ(0, 0, 11), { cx, cy, s }); shine(x, p, c, 10, 0.9); x.fillStyle = rad(x, cx - 3 * s, cy - 3 * s, 14 * s, [[0, '#ffffff'], [0.5, '#ffe08a'], [1, '#ff7a1a']]); x.fill(p); }
 }
 function emblem(i) {

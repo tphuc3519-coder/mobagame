@@ -1,12 +1,13 @@
 // Kiểm thử trình duyệt GĐ4 (tiến trình tài khoản + lưu dữ liệu), Playwright + Chromium phần mềm. Cần máy chủ tĩnh ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 season844 season1280 skin (mặc định: tất cả)
+//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 season844 season1280 skin peak844 peak1280 (mặc định: tất cả)
 // save: máy A (hồ sơ có sẵn) → Cài đặt → Dữ liệu → Xuất mã lưu; máy B (trình duyệt trống) → Nhập mã lưu: mã sai bị báo lỗi, mã đúng hiện tóm tắt
 //   → Nhập và tải lại → hồ sơ + cài đặt y như máy A, hồ sơ cũ của B được cất làm bản sao lưu; hộp thoại nằm trọn màn hình.
 // bag: Túi đồ → mở rương → màn Nhận thưởng (ô quà, chạm ô xem mô tả, chạm khoảng trống đóng) → mua rương, đổi mảnh, bật Thẻ Nhân Đôi Sao;
 //   nhận nhiệm vụ cũng hiện màn Nhận thưởng; mọi thứ nằm trọn màn hình.
 // season: Xếp hạng → Mùa giải (đếm ngược, thành thạo, trang phục mùa, Hành trình đỉnh cao, khung) → ĐỔI GIỜ THIẾT BỊ sang mùa sau, mở lại →
 //   màn "Kết thúc mùa" (thưởng theo bậc cao nhất) + reset mềm đúng bảng 08 §4 (Mốc 13).
+// peak: Thái Dương lọt top 50 Hào Quang → Thiên Hà ở sảnh; Đấu Đỉnh Cao khoá lúc 10:00, mở lúc 20:00 (máy Ác mộng, cấm/chọn đầy đủ); bảng Top 100.
 // skin: trận 1v1 cùng tướng hai bên, tướng mình bật trang phục mùa → màu vật liệu = màu bên địch × màu mùa; model cao cấp không bị phủ.
 // miss: Nhiệm vụ ba thẻ Ngày / Tuần / Sự kiện, nhận Rương tuần, nhận sự kiện → Gạo Hội, Phòng chờ hiện tiến độ sự kiện tích luỹ.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
@@ -14,7 +15,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin'];
+const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin', 'peak844', 'peak1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -228,6 +229,77 @@ async function season(browser, vp) {
   await ctx.close();
 }
 
+async function peak(browser, vp) {
+  const label = `peak${vp}`;
+  console.log(`— ${label}: Hào Quang / Thiên Hà ở sảnh, Đấu Đỉnh Cao theo giờ thiết bị, bảng Top 100`);
+  const { virtualBoard } = await import(require('url').pathToFileURL(path.join(__dirname, '../src/ui/haoQuang.js')).href);
+  const B = virtualBoard(1), hq = B[20].hq + 1; // hạng 21 bảng khu mùa 1 (sau trận thắng còn lên nữa)
+  const ctx = await browser.newContext(VP[vp]);
+  const page = await ctx.newPage(), errs = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
+  page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
+  await page.clock.setFixedTime(new Date(2026, 10, 10, 10, 0)); // 10:00 — Đỉnh Cao chưa mở
+  const prof = { version: 2, name: 'Thử Đỉnh', rolePri: 'mid', roleSec: 'jungle', stars: 149, best: 149, season: 1, seasonPeak: 149, hq, ranked: 40, rankedWins: 30, bag: {} }; // Thái Dương
+  await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  const ht = (await page.textContent('#home')).replace(/\s+/g, ' ');
+  ok(`${label}: sảnh — huy hiệu Thiên Hà + thanh Hào Quang ${hq}`, /ĐẤU HẠNG\s*Thiên Hà/.test(ht) && /Hào Quang\s*\d+/.test(ht) && (await page.getAttribute('#home .rank-go .rkb img', 'src')).includes('rank_thien_ha'), ht.match(/Hào Quang[^A-Z]{0,20}/)?.[0]);
+  ok(`${label}: huy hiệu Thiên Hà tải được`, await page.evaluate(() => new Promise((res) => { const i = document.querySelector('#home .rank-go .rkb img'); if (i.complete) res(i.naturalWidth > 0); else { i.onload = () => res(true); i.onerror = () => res(false); } })));
+  const oH = await inView(page, ['#home .hm-cg']); ok(`${label}: thanh Hào Quang nằm trọn màn hình`, !oH.length, oH.join(' ; '));
+  await shot(page, label + '_home');
+  // —— Chọn chế độ lúc 10:00: thẻ Đỉnh Cao khoá ——
+  await page.click('#home [data-a="modes"]'); await page.waitForSelector('.md-card[data-m="peak"]', { timeout: T(10) }); await page.waitForTimeout(300);
+  ok(`${label}: 10:00 — thẻ Đấu Đỉnh Cao khoá, ghi giờ mở`, await page.evaluate(() => document.querySelector('.md-card[data-m="peak"]').classList.contains('lock')) && /Mở lúc 19:00 \(còn 9 giờ/.test(await page.textContent('.md-card[data-m="peak"]')));
+  const oM = await inView(page, ['.md-card']); ok(`${label}: 5 thẻ chế độ nằm trọn màn hình`, !oM.length, oM.slice(0, 3).join(' ; '));
+  await shot(page, label + '_modes_lock');
+  await page.click('.md-card[data-m="peak"]', { force: true }); await page.waitForTimeout(300); // thẻ khoá mang aria-disabled: Playwright không tự chạm
+  ok(`${label}: chạm thẻ khoá → báo giờ mở, không vào phòng`, /Mở lúc 19:00/.test(await page.textContent('.ui-toast')) && await page.evaluate(() => window.__flow.nav.screen === 'home'));
+  await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
+  // —— 20:00: mở ——
+  await page.clock.setSystemTime(new Date(2026, 10, 10, 20, 0)); // giờ chạy tiếp (phòng chờ đếm thời gian tìm trận)
+  await page.click('#home [data-a="modes"]'); await page.waitForSelector('.md-card[data-m="peak"]', { timeout: T(10) }); await page.waitForTimeout(300);
+  ok(`${label}: 20:00 — thẻ Đấu Đỉnh Cao mở`, !(await page.evaluate(() => document.querySelector('.md-card[data-m="peak"]').classList.contains('lock'))));
+  await page.click('.md-card[data-m="peak"]'); await page.waitForFunction(() => window.__flow.nav.screen === 'room', null, { timeout: T(10) }); await page.waitForTimeout(300);
+  const sub = (await page.textContent('#room .rm-sub')).replace(/\s+/g, ' ');
+  ok(`${label}: phòng Đấu Đỉnh Cao — máy Ác mộng, cấm/chọn đầy đủ, Hào Quang ×1,5`, /Đấu Đỉnh Cao/.test(await page.textContent('#room .rm-head')) && /Máy Ác mộng/.test(sub) && /Đầy đủ/.test(sub) && /×1,5/.test(sub), sub);
+  const oR = await inView(page, ['#room .rm-sub span']); ok(`${label}: dòng thông tin phòng không tràn`, !oR.length, oR.join(' ; '));
+  await shot(page, label + '_room');
+  await page.click('#room [data-a="go"]'); await page.waitForSelector('.found [data-a="accept"]', { timeout: T(20) });
+  await page.click('.found [data-a="accept"]'); await page.waitForFunction(() => window.__flow.nav.screen === 'draft' && window.__draft, null, { timeout: T(30) });
+  ok(`${label}: cấm/chọn đầy đủ (6 cấm)`, (await page.evaluate(() => window.__draft.seq)) === 'full');
+  // —— đánh một trận Đỉnh Cao (cấm/chọn tua nhanh, hết giờ thì tự khoá), đối thủ đầu hàng → kết quả có Hào Quang ×1,5 ——
+  await page.evaluate(() => window.__draft.speed(25));
+  await page.waitForFunction(() => window.__draft?.st.phase === 'prep', null, { timeout: T(120) });
+  await page.click('#draft [data-a="ready"]');
+  await page.waitForFunction(() => window.__game?.world?.tick > 5, null, { timeout: T(420), polling: 500 });
+  const hq0 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).hq);
+  await page.evaluate(() => window.__game.world.surrender(1));
+  await page.waitForFunction(() => !!window.__post, null, { timeout: T(90) });
+  const res = await page.evaluate(() => { const o = window.__post.o; return { rw: o.rewards, score: o.rows.find((x) => x.id === o.myId).score, mode: o.mode }; });
+  const want = Math.round(Math.min(25, 15 + res.score - 8) * 1.5), hq1 = hq0 + want;
+  ok(`${label}: thắng Đỉnh Cao điểm ${res.score.toFixed(1)} → Hào Quang +${want} (×1,5), +1 sao`, res.mode === 'peak' && res.rw.hq?.delta === want && res.rw.stars >= 1 && (await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).hq)) === hq1, JSON.stringify(res.rw.hq));
+  await page.evaluate(() => window.__post.next()); await page.waitForTimeout(900);
+  const chip = (await page.textContent('#pg .rw')).replace(/\s+/g, ' ');
+  ok(`${label}: màn kết quả ghi "Hào Quang ${hq1} +${want} (×1,5)"`, chip.includes(`Hào Quang ${hq1}`) && chip.includes(`+${want} (×1,5)`), chip);
+  const oP = await inView(page, ['#pg .rw > span']); ok(`${label}: dòng thưởng màn kết quả nằm trọn màn hình`, !oP.length, oP.join(' ; '));
+  await shot(page, label + '_post');
+  await page.evaluate(() => window.__post.o.onHome()); await home(page); // Về sảnh → màn Nhận thưởng (vàng, KN, khung Hào Quang vừa đạt mốc 2000)
+  await page.waitForSelector('#rewardScr .tl', { timeout: T(20) }); await page.waitForTimeout(600);
+  ok(`${label}: Nhận thưởng có Khung Hào Quang Chói Sáng (đã quá mốc 2000)`, (await page.evaluate(() => window.__rewards.items)).some((x) => x.k === 'frame' && x.id === 'hao_quang'));
+  await page.evaluate(() => window.__rewards.close()); await page.waitForTimeout(300);
+  // —— bảng Top 100 ——
+  await page.click('#home [data-a="leader"]'); await page.waitForSelector('.ui-panel .pn-tabs', { timeout: T(10) });
+  await page.evaluate(() => window.__board.tab('top')); await page.waitForSelector('.tb-list .me', { timeout: T(5) }); await page.waitForTimeout(300);
+  const tb = await page.evaluate(() => ({ n: document.querySelectorAll('.tb-list .pn-row').length, pos: [...document.querySelectorAll('.tb-list .pn-row')].findIndex((r) => r.classList.contains('me')) + 1, txt: document.querySelector('.tb-me').textContent.replace(/\s+/g, ' '), meIn: (() => { const r = document.querySelector('.tb-list .me').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })() }));
+  const pos = 1 + B.filter((x) => x.hq > hq1).length;
+  ok(`${label}: Top 100 — 100 dòng, mình ở hạng ${pos}, "Đang ở Thiên Hà", dòng của mình hiện trong khung`, tb.n === 100 && tb.pos === pos && tb.txt.includes(`Hạng ${pos}`) && /Đang ở Thiên Hà/.test(tb.txt) && tb.meIn, JSON.stringify(tb));
+  const oT = await page.evaluate(() => [...document.querySelectorAll('.ui-panel .tb-me, .ui-panel .tb-list .pn-row')].filter((e) => e.getBoundingClientRect().right > innerWidth + 0.5).length);
+  ok(`${label}: bảng Top 100 không tràn ngang`, !oT, oT);
+  await shot(page, label + '_top');
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
+  await ctx.close();
+}
+
 async function skin(browser) {
   const label = 'skin';
   console.log(`— ${label}: trang phục mùa phủ màu đúng tướng của mình trong trận (model cao cấp không bị phủ)`);
@@ -269,6 +341,8 @@ async function skin(browser) {
       else if (k === 'season844') await season(browser, 844);
       else if (k === 'season1280') await season(browser, 1280);
       else if (k === 'skin') await skin(browser);
+      else if (k === 'peak844') await peak(browser, 844);
+      else if (k === 'peak1280') await peak(browser, 1280);
     }
   } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   await browser.close();

@@ -3,7 +3,8 @@
 // kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Bảng Bùa / Túi đồ / Bạn bè, dưới phải hai nút pha lê
 // "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc. Đổi tướng đứng ở sảnh: mục Tướng.
 import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast, dialog } from './kit.js';
-import { profile, rankOf, expNeed, missionsReady, mailUnread, COURAGE_MAX, seasonCheck } from './profile.js';
+import { profile, rankNow, expNeed, missionsReady, mailUnread, COURAGE_MAX, seasonCheck } from './profile.js';
+import { HQ } from '../data/haoQuang.js';
 import { FRAMES } from '../data/seasons.js';
 import { showRewards } from './rewards.js';
 import { FRIENDS, chatLine } from './people.js';
@@ -26,7 +27,7 @@ export function openHome(nav) {
 
   const friends = FRIENDS.filter((f) => f.status !== 'offline').slice(0, 3);
   const render = () => {
-    const r = rankOf(p.stars), miss = missionsReady(), mail = mailUnread(), ev = Math.min(7, p.checkin || 0);
+    const r = rankNow(), miss = missionsReady(), mail = mailUnread(), ev = Math.min(7, p.checkin || 0);
     el.innerHTML = `
       <button type="button" class="hm-me" data-a="profile"><span class="av"${p.frame && FRAMES[p.frame] ? ` style="box-shadow:0 0 0 3px ${FRAMES[p.frame].col},0 0 14px ${FRAMES[p.frame].col}"` : ''}>${face(p.avatar)}<i class="lvb"><b>${p.level}</b></i></span>
         <span class="who"><b>${p.name}</b><span class="rk">${rankBadge(r, 24)}${r.name}</span><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span></span></button>
@@ -47,6 +48,7 @@ export function openHome(nav) {
           <button type="button" class="tile fr" data-a="history">${icon('hourglass')}<span>Lịch sử</span></button>
         </div>
         ${p.ranked ? `<div class="hm-cg" title="Điểm tích luỹ: đầy thì thắng +1 sao / thua được giữ sao"><span>Tích luỹ</span><span class="pbar"><i style="width:${Math.round(((p.courage || 0) / COURAGE_MAX) * 100)}%"></i></span><small>${p.courage || 0}/${COURAGE_MAX}</small></div>` : ''}
+        ${p.hq != null ? `<div class="hm-cg hq" title="Điểm Hào Quang: ${HQ.title} điểm mở danh hiệu ${HQ.titleName}"><span>Hào Quang</span><span class="pbar"><i style="width:${Math.min(100, Math.round((p.hq / HQ.title) * 100))}%"></i></span><small>${p.hq}${p.hq < HQ.title ? `/${HQ.title}` : ''}</small></div>` : ''}
       </div>
       <nav class="hm-nav">
         <button type="button" data-a="heroes">${icon('helmet')}<span>Tướng</span></button>

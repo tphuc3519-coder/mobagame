@@ -18,10 +18,13 @@ let fail = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ĐẠT ' : 'LỖI ') + name + (extra ? '  ' + extra : '')); if (!cond) fail++; return cond; };
 const T = (s) => s * 1000;
 
-async function openPage(browser, vp, prof, query = '') {
+// Tai thỏ (điện thoại ngang): vùng an toàn trái / phải 47 px, đáy 21 px (thanh vuốt) — giả lập bằng CDP (Chromium ≥ 133)
+const NOTCH = { left: 47, right: 47, top: 0, bottom: 21 };
+async function openPage(browser, vp, prof, query = '', notch = false) {
   const ctx = await browser.newContext(VP[vp]);
   await ctx.addInitScript((p) => { try { localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
   const page = await ctx.newPage(), errs = [];
+  if (notch) await (await ctx.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: NOTCH });
   page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
   await page.goto(`${BASE}/${query}`, { waitUntil: 'domcontentloaded' });
@@ -40,6 +43,21 @@ const layout = (page, sels) => page.evaluate((sels) => {
   const cross = mid ? [...document.querySelectorAll('.dr-col')].filter((c) => hit(mid, c.getBoundingClientRect())).length : 0;
   return { out, cross, sw: document.documentElement.scrollWidth, W };
 }, sels);
+
+/** Có tai thỏ: nút / vùng bấm đang hiện không được nằm trong vùng an toàn (bỏ qua lớp phủ trải hết bề ngang — vd nền chạm để tiếp tục). */
+const notchOut = (page, sel = 'button, [data-a], [role="button"], .ui-back') => page.evaluate(([sel, N]) => {
+  const W = innerWidth, H = innerHeight, out = [];
+  for (const e of document.querySelectorAll(sel)) {
+    const b = e.getBoundingClientRect(), cs = getComputedStyle(e);
+    if (!b.width || !b.height || cs.visibility === 'hidden' || +cs.opacity === 0 || b.width > W * 0.7 || e.closest('[aria-hidden="true"]')) continue;
+    const r = { left: b.left, top: b.top, right: b.right, bottom: b.bottom }; // phần thật sự nhìn thấy: cắt theo khung cuộn / khung che của cha
+    for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) { const o = getComputedStyle(a); if (/(auto|scroll|hidden|clip)/.test(o.overflow + o.overflowX + o.overflowY)) { const q = a.getBoundingClientRect(); r.left = Math.max(r.left, q.left); r.top = Math.max(r.top, q.top); r.right = Math.min(r.right, q.right); r.bottom = Math.min(r.bottom, q.bottom); } }
+    if (r.right - r.left < 4 || r.bottom - r.top < 4 || r.right <= 0 || r.left >= W || r.bottom <= 0 || r.top >= H) continue;
+    if (r.left < N.left - 0.5 || r.right > W - N.right + 0.5 || r.bottom > H - N.bottom + 0.5) out.push(`${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}.${String(e.className?.baseVal ?? e.className).trim().replace(/\s+/g, '.')} ${e.dataset.a || e.dataset.k || e.getAttribute('aria-label') || ''} [${r.left | 0},${r.top | 0}→${r.right | 0},${r.bottom | 0}]`);
+  }
+  return out;
+}, [sel, NOTCH]);
+const notchOk = async (page, label, step, notch, sel) => { if (!notch) return; const o = await notchOut(page, sel); ok(`${label}: tai thỏ — ${step}: không nút nào lấn vùng an toàn`, !o.length, o.slice(0, 4).join(' ; ')); };
 
 async function toMatch(page, label) {
   await screen(page, 'lineup', 60); await shot(page, label + '_lineup');
@@ -61,10 +79,11 @@ async function endMatch(page, label) {
 const ROLES5 = JSON.stringify(['jungle', 'mid', 'river', 'support', 'temple']);
 
 async function ranked(browser, vp, stars) {
-  const label = `ranked${vp}`, full = stars >= 66;
+  const label = `ranked${vp}`, full = stars >= 66, notch = vp === 844; // 19,5:9 có tai thỏ
   console.log(`— ${label}: Đấu hạng (${full ? 'Hải Đăng → đầy đủ 6 cấm' : 'Đèn Dầu → cơ bản 4 cấm'}), vị trí Rừng / phụ Giữa, ghế 0`);
-  const { ctx, page, errs } = await openPage(browser, vp, { stars, best: stars, rolePri: 'jungle', roleSec: 'mid' }, '?seat=0');
-  await page.click('[data-a="ranked"]'); await screen(page, 'room');
+  const { ctx, page, errs } = await openPage(browser, vp, { stars, best: stars, rolePri: 'jungle', roleSec: 'mid' }, '?seat=0', notch);
+  await page.waitForTimeout(600); await notchOk(page, label, 'sảnh', notch);
+  await page.click('[data-a="ranked"]'); await screen(page, 'room'); await page.waitForTimeout(400); await notchOk(page, label, 'phòng chờ', notch);
   ok(`${label}: phòng chờ có nút vị trí "Rừng"`, (await page.textContent('#room .rl-chip'))?.includes('Rừng'));
   ok(`${label}: phòng chờ ghi luật cấm/chọn`, (await page.textContent('#room .rm-sub'))?.includes(full ? '6 cấm' : '4 cấm'));
   await shot(page, label + '_room');
@@ -74,6 +93,7 @@ async function ranked(browser, vp, stars) {
   await shot(page, label + '_found');
   await page.click('.found [data-a="accept"]'); await screen(page, 'draft', 30);
   const seq = await page.evaluate(() => window.__draft.seq);
+  await page.waitForTimeout(600); await notchOk(page, label, 'cấm/chọn', notch);
   ok(`${label}: thứ tự cấm/chọn ${full ? 'full' : 'lite'}`, seq === (full ? 'full' : 'lite'), seq);
   await page.evaluate(() => window.__draft.speed(25));
   let checked = false, myBans = 0, myPick = false, guard = 0;
@@ -106,15 +126,16 @@ async function ranked(browser, vp, stars) {
   ok(`${label}: đủ 5 + 5 tướng, không trùng, không tướng bị cấm`, D.picks.flat().every(Boolean) && new Set(D.picks.flat()).size === 10 && !D.picks.flat().some((h) => D.bans.flat().includes(h)));
   await page.waitForFunction(() => window.__draft?.st.phase === 'prep', null, { timeout: T(10) });
   const L2 = await layout(page, ['.dr-prep button', '.dr-row']); ok(`${label}: màn chuẩn bị nằm trọn trong màn hình`, !L2.out.length, L2.out.slice(0, 3).join(' ; '));
-  await page.waitForTimeout(1200); await shot(page, label + '_prep');
+  await page.waitForTimeout(1200); await shot(page, label + '_prep'); await notchOk(page, label, 'chuẩn bị', notch);
   await page.click('#draft [data-a="ready"]');
   const m = await toMatch(page, label);
   ok(`${label}: vào trận đúng vị trí đã chia`, m.role === m.pick.role && !!m.role, `${m.role} / ${m.pick.role}`);
   ok(`${label}: vào trận đúng tướng đã chọn`, m.heroId === m.pick.heroId, m.heroId);
   ok(`${label}: hai đội đủ 5 vị trí, đúng 1 người chơi`, JSON.stringify(m.roles0) === ROLES5 && JSON.stringify(m.roles1) === ROLES5 && m.players === 1);
   ok(`${label}: tướng bị cấm không có trong trận, hai đội không trùng tướng`, !m.pick.bans.flat().some((h) => m.ids0.includes(h) || m.ids1.includes(h)) && !m.ids0.some((h) => m.ids1.includes(h)));
+  await notchOk(page, label, 'trong trận', notch, 'button, [data-a], [role="button"], .sb, #goldPill, #qb, #pingBtn, #scoreTop');
   if (m.role === 'jungle') ok(`${label}: đi rừng mang Trừng Trị + Nanh Thú Rừng`, m.spell === 'thu_hoach' && m.items.includes('nanh_thu_rung'), `${m.spell} ${m.items.join(',')}`);
-  await endMatch(page, label);
+  await endMatch(page, label); await notchOk(page, label, 'kết quả', notch);
   // GĐ4f: Kết quả → Nhận thưởng → Phòng chờ (Mốc 12)
   const rw = await page.evaluate(() => window.__flow.result.rewards);
   await page.waitForFunction(() => !!window.__post, null, { timeout: T(30) });
@@ -124,6 +145,7 @@ async function ranked(browser, vp, stars) {
   const gotGold = R.items.find((x) => x.k === 'gold')?.n, gotExp = R.items.find((x) => x.k === 'exp')?.n;
   ok(`${label}: rời màn kết quả → màn Nhận thưởng (vàng + kinh nghiệm của trận) trên Phòng chờ`, R.screen === 'room' && gotGold === rw.gold && gotExp === rw.exp, JSON.stringify(R.items));
   const L3 = await layout(page, ['#rewardScr h2', '#rewardScr .tl', '#rewardScr .go']); ok(`${label}: màn Nhận thưởng nằm trọn trong màn hình`, !L3.out.length, L3.out.slice(0, 3).join(' ; '));
+  await notchOk(page, label, 'nhận thưởng', notch, '#rewardScr .tl, #rewardScr .go');
   await page.mouse.click(6, 6); await page.waitForTimeout(250);
   ok(`${label}: chạm khoảng trống → về Phòng chờ bấm được`, !(await page.$('#rewardScr')) && !!(await page.$('#room [data-a="go"]')));
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 4).join(' || '));

@@ -8,6 +8,7 @@ import { migrateProfile, SAVE_VER } from './save.js';
 import { BAG, CHEST, SHARD_SHOP } from '../data/rewards.js';
 import { seasonAt } from '../data/seasons.js';
 import { seasonFields, rollSeason, seasonTrack, journeyList, journeyTake, chooseSkinHero, toggleSkin } from './season.js';
+import { hqFields, hqApply, rankFull, peakState } from './haoQuang.js';
 
 const KEY = 'la.profile';
 const DEF = () => ({
@@ -16,6 +17,7 @@ const DEF = () => ({
   bag: { giu_sao_mvp: 2 }, // quà tân thủ: 2 Bùa Giữ Sao (MVP thua) — không hạn (vật phẩm không hạn đếm ở bag, có hạn ở timed)
   timed: [], manh: 0, gao: 0, chestN: 0, chests: 0, x2Armed: false, // GĐ4d: vật phẩm có hạn [{ id, exp }], Mảnh Tướng, Gạo Hội, rương
   season: null, seasonPeak: 0, seasonWins: 0, mastery: {}, journey: [], frames: [], frame: null, skins: [], skinHero: null, skinOn: {}, // GĐ4b: mùa giải (ui/season.js)
+  hq: null, hqBest: 0, hqTitle: 0, galaxyPeak: false, // GĐ4c: Điểm Hào Quang (null: chưa vào Nguyệt Quang), Thiên Hà (ui/haoQuang.js)
   daily: null, weekly: null, event: null, mail: [], login: '', lastHero: 'hoa_ren', spell: 'chop_buoc', page: null,
   rolePri: null, roleSec: null, spellJungle: 'thu_hoach', // vị trí 5v5 (data/roles.js) + phép nhớ riêng khi đi rừng
   charmPages: [], heroPage: {}, emblems: {}, // trang bùa riêng (u1..u10), trang nhớ theo tướng, phù hiệu theo tướng — ui/loadout.js
@@ -35,7 +37,7 @@ export function profile() {
   P = migrateProfile({ ...DEF(), ...(raw || {}) }, raw ? raw.version : SAVE_VER); // GĐ4a: bản cũ chuyển sang bản hiện tại (ui/save.js)
   if (!ALPHA.includes(P.feature)) P.feature = 'hoa_ren';
   if (!ALPHA.includes(P.avatar)) P.avatar = P.feature;
-  pruneBag(); seasonFields(P);
+  pruneBag(); seasonFields(P); hqFields(P);
   return P;
 }
 export function saveProfile() { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (_) { /* không lưu được thì thôi */ } }
@@ -43,6 +45,13 @@ export function saveProfile() { try { localStorage.setItem(KEY, JSON.stringify(P
 // —— Bậc hạng (08 §1): bảng + rankOf ở data/ranks.js (dùng chung với logic mùa giải ui/season.js) ——
 import { TIERS, HAI_DANG, rankOf, starsAt } from '../data/ranks.js';
 export { TIERS, HAI_DANG, rankOf, starsAt };
+
+/** Bậc để hiển thị của người chơi (Thái Dương lọt top 50 bảng Hào Quang → Thiên Hà). */
+export const rankNow = () => rankFull(profile());
+/** Đấu Đỉnh Cao có mở không (giờ thiết bị + bậc): { open, reason }. */
+export const peakNow = (now = Date.now()) => peakState(profile(), now);
+/** Chế độ tính sao hạng: Đấu hạng và Đấu Đỉnh Cao. */
+export const isRankedMode = (mode) => mode === 'ranked' || mode === 'peak';
 
 /** Độ khó máy ở đấu hạng theo bậc (Đèn Dầu: Dễ … Nguyệt Quang / Thái Dương: Ác mộng). */
 export const rankDifficulty = (total) => ['easy', 'easy', 'normal', 'normal', 'hard', 'hard', 'nightmare', 'nightmare'][rankOf(total).tier];
@@ -193,17 +202,18 @@ const MODE_GOLD = { normal: 1, ranked: 1, solo: 0.7 };
 export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, assists = 0, score = 0, mvp = null, towers = 0, now = Date.now() }) {
   const p = profile();
   let before = rankOf(p.stars);
-  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: before, rankAfter: before, levelUp: false, level: p.level, chest: false, chestLeft: 0, unlocks: [], seasonEnd: null };
+  const out = { gold: 0, exp: 0, stars: 0, notes: [], courage: null, rankBefore: rankFull(p), rankAfter: rankFull(p), levelUp: false, level: p.level, chest: false, chestLeft: 0, unlocks: [], seasonEnd: null, hq: null };
   if (mode === 'training') return out;
   out.seasonEnd = seasonCheck(now); // mùa vừa hết giữa trận: thưởng + reset mềm trước khi tính trận này vào mùa mới
-  if (out.seasonEnd) { before = rankOf(p.stars); out.rankBefore = out.rankAfter = before; }
+  if (out.seasonEnd) { before = rankOf(p.stars); out.rankBefore = out.rankAfter = rankFull(p); }
   const mult = MODE_GOLD[mode] || 1;
   out.gold = Math.round(((win ? 100 : 50) + score * 6 + (mvp ? 30 : 0)) * mult);
   out.exp = Math.round((win ? 60 : 30) + score * 2);
   p.games++; if (win) p.wins++; p.kills += kills; p.deaths += deaths; p.assists += assists; p.streak = win ? Math.max(1, p.streak + 1) : Math.min(-1, p.streak - 1);
   p.scoreSum = (p.scoreSum || 0) + score; if (mvp) p.mvp = (p.mvp || 0) + 1;
-  missionProgress({ won: win, kills, assists, towers, ranked: mode === 'ranked', mvp, heroId }, now);
-  if (mode === 'ranked') {
+  const ranked = isRankedMode(mode);
+  missionProgress({ won: win, kills, assists, towers, ranked, mvp, heroId }, now);
+  if (ranked) {
     p.ranked++; if (win) p.rankedWins++;
     const gain = Math.round(win ? 10 + score : score / 2); let cg = Math.min(COURAGE_MAX, (p.courage || 0) + gain), used = false;
     if (win) {
@@ -221,6 +231,9 @@ export function applyResult({ mode, win, heroId = null, kills = 0, deaths = 0, a
     p.stars = Math.max(0, p.stars + out.stars); p.best = Math.max(p.best, p.stars);
     out.rankAfter = rankOf(p.stars);
     for (const r of seasonTrack(p, { won: win, heroId })) out.unlocks.push(...grant(r, now)); // GĐ4b: bậc cao nhất mùa, thành thạo, trang phục mùa
+    out.hq = hqApply(p, { win, score, peak: mode === 'peak', before, after: out.rankAfter }); // GĐ4c: Hào Quang (Nguyệt Quang trở lên), mốc 2000, Thiên Hà
+    if (out.hq.reward) out.unlocks.push(...grant(out.hq.reward, now));
+    out.rankAfter = rankFull(p);
   }
   p.chestN = (p.chestN || 0) + 1; // rương: cứ CHEST.every trận (trừ luyện tập) được 1 rương
   if (p.chestN >= CHEST.every) { p.chestN = 0; p.chests = (p.chests || 0) + 1; out.chest = true; }

@@ -92,7 +92,7 @@ ok('đeo khung đã có', M.equipFrame('hai_dang') && p.frame === 'hai_dang');
 M.saveProfile();
 const M2 = await import(`../src/ui/profile.js?s=${++v}`), p2 = M2.profile();
 ok('tắt / mở lại: mùa, khung, hành trình còn nguyên', p2.season === 1 && p2.frame === 'hai_dang' && p2.journey.includes(3));
-ok('mọi bậc có dòng thưởng hết mùa + dòng reset', SEASON_END.length === 8 && SOFT_RESET.length === 8);
+ok('mọi bậc có dòng thưởng hết mùa (+ Thiên Hà) + dòng reset', SEASON_END.length === 9 && SOFT_RESET.length === 8);
 
 console.log(fail ? `LỖI: ${fail} mục` : 'Tất cả đạt');
 process.exit(fail ? 1 : 0);
