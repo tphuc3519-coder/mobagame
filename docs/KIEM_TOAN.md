@@ -401,7 +401,7 @@ Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `doc
 
 *Xong khi* (Mốc 14):
 - ✅ cài được lên màn hình chính, chơi không mạng (`b_pwa.cjs`, từ GĐ3);
-- ✅ lần mở thứ hai vào Sảnh dưới 3 s (`b_pwa.cjs`: __OPEN2__).
+- ✅ lần mở thứ hai vào Sảnh dưới 3 s (`b_pwa.cjs`: trung vị **2,3 s** (2,1 / 2,3 / 2,3 s trên máy thử không GPU)).
 
 **Chưa làm, cần người / máy chủ:** model và bản đồ vẽ tay thật thay hàng sinh bằng code; bọc Capacitor ra APK (tuỳ chọn); phần "Sau 1.0"
 (PvP trực tuyến cần máy chủ Node chạy `src/sim/` + WebSocket; mắt (ward), chế độ / tướng mới mỗi mùa).

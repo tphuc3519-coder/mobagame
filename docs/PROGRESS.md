@@ -591,4 +591,4 @@ Còn lại:
 - **Bản quyền:** `assets/LICENSES.md` đủ dòng; `node tools/t_licenses.mjs` (278 tệp đem lên mạng đều có dòng, không dòng thừa).
 - **Tải theo nhu cầu:** màn khởi động bỏ 20 ảnh thẻ tướng + ảnh phòng chờ (tải nền sau khi vào Sảnh).
 - **Deploy:** `tools/build_site.mjs` dùng chung cho `pages.yml`, `netlify.toml`, `vercel.json`; bỏ 10 thư mục model tướng cũ khỏi bản đem lên.
-- **Mở lần hai vào Sảnh:** `b_pwa.cjs` đo __OPEN2__.
+- **Mở lần hai vào Sảnh:** `b_pwa.cjs` đo trung vị 2,3 s (2 087 / 2 319 / 2 343 ms, máy thử không GPU) — dưới 3 s.
