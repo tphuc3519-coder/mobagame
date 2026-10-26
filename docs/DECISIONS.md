@@ -944,8 +944,9 @@
   mức Vừa (mặc định điện thoại) và Cao. Bản cũ ở mức Vừa: **279 lệnh vẽ, 962k tam giác, 34 mesh có xương** — vượt cả ba mục 02 §2. Nguồn chính là
   cảnh: cây / đá / cỏ rải bằng InstancedMesh theo ô 3 200 vẽ 437k tam giác mỗi khung trong khi chỉ ~10k nằm trong màn hình. Đã sửa, **hình ảnh
   không đổi**:
-  - `render/env/cull.js`: gộp InstancedMesh cùng hình + vật liệu thành một mesh cả bản đồ, lọc **từng bản sao** theo khung nhìn (hộp bóng nếu mesh
-    đổ bóng) mỗi khi camera dịch đáng kể; khối tĩnh không bản sao chia ô 1 600 thay vì 3 200.
+  - `render/env/cull.js`: gộp InstancedMesh cùng hình + vật liệu thành một mesh cả bản đồ, lọc **từng bản sao** theo khung nhìn mỗi khi camera dịch
+    đáng kể (lọc thô theo ô 1 600 trước; mesh đổ bóng nới thêm tầm bóng hắt 1 200 thay vì xét cả hộp bóng 6 000 × 6 000) — **0,07 ms** một lượt cho
+    15–20 nghìn bản sao trên máy thử (bản đầu xét từng bản sao: 0,4–0,7 ms); khối tĩnh không bản sao chia ô 1 600 thay vì 3 200.
   - bóng tròn dưới chân: một InstancedMesh cho mọi đơn vị (trước: mỗi đơn vị một lệnh vẽ);
   - lính không đổ bóng thật nữa (02 §13.6 vốn ghi "Lính chỉ có bóng tròn"; model GLB lính bật nhầm `castShadow`); lớp mặt `face` và lớp phát sáng
     `<tướng>_glow` của tướng không đổ bóng (đầu / thân đã đổ bóng). Áp ở bước dựng đổ bóng — **không đụng model**, kể cả 4 model cao cấp;
