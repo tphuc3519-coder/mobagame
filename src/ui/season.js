@@ -2,6 +2,7 @@
 // thành thạo, trang phục mùa (10 trận hạng thắng), khung ảnh đại diện. Hàm thuần trên đối tượng hồ sơ p (không import ui/profile.js — profile.js
 // gọi vào đây, tránh vòng import). Thưởng trả về dạng mô tả { gold, gems, manh, item, frame, skin }; profile.js cộng vào hồ sơ.
 import { seasonAt, seasonByN, SOFT_RESET, SEASON_END, JOURNEY, MASTERY, SEASON_SKIN, SKIN_LOCKED, skinLook } from '../data/seasons.js';
+import { costumeOf } from '../data/shop.js';
 import { rankOf, starsAt, GALAXY } from '../data/ranks.js';
 
 const int = (v) => (Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
@@ -13,6 +14,7 @@ export function seasonFields(p) {
   p.frames = Array.isArray(p.frames) ? p.frames.filter((f) => f && typeof f.id === 'string') : [];
   p.skins = Array.isArray(p.skins) ? p.skins.filter((s) => s && typeof s.hero === 'string' && Number.isInteger(s.season)) : [];
   p.skinOn = p.skinOn && typeof p.skinOn === 'object' && !Array.isArray(p.skinOn) ? p.skinOn : {};
+  p.costumes = Array.isArray(p.costumes) ? p.costumes.filter((c) => typeof c === 'string' && /^[a-z_]+:[a-z_]+$/.test(c)) : []; // GĐ5b: 'tướng:màu' mua ở cửa hàng ngọc
   if (p.skinHero != null && (typeof p.skinHero !== 'string' || SKIN_LOCKED.includes(p.skinHero))) p.skinHero = null;
   return p;
 }
@@ -78,10 +80,20 @@ export function toggleSkin(p, hero, season) {
   if (p.skinOn[hero] === season) delete p.skinOn[hero]; else p.skinOn[hero] = season;
   return true;
 }
-/** Màu phủ của tướng (nếu đang dùng trang phục mùa) — null nếu không, hoặc là model cao cấp. */
+/** Màu phủ của tướng: skinOn[tướng] là số mùa (trang phục mùa) hoặc id màu (trang phục cửa hàng ngọc). null nếu không mặc, hoặc là model cao cấp. */
 export function skinTint(p, hero) {
-  const s = p?.skinOn?.[hero]; if (!s || SKIN_LOCKED.includes(hero) || !p.skins?.some((k) => k.hero === hero && k.season === s)) return null;
-  return skinLook(s).tint;
+  const s = p?.skinOn?.[hero]; if (!s || SKIN_LOCKED.includes(hero)) return null;
+  if (typeof s === 'string') { const c = costumeOf(s); return c && (p.costumes || []).includes(`${hero}:${s}`) ? c.tint : null; }
+  return p.skins?.some((k) => k.hero === hero && k.season === s) ? skinLook(s).tint : null;
+}
+/** Trang phục cửa hàng: đã có? */
+export const ownsCostume = (p, hero, look) => (p.costumes || []).includes(`${hero}:${look}`);
+/** Mặc (look) / cởi (null) trang phục cửa hàng. false nếu chưa có hoặc là model cao cấp. */
+export function wearCostume(p, hero, look) {
+  if (SKIN_LOCKED.includes(hero)) return false;
+  if (look == null) { if (typeof p.skinOn[hero] === 'string') delete p.skinOn[hero]; return true; }
+  if (!ownsCostume(p, hero, look)) return false;
+  p.skinOn[hero] = look; return true;
 }
 
 // —— Hành trình đỉnh cao ——

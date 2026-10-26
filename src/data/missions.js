@@ -27,5 +27,5 @@ export const WEEKLY = [
   { id: 'w_rwin5', name: 'Thắng 5 trận đấu hạng', key: 'rankedWon', goal: 5, gold: 500, item: 'bua_giu_sao' },
 ];
 /** Rương tuần: nhận khi xong (đã nhận thưởng) cả 4 nhiệm vụ tuần. */
-export const WEEK_BONUS = { name: 'Rương tuần', gold: 300, item: 'bua_giu_sao', chest: 1 };
+export const WEEK_BONUS = { name: 'Rương tuần', gold: 300, gems: 20, item: 'bua_giu_sao', chest: 1 }; // gems: một nguồn ngọc đều đặn (GĐ5b)
 export const EVENT = { id: 'ev_join3', name: 'Tham gia sự kiện tích luỹ', goal: 3, gao: 8 };

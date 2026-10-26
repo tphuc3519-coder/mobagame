@@ -574,3 +574,9 @@ Còn lại:
 - `sim/status.js`: chuỗi khống chế cứng liên tiếp > 3 s ⇒ khống chế mới giảm 50% trong 2 s tiếp theo; HUD hiện "Kháng 50%".
 - Kiểm thử: `node tools/t_ccchain.mjs` — 11 mục (nối chuỗi, khoảng nghỉ cắt chuỗi, một choáng dài, hất tung / áp chế không giảm, hiệu ứng đồng minh,
   tất định); `t_determinism`, `t_suppress`, `t_combat`, `t_heroes`, `t_spells`, `t_lockon`, `t_fixes`, `t_actives`, `t_kills`, `t_jungle`, `t_target` vẫn đạt.
+
+## GĐ5b (26/10) — cửa hàng ngọc (sảnh trước đây báo "Cửa hàng ngọc sắp mở")
+- `data/shop.js`, `ui/shopPanel.js` (dấu + cạnh ô ngọc): thẻ **Trang phục** (chọn tướng → 4 màu, mua có hộp xác nhận, Mặc / Cởi; phủ màu ngay ở sảnh và trong trận),
+  **Vật phẩm** (3 rương / Bùa Giữ Sao / Thẻ Nhân Đôi Sao / 800 vàng), **Nhận ngọc** (lên cấp +10, Rương tuần +20, mùa, Hành trình).
+- Kiểm thử: `node tools/t_shop.mjs` — 21 mục; `b_prog.cjs shop844 shop1280` (mua → Nhận thưởng → mặc / cởi → đổi rương → về sảnh số ngọc đúng);
+  `t_missions` cập nhật (Rương tuần có ngọc).

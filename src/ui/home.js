@@ -14,6 +14,7 @@ import { openLoadout } from './loadoutPanel.js';
 import { ALPHA } from '../data/heroes/index.js';
 import { openProfile, openFriends, openMail, openMissions, openHeroes, openItems, openSettings, openEvent, openLeaderboard, openHistory } from './panels.js';
 import { openBag } from './bagPanel.js';
+import { openShop } from './shopPanel.js';
 
 export function openHome(nav) {
   const p = profile();
@@ -34,7 +35,7 @@ export function openHome(nav) {
       <div class="hm-fr">${friends.map((f) => `<button type="button" data-a="friends" aria-label="${f.name}">${face(f.avatar)}${f.status === 'online' ? '<i class="dot"></i>' : ''}</button>`).join('')}
         <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button></div>
       <div class="hm-top"><span class="cur">${icon('coin')}<b>${fmt(p.gold)}</b><i class="add" data-a="event" role="button" aria-label="Nhận thêm vàng">+</i></span>
-        <span class="cur gem">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add" data-a="gems" role="button" aria-label="Nạp ngọc">+</i></span>
+        <span class="cur gem">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add" data-a="gems" role="button" aria-label="Cửa hàng ngọc">+</i></span>
         <button type="button" class="icb" data-a="mail" aria-label="Thư">${icon('mail')}${mail ? `<i class="badge">${mail}</i>` : ''}</button>
         <button type="button" class="icb" data-a="full" aria-label="Toàn màn hình">${ICON.full()}</button>
         <button type="button" class="icb" data-a="settings" aria-label="Cài đặt">${icon('gear')}</button></div>
@@ -82,7 +83,7 @@ export function openHome(nav) {
     profile: () => openProfile(render), friends: () => openFriends(), mail: () => openMail(render), settings: () => openSettings(),
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard('season', render), history: () => openHistory(),
     bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
-    chat: () => openFriends(), gems: () => toast('Cửa hàng ngọc sắp mở'), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
+    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), // trang phục vừa mặc: dựng lại tướng ở sảnh để phủ màu modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };

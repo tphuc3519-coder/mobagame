@@ -127,7 +127,7 @@ export function openMail(onChange) {
 export function openMissions(onChange, tab0 = 'daily') {
   css(); const p = profile(); const { body, el } = panel({ title: 'Nhiệm vụ', right: gold(p.gold) });
   let tab = tab0;
-  const rew = (m) => [m.gold ? `${m.gold} vàng` : '', m.gao ? `${m.gao} Gạo Hội` : '', m.item ? '1 ' + BAG_ITEMS[m.item].name : '', m.chest ? `${m.chest} rương` : ''].filter(Boolean).join(' + ');
+  const rew = (m) => [m.gold ? `${m.gold} vàng` : '', m.gems ? `${m.gems} ngọc` : '', m.gao ? `${m.gao} Gạo Hội` : '', m.item ? '1 ' + BAG_ITEMS[m.item].name : '', m.chest ? `${m.chest} rương` : ''].filter(Boolean).join(' + ');
   const row = (m, data) => `<div class="pn-row">${icon(m.done ? 'chest' : 'scroll')}<div><b>${m.name}</b><small>${m.v}/${m.goal} · thưởng ${rew(m)}</small><span class="pbar"><i style="width:${(m.v / m.goal) * 100}%"></i></span></div><button type="button" class="btn-gold go" ${data} ${m.done && !m.claimed ? '' : 'disabled'}>${m.claimed ? 'Đã nhận' : m.done ? 'Nhận' : 'Chưa xong'}</button></div>`;
   const render = () => {
     const tabs = `<div class="pn-tabs">${[['daily', 'Ngày'], ['weekly', 'Tuần'], ['event', 'Sự kiện']].map(([k, n]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>`;

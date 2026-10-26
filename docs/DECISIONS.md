@@ -935,3 +935,8 @@
   - Chỉ hiệu ứng **của địch** (khác đội) mới tính và mới bị giảm.
   - Hiệu ứng làm chuỗi vượt ngưỡng vẫn đủ thời gian; chỉ hiệu ứng áp trong cửa sổ sau đó mới giảm.
   - HUD hiện "Kháng 50%" trên đầu tướng của mình hoặc tướng địch khi bị giảm.
+- **Cửa hàng ngọc (GĐ5b):** ngọc vốn ghi "dành cho trang phục" nên cửa hàng bán **trang phục phối màu vĩnh viễn** (4 màu × 16 tướng thường, 60 ngọc) cộng
+  vài vật phẩm (rương, Bùa Giữ Sao, Thẻ Nhân Đôi Sao, vàng). **Không có nạp tiền** — ngọc kiếm trong game: +10 mỗi lần lên cấp, +20 ở Rương tuần, thưởng mùa
+  từ Nguyệt Quang, Hành trình đỉnh cao. Giá và màu là số tự đặt.
+  - Trang phục mùa và trang phục cửa hàng dùng **chung một chỗ mặc** (`skinOn[tướng]`: số mùa hoặc id màu) — mỗi tướng chỉ mặc một bộ.
+  - 4 model cao cấp không bán, không phủ (cùng chốt chặn `SKIN_LOCKED`).

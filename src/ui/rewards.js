@@ -5,6 +5,7 @@ import { icon, fmt } from './kit.js';
 import { profile, itemCount, bagList } from './profile.js';
 import { CURRENCY, BAG } from '../data/rewards.js';
 import { FRAMES, skinLook } from '../data/seasons.js';
+import { costumeOf } from '../data/shop.js';
 import { HEROES } from '../data/heroes/index.js';
 import { sfx } from '../audio/audio.js';
 
@@ -16,6 +17,7 @@ const INFO = {
 export function rewardInfo(r) {
   if (r.k === 'item') return BAG[r.id];
   if (r.k === 'frame') return { name: FRAMES[r.id]?.name || 'Khung ảnh', icon: 'trophy', desc: 'Khung ảnh đại diện — đổi ở Xếp hạng → Mùa giải.' };
+  if (r.k === 'costume') return { name: `Trang phục ${costumeOf(r.look)?.name || ''} · ${HEROES[r.id]?.name || ''}`, icon: 'star', desc: 'Phối màu vĩnh viễn — mặc / cởi ở Cửa hàng → Trang phục. Không đổi chỉ số.' };
   if (r.k === 'skin') return { name: `Trang phục mùa ${skinLook(r.season || 1).name} · ${HEROES[r.id]?.name || ''}`, icon: 'star', desc: 'Phối màu riêng của mùa cho tướng này — bật / tắt ở Xếp hạng → Mùa giải.' };
   return CURRENCY[r.k] || INFO[r.k] || { name: r.k, icon: 'star', desc: '' };
 }
@@ -25,6 +27,7 @@ function owned(r) {
   if (r.k === 'chest') return p.chests || 0;
   if (r.k === 'frame') return (p.frames || []).filter((f) => f.id === r.id).length;
   if (r.k === 'skin') return (p.skins || []).filter((s) => s.hero === r.id).length;
+  if (r.k === 'costume') return (p.costumes || []).filter((c) => c.startsWith(r.id + ':')).length;
   if (r.k === 'exp') return null;
   return p[r.k] ?? null;
 }

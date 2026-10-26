@@ -1,6 +1,6 @@
 // Kiểm thử trình duyệt GĐ4 (tiến trình tài khoản + lưu dữ liệu), Playwright + Chromium phần mềm. Cần máy chủ tĩnh ở thư mục repo:
 //   python3 -m http.server <cổng> --bind 127.0.0.1
-//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 season844 season1280 skin peak844 peak1280 (mặc định: tất cả)
+//   node tools/b_prog.cjs <cổng> [kịch bản…]     kịch bản: save844 save1280 bag844 bag1280 miss844 miss1280 season844 season1280 skin peak844 peak1280 shop844 shop1280 (mặc định: tất cả)
 // save: máy A (hồ sơ có sẵn) → Cài đặt → Dữ liệu → Xuất mã lưu; máy B (trình duyệt trống) → Nhập mã lưu: mã sai bị báo lỗi, mã đúng hiện tóm tắt
 //   → Nhập và tải lại → hồ sơ + cài đặt y như máy A, hồ sơ cũ của B được cất làm bản sao lưu; hộp thoại nằm trọn màn hình.
 // bag: Túi đồ → mở rương → màn Nhận thưởng (ô quà, chạm ô xem mô tả, chạm khoảng trống đóng) → mua rương, đổi mảnh, bật Thẻ Nhân Đôi Sao;
@@ -8,6 +8,7 @@
 // season: Xếp hạng → Mùa giải (đếm ngược, thành thạo, trang phục mùa, Hành trình đỉnh cao, khung) → ĐỔI GIỜ THIẾT BỊ sang mùa sau, mở lại →
 //   màn "Kết thúc mùa" (thưởng theo bậc cao nhất) + reset mềm đúng bảng 08 §4 (Mốc 13).
 // peak: Thái Dương lọt top 50 Hào Quang → Thiên Hà ở sảnh; Đấu Đỉnh Cao khoá lúc 10:00, mở lúc 20:00 (máy Ác mộng, cấm/chọn đầy đủ); bảng Top 100.
+// shop: Cửa hàng ngọc (dấu + cạnh ô ngọc) — mua trang phục (hộp xác nhận → Nhận thưởng), mặc / cởi, đổi ngọc lấy rương, thẻ Nhận ngọc; model cao cấp không có.
 // skin: trận 1v1 cùng tướng hai bên, tướng mình bật trang phục mùa → màu vật liệu = màu bên địch × màu mùa; model cao cấp không bị phủ.
 // miss: Nhiệm vụ ba thẻ Ngày / Tuần / Sự kiện, nhận Rương tuần, nhận sự kiện → Gạo Hội, Phòng chờ hiện tiến độ sự kiện tích luỹ.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
@@ -15,7 +16,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
-const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin', 'peak844', 'peak1280'];
+const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin', 'peak844', 'peak1280', 'shop844', 'shop1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
@@ -300,6 +301,39 @@ async function peak(browser, vp) {
   await ctx.close();
 }
 
+async function shop(browser, vp) {
+  const label = `shop${vp}`;
+  console.log(`— ${label}: Cửa hàng ngọc — trang phục, vật phẩm, nguồn ngọc`);
+  const { ctx, page, errs } = await openPage(browser, vp, { 'la.profile': { version: 2, name: 'Thử Shop', gems: 200, gold: 500, feature: 'kiem_thuy', avatar: 'kiem_thuy', season: 1, bag: {} } });
+  await page.click('#home [data-a="gems"]'); await page.waitForSelector('.ui-panel .sh-looks', { timeout: T(10) }); await page.waitForTimeout(300);
+  const heroes = await page.evaluate(() => [...document.querySelectorAll('.sh-heroes [data-h]')].map((b) => b.dataset.h));
+  ok(`${label}: thẻ Trang phục — 16 tướng (không có 4 model cao cấp), mở sẵn tướng đang đứng ở sảnh`, heroes.length === 16 && !['hoa_ren', 'thach_quy', 'bong_tre', 'nguyet_ha'].some((h) => heroes.includes(h)) && (await page.getAttribute('.sh-heroes .on', 'data-h')) === 'kiem_thuy', heroes.length);
+  const o1 = await inView(page, ['.sh-look', '.ui-panel .ui-hr']); ok(`${label}: thẻ màu + số ngọc nằm trọn màn hình`, !o1.length, o1.slice(0, 3).join(' ; '));
+  await shot(page, label + '_costume');
+  await page.click('.sh-look [data-buy="hong_ngoc"]'); await page.waitForSelector('.ui-dlg .btns button', { timeout: T(5) });
+  await page.click('.ui-dlg .btns button:last-child'); await page.waitForSelector('#rewardScr .tl', { timeout: T(10) }); await page.waitForTimeout(500);
+  const it = await page.evaluate(() => window.__rewards.items[0]);
+  ok(`${label}: mua Hồng Ngọc → hộp xác nhận → Nhận thưởng (trang phục)`, it.k === 'costume' && it.id === 'kiem_thuy' && it.look === 'hong_ngoc', JSON.stringify(it));
+  await page.evaluate(() => window.__rewards.close()); await page.waitForTimeout(250);
+  const P1 = await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')));
+  ok(`${label}: trừ 60 ngọc, đang mặc (viền xanh + nút Cởi)`, P1.gems === 140 && P1.skinOn.kiem_thuy === 'hong_ngoc' && !!(await page.$('.sh-look.wear [data-wear="hong_ngoc"]')));
+  await page.click('.sh-look [data-wear="hong_ngoc"]'); await page.waitForTimeout(200);
+  ok(`${label}: Cởi → bỏ phủ màu`, (await page.evaluate(() => JSON.parse(localStorage.getItem('la.profile')).skinOn.kiem_thuy)) === undefined);
+  await page.click('.sh-look [data-wear="hong_ngoc"]'); await page.waitForTimeout(200);
+  await page.evaluate(() => window.__shop.tab('items')); await page.waitForTimeout(200);
+  await page.click('[data-item="g_chest3"]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(10) }); await page.waitForTimeout(400);
+  ok(`${label}: thẻ Vật phẩm — 30 ngọc đổi 3 rương`, (await page.evaluate(() => window.__rewards.items)).some((x) => x.k === 'chest' && x.n === 3));
+  await page.evaluate(() => window.__rewards.close()); await page.waitForTimeout(250);
+  const o2 = await inView(page, ['.ui-panel .pn-row .go']); ok(`${label}: nút đổi vật phẩm nằm trọn màn hình`, !o2.length, o2.slice(0, 3).join(' ; '));
+  await page.evaluate(() => window.__shop.tab('earn')); await page.waitForTimeout(200);
+  ok(`${label}: thẻ Nhận ngọc ghi rõ nguồn (lên cấp, Rương tuần, mùa)`, /Lên cấp/.test(await page.textContent('.ui-panel .ui-body')) && /Rương tuần/.test(await page.textContent('.ui-panel .ui-body')));
+  await shot(page, label + '_earn');
+  await page.click('.ui-panel .ui-back'); await page.waitForTimeout(500);
+  ok(`${label}: về sảnh — số ngọc cập nhật (110)`, /110/.test(await page.textContent('#home .cur.gem')));
+  ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
+  await ctx.close();
+}
+
 async function skin(browser) {
   const label = 'skin';
   console.log(`— ${label}: trang phục mùa phủ màu đúng tướng của mình trong trận (model cao cấp không bị phủ)`);
@@ -343,6 +377,8 @@ async function skin(browser) {
       else if (k === 'skin') await skin(browser);
       else if (k === 'peak844') await peak(browser, 844);
       else if (k === 'peak1280') await peak(browser, 1280);
+      else if (k === 'shop844') await shop(browser, 844);
+      else if (k === 'shop1280') await shop(browser, 1280);
     }
   } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
   await browser.close();

@@ -58,7 +58,7 @@ ok('chưa nhận đủ 4: Rương tuần chưa mở', !M.weekBonusReady(T0) && M
 const all = W.map((m) => M.claimMission('weekly', m.id, T0)).flat();
 ok('nhận 4 nhiệm vụ tuần: có Bùa Giữ Sao + 1 rương', all.some((r) => r.k === 'item' && r.id === 'bua_giu_sao') && all.some((r) => r.k === 'chest'));
 const ch0 = p.chests; got = M.claimWeekBonus(T0);
-ok('Rương tuần: vàng + Bùa Giữ Sao + 1 rương, một lần', got?.length === 3 && p.chests === ch0 + WEEK_BONUS.chest && M.claimWeekBonus(T0) === null && M.itemCount('bua_giu_sao', T0) === 2);
+ok('Rương tuần: vàng + ngọc + Bùa Giữ Sao + 1 rương, một lần', got?.length === 4 && p.chests === ch0 + WEEK_BONUS.chest && M.claimWeekBonus(T0) === null && M.itemCount('bua_giu_sao', T0) === 2);
 
 // —— 5. làm mới ——
 const T1 = at(2026, 10, 28, 4, 1);
