@@ -1,12 +1,14 @@
 // Sảnh chính (ảnh 2): tướng 3D đứng trên bệ giữa quảng trường đêm (phông dựng sẵn), góc trái trên thẻ người chơi (ảnh đại diện viền vàng
 // + cấp + huy hiệu hạng + thanh kinh nghiệm), cột bạn bè trực tuyến, góc phải trên tiền tệ / thư / toàn màn / cài đặt, cột phải băng sự
-// kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Túi đồ / Bạn bè, dưới phải hai nút pha lê
+// kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Bảng Bùa / Túi đồ / Bạn bè, dưới phải hai nút pha lê
 // "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc. Đổi tướng đứng ở sảnh: mục Tướng.
 import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast } from './kit.js';
 import { profile, rankOf, expNeed, missionsReady, mailUnread, COURAGE_MAX } from './profile.js';
 import { FRIENDS, chatLine } from './people.js';
 import { stage, stageOn, backdrop } from './stage.js';
 import { openModes } from './modes.js';
+import { openLoadout } from './loadoutPanel.js';
+import { ALPHA } from '../data/heroes/index.js';
 import { openProfile, openFriends, openMail, openMissions, openHeroes, openItems, openBag, openSettings, openEvent, openLeaderboard, openHistory } from './panels.js';
 
 export function openHome(nav) {
@@ -46,6 +48,7 @@ export function openHome(nav) {
       <nav class="hm-nav">
         <button type="button" data-a="heroes">${icon('helmet')}<span>Tướng</span></button>
         <button type="button" data-a="items">${icon('items')}<span>Trang bị</span></button>
+        <button type="button" data-a="loadout">${icon('book')}<span>Bảng Bùa</span></button>
         <button type="button" data-a="bag">${icon('bag')}<span>Túi đồ</span></button>
         <button type="button" data-a="friends">${icon('friends')}<span>Bạn bè</span></button>
       </nav>
@@ -67,7 +70,7 @@ export function openHome(nav) {
   const A = {
     profile: () => openProfile(render), friends: () => openFriends(), mail: () => openMail(render), settings: () => openSettings(),
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard(), history: () => openHistory(),
-    bag: () => openBag(), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
+    bag: () => openBag(), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
     chat: () => openFriends(), gems: () => toast('Cửa hàng ngọc sắp mở'), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };

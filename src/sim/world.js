@@ -16,6 +16,8 @@ import { checkMatch, surrender } from './match.js';
 import { updateVision } from './vision.js';
 import { initEconomy, updateEconomy } from './economy.js';
 import { SPELLS } from '../data/spells.js';
+import { sanitizePage } from '../data/charms.js';
+import { sanitizeEmblem } from '../data/emblems.js';
 import { equip, computeBonus } from './inventory.js';
 import { updateItems } from './items.js';
 import { createBot, updateBots } from '../ai/heroBot.js';
@@ -23,11 +25,13 @@ import { createLaneBot } from '../ai/laneBot.js';
 import { DIFFICULTY } from '../data/ai.js';
 import { initJungle, updateJungle } from './jungle.js';
 import { initOrbs, updateOrbs } from './orbs.js';
+import { updateSkillEntities } from './skillTypes.js';
+import { updatePings } from './pings.js';
 
 const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base: { maxHp: 6000, maxMana: 0, atk: 0, ap: 0, armor: 30, mr: 30, atkSpeed: 1, moveSpeed: 0, range: 0 }, perLevel: {}, basicAttack: {}, skills: {} };
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
-  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
+  const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], tethers: [], suppressions: [], pings: [], aceTick: [-1, -1], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
   world.byId = (id) => world.entities.find((e) => e.id === id) || null;
   world.surrender = (team) => surrender(world, team);
   world.emit = (type, data) => world.events.push({ ...data, type, tick: world.tick }); // loại sự kiện không bị trường cùng tên trong data đè
@@ -53,6 +57,18 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   };
   world.spawnHero = (heroId, team, pos) => makeHero(HEROES[heroId], team, pos, 'hero');
   world.spawnDummy = (team, pos) => makeHero(DUMMY, team, pos, 'dummy');
+  /** Bộ trang bị tiền trận { spellId, charm: {name, red, blue, gray}, emblem: {key, minors} | false } — chỉ nhận lúc tick 0 (trả false và
+   *  không đổi gì sau đó). Dữ liệu được làm sạch (sanitizePage / sanitizeEmblem). charm bỏ trống: giữ trang hiện tại; emblem bỏ trống: phù
+   *  hiệu mặc định theo vai, false: không có. Cùng seed + cùng bộ ⇒ cùng trận. */
+  world.setLoadout = (e, lo = {}) => {
+    if (world.tick !== 0 || e?.kind !== 'hero') return false;
+    const sp = lo.spellId && SPELLS[lo.spellId];
+    if (sp && !(sp.disabledIn1v1 && !e.teamMode)) e.spell = { id: lo.spellId, ready: 0 };
+    if (lo.charm !== undefined) { const pg = sanitizePage(lo.charm); if (pg) e.charm = pg; }
+    e.emblem = lo.emblem === false ? null : sanitizeEmblem(lo.emblem, e.data.roles?.[0] ?? e.data.role); e.emState = {};
+    e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana;
+    return true;
+  };
   /** Gắn bot điều khiển tướng (06 §5). */
   world.addBot = (e, difficulty = 'normal', laneIdx = null) => { e.goldMult = DIFFICULTY[difficulty]?.goldMult ?? 1; return laneIdx != null && map.lanes.length > 1 ? createLaneBot(world, e, difficulty, laneIdx) : createBot(world, e, difficulty); };
   world.command = (entityId, cmd) => {
@@ -61,9 +77,9 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     q.push(cmd);
   };
   world.debug = {
-    /** Bỏ bùa và đồ để đo sát thương thuần (dùng trong kiểm thử). */
-    bare(e) { e.charm = null; e.items = e.items.map(() => null); e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; },
-    resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; },
+    /** Bỏ bùa, phù hiệu và đồ để đo sát thương thuần (dùng trong kiểm thử). */
+    bare(e) { e.charm = null; e.emblem = null; e.emState = {}; e.items = e.items.map(() => null); e.bonus = computeBonus(e); refreshStats(world, e); e.hp = e.stats.maxHp; },
+    resetCooldowns(e) { e.cooldowns.s1 = e.cooldowns.s2 = e.cooldowns.s3 = 0; e.mana = e.stats.maxMana; e.recast = null; },
     level15(e) { setLevel(world, e, 15); autoLevel(e); }, // thử nghiệm: cộng luôn điểm kỹ năng (người chơi bình thường tự cộng bằng nút +)
     fullHeal(e) { e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; },
   };
@@ -97,7 +113,9 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     if (due.length) { world.pending = world.pending.filter((p) => p.tick > world.tick); for (const p of due) p.run(); }
     updateProjectiles(world); updateZones(world);
     updateMovement(world);
+    updateSkillEntities(world); // dây trói, phân thân, lịch sử vị trí (tua ngược)
     updateOrbs(world);
+    updatePings(world);
     updateCombat(world);
     // dọn lính đã chết sau 1 giây (để hiệu ứng ngã kịp chạy)
     world.entities = world.entities.filter((e) => !(e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30));

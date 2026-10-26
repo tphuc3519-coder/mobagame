@@ -8,6 +8,9 @@ import { dealDamage } from './damage.js';
 import { applyStatus, isHardCC, isRooted } from './status.js';
 import { spawnProjectile } from './projectiles.js';
 import { isTargetable } from './targeting.js';
+import { spawnMinion } from './minions.js';
+import { ITEM_PASSIVE } from '../data/items.js';
+import { computeBonus } from './inventory.js';
 
 export const NEUTRAL = 2;
 
@@ -38,7 +41,14 @@ export function updateJungle(world) {
   for (const camp of world.camps) {
     if (camp.respawnAt != null) { if (world.tick >= camp.respawnAt) spawnCamp(world, camp); continue; }
     const members = camp.alive.map((id) => world.byId(id)).filter((e) => e && e.alive);
-    if (!members.length) { camp.respawnAt = world.tick + T(MONSTERS[camp.type].respawn); world.emit('campCleared', { camp: camp.id, monster: camp.type }); continue; }
+    if (!members.length) {
+      camp.respawnAt = world.tick + T(MONSTERS[camp.type].respawn); world.emit('campCleared', { camp: camp.id, monster: camp.type, by: camp.lastKiller ?? null });
+      const k = camp.lastKiller != null ? world.byId(camp.lastKiller) : null; // Nanh Thú Rừng tự nâng sau khi hạ đủ số bãi (05 §4)
+      if (k?.bonus?.passives?.has('jungleFang') && !k.flags.fangUp && (k.flags.fangCamps = (k.flags.fangCamps || 0) + 1) >= ITEM_PASSIVE.jungleFang.upCamps) {
+        k.flags.fangUp = true; k.bonus = computeBonus(k); world.emit('itemUpgrade', { id: k.id, from: 'nanh_thu_rung', to: 'nanh_thu_rung' });
+      }
+      camp.lastKiller = null; continue;
+    }
     // gây hấn chung: con nào bị tướng đánh thì cả trại nhắm kẻ đó; nhớ mọi tướng vừa đánh trại (camp.threat) để đổi mục tiêu
     camp.threat ||= {};
     for (const m of members) {
@@ -109,15 +119,20 @@ export function onMonsterKilled(world, killer, m, { addGold, gainXp }) {
   const def = MONSTERS[m.monsterType]; if (!def) return;
   const heroes = world.entities.filter((h) => h.kind === 'hero' && h.alive);
   if (killer && killer.kind === 'hero') {
-    addGold(world, killer, def.gold[m.member] || 0);
+    const camp = world.camps?.find((c) => c.id === m.campId); if (camp) camp.lastKiller = killer.id;
+    const fang = killer.bonus?.passives?.has('jungleFang') ? ITEM_PASSIVE.jungleFang.rewardMult : 1; // Nanh Thú Rừng: +30% vàng và KN từ quái
+    addGold(world, killer, (def.gold[m.member] || 0) * fang);
     const near = heroes.filter((h) => h.team === killer.team && dist(h.pos, m.pos) <= 1200);
-    for (const h of near) gainXp(world, h, (def.xp[m.member] || 0) * (h === killer ? 1 : 0.5));
+    for (const h of near) gainXp(world, h, (def.xp[m.member] || 0) * (h === killer ? fang : 0.5));
     if (def.teamReward) for (const h of world.entities.filter((x) => x.kind === 'hero' && x.team === killer.team)) { addGold(world, h, def.teamReward.gold); gainXp(world, h, def.teamReward.xp); }
     const b = def.buff;
     if (b) for (const h of b.to === 'team' ? heroes.filter((x) => x.team === killer.team) : [killer]) {
-      applyStatus(world, h, { status: 'statMod', id: b.id, buff: b.id, ...b.mod, burn: b.burn, duration: b.duration }, h);
+      applyStatus(world, h, { status: 'statMod', id: b.id, buff: b.id, buffName: b.name, ...b.mod, burn: b.burn, duration: b.duration, transfer: b.to === 'killer', transferMin: b.transferMin || 0 }, h); // bùa cá nhân: rơi sang người hạ
       world.emit('buff', { id: h.id, buff: b.id, name: b.name, duration: b.duration });
     }
+    if (def.pushers && world.map.lanes.length > 1) for (let l = 0; l < world.map.lanes.length; l++) spawnMinion(world, def.pushers, killer.team, l, 0); // Người Đá Đèn đẩy cả ba đường
+    if (def.pushers) world.emit('pushers', { team: killer.team, type: def.pushers });
+    if (def.boss) world.lastBoss = { team: killer.team, tick: world.tick, x: m.pos.x, y: m.pos.y, type: m.monsterType }; // não đội (ai/teamBrain.js): vừa hạ mục tiêu lớn → dồn đường gần đó
     if (def.boss) { const ts = (world.teamStats ||= [{}, {}])[killer.team]; ts[m.monsterType] = (ts[m.monsterType] || 0) + 1; ts.boss = (ts.boss || 0) + 1; } // bảng tỉ số
     world.emit('monsterKill', { id: m.id, killer: killer.id, team: killer.team, monster: m.monsterType, boss: !!def.boss, name: def.name });
   }

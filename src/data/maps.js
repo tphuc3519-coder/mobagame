@@ -20,7 +20,10 @@ export const DUEL = {
   // Bụi cỏ ở mép trong của đường (chỉ hình ở Mốc 3; ẩn đơn vị ở Mốc 9).
   bushes: [{ x: 2250, y: 850, w: 360, h: 220 }, { x: 2250, y: 1550, w: 360, h: 220 }, { x: 1650, y: 1520, w: 240, h: 180 }, { x: 1150, y: 880, w: 220, h: 160 }],
   tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
-  waves: { first: 15, every: 25, sword: 3, archer: 1, siegeEvery: 3, spawnX: 900, gap: 14 },
+  // giantFrom: từ phút 18, đội đã phá trụ của địch có thêm Lính Đèn Lớn mỗi đợt (sim/minions.js giantsFor)
+  waves: { first: 15, every: 25, sword: 3, archer: 1, siegeEvery: 3, spawnX: 900, gap: 14, giantFrom: 1080 },
+  // đột tử: từ phút 30 công trình nhận gấp đôi sát thương và thôi tự hồi máu — hai tướng hồi máu / đỡ đòn đấu nhau không hoà mãi
+  suddenDeath: { from: 1800, structureTaken: 2 },
   // Đường duy nhất cho lính, đi từ Xanh sang Đỏ (cùng định dạng với bản 5v5).
   lanes: [{ id: 'main', width: 900, pts: [[900, 1200], [W - 900, 1200]] }],
   mirror: (x, y) => ({ x: mirrorX(x), y }),
@@ -85,7 +88,7 @@ const LANES = [
 
 const tower = (id, tier, x, y, invulnUntil) => {
   const T = { outer: [4000, 80, 220], inner: [4500, 90, 260], home: [5000, 100, 300] }[tier];
-  return { id, kind: 'tower', x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
+  return { id, kind: 'tower', tier, x: x * K, y: y * K, hp: T[0], atk: T[2], range: 1050, rate: 1.0, armor: T[1], radius: 85, invulnUntil, lane: id.split('_')[0] };
 };
 
 /** Tường dọc mép đường: đoạn dài `piece`, cách nhau `gap`, lùi `inset` ở hai đầu (chừa sân căn cứ và ngã tư giữa bản đồ). */
@@ -130,13 +133,14 @@ const CAMPS_BLUE = [
   { id: 'toad_b', type: 'coc_reu', x: 3150, y: 4470, arc: { r: 330, face: 90 } },
 ];
 // Mục tiêu lớn giữa sông (nằm trên trục đối xứng nên chỉ có một mỗi loại)
-const BOSSES = [ // hang nằm ở mép rừng mỗi bên sông, sát hai đường cánh (như Liên Quân): Long Ngư phía Xanh gần đường trên, Hổ Lôi phía Đỏ gần đường dưới
-  // Hai hang nằm trên MŨI ĐÁ chìa ra vực ở hai đầu sông (sông đổ xuống vực quanh mũi đá) — Long Ngư (tổ rồng) góc trên-trái cạnh đường Đền,
-  // Hổ Lôi (hang tím) góc dưới-phải cạnh đường Sông; nằm trên trục đối xứng nên công bằng cho hai phe. back: hướng lưng hang (ra vực).
-  // Hai hang lớn ở mép rừng hai bên sông (đối xứng tâm): Long Ngư phút 2 (phía Xanh, gần đường Đền), Hổ Lôi phút 8 (phía Đỏ, gần đường Sông).
-  { id: 'long_ngu', type: 'long_ngu', x: 1430, y: 2020, boss: true, back: 2.36 },
-  { id: 'ho_loi', type: 'ho_loi', x: 4990, y: 4380, boss: true, back: -0.785 },
-  // Hai mục tiêu cuối trận (phút 15) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
+const BOSSES = [ // hai hang lớn NẰM TRÊN TRỤC SÔNG y = x (03 §A7 "trung lập, trên trục sông"; như Liên Quân: cùng một đường gần hang cho cả hai đội)
+  // Long Ngư (phút 2) giữa sông đoạn gần đường Đền, Hổ Lôi (phút 8) giữa sông đoạn gần đường Sông; lưng hang quay về mũi đá cuối sông (Thần Điểu /
+  // Tà Thần), miệng hang mở về giữa bản đồ nên đội nào cũng vào từ sông như nhau. Trước 20/10 hai hang nằm ở mép rừng mỗi bên (Long Ngư
+  // phía Xanh, Hổ Lôi phía Đỏ): đo 50 trận toàn bot đổi bên cùng đội hình, Xanh thắng 60–65% (Long Ngư mọc sớm, thưởng vàng + KN cả đội,
+  // nằm sát rừng Xanh); bỏ Long Ngư → 50%, dời Long Ngư lên trục → 47%. Xem docs/DECISIONS.md.
+  { id: 'long_ngu', type: 'long_ngu', x: 1725, y: 1725, boss: true, back: -2.356 },
+  { id: 'ho_loi', type: 'ho_loi', x: 4675, y: 4675, boss: true, back: 0.785 },
+  // Hai mục tiêu cuối trận (phút 12, 03 §A9) trên mũi đá chìa ra vực: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -2.356 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: 0.785 },
 ];
@@ -296,13 +300,10 @@ export const ARENA = {
   // bụi cỏ (hình chữ nhật theo trục, toạ độ gốc ×K): bụi vừa (cũ), bụi lớn để "macro" (núp cả nhóm, chặn đường rừng/bờ sông) và nhiều bụi nhỏ rải rác
   bushes: [
     ...BUSHES_BLUE.map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
-    // bụi cỏ dài mọc mép nước dọc bờ sông ở cả bốn cửa sông, sát hai đường cánh (đường trên/đường dưới) — như Liên Quân. Không lấy ảnh x↔y
-    // (bờ đối diện mỗi bụi là một hang lớn) mà ĐỐI XỨNG TÂM (x, y) → (6400 − x, 6400 − y) như hai hang: khai [x1, y1, x2, y2, r] gốc một
-    // bụi, bụi kia là ảnh. Cặp 1: bụi bờ phía Đỏ cạnh trụ ngoài đường Đền (ảnh: phía Xanh cạnh trụ ngoài đường Sông). Cặp 2: bụi bờ phía
-    // Xanh cạnh trụ ngoài đường Đền, sát hang Long Ngư (ảnh: phía Đỏ cạnh trụ ngoài đường Sông, sát hang Hổ Lôi) — cùng đường tâm bờ
-    // (|x − y| = 310) nhưng ngắn và mảnh hơn: đầu gần trụ giữ mép bụi ngoài tầm trụ như cặp 1 (≥ 350 + bán kính tướng), đầu kia dừng
-    // trước mũi vách hang (cách ≥ 10; vách Hổ Lôi to hơn nên quyết định độ dài cho cả cặp).
-    ...[[1560, 1250, 1870, 1560, 95], [1235, 1545, 1345, 1655, 85]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [6400 - c, 6400 - d, 6400 - a, 6400 - b]]
+    // bụi cỏ mọc mép nước ở cả bốn cửa sông, sát hai đường cánh — như Liên Quân. Hai hang lớn nằm trên trục sông nên bốn bụi giống hệt nhau:
+    // khai một bụi (bờ phía Đỏ cạnh trụ ngoài đường Đền), ba bụi kia là ảnh x↔y và ảnh đối xứng tâm. Đường tâm bờ |x − y| = 310; đầu gần trụ
+    // giữ mép bụi ngoài tầm trụ (≥ 350 + bán kính tướng), đầu kia dừng trước vách hang (vách Hổ Lôi to hơn nên quyết định độ dài cho cả bốn).
+    ...[[1560, 1250, 1654, 1344, 95]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [b, a, d, c], [6400 - c, 6400 - d, 6400 - a, 6400 - b], [6400 - d, 6400 - c, 6400 - b, 6400 - a]]
       .map((q) => ({ cap: q.map((v) => v * K), r: r * K, bank: true, noMirror: true }))),
     // hai bụi lớn liền khối NGAY GIỮA SÔNG, nằm NGANG lòng sông (song song đường Giữa), hai bên cầu: chốt chặn quan trọng nhất.
     // Nằm trên trục đối xứng nên mỗi bụi chỉ có một.
@@ -314,10 +315,14 @@ export const ARENA = {
     ...CAMPS_BLUE.flatMap((c) => [{ ...c, x: c.x * K, y: c.y * K, side: 0 }, { ...c, id: c.id + '_r', x: c.y * K, y: c.x * K, side: 1 }]),
     ...BOSSES.map((b) => ({ ...b, x: b.x * K, y: b.y * K, side: null })),
   ],
-  tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90 },
+  // fortifyUntil / fortifyTaken: giáp trụ ngoài — trước phút 4 trụ ngoài chỉ nhận 60% sát thương (đầu trận không bị phá trụ quá sớm);
+  // homeRegen: trụ nhà hồi 15 máu/giây khi không bị đánh `regenAfter` giây (nhà chính hồi riêng 20/giây). minionAggro: lính đổi mục tiêu
+  // sang tướng địch vừa đánh tướng phe mình trong `minionAggroRange`, giữ `minionAggroFor` giây.
+  tower: { minionAggroRadius: 900, backdoorTaken: 0.4, streakStep: 0.3, streakMax: 1.5, minionPct: 0.45, siegePct: 0.2, aggroLinger: 90,
+    fortifyUntil: 240, fortifyTaken: 0.6, homeRegen: 15, regenAfter: 8, minionAggroRange: 700, minionAggroFor: 2.5 },
   // cục máu sau trụ ngoài mỗi đường (sim/orbs.js): cách trụ `behind` về phía nhà, tướng phe đó chạm vào → hồi máu + năng lượng, mọc lại sau `respawn` giây
   orbs: { behind: 560, radius: 120, respawn: 60, hpPct: 0.15, manaPct: 0.15 },
-  waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, gap: 14, spawnDist: 900 },
+  waves: { first: 20, every: 30, sword: 3, archer: 2, siegeEvery: 3, siegeEveryLate: 2, siegeLateFrom: 600, gap: 14, spawnDist: 900 },
   laneMult: 1,
   mirror: swap,
 };

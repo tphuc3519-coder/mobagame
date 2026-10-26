@@ -4,6 +4,7 @@ import { HEROES } from '../data/heroes/index.js';
 import { face } from './kit.js';
 import { profile } from './profile.js';
 import { botLabel } from './people.js';
+import { roleTag } from './roles.js';
 import { MODES, S } from './modes.js';
 import { stage, stageOn, backdrop } from './stage.js';
 import { sfx } from '../audio/audio.js';
@@ -19,11 +20,11 @@ export function openLineup(nav) {
   const pose = setTimeout(() => show.play('Victory'), 450);
   sfx('ui_vs');
 
-  const card = (heroId, name, me = false, i = 0) => `<div class="lu ${me ? 'me' : ''}" style="animation-delay:${0.08 * i}s"><div class="ring">${face(heroId)}</div><b>${HEROES[heroId].name}</b><small>${name}</small></div>`;
+  const card = (heroId, name, me = false, i = 0, role = null) => `<div class="lu ${me ? 'me' : ''}" style="animation-delay:${0.08 * i}s"><div class="ring">${face(heroId)}</div><b>${HEROES[heroId].name}</b><small>${name}</small>${roleTag(role)}</div>`;
   let row;
   if (M.size === 5) {
-    const al = P.allyHeroes.map((id, i) => card(id, `${A.allies[i].name} ${botLabel}`, false, i < 2 ? i : i + 1));
-    row = [al[0], al[1], card(P.heroId, p.name, true, 2), al[2], al[3]].join('');
+    const al = P.allyHeroes.map((id, i) => card(id, `${A.allies[i].name} ${botLabel}`, false, i < 2 ? i : i + 1, P.allyRoles?.[i]));
+    row = [al[0], al[1], card(P.heroId, p.name, true, 2, P.role), al[2], al[3]].join('');
   } else {
     row = card(P.heroId, p.name, true, 0);
     if (P.foeHeroes[0]) row += `<b class="lu-vs gt">VS</b>` + card(P.foeHeroes[0], `${A.foes[0].name} ${botLabel}`, false, 2).replace('class="lu ', 'class="lu foe ');

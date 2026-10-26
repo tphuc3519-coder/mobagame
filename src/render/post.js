@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { on } from '../core/scope.js';
 
 // Hậu kỳ trong trận, gọn cho GPU điện thoại (TBDR: mỗi lượt vẽ toàn màn = đọc/ghi cả khung qua bộ nhớ chung). Trước: EffectComposer +
 // UnrealBloomPass + OutputPass + chỉnh màu ≈ 15 lượt. Nay tối đa 7: cảnh → render target HalfFloat tuyến tính (MSAA tuỳ chọn) →
@@ -130,11 +131,15 @@ export function createPost(renderer, scene, camera, { bloom = true, aa = 4, stre
     if (on) { draw(bright, b4); draw(hA, h4); draw(vA, g4); draw(hB, h8); draw(vB, g8); }
     draw(fin[on ? 1 : 0], null);
   };
-  addEventListener('resize', resize); resize();
+  on(window, 'resize', resize); resize();
   passes(false); passes(true); // dịch sẵn mọi shader hậu kỳ (cả biến thể không bloom) để bật / tắt giữa trận không khựng
 
   return {
     get target() { return rt; },
+    /** Vật liệu các lượt hậu kỳ (giữ lại khi rời trận để chương trình shader còn cho trận sau). */
+    materials: () => [bright, hA, vA, hB, vB, ...fin],
+    /** Rời trận: trả các khung vẽ phụ + tam giác; trả về vật liệu để giữ (không huỷ). */
+    dispose() { for (const t of [rt, b4, h4, g4, h8, g8]) t.dispose(); tri.dispose(); return [bright, hA, vA, hB, vB, ...fin]; },
     render() {
       renderer.setRenderTarget(rt); renderer.render(scene, camera);
       if (!aa) gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]); // không MSAA: three không tự bỏ độ sâu sau lượt

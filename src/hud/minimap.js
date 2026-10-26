@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { canSee } from '../sim/vision.js';
 import { prefs } from '../core/prefs.js';
+import { on, track } from '../core/scope.js';
 
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
@@ -11,7 +12,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
   cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:2px solid #c9b47a;border-radius:6px;background:#0f1224;box-shadow:0 2px 12px #000a;touch-action:none';
-  document.body.appendChild(cv);
+  document.body.appendChild(track(cv));
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 
   let W = 0, H = 0, dpr = 1, sx = 1, sy = 1, bg = null;
@@ -52,7 +53,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     paintBackground(c);
     document.documentElement.style.setProperty('--mmh', H + 'px'); document.documentElement.style.setProperty('--mmw', W + 'px'); // cửa hàng xếp ngay dưới
   }
-  addEventListener('resize', resize); resize();
+  on(window, 'resize', resize); resize();
 
   const ray = new THREE.Raycaster(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
@@ -66,8 +67,10 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     return pts;
   }
 
+  let overlay = null; // vẽ thêm (tín hiệu — hud/pings.js) sau cùng
   return {
     canvas: cv,
+    setOverlay(fn) { overlay = fn; },
     draw() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.drawImage(bg, 0, 0, W, H);
@@ -108,6 +111,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         if (portraits) portraits.draw(ctx, e.heroId, e.data.name, x, y, me ? R * 1.12 : R, col(e), { me });
         else { ctx.fillStyle = col(e); ctx.beginPath(); ctx.arc(x, y, R * 0.6, 0, 7); ctx.fill(); }
       }
+      overlay?.(ctx, wx, wy);
     },
   };
 }

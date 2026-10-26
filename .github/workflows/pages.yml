@@ -1,7 +1,11 @@
 name: Deploy game to GitHub Pages
-# Chỉ chạy khi bấm tay (Actions → Deploy game to GitHub Pages → Run workflow), sau khi đã bật Pages:
-# Settings → Pages → Source: GitHub Actions. Không tự chạy khi push để khỏi báo lỗi khi Pages chưa bật.
+# Tự chạy mỗi khi có commit lên main (merge PR) và vẫn bấm tay được (Actions → Deploy game to GitHub Pages → Run workflow).
+# Chỉ đưa lên những thứ game cần khi chạy: index.html, demo.html, src/, lib/, assets/, manifest + service worker (đánh phiên bản bằng
+# tools/mk_sw.mjs) — không đẩy tools/
+# (model gốc ~26 MB), docs/ hay play.html cũ. enablement: true tự bật Pages nếu repo chưa bật.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,11 +22,24 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: actions/configure-pages@v5
-      - name: Bỏ thứ không cần khi chơi
-        run: rm -rf tools/modelgen/node_modules docs/previews .git
+        with:
+          enablement: true
+      - name: Dựng thư mục đem lên mạng
+        run: |
+          set -e
+          mkdir -p site
+          cp index.html demo.html manifest.webmanifest sw.js site/
+          cp -r src lib assets site/
+          # Đánh phiên bản: mã commit vào <meta name="la-build"> và sw.js; sw.js nhận danh sách tệp + băm SHA-256 (16 ký tự):
+          # máy người chơi chỉ tải lại tệp đã đổi, mã mới không trộn với tệp cũ (tools/mk_sw.mjs)
+          node tools/mk_sw.mjs site "${GITHUB_SHA::12}"
+          echo "site/: $(du -sh site | cut -f1)"
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

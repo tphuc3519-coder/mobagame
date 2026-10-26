@@ -1,10 +1,12 @@
-// Nội tại và kích hoạt của đồ (05 §4). Chỉ số phẳng nằm ở inventory.js; ở đây là hiệu ứng có điều kiện.
+// Nội tại và kích hoạt của đồ (05 §4). Chỉ số phẳng nằm ở inventory.js; ở đây là hiệu ứng có điều kiện. Từng loại kích hoạt: itemActives.js.
 import { ITEMS } from '../data/items.js';
 import { COMBAT_EXTRA } from '../data/economy.js';
 import { T, dist } from './util.js';
-import { applyStatus } from './status.js';
+import { applyStatus, isHardCC } from './status.js';
 import { dealDamage } from './damage.js';
 import { alliesOf, enemiesOf } from './targeting.js';
+import { ACTIVES } from './itemActives.js';
+import { cancelRecall } from './economy.js';
 
 const has = (e, p) => !!e.bonus?.passives.has(p);
 
@@ -13,7 +15,7 @@ export function onBasicAttack(world, e, pay) {
   const s = e.stats;
   let amount = pay.amount;
   let crit = false;
-  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0); crit = pay.crit = true; }
+  if (s.crit > 0 && world.rng.next() < Math.min(1, s.crit)) { amount *= s.critDmg ?? (COMBAT_EXTRA.critBase + (e.bonus?.critDmg || 0)); crit = pay.crit = true; }
   const extra = [];
   if (e.flags.spellblade && world.tick >= (e.flags.sbCd || 0)) { extra.push({ amount: s.baseAtk, type: 'physical' }); e.flags.spellblade = false; e.flags.sbCd = world.tick + T(2); }
   if (has(e, 'forgehammer')) extra.push({ amount: 0.02 * pay.targetMaxHp, type: 'physical' });
@@ -65,14 +67,19 @@ export function updateItems(world, e) {
   if (has(e, 'lanternaura')) for (const a of alliesOf(world, e, 700)) applyStatus(world, a, { status: 'statMod', id: 'lanternaura', armor: 10, mr: 10, duration: 0.3 }, e);
 }
 
-/** Đồ kích hoạt (Bình Sương Đông). */
-export function useItem(world, e, slot) {
+/** Đồ kích hoạt ở ô `slot` (itemActives.js). aim: { x, y } hướng (aim 'direction') hoặc { id } mục tiêu chỉ định (aim 'target').
+ *  Hồi chiêu riêng từng món, không giảm bởi giảm hồi chiêu, chỉ tính khi kích hoạt thành công; bị khống chế cứng thì không dùng được (trừ
+ *  món `inCC`); dùng được thì huỷ Biến về. (Áp chế / Sương Đông chặn ở commands.js.) */
+export function useItem(world, e, slot, aim = null) {
   const id = e.items[slot], act = id && ITEMS[id].active;
   if (!act) return { ok: false, reason: 'none' };
   e.itemCd ||= {};
   if (world.tick < (e.itemCd[id] || 0)) return { ok: false, reason: 'cooldown' };
+  if (!act.inCC && isHardCC(e)) return { ok: false, reason: 'cc' };
+  const run = ACTIVES[act.id]; if (!run) return { ok: false, reason: 'unsupported' };
+  const r = run(world, e, act, aim); if (!r.ok) return r;
   e.itemCd[id] = world.tick + T(act.cooldown);
-  if (act.id === 'stasis') { e.dash = null; e.moveDir = { x: 0, y: 0 }; applyStatus(world, e, { status: 'stasis', duration: act.duration }, e); }
-  world.emit('itemUse', { id: e.id, item: id });
+  cancelRecall(world, e);
+  world.emit('itemUse', { id: e.id, item: id, act: act.id, ...(r.ev || {}) });
   return { ok: true };
 }

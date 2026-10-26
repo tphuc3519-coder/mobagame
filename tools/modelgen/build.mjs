@@ -10,6 +10,7 @@ import { buildClips } from './anim.mjs';
 import { importHero } from './import_glb.mjs';
 import { importFused } from './import_fused.mjs';
 import { HEROES } from './heroes/index.mjs';
+import { PREMIUM } from '../premium.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outRoot = path.resolve(here, '../../assets/heroes');
@@ -18,6 +19,7 @@ const only = process.argv.slice(2);
 const report = [];
 for (const [id, def] of Object.entries(HEROES)) {
   if (only.length && !only.includes(id)) continue;
+  if (PREMIUM.includes(id) && !process.env.FORCE_PREMIUM) { console.log(id, ': model CAO CẤP của chủ dự án — bỏ qua (FORCE_PREMIUM=1 nếu chính chủ dự án gửi bản mới)'); continue; }
   if (def.import) { report.push(await (def.import.mode === 'fused' ? importFused : importHero)(id, def, outRoot, here)); continue; } // model hoạ sĩ nhập vào, không sinh bằng code
   const ctx = def.build(id);
   const { m } = ctx;

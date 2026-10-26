@@ -1,7 +1,9 @@
 import { TICK } from '../core/loop.js';
 import { isTargetable } from './targeting.js';
+import { isUntargetable } from './status.js';
 
-// Đạn: thẳng (kỹ năng) hoặc tự dẫn (đòn đánh xa). onHit(target) trả true nếu đạn dừng lại.
+// Đạn: thẳng (kỹ năng) hoặc tự dẫn (đòn đánh xa, chiêu khoá mục tiêu). onHit(target) trả true nếu đạn dừng lại.
+// skip(t): bỏ qua mục tiêu (đòn đánh thường không trúng người có basicImmune); pierce: true = xuyên mọi mục tiêu, số n = xuyên n mục tiêu rồi dừng ở mục tiêu kế; heroOnly: chỉ va tướng; onEnd(p): hết tầm / mất mục tiêu mà chưa dừng.
 export function spawnProjectile(world, p) {
   const proj = { id: world.nextId++, hit: new Set(), homing: null, width: 40, pierce: false, ...p };
   proj.perTick = proj.speed * TICK;
@@ -22,25 +24,26 @@ export function updateProjectiles(world) {
     let done = false;
     if (p.homing != null) { // đòn đánh xa tự dẫn
       const t = world.byId(p.homing);
-      if (!t || !t.alive) done = true;
+      // chiêu khoá mục tiêu trượt khi mục tiêu thành không thể chọn / Sương Đông giữa đường (đòn đánh thường giữ như cũ)
+      if (!t || !t.alive || (p.kind === 'skill' && isUntargetable(t))) { done = true; p.onEnd?.(p); }
       else {
         const dx = t.pos.x - p.x, dy = t.pos.y - p.y, d = Math.hypot(dx, dy);
-        if (d <= p.perTick + t.radius * 0.6) { p.onHit(t); done = true; }
+        if (d <= p.perTick + t.radius * 0.6) { p.hit.add(t.id); p.onHit(t); done = true; }
         else { p.x += (dx / d) * p.perTick; p.y += (dy / d) * p.perTick; p.dx = dx / d; p.dy = dy / d; }
       }
     } else {
       const step = Math.min(p.perTick, p.remaining);
       const nx = p.x + p.dx * step, ny = p.y + p.dy * step;
       for (const t of world.entities) {
-        if (!owner || t.team === owner.team || p.hit.has(t.id) || !isTargetable(owner, t)) continue;
+        if (!owner || t.team === owner.team || p.hit.has(t.id) || !isTargetable(owner, t) || (p.heroOnly && !t.isHero) || (p.skip && p.skip(t))) continue;
         if (segDist(t.pos.x, t.pos.y, p.x, p.y, nx, ny) <= t.radius + p.width / 2) {
           p.hit.add(t.id);
           const stop = p.onHit(t);
-          if (stop && !p.pierce) { done = true; break; }
+          if (stop && (p.pierce === true ? false : typeof p.pierce === 'number' ? p.hit.size > p.pierce : true)) { done = true; break; }
         }
       }
-      p.x = nx; p.y = ny; p.remaining -= step;
-      if (p.remaining <= 0.01) done = true;
+      if (done) { p.x = nx; p.y = ny; }
+      else { p.x = nx; p.y = ny; p.remaining -= step; if (p.remaining <= 0.01) { done = true; p.onEnd?.(p); } }
     }
     if (!done) keep.push(p);
   }

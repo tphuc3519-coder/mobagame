@@ -12,6 +12,10 @@ const ground = (m, y = 4) => { m.rotation.x = -Math.PI / 2; m.position.y = y; re
 
 /** floor(x, z, r): độ cao mặt nền phần nhìn (bệ trại quái, hang mục tiêu lớn — env/floor.js); hình sát đất đặt lên trên mặt đó. */
 const keep = []; // vật liệu mẫu đã dịch sẵn (warm) — giữ sống để chương trình shader không bị giải phóng
+/** Ngữ cảnh WebGL bị bỏ (renderer.drop): chương trình mất theo, bỏ bộ giữ để trận sau giữ bộ mới. */
+export function resetShapeKeep() { keep.length = 0; }
+/** Vật liệu mẫu đang giữ (ảnh của chúng được trả GPU khi rời trận, tải lại khi cần). */
+export const keptShapeMaterials = () => keep;
 export function createShapes(scene, { floor = null } = {}) {
   const live = [], fl = (x, z, r = 0) => (floor ? floor(x, z, r) : 0);
   const add = (obj, life, update, opts = {}) => { scene.add(obj); const it = { obj, life, t: 0, update, ...opts }; live.push(it); return it; };
@@ -177,7 +181,11 @@ export function createShapes(scene, { floor = null } = {}) {
     decal('crack', X, X, 1, { additive: false });
     const t = trail(), made = live.splice(n0);
     // gỡ khỏi cảnh nhưng KHÔNG huỷ vật liệu: vật liệu cuối cùng dùng một chương trình bị huỷ thì three.js xoá luôn chương trình đã dịch
-    return () => { for (const it of made) scene.remove(it.obj); scene.remove(t.mesh); keep.push(...made.map((it) => it.obj.material), t.mesh.material); };
+    return () => {
+      for (const it of made) { scene.remove(it.obj); it.obj.geometry?.dispose?.(); } scene.remove(t.mesh); t.mesh.geometry?.dispose?.();
+      if (!keep.length) keep.push(...made.map((it) => it.obj.material), t.mesh.material); // giữ một bộ cho cả phiên (đấu lại: không chép thêm)
+      else { for (const it of made) it.obj.material.dispose(); t.mesh.material.dispose(); }
+    };
   }
 
   return {

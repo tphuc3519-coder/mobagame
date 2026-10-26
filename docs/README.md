@@ -32,6 +32,7 @@
 8. Không dùng tên, hình, model, icon, âm thanh, font, bộ kỹ năng đặc trưng hay tên vật phẩm của game thương mại khác.
 10. Model 3D chỉ nạp từ `assets/` và mỗi file phải có dòng ghi nguồn trong `assets/LICENSES.md`.
 9. Khi spec mâu thuẫn hoặc thiếu: chọn cách đơn giản nhất, ghi lại trong `docs/DECISIONS.md`.
+11. **Bốn model cao cấp do chủ dự án gửi — Hoả Rèn (`hoa_ren`), Thạch Quy (`thach_quy`), Bóng Tre (`bong_tre`), Nguyệt Hạ (`nguyet_ha`) — không được sửa, dựng lại hay chụp lại**: file GLB / `hero.art.json`, file gốc trong `tools/modelgen/imports/`, animation viết tay trong `tools/modelgen/heroes/<id>*.mjs` và ảnh thẻ trong `assets/ui/heroes/<id>_*`. `node tools/t_premium.mjs` kiểm mã băm của 35 file đó; `tools/modelgen/build.mjs` và `tools/uiart/render.cjs` tự bỏ qua 4 tướng này (chỉ chủ dự án dùng `FORCE_PREMIUM=1` khi chính họ gửi bản mới). Không đổi chất liệu / đổ bóng / animation chung theo cách làm 4 tướng này trông khác đi.
 
 ## Chạy local
 ```

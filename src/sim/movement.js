@@ -1,30 +1,44 @@
 import { TICK } from '../core/loop.js';
-import { dist, clampToMap } from './util.js';
-import { isRooted, isHardCC } from './status.js';
+import { dist, dirTo, clampToMap } from './util.js';
+import { isRooted, isHardCC, removeStatus, isCcImmune } from './status.js';
 import { skillHit } from './skills.js';
-import { enemiesOf } from './targeting.js';
+import { enemiesOf, isTargetable } from './targeting.js';
 
-/** Lướt (dash) một tick: dừng khi hết tầm, khi gặp tướng (stopOnHero) hoặc bị khống chế cứng. */
+/** Kết thúc lướt: gọi onEnd(mục tiêu chạm được hoặc null) — chém liên hoàn sau cú lướt, hook trượt của lao khoá mục tiêu. Lướt của chiêu
+ *  `unstoppable` thì cửa sổ không thể cản kết thúc cùng cú lướt. */
+function endDash(e, t) { const d = e.dash; e.dash = null; if (d?.cast?.skill?.unstoppable) removeStatus(e, 'unstoppable'); d?.onEnd?.(t); }
+
+/** Lướt (dash) một tick: dừng khi hết tầm, khi gặp tướng (stopOnHero), khi chạm mục tiêu đã khoá (target) hoặc bị khống chế cứng. */
 function updateDash(world, e) {
   const d = e.dash;
   if (isHardCC(e)) { e.dash = null; return; }
-  const step = Math.min(d.perTick, d.left), n = Math.ceil(step / 30); // chia bước nhỏ: lướt nhanh không xuyên qua bệ đá mỏng
+  let step = Math.min(d.perTick, d.left);
+  if (d.target != null) { // lao khoá mục tiêu: bám theo, không vượt quá chỗ chạm
+    const t = world.byId(d.target);
+    if (!t || !t.alive || !isTargetable(e, t)) { endDash(e, null); return; }
+    const gap = dist(e.pos, t.pos) - e.radius - t.radius;
+    if (gap <= 6) { d.hit.add(t.id); skillHit(world, e, t, d.cast); endDash(e, t); return; }
+    const dd = dirTo(e.pos, t.pos); d.dx = dd.x; d.dy = dd.y; e.facing = Math.atan2(dd.y, dd.x); step = Math.min(step, gap);
+  }
+  const n = Math.ceil(step / 30); // chia bước nhỏ: lướt nhanh không xuyên qua bệ đá mỏng
   for (let i = 0; i < n; i++) { e.pos.x += d.dx * step / n; e.pos.y += d.dy * step / n; clampToMap(world.map, e.pos, e.radius); }
   d.left -= step;
   const { skill } = d.cast;
-  if (skill.damage) {
+  if (d.target == null && (skill.damage || d.noHit)) {
     for (const t of enemiesOf(world, e)) {
       if (d.hit.has(t.id) || dist(t.pos, e.pos) > e.radius + t.radius) continue;
-      if (d.along || (d.stop && t.isHero)) { d.hit.add(t.id); skillHit(world, e, t, d.cast); }
-      if (d.stop && t.isHero) { e.dash = null; return; }
+      const stopHere = d.stop && t.isHero;
+      if (d.along || stopHere) { d.hit.add(t.id); if (!d.noHit) skillHit(world, e, t, d.cast); }
+      if (stopHere) { endDash(e, t); return; }
     }
   }
-  if (d.left <= 0.01) e.dash = null;
+  if (d.left <= 0.01) endDash(e, null);
 }
 
 /** Kéo/đẩy cưỡng bức (móc neo, xoáy nước): đơn vị bị dời thẳng tới điểm đích với tốc độ cố định, mất lượt lướt đang có. */
 export function forceMove(world, t, to, speed) {
   if (!t.alive || t.structure || t.boss) return; // mục tiêu lớn đứng yên trong hang: không bị kéo/hút (trước bị kéo ra, tốc chạy 0 nên kẹt "đang về" mãi — hồi máu liên tục, không đánh trả)
+  if (isCcImmune(t)) return; // miễn khống chế / không thể cản: không bị kéo, đẩy (forceMove chỉ dùng để dời đơn vị khác)
   const d = dist(t.pos, to);
   if (d < 1) return;
   t.dash = null; t.forced = { x: to.x, y: to.y, perTick: speed * TICK };

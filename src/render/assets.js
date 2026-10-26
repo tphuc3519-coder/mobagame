@@ -26,7 +26,7 @@ const cache = new Map(), ready = new Map(), arts = new Map();
 const prog = new Map(), urlOf = new Map(); // tiến độ tải từng file .glb (0..1) — màn tải trận vẽ thanh tiến độ theo model tướng của từng người
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Điện thoại (màn cảm ứng nhỏ): bỏ bản trưng bày chi tiết (texture 2048², ~8 MB) — bản trong trận đủ nét ở màn nhỏ, đỡ tốn bộ nhớ. */
-const LITE = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
+export const LITE = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
 /** Báo giao diện khi một tướng tải lỗi hẳn (sau các lần thử lại) — hiện thông báo kèm lỗi; nơi gọi tự thử lại sau. */
 const fail = (id, e) => { try { dispatchEvent(new CustomEvent('la:modelfail', { detail: { id, error: e?.message || String(e) } })); } catch (_) { /* không có DOM */ } };
 

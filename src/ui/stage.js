@@ -32,6 +32,9 @@ export function backdrop(kind, { rays = false, cx = '50%', cy = '42%' } = {}) {
   b.style.setProperty('--cx', cx); b.style.setProperty('--cy', cy);
 }
 export function stageDispose() {
-  if (show) { show.dispose(); show = null; }
+  if (show) { // canvas đã forceContextLoss không dựng được renderer mới: thay canvas mới (về sảnh sau trận ngay trong trang)
+    show.dispose(); show = null;
+    const c = document.getElementById('show'); if (c) { const n = document.createElement('canvas'); n.id = 'show'; n.className = c.className; c.replaceWith(n); }
+  }
   clearInterval(poll); busy = 0; document.getElementById('showload')?.classList.remove('on');
 }

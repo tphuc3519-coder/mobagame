@@ -1,6 +1,7 @@
-// Túi đồ: mua (tự tiêu thành phần), bán 60%, cộng chỉ số từ đồ + bùa (05 §1, §8).
-import { ITEMS, ITEM_MAX, SELL_RATE, cleanBuild } from '../data/items.js';
+// Túi đồ: mua (tự tiêu thành phần), bán 60%, cộng chỉ số từ đồ + bùa + phù hiệu (05 §1, §8, §9).
+import { ITEMS, ITEM_MAX, ACTIVE_MAX, SELL_RATE, cleanBuild, ITEM_PASSIVE } from '../data/items.js';
 import { CHARM_PAGES, PAGE_BY_ROLE, pageStats } from '../data/charms.js';
+import { emblemStats } from '../data/emblems.js';
 
 const NUMERIC = ['atk', 'ap', 'maxHp', 'maxMana', 'armor', 'mr', 'atkSpeedPct', 'crit', 'lifesteal', 'spellvamp', 'cdr', 'armorPenPct', 'armorPenFlat', 'mrPen', 'moveSpeed', 'moveSpeedPct', 'tenacity', 'regenHp'];
 
@@ -16,9 +17,11 @@ export function computeBonus(e) {
     for (const [k, v] of Object.entries(it.unique || {})) b.uniq[k] = Math.max(b.uniq[k] || 0, v);
     if (it.passive) b.passives.add(it.passive);
   }
+  if (b.passives.has('jungleFang') && e.flags?.fangUp) add(ITEM_PASSIVE.jungleFang.upStats); // Nanh Thú Rừng đã nâng
   b.armorPenPct += b.uniq.armorPenPct || 0; b.mrPenPct = b.uniq.mrPenPct || 0; b.critDmg = b.uniq.critDmg || 0;
   b.apMult = b.uniq.apMult || 0; b.basicReduce = b.uniq.basicReduce || 0;
   if (e.charm) add(pageStats(e.charm));
+  if (e.emblem) add(emblemStats(e.emblem)); // nét phụ của phù hiệu
   return b;
 }
 
@@ -50,6 +53,7 @@ export function planBuy(e, id) {
   const cost = it.cost - take(id);
   const left = e.items.filter((x, i) => x && !taken.has(i));
   if (left.length >= ITEM_MAX) return { ok: false, reason: 'full', cost, consume };
+  if (it.active && left.filter((x) => ITEMS[x].active).length >= ACTIVE_MAX) return { ok: false, reason: 'active', cost, consume }; // tối đa 2 món có kích hoạt (HUD 2 nút)
   for (const tag of it.tags || []) if (['boots', 'jungle', 'support'].includes(tag) && left.some((x) => ITEMS[x].tags?.includes(tag))) return { ok: false, reason: 'limit', cost, consume };
   return { ok: true, cost, consume };
 }

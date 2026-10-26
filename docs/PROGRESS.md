@@ -301,3 +301,165 @@ vật tung skill cũng có hồn có lực hơn chứ đừng đơ đơ như v�
     bị đẩy giật + ngả theo cú đánh, chờ đúng lúc vũ khí người đánh tới.
   - `render/camera.js`: giật camera nhẹ theo hướng chiêu của người chơi (chiêu cuối mạnh hơn; tắt khi máy bật giảm chuyển động).
   - `render/vfx/library.js`: tụ lực ở tay / vũ khí suốt lúc gồng, loé + bùng ở mũi vũ khí đúng khung chạm; cú búa Xỉ Sắt theo clip.
+
+## Kiểm toán 19/10 — Giai đoạn 1a + 1b: mở đủ 20 tướng, luật 5v5 còn thiếu
+- **Mở khoá 14 tướng** (Hạnh Hoa, Tiểu Ảnh, Bà Năm Chảo, Cầu Mây, Bóng Đèn, Thầy Đồ, Kép Chèo, Mèo Thần Tài, Phù Đổng, Thư Linh, Kiếm Thuỷ,
+  Lưỡng Cực, Nhãn Sư, Trạng Nhí) — `ALPHA` giờ là 20 tướng; màn chọn, đội hình bot, chế độ thử (`?hero=<id>`) đều dùng được.
+  - Kiểu chiêu mới (`src/sim/skillTypes.js`): `line` (đường thẳng nhiều nhịp, hiệu ứng khi trúng đủ nhịp), `tether` (trói nối, hết giờ còn
+    trong tầm thì choáng, đứt khi người trói bị khống chế / kéo giãn), `recast` (phân thân giấy tự bắn, kích hoạt lại đổi chỗ), `targetedDash`
+    (lao khoá mục tiêu), `targeted` (đạn khoá mục tiêu); chém liên hoàn sau cú lướt; tua ngược vị trí + máu (lịch sử 0,5 s/mẫu).
+  - Kiểu cũ thêm: bắn nhiều phát (`count`/`interval`, phát sau bám mục tiêu phát đầu), biến thể ngẫu nhiên (Pháo Giấy nổ vùng giảm dần,
+    Đá Lộn Ngược), xuyên N mục tiêu, chỉ trúng tướng, nhiều đợt sóng + hất ngược đạn, nhiều tia trong quạt (đếm tia trúng → kiệt sức),
+    khiên đồng minh trong vùng, miễn đòn đánh thường, hiệu ứng tức thời (đẩy lùi, hút về, giải khống chế, cắt chiêu — `sim/effects.js`).
+  - Hook nội tại mới: `onCast` (đổi đòn sắp ra: `cast.dmgAdd/dmgMult/extraEffects`), `onTakeDamage` (giảm / né hẳn), `onSkillMiss`,
+    `canCast` / `canTarget` (điều kiện riêng: đủ Ấn, đủ Tầm Nhìn, máu dưới 30%, đủ 2 Manh Mối); công cụ tầng dấu `addStack/stacks/clearStack`;
+    `passive.gauge` hiện cạnh thanh máu (Nụ 2/4, Ấn 3/5, Tầm Nhìn 60/100…).
+  - Trạng thái mới: `noDash` (không lướt / Chớp Bước), `blind` (đánh thường có tỉ lệ trượt), `suppress`, `basicImmune`, `mark`; hồi máu theo %.
+  - HUD: chiêu khoá mục tiêu kéo để chọn, nút xám khi chưa đủ điều kiện, nút vàng khi đang trong cửa sổ kích hoạt lại; bot dùng đủ các kiểu mới
+    (`ai.ultRule` hpBelowX cho Đổi Vai / Đồng Hồ Ngược; hồi máu nhắm đồng minh máu thấp nhất).
+  - Hình: màu chủ đề 14 tướng, hiệu ứng mới `render/vfx/extra.js` (nét chém đường thẳng, dây trói, giấy vụn phân thân, phản đạn, tua ngược,
+    chuỗi chém, né / trượt, tráo máu, nội tại bùng); phân thân vẽ mờ như bóng. Ảnh thẻ + toàn thân 14 tướng dựng bằng `tools/uiart/render.cjs`
+    (sửa công cụ gãy vì gọi hàm viền đã bỏ).
+- **Luật 5v5 (03 §A4–A7)**: giáp trụ ngoài (−40% sát thương trước phút 4), trụ nhà hồi 15 máu/giây khi yên 8 s, lính quay sang đánh tướng
+  địch vừa đánh tướng phe mình (giữ 2,5 s), bùa xanh / đỏ rơi sang người hạ (giữ thời gian còn lại, ít nhất 30 s), hạ Tà Thần → mỗi đường
+  một Người Đá Đèn đẩy đường cho đội hạ; Lính Đèn Lớn trâu hơn dưới trụ (trụ bắn 20% máu / phát thay vì 45%).
+- **1v1 không hoà mãi**: tướng hồi máu / đỡ đòn đấu nhau từng kéo 40 phút (14/50 trận bot hoà). Từ phút 18 đội đã phá trụ địch có siêu lính,
+  từ phút 30 công trình nhận gấp đôi sát thương và thôi hồi máu; bot lao phá trụ khi đối thủ còn chết ≥ 6 s. Đo lại: 50/50 trận kết thúc, TB 20,4 phút.
+- Kiểm thử mới: `node tools/t_heroes.mjs` (cơ chế từng tướng + 14 trận bot 90 s), `node tools/t_rules5v5.mjs`. Toàn bộ `tools/t_*.mjs` đạt.
+
+## Kiểm toán 19–20/10 — Giai đoạn 1c: bot 5v5 có não đội
+- **Não đội** (`src/ai/teamBrain.js`): mỗi giây giao lệnh thủ trụ / đánh mục tiêu lớn / dồn đường cho bot rảnh; bot đường (`laneBot.js`) làm theo,
+  đứng ngoài tầm trụ chờ lính khi đẩy, chỉ lặn trụ khi an toàn.
+- **Hai hang Long Ngư / Hổ Lôi lên trục sông** cho công bằng hai phe; Thần Điểu / Tà Thần mọc phút 12; gom đội đẩy đường từ phút 10.
+- **Đo** (`node tools/t_arena_batch.mjs 50 normal`, ~19 phút máy): 50/50 kết thúc, trung vị **15,9 phút**, Xanh **54%**, mục tiêu lớn **3,6 /
+  trận**, 0 lỗi. Trước GĐ1c: trung vị 22,6 phút, Xanh 65% (đo đổi bên cùng đội hình), mục tiêu lớn gần như không ai đánh.
+
+## GĐ2 (nhánh gd2-trongtran): chiêu khoá mục tiêu, Áp chế, Không thể cản, 3 đồ kích hoạt mới (20/10)
+- **Áp chế** (`sim/suppress.js`): sợi xích nối người gây và mục tiêu — mục tiêu không đi / đánh / chiêu / phép / đồ / Hồi Máu / Biến về,
+  không giảm bởi kháng hiệu ứng, Giải Trói không gỡ; người gây đứng niệm giữ, đứt khi bị khống chế cứng / câm lặng / khiêu khích / bị cắt chiêu
+  / chết / tự dùng phép, đồ. Một cửa chặn lệnh duy nhất ở `sim/commands.js`. Bóng Đèn K2 Trói Bóng: áp chế 1,25s rồi choáng 0,8s (hồi 13→10,5s).
+- **Không thể cản** (`unstoppable`): Bà Năm K3 Dép Bay 0,5s, Kiếm Thuỷ K3 Nhật Vũ 0,35s — miễn khống chế, không bị đẩy / hút / cắt chiêu (hết
+  cùng cú lướt). Miễn khống chế (cả Giải Trói, cú bay của Mèo) giờ chặn luôn đẩy / hút / cắt chiêu. Bị trói không lướt được.
+- **Chiêu khoá mục tiêu**: lệnh mang `aim.id` — chạm nhanh dùng mục tiêu đang khoá, kéo thì dấu vàng xem trước đúng tướng sẽ bị chọn và gửi đúng
+  tướng đó; bot gửi đúng tướng nó chọn. Đạn khoá mục tiêu trượt khi mục tiêu vào Sương Đông / không thể chọn giữa đường; Sương Đông chặn mọi
+  hiệu ứng của địch.
+- **Đồ kích hoạt** (`sim/itemActives.js`): tối đa 2 món / túi, HUD 2 nút (nút 2 xếp trên nút 1; phím E / Q), mờ khi không có mục tiêu, xám khi bị
+  khống chế. Món mới: **Xích Đồng** (Xích Giữ — áp chế 1,25s), **Lọng Hộ Mệnh** (Lọng Che — khiên cả nhóm), **Dải Lụa Gió** (Lụa Gió — lướt
+  320). Danh mục 56 món. Bot dùng theo `BOT.items` (06 §4.7), bot 5v5 đánh trước kẻ bị áp chế / đang niệm.
+- Chữ trên đầu `ÁP CHẾ` / `KHÔNG THỂ CẢN`, thanh niệm tím, chữ lý do khi bấm hỏng; hiệu ứng (xích, vòng ký tự, kén băng, vòng lọng, vệt lụa) và
+  tiếng chỉ dùng hình / id có sẵn (không dựng lại `assets/audio`, không đụng `render/vfx/library.js`).
+- Kiểm thử mới: `node tools/t_suppress.mjs` (37 mục), `node tools/t_actives.mjs` (41), `node tools/t_lockon.mjs` (16); `t_items` (56 món),
+  `t_heroes` (Bóng Đèn) cập nhật. Toàn bộ bộ nhanh + `t_arena` + `t_bot` (50/50 trận kết thúc, TB 20,1 phút, kẹt lâu nhất 2,2s) đạt;
+  `t_premium` đạt (35 file của 4 model cao cấp không đổi).
+- **Dấu vân tay mô phỏng mới** (`node tools/t_determinism.mjs`, hai lần chạy trùng nhau): 5v5 `748f8cd9 60ce391c c9a30571 83d4ef8a e4036f30
+  102485c6 778d3ec2 18041c25`; 1v1 `baae542e 454d9a52 170c06b7 bc096c4e 5925c156 34c07f7e bb44540f aedd9e61` (1v1 không đổi so với trước; 5v5
+  khác từ phút 2 vì Bóng Đèn có trong đội hình bot).
+- **Kiểm thử trình duyệt**: `node tools/b_match.cjs <PORT> [--only=items,lockon,suppress]` (trận 5v5 thật `?hero=<id>&mode=5v5`, 844×390 rồi
+  1280×720): 2 nút đồ không đè nút khác / thanh máu / mép màn, chạm Xích Giữ áp chế địch, giữ nút Lọng xem mô tả, phím Q dùng Lọng, kéo Lụa Gió
+  lướt ~320, kéo K3 Trạng Nhí hiện dấu vàng và gửi đúng `aim.id`, chạm K2 Bóng Đèn áp chế; không lỗi trang / console.
+- Thử trên điện thoại: 2 nút đồ ở 844×390 (mua Xích Đồng + Lọng Hộ Mệnh), chạm Xích Giữ cạnh tướng địch, kéo Lụa Gió theo nhiều hướng, Bóng Đèn
+  K2, chữ `ÁP CHẾ` / `KHÔNG THỂ CẢN`, giữ nút đồ xem mô tả rồi kéo tiếp.
+
+## GĐ2 — Khoá mục tiêu, Áp chế, Không thể cản, đồ kích hoạt mới
+- `src/sim/suppress.js` (áp chế + niệm giữ), `src/sim/itemActives.js` (Xích Giữ, Lọng Che, Lụa Gió, Sương Đông), cửa chặn lệnh khi bị
+  áp chế / Sương Đông trong `sim/commands.js`, `unstoppable` trong `sim/skills.js` + `movement.js`, chiêu khoá mục tiêu nhận `aim.id`.
+- HUD: 2 nút đồ kích hoạt, chữ trên đầu "ÁP CHẾ" / "KHÔNG THỂ CẢN", chữ báo lỗi tung chiêu; hiệu ứng xích / lọng / lụa (`render/vfx/extra.js`).
+- Kiểm thử: `node tools/t_suppress.mjs`, `node tools/t_actives.mjs`, `node tools/t_lockon.mjs`; trình duyệt `node tools/b_match.cjs <port>`.
+- Thử trên điện thoại: mua Xích Đồng + Lọng Hộ Mệnh → 2 nút đồ không đè nút nào ở 844×390; chạm Xích Giữ cạnh tướng địch; kéo Lụa Gió;
+  Bóng Đèn K2 giữ được tướng địch, Giải Trói của địch không gỡ được.
+
+## GĐ2 — Tín hiệu, mua nhanh 2 món, thanh khống chế, Quét Sạch
+- Mô phỏng: `src/sim/pings.js` (lệnh `ping`, giới hạn tần suất, `pingMood`), `checkAce` trong `sim/match.js`, `t0` của hiệu ứng.
+- Bot: `ai/teamBrain.js` giao lệnh `ping` theo tín hiệu người chơi + bot tự ra tín hiệu khi đội có người chơi; `ai/laneBot.js` đi theo,
+  Rút lui / Cẩn thận.
+- HUD: `src/hud/pings.js` (nút cờ, vòng 4 lựa chọn, vẽ vòng + huy hiệu trên đất và bản đồ nhỏ, dòng chữ), `src/hud/pingText.js` (tên chỗ),
+  `killBanner.js` thêm Quét Sạch, `hud.js` thanh khống chế, `shop.js` mua nhanh 2 món.
+- Kiểm thử: `node tools/t_pings.mjs`.
+- Thử trên điện thoại: chạm nút cờ cạnh bản đồ nhỏ → chọn Tập hợp → chạm hang Long Ngư trên bản đồ nhỏ: dòng chữ hiện, bot đồng đội báo
+  "Tới ngay!" và kéo tới; Rút lui gần bot thì bot lùi; bị choáng thấy ô "CHOÁNG 1,2s" dưới chân; mua nhanh hiện 2 món không đè cần di chuyển.
+
+## GĐ2 (20/10) — chọn vị trí + cấm/chọn đấu hạng
+- **Phòng chờ 5v5**: nút vị trí dưới ô của mình ("Chọn vị trí" nhấp nháy khi chưa chọn) → hộp Vị trí chính (Đền / Giữa / Sông / Rừng / Trợ
+  thủ / Tuỳ ý) + Vị trí phụ; Bắt đầu khi chưa chọn thì mở hộp trước. Đấu hạng ghi luật "Cấm/chọn Cơ bản · 4 cấm / Đầy đủ · 6 cấm". Tìm thấy
+  trận: chia vị trí (85% vị trí chính), hộp chấp nhận ghi "Vị trí của bạn: Đi rừng (vị trí phụ)".
+- **Đấu thường (chọn ẩn) có vị trí**: mỗi dòng đội ghi vị trí, lưới xếp tướng hợp vị trí lên đầu + nhãn "Đề cử", máy chọn tướng hợp vị trí,
+  đối thủ chọn ẩn theo vị trí của họ; đi rừng chọn sẵn Trừng Trị.
+- **Đấu hạng → Cấm/chọn** (`src/ui/draft.js`): hàng ô cấm hai bên, đồng hồ lượt, cột Xanh / Đỏ (vị trí, "Đang cấm… / Đang chọn…", tướng đã
+  chọn), lưới lọc Tất cả / Đề cử / theo vị trí, Cấm / Bỏ qua / Khoá tướng; dưới Hải Đăng 2 cấm mỗi bên, từ Hải Đăng đủ 3 (07 §7.3). Xong:
+  15 s chuẩn bị (tướng trên sân khấu, phép bổ trợ, bảng bùa, Sẵn sàng) → đội hình (có vị trí) → tải trận (máy đi rừng hiện Trừng Trị) → trận.
+- **Vị trí vào trận**: `startMatch` nhận `playerRole / allyRoles / foeRoles`; mỗi tướng đứng đúng ô đã chia; người chơi đi rừng có Trừng Trị +
+  Nanh Thú Rừng. Gọi không có vị trí: y như cũ (băm `t_determinism 8 1` trước/sau trùng nhau).
+- File mới: `src/data/roles.js`, `src/data/draft.js`, `src/ui/roles.js`, `src/ui/draftRules.js`, `src/ui/roleSelect.js`, `src/ui/pickLoadout.js`,
+  `src/ui/draft.js`, `src/ui/cssDraft.js`; sửa nhỏ `sim/lineup.js` (ghim ô), `game.js`, `main.js`, `data/items.js` (`starterFor`), `ui/room.js`,
+  `ui/pick.js`, `ui/flow.js`, `ui/lineup.js`, `ui/loading.js`, `ui/profile.js`, `audio/uiSounds.js`.
+- Kiểm thử: `node tools/t_draft.mjs` (thứ tự lượt, 3000 ván máy: không trùng / không chọn tướng bị cấm / không tự cấm tướng được bảo vệ, 98,7%
+  tướng máy chọn hợp vị trí, tất định theo seed, chia vị trí 85%, tướng tủ bị cấm ~50%), `node tools/t_lineup_roles.mjs` (vị trí vào sim, đường
+  cũ giữ nguyên 20 seed, trùng tướng hai đội, đồ khởi đầu, 2 phút trận người chơi đi rừng), trình duyệt `node tools/b_flow.cjs <cổng>` (cần máy
+  chủ tĩnh) hoặc `node tools/t_ui_draft.mjs [cổng]` (tự mở máy chủ): Sảnh → Đấu hạng → Phòng chờ → Tìm trận → Chấp nhận → Cấm/chọn → Chuẩn
+  bị → Đội hình → Tải → Trận ở 844×390 (lite) và 1280×720 (full), Đấu thường ở cả hai cỡ, hộp chọn vị trí; đo trong khung nhìn, không cuộn
+  ngang, không lỗi trang / console.
+- Danh sách thử trên điện thoại: 19,5:9 ngang + máy tính bảng 16:9 — Sảnh → Đấu hạng → Phòng chờ (nút Vị trí) → Tìm trận → Chấp nhận (hiện vị
+  trí) → Cấm/chọn (Cơ bản ở Đèn Dầu, Đầy đủ ở Hải Đăng) → Chuẩn bị → Đội hình → Tải → Trận (đúng đường; đi rừng có Trừng Trị + Nanh Thú Rừng) →
+  Kết quả → Đấu lại về phòng chờ, vị trí vẫn giữ.
+- **Kiểm chứng lượt hoàn thiện (20/10):** `node tools/b_flow.cjs 8781` cả 5 kịch bản đạt — ranked844 (Đèn Dầu → lite, 2 cấm mỗi bên),
+  ranked1280 (Hải Đăng → full, 3 cấm mỗi bên), normal844, normal1280, role844 — vào trận đúng vị trí / đúng tướng, đi rừng có Trừng Trị +
+  Nanh Thú Rừng, tướng bị cấm không có trong trận, không lỗi trang / console; ảnh ở `/tmp/claude-0/shots/gd2a/`. `t_determinism 8 1`:
+  băm 5v5 / 1v1 trùng khớp bản trước cụm này (e6c2888). Sửa thêm: ô tướng bị cấm trong lưới có nền tối để chữ "Bị cấm" không đè lên tên tướng.
+
+## GĐ2 (20/10) — phép bổ trợ, bảng bùa tự xếp, phù hiệu
+- **4 phép mới** (10 phép): Tắt Đèn, Loá Mắt, Trống Trận, Bùa Mỏi — hộp chọn phép theo thứ tự `SPELL_LIST`, nút xám khi không có mục tiêu,
+  hiệu ứng / tiếng / biểu tượng; bot 5v5 mang phép theo vị trí + vai và biết dùng (`ai/botSpells.js`).
+- **Bảng Bùa** ở Sảnh (nút thứ 5 thanh dưới trái): thẻ Bảng bùa (5 trang mẫu + 10 trang riêng, 3×5 ô, ×5, sao chép / gỡ hết / xoá / đổi tên,
+  tổng chỉ số, cấp n/15) và thẻ Phù hiệu (4 phù hiệu chính + 2 hàng nét phụ, theo từng tướng, "Mặc định theo vai").
+- **Màn chọn tướng / chuẩn bị cấm-chọn**: nút "Bùa · <trang> Cấp n" mở hộp chọn trang nhanh (+ "Chỉnh trang" → "Dùng trang này"), nút "Phù hiệu ·
+  <tên>" mở thẻ phù hiệu của tướng đang xem. Vào trận mang đúng phép + trang + phù hiệu (`world.setLoadout`).
+- File mới: `src/sim/emblems.js`, `src/data/emblems.js`, `src/ai/botSpells.js`, `src/ui/loadout.js`, `src/ui/loadoutPanel.js`,
+  `src/ui/charmEditor.js`, `src/ui/emblemEditor.js`, `src/ui/charmArt.js`, `src/ui/loadoutCss.js`.
+- Kiểm thử: `node tools/t_spells.mjs` (4 phép: mục tiêu, hồi chiêu, khống chế, bot dùng đúng lúc), `node tools/t_emblems.mjs` (4 phù hiệu + nét phụ,
+  `setLoadout` tick 0, làm sạch dữ liệu, tất định), `node tools/t_charms.mjs` (kho trang: bản sao, giới hạn 10, xoá, hồ sơ hỏng, gói vào trận);
+  trình duyệt `node tools/b_flow.cjs <cổng> loadout844 loadout1280`: Sảnh → Bảng Bùa → sửa trang mẫu (tự sao) → ×5 → gỡ ô → Phù hiệu → Đấu
+  thường → chọn tướng → hộp trang → vào trận đúng trang + phù hiệu, nằm trọn màn hình, không lỗi console.
+
+## GĐ2 (20/10) — gộp hai cụm + HUD còn thiếu
+- Gộp cụm trong trận (khoá mục tiêu, áp chế, 3 đồ kích hoạt, 4 tín hiệu, Quét Sạch, mua nhanh 2 món, thanh thời gian khống chế) và cụm tiền
+  trận (chọn vị trí, cấm/chọn, 4 phép, bảng bùa, phù hiệu) vào nhánh chính. Sửa khi gộp: lệnh tín hiệu chen giữa `if/else` khối mục tiêu lớn
+  của não đội làm đội đang đánh dở mục tiêu lớn quên mục tiêu.
+- HUD: chữ "SUY YẾU" trên đầu tướng dính Bùa Mỏi, "TẮT ĐÈN 3s" trên trụ bị Tắt Đèn (vòng tầm trụ mờ đi, mất tia nhắm), chữ nổi tên phù hiệu
+  khi phù hiệu của mình kích hoạt.
+- Kiểm chứng: `node tools/b_flow.cjs <cổng> ranked844 ranked1280` (Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả, 19,5:9 và 16:9,
+  không lỗi), `b_match.cjs --only=pings`, cả bộ `tools/t_*.mjs`; 50 trận bot: trung vị 16,4 phút, Xanh 46%, mục tiêu lớn 4,2 / trận, 0 lỗi.
+
+## GĐ3 (20/10) — kết thúc trận, đấu lại trong trang, cài như ứng dụng
+- **Cuối trận**: camera lướt tới nhà chính bên thua rồi nổ + rung (cả khi đầu hàng); băng-rôn rồi màn kết quả như cũ.
+- **Màn kết quả → Chi tiết**: mỗi người 3 ô phần trăm có thanh (sát thương lên tướng, gánh chịu, tham gia / 1v1: tỉ lệ hạ) + trang bị;
+  bảng Số liệu thêm 5 cột.
+- **Đấu lại / Về sảnh không tải lại trang**: đo bằng `tools/b_gd3.cjs` (máy không GPU, CPU giả lập chậm 4×): **về phòng chờ 0,3 s** (trước:
+  tải lại cả trang); trận 2 dịch sẵn **0,46 s** thay vì 7,1 s; sau khi dọn: 0 hình khối trên GPU, 3 ảnh dùng chung cả phiên (không tăng qua
+  3 trận), listener window / document / body không dồn qua các trận, không còn phần tử HUD.
+- **Cài như ứng dụng + chơi không mạng**: đo bằng `tools/b_pwa.cjs`: tải sẵn 429 tệp / 13,8 MB, Sảnh lưu đủ 20 tướng, Chrome báo cài được,
+  tắt mạng vẫn mở tới Sảnh và đánh trận 1v1 không hỏng yêu cầu nào; đẩy bản mới → hộp "Có bản mới" ở Sảnh → Cập nhật → đúng bản mới,
+  chỉ tệp đổi được tải lại, không tải lại model tướng.
+- Kiểm thử mới: `t_share.mjs`, `t_scope.mjs`, `t_dispose.mjs`, `t_endcam.mjs`, `t_pwa.mjs` (node); `b_gd3.cjs`, `b_pwa.cjs` (trình duyệt).
+- Danh sách thử trên điện thoại: Android Chrome → Cài đặt → Dữ liệu → "Thêm vào màn hình chính" → mở toàn màn ngang, không có nút toàn màn;
+  bật chế độ máy bay → mở game, đánh một trận 5v5; iPhone Safari → Chia sẻ → Thêm vào MH chính, mở một lần khi có mạng rồi thử không mạng;
+  "Đấu lại" về phòng chờ dưới 3 s; cuối trận thấy nhà chính nổ phía trên băng-rôn ở màn 844×390.
+
+
+## Tổng kết lộ trình kiểm toán (21/10) — cả 4 giai đoạn đã code xong, chưa gộp vào `main`
+
+Kế hoạch gốc + bảng hoàn thiện từng mục: `docs/KIEM_TOAN.md` (báo cáo 19/10, mục 4 — Lộ trình nâng cấp). Toàn bộ nằm trên nhánh
+`claude/kiem-toan-lien-quan` (19 commit trước `main`, chưa có PR) ⇒ **trang chơi trên GitHub Pages vẫn là bản 17/10** cho tới khi gộp vào `main`
+(workflow tự deploy khi có commit lên `main`).
+
+| Giai đoạn | Tiêu chí "xong khi" | Đo được |
+|---|---|---|
+| 0 — sửa lỗi đã đo | mỗi lỗi một kiểm thử, 1 siêu lính / đợt | ✅ đạt (`t_fixes.mjs` 25 kiểm tra, deploy tự động khi lên `main`) |
+| 1 — lối chơi 5v5 | 50 trận bot: trung vị 12–18 phút, Xanh 45–55 %, mục tiêu lớn ≥ 2 / trận | ✅ trung vị 15,9–16,4 phút · Xanh 46–54 % · 3,6–4,2 mục tiêu lớn / trận · 20/20 tướng |
+| 2 — UI/UX chuẩn Liên Quân | Sảnh → Đấu hạng → Phòng chờ → Cấm/chọn → Trận → Kết quả không lỗi ở 19,5:9 và 16:9 | ✅ `b_flow.cjs` 7 kịch bản × 2 cỡ màn đạt hết trên bản cuối (21/10) |
+| 3 — kết thúc trận, đấu lại, PWA | cài được, chơi không mạng, Đấu lại < 3 s | ✅ về phòng chờ 0,17–0,29 s · cài được · không mạng vẫn đánh trọn trận 1v1 |
+
+Còn lại:
+- ✅ Đã chạy lại trên bản cuối (21/10): 50 trận bot 50/50 kết thúc, trung vị 16,4 phút, Xanh 46%, 4,18 mục tiêu lớn / trận, 0 lỗi;
+  `b_match.cjs --only=pings` 10/10, `b_flow.cjs` 7 kịch bản × 2 cỡ màn, `t_*.mjs`, `t_premium` đều đạt.
+- Gộp nhánh vào `main` (PR) ⇒ Pages tự deploy bản mới.
+- Thử trên điện thoại thật: danh sách ở mục GĐ3 ngay trên.

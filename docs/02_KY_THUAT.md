@@ -84,6 +84,11 @@ frame(dt):
   audio.js  sfx.js
 ```
 
+Thêm từ GĐ3: `src/core/scope.js` (phạm vi dọn dẹp của trận — listener toàn cục phải qua `on()`, phần tử gắn body qua `track()`),
+`src/render/dispose.js` (trả bộ nhớ GPU, giữ vật liệu một thế hệ), `src/render/endCam.js`, `src/data/endgame.js`, `src/ui/pwa.js`.
+`/sw.js` + `/manifest.webmanifest` ở gốc; lúc deploy `node tools/mk_sw.mjs site <mã commit>` ghi mã bản vào `<meta name="la-build">` và
+danh sách tệp + băm vào `sw.js` (`.github/workflows/pages.yml`).
+
 **Quy tắc tầng:** chỉ `render/` và `showcase/` được import `three`. `sim/` không import từ `render/`, `hud/`, `ui/`. Render chỉ đọc trạng thái. Điều này giữ khả năng chạy mô phỏng trên server Node.js về sau.
 
 ## 5. Entity

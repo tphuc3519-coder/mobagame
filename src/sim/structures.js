@@ -11,8 +11,8 @@ export function spawnStructures(world) {
   const { map } = world;
   for (const s of structuresOf(map)) {
     const data = { name: s.kind === 'core' ? 'Nhà chính' : 'Trụ', structure: true, base: { maxHp: s.hp, maxMana: 0, atk: s.atk, ap: 0, armor: s.armor, mr: s.armor, atkSpeed: s.rate, moveSpeed: 0, range: s.range }, perLevel: {}, basicAttack: {}, skills: {} };
-    const e = world.spawnEntity({ kind: s.kind, structure: true, team: s.team, sid: s.id, data, radius: s.radius, pos: { x: s.x, y: s.y }, invulnUntil: s.invulnUntil, invulnerable: !!s.invulnUntil,
-      streak: 0, streakTarget: null, aggro: null, aggroUntil: 0, height: s.kind === 'core' ? 900 : 700 });
+    const e = world.spawnEntity({ kind: s.kind, structure: true, team: s.team, sid: s.id, tier: s.tier ?? (s.kind === 'tower' ? s.id.split('_').pop() : null), data, radius: s.radius, pos: { x: s.x, y: s.y }, invulnUntil: s.invulnUntil, invulnerable: !!s.invulnUntil,
+      streak: 0, streakTarget: null, aggro: null, aggroUntil: 0, disabledUntil: 0, height: s.kind === 'core' ? 900 : 700 });
     e.hp = e.stats.maxHp;
   }
   for (const team of [0, 1]) {
@@ -22,11 +22,14 @@ export function spawnStructures(world) {
   }
 }
 
-/** Trụ đang bị đánh sau khi tướng địch đánh tướng phe trụ trong tầm: đổi mục tiêu ngay (luật 2). */
+/** Tướng địch đánh tướng phe mình: trụ trong tầm đổi mục tiêu ngay (luật 2); lính phe mình quanh đó cũng quay sang đánh kẻ đó (03 §A5). */
 export function onHeroDamaged(world, src, tgt) {
+  if (src.team === tgt.team) return;
+  const TW = world.map.tower, R = TW.minionAggroRange ?? 0;
   for (const s of world.entities) {
-    if (!s.structure || s.noTarget || !s.alive || s.team !== tgt.team) continue;
-    if (dist(s.pos, tgt.pos) - tgt.radius <= s.stats.range && dist(s.pos, src.pos) - src.radius <= s.stats.range) { s.aggro = src.id; s.aggroUntil = world.tick + world.map.tower.aggroLinger; }
+    if (!s.alive || s.team !== tgt.team || s.noTarget) continue;
+    if (s.structure) { if (dist(s.pos, tgt.pos) - tgt.radius <= s.stats.range && dist(s.pos, src.pos) - src.radius <= s.stats.range) { s.aggro = src.id; s.aggroUntil = world.tick + TW.aggroLinger; } continue; }
+    if (R && s.kind === 'minion' && dist(s.pos, tgt.pos) <= R && dist(s.pos, src.pos) <= R) { s.target = src.id; s.aggroUntil = world.tick + T(TW.minionAggroFor ?? 2); }
   }
 }
 
@@ -56,8 +59,10 @@ export function updateStructures(world) {
       const peers = world.entities.filter((p) => p.structure && p.team === s.team && [].concat(s.invulnUntil).includes(p.sid));
       s.invulnerable = Array.isArray(s.invulnUntil) ? peers.length > 0 && peers.every((p) => p.alive) : peers.some((p) => p.alive);
     }
-    // hồi máu khi lâu không bị đánh (nhà chính)
-    if (s.kind === 'core' && world.tick - s.lastDamagedTick > T(8)) s.hp = Math.min(s.stats.maxHp, s.hp + 20 / 30);
+    // hồi máu khi lâu không bị đánh: nhà chính 20/giây, trụ nhà `homeRegen`/giây
+    const regen = s.kind === 'core' ? 20 : s.tier === 'home' ? map.tower.homeRegen || 0 : 0;
+    if (regen && !(map.suddenDeath && world.tick >= T(map.suddenDeath.from)) && world.tick - s.lastDamagedTick > T(map.tower.regenAfter ?? 8)) s.hp = Math.min(s.stats.maxHp, s.hp + regen / 30);
+    if (world.tick < (s.disabledUntil || 0)) { s.streak = 0; s.streakTarget = null; s.aggro = null; continue; } // Tắt Đèn: ngừng bắn (đạn đã bay vẫn tới)
     if (world.tick < s.attackReady) continue;
     const t = pickTarget(world, s);
     if (!t) { s.streak = 0; s.streakTarget = null; continue; }

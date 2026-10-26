@@ -1,9 +1,11 @@
 import { project } from '../render/project.js';
+import { KEYSTONES } from '../data/emblems.js';
 import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
 import { floorAt } from '../render/env/floor.js';
 import { createKillBanner } from './killBanner.js';
 import { createHudExtras } from './hudExtras.js';
+import { on } from '../core/scope.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -13,6 +15,22 @@ export const DMG_STYLE = {
   true: { top: '#ffffff', bot: '#d4dbef', stroke: '#2a2d3c', burst: '#e8f0ff', icon: 'gem', glow: true },
 };
 const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
+/** Chữ khống chế trên đầu (áp chế ưu tiên cao nhất, màu tím riêng). */
+const CC_STYLE = { suppress: ['ÁP CHẾ', '#c77dff'], knockup: ['HẤT TUNG', '#ffe066'], stun: ['CHOÁNG', '#ffc83a'], taunt: ['KHIÊU KHÍCH', '#ff7a3d'], root: ['TRÓI', '#5fe08a'], silence: ['CÂM LẶNG', '#7fb2ff'] };
+const CC_ORDER = Object.keys(CC_STYLE); // thứ tự ưu tiên hiện: áp chế > hất tung > choáng > khiêu khích > trói > câm
+/** Khống chế cứng mạnh nhất đang dính (cùng loại thì cái còn lâu nhất): { kind, left (giây), frac (0..1 phần còn lại) } hoặc null. */
+export function hardCc(e, tick) {
+  let best = null;
+  for (const s of e.statuses) {
+    const r = CC_ORDER.indexOf(s.kind); if (r < 0 || s.until <= tick) continue;
+    if (!best || r < best.r || (r === best.r && s.until > best.s.until)) best = { r, s };
+  }
+  if (!best) return null;
+  const s = best.s, total = Math.max(1, s.until - (s.t0 ?? s.until - (s.duration || 1) * 30));
+  return { kind: s.kind, left: (s.until - tick) / 30, frac: Math.max(0, Math.min(1, (s.until - tick) / total)) };
+}
+/** Lý do không dùng được chiêu / phép / đồ của chính mình (sự kiện castFail) → chữ nổi trên đầu. */
+const FAIL = { noTarget: 'Không có mục tiêu', suppressed: 'Đang bị áp chế', channel: 'Đang giữ chiêu', noDash: 'Không thể lướt', rooted: 'Đang bị trói', cc: 'Đang bị khống chế' };
 
 /** Canvas 2D phủ trên cảnh: joystick, thanh máu trên đầu, số sát thương bay, thanh máu/mana của mình, debug. */
 export function createHud(canvas, input, portraits = null) {
@@ -23,9 +41,10 @@ export function createHud(canvas, input, portraits = null) {
   const extras = createHudExtras({ portraits }); // tướng địch rìa màn hình, thông số mục tiêu, ảnh tung chiêu cuối (hudExtras.js — bật/tắt trong Cài đặt)
   const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
+  let lastFail = -9; // lần hiện chữ castFail gần nhất (giây): bấm liên tục không dồn chữ
   const tags = new Map(), mctx = document.createElement('canvas').getContext('2d'); // nhãn vẽ sẵn (tên tướng, huy hiệu cấp)
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; tags.clear(); };
-  addEventListener('resize', resize); resize();
+  on(window, 'resize', resize); resize();
   /** Nhãn vẽ một lần ra canvas nhỏ rồi chỉ dán (drawImage) mỗi khung: strokeText + fillText cho từng tướng mỗi khung là phần nặng nhất của
    *  lớp HUD trên Safari. Chữ chưa tải xong phông thì không lưu (khỏi giữ mãi nhãn phông dự phòng). */
   function tag(key, font, text, bw, bh, paint) {
@@ -118,6 +137,8 @@ export function createHud(canvas, input, portraits = null) {
   }
 
   return {
+    /** Rời trận: xoá canvas HUD (về 1×1), bỏ nhãn / số bay đang giữ. */
+    dispose() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.width = canvas.height = 1; tags.clear(); floats.length = 0; golds.length = 0; },
     /** Xem trước 6 kiểu số sát thương trên đầu một đơn vị (bảng thử ?debug=1). */
     previewDamage(e) {
       const kinds = ['physical', 'magic', 'true'];
@@ -133,8 +154,11 @@ export function createHud(canvas, input, portraits = null) {
         }
         extras.handle(ev, world, world.__localId);
         if (ev.type === 'monsterKill' && ev.boss) kills.boss(ev, world, world.__localId, world.__localTeam);
+        if (ev.type === 'ace') kills.ace(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
+        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
+        if (ev.type === 'emblem' && ev.id === world.__localId && KEYSTONES[ev.key]) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: KEYSTONES[ev.key].name, color: '#ffd36a', size: 13, life: 1.0, drift: 0, tilt: 0 }); // phù hiệu kích hoạt
         if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });
         if (ev.type === 'damage' && e.kind === 'monster') monHit.set(e.id, now());
         if (ev.type === 'death') { monHit.delete(ev.id); monTrail.delete(ev.id); }
@@ -152,6 +176,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
       ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      let ccPill = null; // khống chế đang dính trên tướng mình: vẽ thêm ô đếm giờ to dưới chân
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
         const p = project(cam, e.pos.x, (e.kind === 'hero' ? HERO_BAR_Y : e.kind === 'dummy' ? 230 : e.height) + floorAt(world.map, e.pos.x, e.pos.y), e.pos.y, w, h); if (!p.visible) continue; // đứng trên bệ trại quái: thanh máu nâng theo
@@ -164,6 +189,7 @@ export function createHud(canvas, input, portraits = null) {
           if (sh > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 + bw * Math.min(1, e.hp / e.stats.maxHp), y0, Math.min(bw, bw * sh / e.stats.maxHp), bh); }
           ctx.fillStyle = 'rgba(8,10,20,0.75)'; for (let v = 250; v < e.stats.maxHp; v += 250) { const tx = x0 + bw * v / e.stats.maxHp; ctx.fillRect(tx, y0, v % 1000 ? 1 : 2, v % 1000 ? bh * 0.55 : bh); }
           ctx.fillStyle = '#4a9cff'; ctx.fillRect(x0, y0 + bh + 1.5, bw * (e.mana / Math.max(1, e.stats.maxMana || 1)), 2.5);
+          if (e.channel && world.tick < e.channel.until) { ctx.fillStyle = '#d8a0ff'; ctx.fillRect(x0, y0 + bh + 5, bw * Math.max(0, (e.channel.until - world.tick) / Math.max(1, e.channel.until - e.channel.start)), 2.5); } // đang niệm giữ xích: thanh tím rút dần
           const hx = x0 - 10, hy = y0 + bh / 2 + 1.5; // huy hiệu cấp
           const lt = levelTag(e.level, col); ctx.drawImage(lt, hx - 12, hy - 12, lt.w, lt.h);
           const nm = e.playerName || e.data.name; // tên người chơi (như Liên Quân); vào thẳng trận không có tên thì hiện tên tướng
@@ -193,8 +219,27 @@ export function createHud(canvas, input, portraits = null) {
         }
         if (e.invulnerable) { ctx.fillStyle = '#c8c8d8'; ctx.fillText('BẤT TỬ', p.x, p.y - (isHero ? 34 : 10)); }
         // hiệu ứng khống chế trên đầu
-        const cc = e.statuses.find((s) => ['stun', 'knockup', 'root', 'taunt', 'silence'].includes(s.kind));
-        if (cc) { ctx.fillStyle = '#ffd23a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText({ stun: 'CHOÁNG', knockup: 'HẤT TUNG', root: 'TRÓI', taunt: 'KHIÊU KHÍCH', silence: 'CÂM' }[cc.kind], p.x, p.y - (isHero ? 48 : 24)); }
+        const cc = hardCc(e, world.tick); // khống chế cứng mạnh nhất: chữ + (tướng) dải thời gian rút dần dưới thanh năng lượng
+        if (cc) {
+          const [label, ccol] = CC_STYLE[cc.kind];
+          ctx.fillStyle = ccol; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(label, p.x, p.y - (isHero ? 48 : 24));
+          if (isHero) { const bw = 86, x0 = p.x - bw / 2 + 8, yb = p.y - 14 + 8 + (e.channel && world.tick < e.channel.until ? 8 : 5), th = e.id === player.id ? 5 : 4;
+            ctx.fillStyle = 'rgba(8,10,20,0.85)'; ctx.fillRect(x0 - 1, yb - 1, bw + 2, th + 2); ctx.fillStyle = ccol; ctx.fillRect(x0, yb, bw * cc.frac, th); }
+          if (e.id === player.id) ccPill = { cc, x: p.x };
+        }
+        else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
+        else if (isHero && e.statuses.some((s) => s.kind === 'weaken' && s.until > world.tick)) { ctx.fillStyle = '#c89aff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('SUY YẾU', p.x, p.y - 48); } // Bùa Mỏi
+        if (e.structure && world.tick < (e.disabledUntil || 0)) { ctx.fillStyle = '#9ad0ff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('TẮT ĐÈN ' + Math.ceil((e.disabledUntil - world.tick) / 30) + 's', p.x, p.y - 14); } // Tắt Đèn
+      }
+      if (ccPill) { // ô khống chế của mình: viền + nền màu loại khống chế rút dần, chữ "CHOÁNG 1,2s", nằm dưới chân, kẹp trong màn
+        const fp = project(cam, player.pos.x, floorAt(world.map, player.pos.x, player.pos.y), player.pos.y, w, h), [label, ccol] = CC_STYLE[ccPill.cc.kind];
+        const pw = 132, ph = 24, px = Math.max(8, Math.min(w - pw - 8, fp.x - pw / 2)), py = Math.max(8, Math.min(h - ph - 40, fp.y + 16));
+        ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = 'rgba(10,12,24,0.85)'; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(px, py, Math.max(ph, pw * ccPill.cc.frac), ph, 12); ctx.fillStyle = ccol + '80'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = ccol; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${label} ${ccPill.cc.left.toFixed(1).replace('.', ',')}s`, px + pw / 2, py + ph / 2 + 0.5); ctx.restore();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       }
       // số bay
       for (let i = floats.length - 1; i >= 0; i--) {
@@ -209,7 +254,8 @@ export function createHud(canvas, input, portraits = null) {
       if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
       bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 10px "Be Vietnam Pro", ui-monospace, monospace'; ctx.fillStyle = '#fff';
-      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}`, bx + 6, by + 6);
+      const gg = player.data.passive?.gauge?.(player, world); // thanh nội tại của tướng (Nụ, Ấn, Tầm Nhìn…)
+      ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}${gg ? `    ${gg.label}${gg.max > 1 ? ` ${gg.v}${gg.unit || ''}/${gg.max}${gg.unit || ''}` : ''}` : ''}`, bx + 6, by + 6);
       // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
       if (!player.alive && player.respawnTick) drawDeath(world, player);
       // vàng nhận được: trên đầu tướng mình, nảy lên rồi mờ dần (giết tướng: chữ to)

@@ -33,9 +33,9 @@ export function createTowerRanges(scene) {
         const show = s.alive && player.alive && d < R + NEAR;
         if (!show) { if (ring) ring.visible = false; continue; }
         if (!ring) { ring = new THREE.Mesh(new THREE.CircleGeometry(1, 128), ringMat()); ring.rotation.x = -Math.PI / 2; ring.renderOrder = 3; g.add(ring); rings.set(s.id, ring); }
-        const inside = d <= R, hot = s.streakTarget === player.id && inside, U = ring.material.uniforms;
+        const off = world.tick < (s.disabledUntil || 0), inside = d <= R, hot = !off && s.streakTarget === player.id && inside, U = ring.material.uniforms; // Tắt Đèn: vòng mờ, không tia
         ring.visible = true; ring.scale.set(R, R, 1); ring.position.set(s.pos.x, 9, s.pos.y);
-        U.uT.value = t; U.uA.value = Math.min(1, (R + NEAR - d) / (NEAR * 0.6)); U.uIn.value += ((inside ? 1 : 0) - U.uIn.value) * Math.min(1, dt * 8); U.uHot.value += ((hot ? 1 : 0) - U.uHot.value) * Math.min(1, dt * 10);
+        U.uT.value = t; U.uA.value = Math.min(1, (R + NEAR - d) / (NEAR * 0.6)) * (off ? 0.3 : 1); U.uIn.value += ((inside ? 1 : 0) - U.uIn.value) * Math.min(1, dt * 8); U.uHot.value += ((hot ? 1 : 0) - U.uHot.value) * Math.min(1, dt * 10);
         if (hot) { // tia nhắm từ trụ tới mình
           const dx = player.pos.x - s.pos.x, dz = player.pos.y - s.pos.y;
           beam.visible = true; beam.scale.set(d, 26, 1); beam.rotation.set(-Math.PI / 2, -Math.atan2(dz, dx), 0); beam.position.set(s.pos.x + dx / 2, 10, s.pos.y + dz / 2);

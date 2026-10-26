@@ -80,6 +80,8 @@ if (typeof window !== 'undefined') {
 }
 
 function cleanup(now) { for (let i = voices.length - 1; i >= 0; i--) if (voices[i].end < now) voices.splice(i, 1); }
+/** Tắt mọi tiếng đang kêu (rời trận). */
+export function stopVoices(fade = 0.1) { if (!ctx) return; for (const v of [...voices]) kill(v, fade); voices.length = 0; }
 function kill(v, fade = 0.03) { try { const t = ctx.currentTime; v.gn.gain.cancelScheduledValues(t); v.gn.gain.setValueAtTime(v.gn.gain.value, t); v.gn.gain.linearRampToValueAtTime(0, t + fade); v.src.stop(t + fade + 0.01); } catch (_) { /* đã dừng */ } const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); }
 
 /**

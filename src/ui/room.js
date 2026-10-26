@@ -1,12 +1,17 @@
 // Phòng chờ ghép trận (ảnh 3): nền 5 tướng nhìn về nhà chính, 5 ô người chơi (mình ở giữa, có hạng), cột phải danh sách bạn bè để mời
 // (bạn bè cũng là máy — vào trận vẫn ghi "[Máy]"), nút Bắt đầu → đang tìm trận (đồng hồ, huỷ được) → "Đã tìm thấy trận": chấp nhận
-// trong 12 giây, 10 ô sáng dần khi mọi người chấp nhận → màn chọn tướng.
+// trong 12 giây, 10 ô sáng dần khi mọi người chấp nhận → màn chọn tướng (đấu hạng: cấm/chọn). 5v5: chọn vị trí dưới ô của mình (roleSelect.js);
+// lúc tìm thấy trận chia vị trí (vị trí chính / phụ) cho mình, đồng đội và đối thủ.
 import { DIFFICULTY } from '../data/ai.js';
 import { ICON, icon, face, rankBadge, stars, toast } from './kit.js';
 import { profile, rankOf, missionState, MISSIONS } from './profile.js';
 import { FRIENDS, statusText, chatLine, botNames, nearStars } from './people.js';
 import { MODES, S, modeDiff } from './modes.js';
 import { stageOn } from './stage.js';
+import { roleChip, openRoleDialog } from './roleSelect.js';
+import { assignRoles, roleIcon } from './roles.js';
+import { ROLE_INFO } from '../data/roles.js';
+import { DRAFT, DRAFT_NAME } from '../data/draft.js';
 import { sfx } from '../audio/audio.js';
 
 const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -33,7 +38,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const members = [...S.party.map((f) => ({ kind: 'fr', f })), ...[...pending.keys()].map((f) => ({ kind: 'wait', f }))];
     members.forEach((m, i) => { if (order[i] !== undefined) cells[order[i]] = m; });
     return cells.map((c) => {
-      if (c.kind === 'me') { const r = rankOf(p.stars); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span></div>`; }
+      if (c.kind === 'me') { const r = rankOf(p.stars); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span>${M.map === '5v5' ? roleChip(p) : ''}</div>`; }
       if (c.kind === 'fr') return `<div class="seat mate"><div class="box fr blue">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="sn">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 22)}${c.f.rank.name}</span></div>`;
       if (c.kind === 'wait') return `<div class="seat wait"><div class="box fr blue">${face(c.f.avatar)}</div><b class="sn">${c.f.name}</b><span class="rk">Đang mời…</span></div>`;
       return `<div class="seat empty"><div class="box" data-a="invite"><i class="plus">+</i></div><b class="sn">Mời bạn</b></div>`;
@@ -52,7 +57,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   const r = rankOf(p.stars);
   el.innerHTML = `
     <div class="rm-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2 class="gt">${M.name}</h2></div>
-    <div class="rm-sub"><span>Bản đồ <b>${M.mapName}</b></span><span>Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b></span>${M.ranked ? `<span>${rankBadge(r, 20)}<b>${r.name}</b> <i class="stars">${stars(r)}</i></span>` : ''}</div>
+    <div class="rm-sub"><span>Bản đồ <b>${M.mapName}</b></span><span>Máy <b>${DIFFICULTY[modeDiff(mode)].name}</b></span>${M.ranked ? `<span>${rankBadge(r, 20)}<b>${r.name}</b> <i class="stars">${stars(r)}</i></span><span>Cấm/chọn <b>${DRAFT_NAME[r.tier >= DRAFT.fullFromTier ? 'full' : 'lite']}</b></span>` : ''}</div>
     <div class="rm-slots"></div>
     <aside class="rm-side">
       <div class="rm-tabs"><button type="button" data-tab="fr" class="on">${icon('friends')}<span>Bạn bè</span></button><button type="button" data-tab="chat">${icon('chat')}<span>Trò chuyện</span></button></div>
@@ -88,6 +93,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   // —— tìm trận ——
   function startSearch() {
     if (pending.size) { toast('Chờ bạn bè trả lời lời mời đã'); return; }
+    if (M.map === '5v5' && !p.rolePri) { openRoleDialog({ onDone: () => { render(); startSearch(); } }); return; } // chưa chọn vị trí: chọn trước
     let sec = 0; const wait = 3 + Math.floor(Math.random() * 4);
     const pill = document.createElement('div'); pill.className = 'mm';
     pill.innerHTML = `<i class="spin"></i><span>Đang tìm trận</span><b>00:00</b><button type="button" class="btn-red">Huỷ</button>`;
@@ -100,27 +106,29 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   function found() {
     clearInterval(mm.t); mm.pill.querySelector('span').textContent = 'Đã tìm thấy trận'; sfx('ui_found');
     const n = M.size * 2, acc = new Array(n).fill(false);
+    const rr = M.map === '5v5' ? assignRoles({ pri: p.rolePri, sec: p.roleSec }, Math.random) : null; // vị trí trận này (giao diện: Math.random)
     foundEl = document.createElement('div'); foundEl.className = 'ui-dlg';
-    foundEl.innerHTML = `<div class="box fr found"><h3><span class="gt">Đã tìm thấy trận</span></h3><div class="txt">${M.name} · ${M.mapName}</div><div class="dots">${'<i></i>'.repeat(n)}</div><div class="tm">12</div>
+    foundEl.innerHTML = `<div class="box fr found"><h3><span class="gt">Đã tìm thấy trận</span></h3><div class="txt">${M.name} · ${M.mapName}${rr ? `<div class="rl-got">Vị trí của bạn: ${roleIcon(rr.me)}<b>${ROLE_INFO[rr.me].name}</b>${rr.gotSec ? ' <small>(vị trí phụ)</small>' : ''}</div>` : ''}</div><div class="dots">${'<i></i>'.repeat(n)}</div><div class="tm">12</div>
       <div class="btns"><button type="button" class="btn-gold" data-a="accept">Chấp nhận</button></div></div>`;
     el.append(foundEl);
     const dots = foundEl.querySelectorAll('.dots i'), cur = mm;
-    const ok = (i) => { if (mm !== cur) return; acc[i] = true; dots[i].classList.add('ok'); if (acc.every(Boolean)) { clearInterval(cur.tick); later(600, () => mm === cur && begin()); } };
+    const ok = (i) => { if (mm !== cur) return; acc[i] = true; dots[i].classList.add('ok'); if (acc.every(Boolean)) { clearInterval(cur.tick); later(600, () => mm === cur && begin(rr)); } };
     // người khác chấp nhận dần (bạn trong phòng nhanh hơn); mình là ô đầu
     for (let i = 1; i < n; i++) later(i <= S.party.length ? 300 + Math.random() * 600 : 600 + Math.random() * 3200, () => ok(i));
     let left = 12; const tm = foundEl.querySelector('.tm');
     cur.tick = setInterval(() => { left--; tm.textContent = left; if (left <= 0) { clearInterval(cur.tick); if (!acc[0]) { toast('Bạn đã bỏ lỡ trận đấu'); stopSearch(); } } }, 1000);
     foundEl.onclick = (e) => { const b = e.target.closest('[data-a="accept"]'); if (!b || acc[0]) return; b.disabled = true; b.textContent = 'Đã chấp nhận'; ok(0); };
   }
-  function begin() {
+  function begin(rr) {
     const used = [p.name, ...FRIENDS.map((f) => f.name)], nBots = M.size - 1 - S.party.length;
     const names = botNames(nBots + M.size, Math.random, used);
+    const qs = new URLSearchParams(location.search).get('seat'); // ?seat=0..4: ghế chọn của mình (kiểm thử); mặc định ngẫu nhiên
     S.match = {
-      seed: (Math.random() * 1e9) | 0,
-      allies: [...S.party.map((f) => ({ name: f.name, stars: f.stars, friend: true })), ...names.slice(0, nBots).map((name) => ({ name, stars: nearStars(p.stars) }))],
-      foes: names.slice(nBots).map((name) => ({ name, stars: nearStars(p.stars) })),
+      seed: (Math.random() * 1e9) | 0, role: rr?.me ?? null, gotSec: !!rr?.gotSec, seat: qs !== null && /^[0-4]$/.test(qs) ? +qs : Math.floor(Math.random() * 5),
+      allies: [...S.party.map((f) => ({ name: f.name, stars: f.stars, friend: true })), ...names.slice(0, nBots).map((name) => ({ name, stars: nearStars(p.stars) }))].map((a, i) => ({ ...a, role: rr?.allies[i] ?? null })),
+      foes: names.slice(nBots).map((name, i) => ({ name, stars: nearStars(p.stars), role: rr?.foes[i] ?? null })),
     };
-    nav.go('pick', { mode });
+    nav.go(M.ranked ? 'draft' : 'pick', { mode });
   }
 
   el.onclick = (e) => {
@@ -130,6 +138,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'back') { stopSearch(); nav.go('home'); }
     else if (a === 'go') (mm ? stopSearch() : startSearch());
+    else if (a === 'role') { if (mm) toast('Đang tìm trận — huỷ tìm để đổi vị trí'); else openRoleDialog({ onDone: render }); }
     else if (a === 'invite') { if (M.size === 1 || mm) return; const f = FRIENDS.find((x) => x.status === 'online' && !S.party.includes(x) && !pending.has(x)); if (f) invite(f); else toast('Không còn bạn nào đang trực tuyến'); }
     else if (a === 'quick') { for (const f of FRIENDS.filter((x) => x.status === 'online' && !S.party.includes(x) && !pending.has(x))) if (room() > 0) invite(f); }
     else if (a === 'clear') { S.party = []; for (const t of pending.values()) clearTimeout(t); pending.clear(); render(); }

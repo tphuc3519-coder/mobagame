@@ -7,6 +7,7 @@
 // chiêu tầm xa (> 700) thì camera lệch dần về nửa đường tới chỗ ngắm (aimPad.js aimFocus), thả ra thì về tướng.
 import { pref, onPref } from '../core/prefs.js';
 import { aimFocus } from './aimPad.js';
+import { on, track } from '../core/scope.js';
 const EYE = '<svg viewBox="0 0 32 32"><path d="M3 16c3.5-5.5 8-8.5 13-8.5S25.5 10.5 29 16c-3.5 5.5-8 8.5-13 8.5S6.5 21.5 3 16z" fill="none" stroke="#f3e9d6" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="4.6" fill="#ffd27a"/><circle cx="16" cy="16" r="1.9" fill="#1a1200"/></svg>';
 const MAX_X = 1700, MAX_Z = 1300; // độ lệch tối đa (đơn vị thế giới) — đủ thấy "đoạn sau" ngoài mép màn hình
 
@@ -26,7 +27,7 @@ export function createCamLook({ minimap, map }) {
   // --- nút mắt + vuốt vùng trống bên phải ---
   const btn = document.createElement('button');
   btn.id = 'camBtn'; btn.type = 'button'; btn.setAttribute('aria-label', 'Kéo camera'); btn.innerHTML = `<span class="ring"></span><span class="knob">${EYE}</span>`;
-  document.body.appendChild(btn);
+  document.body.appendChild(track(btn));
   const knob = btn.querySelector('.knob');
   const start = (e, src, R) => {
     if (drag.id !== null) return false;
@@ -36,15 +37,15 @@ export function createCamLook({ minimap, map }) {
   btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (start(e, btn, 90)) btn.classList.add('on'); });
   const world3d = document.getElementById('world');
   // vùng trống nửa phải (chạm trúng nền 3D, không trúng nút nào): vuốt để nhìn — chỉ khi camMode = 'slide'
-  document.body.addEventListener('pointerdown', (e) => { if (e.target === world3d && e.clientX > innerWidth * 0.5 && pref('camMode') === 'slide') start(e, document.body, 170); });
+  on(document.body, 'pointerdown', (e) => { if (e.target === world3d && e.clientX > innerWidth * 0.5 && pref('camMode') === 'slide') start(e, document.body, 170); });
   const move = (e) => { if (e.pointerId !== drag.id) return; drag.x = e.clientX; drag.y = e.clientY; };
   const stop = () => { drag.id = null; btn.classList.remove('on'); knob.style.transform = ''; };
   const up = (e) => { if (e.pointerId === drag.id) stop(); };
-  for (const el of [btn, document.body]) { el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); }
+  for (const el of [btn, document.body]) { on(el, 'pointermove', move); on(el, 'pointerup', up); on(el, 'pointercancel', up); }
   for (const t of ['pointerup', 'pointermove']) btn.addEventListener(t, (e) => e.stopPropagation());
   const reset = () => { stop(); mmId = null; peek = null; };
-  addEventListener('blur', reset);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
+  on(window, 'blur', reset);
+  on(document, 'visibilitychange', () => { if (document.hidden) reset(); });
   const applyMode = () => { const m = pref('camMode'); btn.hidden = m === 'off'; if (drag.id !== null && (m === 'off' || (m === 'hold' && drag.src !== btn))) stop(); }; // đổi giữa lúc đang kéo: thôi kéo
   applyMode(); onPref((k) => { if (k === 'camMode') applyMode(); });
 

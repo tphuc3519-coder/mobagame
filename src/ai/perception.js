@@ -11,12 +11,12 @@ export const fountainOf = (world, team) => world.entities.find((s) => s.kind ===
 export const hp01 = (e) => e.hp / e.stats.maxHp;
 export const ready = (world, e, slot) => {
   const sk = e.data.skills?.[slot], L = e.skillLevels[slot];
-  return !!sk && L > 0 && world.tick >= e.cooldowns[slot] && e.mana >= lv(sk.cost, L);
+  return !!sk && L > 0 && world.tick >= e.cooldowns[slot] && e.mana >= lv(sk.cost, L) && (!sk.canCast || sk.canCast(e, world)); // canCast: điều kiện riêng (đủ Ấn, đủ Tầm Nhìn…)
 };
 
-/** Trụ địch đang che điểm p (tính cả lề an toàn). */
+/** Trụ địch đang che điểm p (tính cả lề an toàn); trụ đang bị Tắt Đèn (còn ≥ 0,5 giây) không che. */
 export function towerCovering(world, team, p, margin = 0) {
-  return towersOf(world, 1 - team).find((t) => dist(t.pos, p) <= t.stats.range + margin) || null;
+  return towersOf(world, 1 - team).find((t) => dist(t.pos, p) <= t.stats.range + margin && !(world.tick < (t.disabledUntil || 0) - 15)) || null; // trụ bị Tắt Đèn (còn ≥0,5s) không tính
 }
 /** Trụ có lính phe `team` đỡ đòn trong tầm. */
 export const tankedBy = (world, tower, team) => minionsOf(world, team).some((m) => dist(m.pos, tower.pos) <= tower.stats.range - 40);

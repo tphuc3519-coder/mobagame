@@ -39,18 +39,19 @@ function announce(it) {
   else if (s.k === 'shutdown') play('ann_shutdown', o);
   else if (s.k === 'streak') play('ann_streak', o);
   else if (s.k === 'executed') play('ann_executed', o);
+  else if (s.k === 'ace') play(s.ally ? 'ann_multi' : 'ann_enemy', { ...o, rate: s.ally ? 1.3 : 0.9 }); // Quét Sạch: dùng lại nhạc báo có sẵn
   else play(s.ally ? 'ann_ally' : 'ann_enemy', o);
 }
 
 export function createKillBanner(portraits) {
   const queue = [];
   let cur = null;
-  const start = (it) => { cur = it; it.t0 = now(); it.life = queue.length ? 1.8 : it.tier >= 2 ? 2.8 : 2.4; announce(it); };
+  const start = (it) => { cur = it; it.t0 = now(); it.life = it.row ? 3.2 : queue.length ? 1.8 : it.tier >= 2 ? 2.8 : 2.4; announce(it); };
   const push = (it) => {
     if (!prefs().killFx) { announce(it); return; } // Cài đặt → Thiết lập → tắt hiệu ứng thông báo: chỉ còn nhạc báo
     if (queue.length >= 4) { const i = queue.findIndex((q) => q.tier < 2); queue.splice(i >= 0 ? i : 0, 1); } // dồn quá nhiều: bỏ bớt cái thường
     queue.push(it);
-    if (cur) { const t = now() - cur.t0; cur.life = Math.min(cur.life, Math.max(t + 0.3, it.tier >= 2 ? 0.9 : 1.4)); } // có cái mới: cái đang hiện rút gọn (hạ liên tiếp chen nhanh hơn)
+    if (cur && !cur.row) { const t = now() - cur.t0; cur.life = Math.min(cur.life, Math.max(t + 0.3, it.tier >= 2 ? 0.9 : 1.4)); } // Quét Sạch không bị rút gọn // có cái mới: cái đang hiện rút gọn (hạ liên tiếp chen nhanh hơn)
   };
 
   /** Hình tròn biểu tượng cho người hạ không phải tướng: trụ / lính / quái (vẽ bằng nét). */
@@ -128,6 +129,13 @@ export function createKillBanner(portraits) {
     // chân dung: người hạ (trái), bị hạ (phải); trượt từ giữa ra
     const sl = ease((t - 0.04) / 0.26), lx = cx - (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl), rx = cx + (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl);
     const otherRing = it.theme === 'ally' ? THEME.foe.ring : THEME.ally.ring;
+    if (it.row) { // Quét Sạch: hàng chân dung cả đội bị hạ, lần lượt bị gạch chéo
+      const n = it.row.length, gap = 30, rr = 12, y = cy + bh / 2 + (it.sub ? 34 : 20);
+      it.row.forEach((f, i) => { const x = cx + (i - (n - 1) / 2) * gap; face(ctx, f, x, y, rr, otherRing, f.me);
+        const k = ease((t - 0.35 - i * 0.09) / 0.14); if (k <= 0) return;
+        ctx.lineCap = 'round'; ctx.lineWidth = 2.6; ctx.strokeStyle = '#ff2a2a'; ctx.beginPath(); ctx.moveTo(x + rr, y - rr); ctx.lineTo(x + rr - 2 * rr * k, y - rr + 2 * rr * k); ctx.stroke(); });
+      ctx.restore(); return;
+    }
     face(ctx, it.killer, lx, cy, R, th.ring, it.killer.me);
     face(ctx, it.victim, rx, cy, R, otherRing, it.victim.me);
     const s = ease((t - 0.3) / 0.14); // vạch chéo đỏ quẹt qua người bị hạ
@@ -163,6 +171,12 @@ export function createKillBanner(portraits) {
     boss(ev, world, me, team) {
       const k = world.byId(ev.killer);
       push({ title: `Hạ ${ev.name}`, sub: ev.team === team ? 'Cả đội nhận thưởng' : 'Đội địch nhận thưởng', tier: 1, snd: { k: 'boss', ally: ev.team === team }, theme: ev.team === team ? 'ally' : 'foe', killer: who(k, me), victim: { kind: 'monster' } });
+    },
+    /** Quét Sạch (sự kiện 'ace' của sim/match.js): cả đội của ev.team đã bị hạ hết. */
+    ace(ev, world, me, team) {
+      const ally = ev.by === team, row = (ev.victims || []).map((id) => world.byId(id)).filter(Boolean).map((e) => who(e, me));
+      push({ title: ally ? 'Quét Sạch!' : 'Đội địch Quét Sạch!', sub: ally ? `Hạ toàn bộ ${row.length} tướng địch` : 'Cả đội ta đã bị hạ — giữ nhà!', tier: ally ? 3 : 2,
+        snd: { k: 'ace', ally }, theme: ally ? 'ally' : 'foe', killer: { kind: null }, victim: { kind: null }, row });
     },
     draw,
     get busy() { return !!cur || queue.length > 0; },

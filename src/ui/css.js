@@ -28,6 +28,7 @@ const CSS = `
 /* màn lớn (máy tính bảng / máy tính): phóng cả lớp giao diện cho cân với cảnh 3D (bố cục tính theo màn điện thoại ngang 360–430 px cao) */
 @media (min-height: 560px) and (min-width: 900px) { .scr, .ui-panel, .ui-dlg { zoom: 1.25; } }
 @media (min-height: 760px) and (min-width: 1200px) { .scr, .ui-panel, .ui-dlg { zoom: 1.5; } }
+@media (display-mode: fullscreen), (display-mode: standalone) { #home [data-a="full"] { display: none; } } /* đã cài như ứng dụng: luôn toàn màn */
 #ui { position: fixed; inset: 0; z-index: 20; font-family: var(--u-body); color: var(--u-txt); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overflow: hidden; }
 #ui[hidden] { display: none; }
 :where(#ui) button { font-family: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; } /* :where — độ ưu tiên thấp, để lớp .btn-gold, .pn-tabs … đặt được font / màu chữ */

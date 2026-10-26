@@ -16,7 +16,7 @@ const KIT = {
 };
 const kitOf = (e) => KIT[e.heroId] || (e.data?.basicAttack?.melee ? ['swing_light', 'hit_flesh', 'arcane'] : ['shot_magic', 'hit_magic', 'arcane']);
 const SKILL = new Set(['s1', 's2', 's3']);
-const SPELL = { hoi_phuc: ['heal'], tram_hon: ['arcane_hit', 0.8], gio_luot: ['haste'], giai_troi: ['cleanse'] }; // Chớp Bước / Trừng Trị: sự kiện blink / smite
+const SPELL = { hoi_phuc: ['heal'], tram_hon: ['arcane_hit', 0.8], gio_luot: ['haste'], giai_troi: ['cleanse'], trong_tran: ['horn', 0.9], loa_mat: ['light_cast', 1.2] }; // Chớp Bước / Trừng Trị: sự kiện blink / smite
 
 export function createGameSounds({ team, me }) {
   let world = null, hornDone = false;
@@ -81,6 +81,12 @@ export function createGameSounds({ team, me }) {
       case 'blink': { const e = ent(ev.id); if (seen(e)) play('blink', ev.from ? { x: ev.from.x, y: ev.from.y } : at(e)); break; }
       case 'spell': { const e = ent(ev.id), s = SPELL[ev.spell]; if (s && seen(e)) play(s[0], at(e, { rate: s[1] })); break; }
       case 'smite': play('smite', { x: ev.x, y: ev.y }); break;
+      case 'towerOff': play('tower_down', { x: ev.x, y: ev.y, rate: 1.4, vol: 0.6 }); break; // Tắt Đèn: tiếng đèn trụ tắt
+      case 'hex': { const t = ent(ev.target); if (seen(t)) play('arcane_hit', at(t, { rate: 0.7 })); break; } // Bùa Mỏi
+      case 'emblem': { // phù hiệu kích hoạt: dùng lại tiếng có sẵn (Mai Rùa đã có tiếng khiên)
+        const e = ent(ev.id), m = { triHit: ['fire_hit', 1.1], ramp: ['haste', 1.25], ward: ['heal', 1.3] }[ev.kind];
+        if (m && seen(e)) play(m[0], at(ent(ev.target) || e, { rate: m[1], vol: 0.6 })); break;
+      }
       case 'restore': { const e = ent(ev.id); if (seen(e)) play('restore', at(e)); break; }
       case 'restoreBreak': { const e = ent(ev.id); if (seen(e)) play('restore_break', at(e)); break; }
       case 'shield': { const e = ent(ev.id); if (e?.kind === 'hero' && seen(e) && ev.amount >= 60 && once('sh' + e.id, 1)) play('shield', at(e)); break; }
@@ -93,13 +99,21 @@ export function createGameSounds({ team, me }) {
         else if (e.kind === 'monster') play('death_monster', at(e, { rate: e.data?.boss ? 0.8 : 1 }));
         break;
       }
-      case 'structureDown': play('tower_down', { vol: 0.85, announce: true }); break; // tin lớn: nghe ở đâu cũng thấy
+      case 'structureDown': if (ev.kind !== 'core') play('tower_down', { vol: 0.85, announce: true }); break; // tin lớn: nghe ở đâu cũng thấy (nhà chính: tiếng nổ phát lúc camera tới — game.js)
       case 'monsterKill': if (ev.boss) play('boss_roar', { vol: 0.85, announce: true }); break;
       case 'orbTaken': { const o = world.orbs?.[ev.orb]; if (o && ev.team === team) play('orb', { x: o.x, y: o.y }); break; }
       case 'recallStart': { const e = ent(ev.id); if (seen(e)) recalls.set(ev.id, play('recall_start', at(e))); break; }
       case 'recallCancel': recalls.get(ev.id)?.stop(0.15); recalls.delete(ev.id); break;
       case 'recalled': { recalls.delete(ev.id); const e = ent(ev.id); if (seen(e)) play('recall_end', at(e)); break; }
-      case 'itemUse': { const e = ent(ev.id); if (seen(e)) play('arcane_cast', at(e, { vol: 0.7, rate: 1.15 })); break; }
+      case 'itemUse': { // đồ kích hoạt: tiếng theo loại (Xích Giữ dùng tiếng của sự kiện suppress)
+        const e = ent(ev.id); if (!seen(e)) break;
+        if (ev.act === 'stasis') play('shield', at(e, { rate: 1.3 })); else if (ev.act === 'ward') play('shield', at(e)); else if (ev.act === 'dash') play('dash', at(e));
+        else if (ev.act !== 'suppress') play('arcane_cast', at(e, { vol: 0.7, rate: 1.15 }));
+        break;
+      }
+      case 'suppress': { const t = ent(ev.target); if (seen(t)) { play('stun', at(t, { rate: 0.75 })); if (ev.item) play('hit_armor', at(t, { vol: 0.6, rate: 0.7 })); } break; } // áp chế: tiếng khoá trầm (+ tiếng xích kim loại)
+      case 'suppressEnd': { const t = ent(ev.target); if (!ev.ok && seen(t)) play('restore_break', at(t, { vol: 0.5 })); break; } // xích đứt sớm
+      case 'unstoppable': { const e = ent(ev.id); if (seen(e)) play('haste', at(e, { vol: 0.6, rate: 1.25 })); break; }
       // —— của riêng mình (không vị trí) ——
       case 'gold': if (mine(ev.id)) play(ev.amount >= 150 ? 'coins' : 'coin', { vol: ev.amount >= 150 ? 1 : 0.8 }); break;
       case 'levelup': if (mine(ev.id)) play('levelup'); break;
@@ -114,6 +128,8 @@ export function createGameSounds({ team, me }) {
     }
   }
   return {
+    /** Rời trận: tắt tiếng biến về đang kêu, bỏ tham chiếu thế giới. */
+    dispose() { for (const r of recalls.values()) r?.stop?.(0.1); recalls.clear(); vis.clear(); world = null; },
     handle(events, w) { world = w; for (const ev of events) handle(ev); },
     /** Mỗi khung: tâm nghe = tâm camera, hướng "phải" của màn hình; tù và khi đợt lính đầu tiên ra trận. */
     update(w, target, camera) {

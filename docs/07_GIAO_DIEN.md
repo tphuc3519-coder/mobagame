@@ -60,6 +60,11 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 > 30 giây; luyện tập chọn tự do) → Đội hình → Tải trận → Trận → Kết quả (3 màn: đội, cá nhân, bảng tỉ số). Code `src/ui/flow.js` và các
 > màn trong `src/ui/`. Khác thiết kế: đếm ngược sau khi cả đội khoá 3 giây (thay 10), chưa có màn Mùa giải và Nhận thưởng riêng (phần
 > thưởng hiện ở màn kết quả cá nhân), chưa có cấm/chọn.
+>
+> **Cập nhật GĐ2 (20/10):** 5v5 (đấu thường + đấu hạng) có **chọn vị trí** ở phòng chờ (vị trí chính / phụ / Tuỳ ý — `ui/roleSelect.js`),
+> lúc tìm thấy trận chia vị trí cho cả 10 người; chọn tướng thường ghi vị trí từng dòng, xếp tướng Đề cử lên đầu. **Đấu hạng luôn qua màn
+> Cấm/chọn** (`ui/draft.js`, luật thuần `ui/draftRules.js`): dưới Hải Đăng thứ tự rút gọn 2 cấm mỗi bên, từ Hải Đăng đủ 3 cấm như §7.3;
+> sau lượt chọn cuối 15 giây chuẩn bị (phép bổ trợ, bảng bùa). Vị trí đi thẳng vào dựng đội trong trận (`sim/lineup.js`).
 
 ```
 Khởi động → Tạo hồ sơ (lần đầu) → SẢNH CHÍNH
@@ -145,6 +150,10 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - Người đang tới lượt có viền sáng chạy và đồng hồ riêng.
 - Tướng bị cấm: gạch chéo đỏ trong lưới, không chọn được.
 - Offline: mọi người khác là bot (`draftBot.js`).
+- **Đã làm (GĐ2):** đấu hạng mọi bậc đều cấm/chọn; dưới Hải Đăng dùng thứ tự rút gọn: cấm `X1, Đ1, X2, Đ2`, chọn `X1 | Đ1 Đ2 | X2 X3 |
+  Đ3 Đ4 | X4 X5 | Đ5` (2 cấm mỗi bên, chọn rắn 1-2-2-2-2-1, 14 tướng), từ Hải Đăng đúng bảng trên (3 cấm, 16 tướng). Người chơi luôn ở đội Xanh (chọn trước), ghế ngẫu nhiên;
+  lượt cấm thứ k của một đội do ghế k làm. Không đổi tướng trong đội (đồng đội là máy) — pha chuẩn bị 15 giây chỉ đổi phép / bùa. Máy cấm/chọn
+  ở `ui/draftRules.js` (thay cho `draftBot.js`), số liệu ở `data/draft.js`.
 
 ## 8. Màn tải trận
 - 2 hàng thẻ dọc (Xanh trên / Đỏ dưới; 1v1: 1 thẻ mỗi bên đối diện nhau), mỗi thẻ: splash cắt dọc của tướng, tên người chơi, bậc hạng, phép bổ trợ, **% tải**.
@@ -175,6 +184,14 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - Mỗi nút kỹ năng: icon, lớp phủ hồi chiêu quét tròn + số giây, mờ khi thiếu mana, ổ khoá khi chưa học.
 - **Chỉ báo ngắm** vẽ trong cảnh 3D, sát mặt đất (02 §13.7): mũi tên (skillshot/dash), vòng tròn + điểm (aoeCircle/zone/blink), hình nón (cone), vòng tầm bắn quanh tướng. Màu ngọc lam; chuyển đỏ khi kéo vào vùng Huỷ.
 - **Nút phụ**: Biến về, Hồi Máu (hồi 15% HP trong 3s, hồi chiêu 60s, tướng địch đánh trúng thì mất hiệu ứng — hiện "Mất hồi máu"), phép bổ trợ.
+- **Đồ kích hoạt: tối đa 2 nút** (chỉ hiện khi có món), nút thứ hai xếp trên nút thứ nhất (hàng nút đáy không dài ra, không đè thanh máu);
+  phím **E** = nút 1, **Q** = nút 2. Đồ có hướng (Lụa Gió) kéo để ngắm như Chớp Bước; đồ khoá mục tiêu (Xích Giữ) giữ nút thì hiện vòng tầm +
+  dấu vàng ở tướng sẽ bị xích. Giữ yên ~0,35s xem mô tả. Bị khống chế / áp chế / đang niệm giữ xích: các nút xám lại.
+- **Chiêu khoá mục tiêu**: chạm nhanh dùng mục tiêu đang khoá (dấu đỏ); kéo thì dấu vàng xem trước đúng tướng sẽ bị chọn và thả ra gửi đúng
+  tướng đó.
+- **Chữ trên đầu**: `ÁP CHẾ` (tím, ưu tiên nhất), `CHOÁNG` / `HẤT TUNG` / `TRÓI` / `KHIÊU KHÍCH` / `CÂM` (vàng), `KHÔNG THỂ CẢN` (vàng cam,
+  khi không có khống chế). Đang niệm giữ xích: thanh tím rút dần dưới thanh mana. Bấm chiêu / đồ không được: chữ nổi lý do trên đầu mình
+  (Không có mục tiêu · Đang bị áp chế · Đang giữ chiêu · Không thể lướt · Đang bị trói · Đang bị khống chế).
 - **Ping và chat nhanh**: nút ping mở vòng tròn 4 lệnh: Tấn công / Rút lui / Tập hợp / Cẩn thận. Chat nhanh: danh sách câu soạn sẵn.
 - **Thông báo hạ gục giữa phía trên** (`hud/killBanner.js`, như Liên Quân): mọi lần tướng chết — đội ta hạ (dải xanh) hay đội địch hạ
   (dải đỏ). Vệt sáng quét ngang mở màn → dải: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),
@@ -234,6 +251,12 @@ Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nú
 - **Bước 3 – Thay đổi hạng** (nếu đấu hạng): sao được/mất bay vào/ra khỏi huy hiệu, thanh điểm bậc tăng, điểm Hào Quang +/−.
 - Nếu là MVP đội thua và có **Bùa Giữ Sao** trong kho: popup hỏi "Dùng Bùa Giữ Sao để không bị trừ sao?" [Dùng] [Bỏ qua].
 - Nút: Tiếp tục → Nhận thưởng.
+
+> **Đã làm (GĐ3, 20/10):** trước màn kết quả, camera lướt tới nhà chính bên thua rồi nổ (kể cả khi đầu hàng) — nhà chính nằm nửa trên màn,
+> băng-rôn CHIẾN THẮNG / THẤT BẠI giữa màn không che. Màn bảng tỉ số có thẻ **Giản lược** (điểm, K/D/A, vàng) và **Chi tiết**: mỗi người 3 ô
+> phần trăm có thanh — **Sát thương tướng**, **Gánh chịu** (mỗi đội cộng đúng 100%), **Tham gia** (1v1: **Tỉ lệ hạ**, tính trên cả trận),
+> số tuyệt đối nhỏ bên dưới, người cao nhất đội tô vàng, cột trang bị (ẩn ở màn hẹp). Bảng **Số liệu** thêm Gây ST / Chịu ST / Mục tiêu /
+> Hồi-khiên / Lính-quái. **Đấu lại / Sảnh không tải lại trang** (về phòng chờ ~0,3 s). Chưa có: biểu đồ vàng theo thời gian.
 
 ## 11. Nhận thưởng (theo ảnh 2)
 - Nền mờ tối có hạt sáng.

@@ -1,18 +1,22 @@
 // Đòn đánh thường: hẹn giờ theo tốc đánh, gây sát thương ở thời điểm `delay` (animation chỉ để nhìn — 02 §13.5).
 import { T, dist } from './util.js';
-import { isHardCC, removeStatus, tauntSource, applyStatus } from './status.js';
+import { isHardCC, removeStatus, tauntSource, applyStatus, missChance } from './status.js';
 import { dealDamage } from './damage.js';
 import { nearestEnemy, isTargetable, pickByRule } from './targeting.js';
 import { canSee } from './vision.js';
 import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
 import { onBasicAttack, onBasicHit } from './items.js';
+import { applyInstant, INSTANT } from './effects.js';
 
 function nextRange(e) { return e.statuses.find((s) => s.kind === 'nextRange')?.value || 0; }
 
-/** Kết quả một đòn đánh: sát thương thường + phần thêm (nội tại, phục kích), rồi hook onHit. */
+/** Kết quả một đòn đánh: sát thương thường + phần thêm (nội tại, phục kích), rồi hook onHit.
+ *  pay.hitEffects (hook onAttack đặt): hiệu ứng kèm đòn này (choáng, đẩy lùi); pay.cleave: lan sang 1 địch gần mục tiêu (hệ số Công). */
 function resolveHit(world, owner, target, pay) {
   if (!owner || !target.alive) return;
+  const miss = missChance(owner); // bị Hào Quang Sân Khấu: có tỉ lệ đánh trượt
+  if (miss > 0 && world.rng.next() < miss) { world.emit('miss', { id: target.id, src: owner.id }); return; }
   const it = onBasicAttack(world, owner, { amount: pay.amount, targetMaxHp: target.stats.maxHp });
   const dealt = dealDamage(world, owner, target, it.amount, 'physical', { basic: true, crit: it.crit });
   for (const x of it.extra) dealDamage(world, owner, target, x.amount, x.type);
@@ -24,17 +28,25 @@ function resolveHit(world, owner, target, pay) {
     dealDamage(world, owner, target, pay.ambush.base + pay.ambush.perLevel * (pay.level - 1) + pay.ambush.adBonus * Math.max(0, owner.stats.atk - owner.data.base.atk), 'physical');
     applyStatus(world, target, { status: 'slow', pct: pay.ambush.slow, duration: pay.ambush.slowDuration }, owner);
   }
-  if (pay.hooks && target.isHero) owner.data.passive?.hooks?.onHit?.(makeCtx(world, owner, { target }));
+  for (const ef of pay.hitEffects || []) { if (!target.alive) break; if (INSTANT.has(ef.status)) applyInstant(world, target, ef, owner); else applyStatus(world, target, ef, owner); }
+  if (pay.cleave) {
+    let best = null, bd = 280;
+    for (const t of world.entities) { if (t === target || t.team === owner.team || t.structure || !isTargetable(owner, t)) continue; const d = dist(t.pos, target.pos) - t.radius; if (d < bd) { bd = d; best = t; } }
+    if (best) dealDamage(world, owner, best, owner.stats.atk * pay.cleave, 'physical', { basic: true });
+  }
+  if (pay.hooks && target.isHero) owner.data.passive?.hooks?.onHit?.(makeCtx(world, owner, { target, proc: !!pay.proc }));
 }
+/** Đòn đánh thường không nhắm được mục tiêu đang có trạng thái basicImmune (Thái Cực Giới). */
+const basicSkip = (t) => t.statuses.some((s) => s.kind === 'basicImmune');
 
 function fire(world, e, target, iv) {
   if (!e.alive || !target.alive || isHardCC(e)) return;
   removeStatus(e, 'stealth');
-  const ctx = makeCtx(world, e, { target, bonusMagic: 0, extraArrow: 0 });
+  const ctx = makeCtx(world, e, { target, bonusMagic: 0, extraArrow: 0, hitEffects: null, cleave: 0, proc: false });
   e.data.passive?.hooks?.onAttack?.(ctx);
   const amb = e.flags.ambush; e.flags.ambush = null;
   const level = Math.max(1, e.skillLevels.s3);
-  const pay = { amount: e.stats.atk, bonusMagic: ctx.bonusMagic, ambush: amb, level, hooks: true };
+  const pay = { amount: e.stats.atk, bonusMagic: ctx.bonusMagic, ambush: amb, level, hooks: true, hitEffects: ctx.hitEffects, cleave: ctx.cleave, proc: ctx.proc };
   removeStatus(e, 'nextRange');
   const ba = e.data.basicAttack;
   if (ba.melee) { resolveHit(world, e, target, pay); return; }
@@ -70,7 +82,7 @@ function whiff(world, e, range) {
   if (ba.melee) {
     let best = null, bd = Infinity;
     for (const t of world.entities) {
-      if (t.team === e.team || !t.alive || t.noTarget || t.structure && t.kind === 'fountain') continue;
+      if (t.team === e.team || !t.alive || t.noTarget || t.structure && t.kind === 'fountain' || basicSkip(t)) continue;
       const dx = t.pos.x - e.pos.x, dy = t.pos.y - e.pos.y, d = Math.hypot(dx, dy) - t.radius;
       if (d > range + 30 || (dx * fx + dy * fy) < 0.5 * Math.hypot(dx, dy)) continue;
       if (d < bd) { bd = d; best = t; }
@@ -78,7 +90,7 @@ function whiff(world, e, range) {
     if (best && nearestEnemy(world, e, range + 30 + best.radius, best.id) === best) resolveHit(world, e, best, pay);
     return;
   }
-  spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: fx, dy: fy, speed: ba.projectile?.speed || 1800, remaining: range + 60, width: 50, kind: 'basic', onHit: (t) => { resolveHit(world, e, t, pay); return true; } });
+  spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: fx, dy: fy, speed: ba.projectile?.speed || 1800, remaining: range + 60, width: 50, kind: 'basic', skip: basicSkip, onHit: (t) => { resolveHit(world, e, t, pay); return true; } });
 }
 
 export function updateCombat(world) {
@@ -88,7 +100,7 @@ export function updateCombat(world) {
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
     const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode)
-      : e.targetBy ? pickByRule(world, e, range, e.targetBy, e.preferTarget) : nearestEnemy(world, e, range, e.preferTarget); // targetBy: chỉ tướng người chơi (Cài đặt)
+      : e.targetBy ? pickByRule(world, e, range, e.targetBy, e.preferTarget, basicSkip) : nearestEnemy(world, e, range, e.preferTarget, basicSkip); // targetBy: chỉ tướng người chơi (Cài đặt)
     if (!target) { // không có mục tiêu: tướng người chơi vẫn vung đòn vào khoảng không theo hướng đang nhìn (như Liên Quân)
       if (e.kind !== 'hero' || e.bot || forced || e.attackMode) continue; // nút ăn lính/đẩy trụ: không có mục tiêu đúng loại thì không vung
       const iv = 1 / e.stats.atkSpeed, delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);

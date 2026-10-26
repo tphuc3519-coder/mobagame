@@ -84,6 +84,8 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
   chev.material.depthTest = false; chev.rotation.x = -CAM_PITCH; chev.scale.set(120, 100, 1); chev.renderOrder = 5; chev.frustumCulled = false; chev.visible = false; scene.add(chev);
   return {
     hide() { g.visible = false; },
+    /** Dấu mục tiêu số k đang hiện? (kiểm thử trình duyệt) */
+    markShown: (k) => !!marks[k]?.visible,
     /** Dấu mục tiêu số k (0: khoá / đang chọn — vòng + mũi chữ V trên đầu, 1: đang bị đánh — vòng). p = { x, z, y (độ cao nền), r (bán kính
      *  vòng), h (độ cao mũi chữ V trên nền) } hoặc null để ẩn; kind 'lock' | 'pick' | 'atk'. */
     mark(k, p, kind = 'lock') {
@@ -106,11 +108,11 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
         arrow.material.uniforms.uKind.value = 1; put(arrow, origin.x, origin.y, R, Math.max(110, (spec.width || 80) * 1.3), ang);
       } else if (t === 'cone') {
         sector.material.uniforms.uHalf.value = ((spec.angle || 90) * Math.PI) / 360; put(sector, origin.x, origin.y, R * 2, R * 2, ang);
-      } else if (t === 'aoeCircle' || t === 'zone') {
-        const r = spec.radius || 150; put(ret, point.x, point.y, r * 2, r * 2);
+      } else if (t === 'aoeCircle' || t === 'zone' || t === 'recast') {
+        const r = spec.radius || (t === 'recast' ? 110 : 150); put(ret, point.x, point.y, r * 2, r * 2);
       } else if (t === 'aoeSelf') {
         const r = spec.radius || R || 300; put(self, origin.x, origin.y, r * 2, r * 2);
-      } else if (t === 'allyTarget') {
+      } else if (t === 'allyTarget' || t === 'targeted') {
         arrow.material.uniforms.uKind.value = 0; put(arrow, origin.x, origin.y, R, 50, ang);
       }
     },

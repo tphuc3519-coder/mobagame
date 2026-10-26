@@ -91,7 +91,13 @@ const STYLE = `
 #pg .pr .pn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e8ecff; } #pg .pr.me .pn { color: #ffe08a; font-weight: 700; }
 #pg .pr .kd { font: 700 15px/1 var(--u-disp); letter-spacing: .03em; text-align: center; white-space: nowrap; }
 #pg .pr .g { display: flex; align-items: center; justify-content: flex-end; gap: 1px; font: 700 14px/1 var(--u-disp); color: #ffe08a; } #pg .pr .g img.ui-ic { width: 18px; height: 18px; }
-#pg .pr.det { grid-template-columns: clamp(32px, 9.5vh, 42px) repeat(5, minmax(0, 1fr)) minmax(0, 2fr); gap: 4px; } #pg .pr.det .v { text-align: center; font: 700 14px/1.1 var(--u-disp); } #pg .pr.det .v small { display: block; font: 600 9px var(--u-body); color: #a8b4d8; }
+#pg .pr.det, #pg .dh { grid-template-columns: clamp(32px, 9.5vh, 42px) repeat(3, minmax(0, 1fr)) 60px; gap: 6px; }
+#pg .dh { display: grid; align-items: end; padding: 0 8px 2px; font: 700 10.5px/1.1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; color: #a8b4d8; }
+#pg .sh { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 5px; align-items: baseline; gap: 0 4px; min-width: 0; }
+#pg .sh b { font: 800 italic 16px/1 var(--u-disp); } #pg .sh small { font-size: 10px; color: #a8b4d8; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pg .sh .pbar { grid-column: 1 / -1; height: 5px; margin-top: 3px; } #pg .sh.top b { color: var(--u-gc); }
+#pg .pbar.red > i { background: linear-gradient(90deg, #a02a30, #ff7a6a 70%, #ffe0d8); box-shadow: 0 0 8px rgba(255,90,74,.6); }
+#pg .pr.det .its { display: grid; grid-template-columns: repeat(3, 18px); gap: 2px; } #pg .pr.det .its .ic { width: 18px; height: 18px; }
 #pg .its { display: flex; gap: 2px; } #pg .its .ic { width: 20px; height: 20px; border-radius: 4px; border-width: 1px; overflow: hidden; display: block; background: rgba(0,0,0,.4); } #pg .its .ic img, #pg .its .ic svg { width: 100%; height: 100%; display: block; }
 #pg .bb { display: flex; justify-content: flex-end; gap: 10px; } #pg .bb button { height: 42px; min-width: 116px; font-size: 19px; } #pg .bb .btn-gold { min-width: 160px; }
 .pg-tab { width: 100%; border-collapse: collapse; font-size: 12px; } .pg-tab th, .pg-tab td { padding: 6px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.07); white-space: nowrap; }
@@ -100,7 +106,7 @@ const STYLE = `
 .pg-how { margin-top: 10px; font-size: 12px; line-height: 1.6; color: #c8d0ea; } .pg-how b { color: #ffe08a; }
 @media (max-height: 400px) { #pg .self .st { gap: 3px; } #pg .score > b { font-size: 44px; } #pg .ttl small { display: none; } #pg .md i { width: 36px; height: 36px; } #pg .md small { font-size: 10px; }
   #pg .parts { gap: 1px 8px; } #pg .parts div { font-size: 10px; } #pg .rw > span { height: 26px; font-size: 13px; } #pg .tap { display: none; } }
-@media (max-width: 760px) { #pg .parts { display: none; } #pg .pr { grid-template-columns: 32px 46px minmax(0, 1fr) 54px 46px; } #pg .pr .hn { display: none; } #pg .pr.det { grid-template-columns: 32px repeat(5, minmax(0, 1fr)); } #pg .pr.det .its { display: none; } }
+@media (max-width: 760px) { #pg .parts { display: none; } #pg .pr { grid-template-columns: 32px 46px minmax(0, 1fr) 54px 46px; } #pg .pr .hn { display: none; } #pg .pr.det, #pg .dh { grid-template-columns: 32px repeat(3, minmax(0, 1fr)); } #pg .pr.det .its, #pg .dh .di { display: none; } }
 `;
 let styled = false;
 const css = () => { if (styled) return; styled = true; const s = document.createElement('style'); s.textContent = STYLE; document.head.append(s); };
@@ -155,22 +161,28 @@ export function openPostgame(o) {
   };
   const row = (r) => {
     const cls = r.id === o.myId ? 'me' : '';
-    if (tab === 'det') return `<div class="pr det ${cls}">${face(r.heroId)}<span class="v">${kfmt(r.dmg)}<small>Gây ST</small></span><span class="v">${kfmt(r.taken)}<small>Chịu ST</small></span><span class="v">${kfmt(r.obj)}<small>Mục tiêu</small></span><span class="v">${kfmt(r.heal)}<small>Hồi/khiên</small></span><span class="v">${r.cs}<small>Lính/quái</small></span><span class="its">${r.items.map((id) => itemIcon(id)).join('')}</span></div>`;
+    if (tab === 'det') return `<div class="pr det ${cls}">${face(r.heroId)}${share(r, 'dmg', kfmt(r.dmg))}${share(r, 'taken', kfmt(r.taken))}${share(r, 'kp', `${solo ? r.k : r.k + r.a}/${r.pct.kills}`)}<span class="its">${r.items.map((id) => itemIcon(id)).join('')}</span></div>`;
     return `<div class="pr ${cls}">${face(r.heroId)}<span class="hn"><b>${HEROES[r.heroId].name}</b><small>Cấp ${r.level}</small></span><span class="sc">${r.score.toFixed(1)}${mvpChip(r)}</span><span class="pn">${nameOf(r)}</span><span class="kd">${r.k}/${r.d}/${r.a}</span><span class="g">${icon('coin')}${kfmt(r.gold)}</span></div>`;
   };
+  // "Chi tiết": 3 ô phần trăm có thanh (sát thương lên tướng / gánh chịu / tham gia — 1v1: tỉ lệ hạ), số tuyệt đối nhỏ bên dưới, người cao nhất đội tô vàng
+  const solo = mine.length <= 1 && theirs.length <= 1;
+  const LABEL = { dmg: 'Sát thương tướng', taken: 'Gánh chịu', kp: solo ? 'Tỉ lệ hạ' : 'Tham gia' };
+  const best = {}; for (const r of [...mine, ...theirs]) for (const k of ['dmg', 'taken', 'kp']) { const b = (best[r.team] ||= {}); if (r.pct[k] > 0 && !(b[k] && b[k].v >= r.pct[k])) b[k] = { id: r.id, v: r.pct[k] }; }
+  const share = (r, k, small) => `<span class="sh ${best[r.team]?.[k]?.id === r.id ? 'top' : ''}" title="${LABEL[k]}"><b>${r.pct[k]}%</b><small>${small}</small><i class="pbar ${r.id === o.myId ? '' : r.team === myTeam ? 'blue' : 'red'}"><i style="width:${r.pct[k]}%"></i></i></span>`;
+  const head = () => (tab === 'det' ? `<div class="dh"><span></span><span>${LABEL.dmg}</span><span>${LABEL.taken}</span><span>${LABEL.kp}</span><span class="di">Trang bị</span></div>` : '');
   const screenC = () => {
     const kills = (rs) => rs.reduce((a, r) => a + r.k, 0), d = new Date();
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     el.innerHTML = `<div class="bg"></div><div class="board">
       <div class="bh"><span class="r ${win ? 'gt' : 'gs'}">${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</span><span class="vs"><b class="b">${kills(mine)}</b><em>VS</em><b class="rd">${kills(theirs)}</b></span><span class="tm"><b>${fmtDur(o.ticks)}</b><small>${o.surrender ? o.surrender + ' · ' : ''}${o.modeName} · ${date}</small></span></div>
       <nav class="tabs"><button type="button" data-t="sum" class="${tab === 'sum' ? 'on' : ''}">Giản lược</button><button type="button" data-t="det" class="${tab === 'det' ? 'on' : ''}">Chi tiết</button></nav>
-      <div class="cols"><div class="col ally">${mine.map(row).join('')}</div><div class="col foe">${theirs.map(row).join('')}</div></div>
+      <div class="cols"><div class="col ally">${head()}${mine.map(row).join('')}</div><div class="col foe">${head()}${theirs.map(row).join('')}</div></div>
       <div class="bb"><button type="button" class="btn-blue" data-a="stats">Số liệu</button><button type="button" class="btn-blue" data-a="home">Sảnh</button><button type="button" class="btn-gold" data-a="again">Đấu lại</button></div></div>`;
   };
   const stats = () => {
     const { body } = panel({ title: 'Số liệu trận đấu' });
-    const tr = (r) => `<tr class="t${r.team === myTeam ? 0 : 1} ${r.id === o.myId ? 'me' : ''}"><td>${HEROES[r.heroId].name} · ${nameOf(r)}</td><td>${r.k}/${r.d}/${r.a}</td><td>${r.kda.toFixed(1)}</td>${PARTS.map(([k]) => `<td>${r.parts[k].toFixed(1)}</td>`).join('')}<td class="tot">${r.score.toFixed(1)}${r.mvp ? ' ★' : ''}</td></tr>`;
-    body.innerHTML = `<div style="overflow:auto"><table class="pg-tab"><tr><th>Tướng · người chơi</th><th>H/C/HT</th><th>KDA</th>${PARTS.map(([, n, m]) => `<th>${n}<br><small>/${m}</small></th>`).join('')}<th>Điểm</th></tr>${[...mine, ...theirs].map(tr).join('')}</table></div>
+    const tr = (r) => `<tr class="t${r.team === myTeam ? 0 : 1} ${r.id === o.myId ? 'me' : ''}"><td>${HEROES[r.heroId].name} · ${nameOf(r)}</td><td>${r.k}/${r.d}/${r.a}</td><td>${r.kda.toFixed(1)}</td><td>${kfmt(r.dmg)}</td><td>${kfmt(r.taken)}</td><td>${kfmt(r.obj)}</td><td>${kfmt(r.heal)}</td><td>${r.cs}</td>${PARTS.map(([k]) => `<td>${r.parts[k].toFixed(1)}</td>`).join('')}<td class="tot">${r.score.toFixed(1)}${r.mvp ? ' ★' : ''}</td></tr>`;
+    body.innerHTML = `<div style="overflow:auto"><table class="pg-tab"><tr><th>Tướng · người chơi</th><th>H/C/HT</th><th>KDA</th><th>Gây ST</th><th>Chịu ST</th><th>Mục tiêu</th><th>Hồi/khiên</th><th>Lính/quái</th>${PARTS.map(([, n, m]) => `<th>${n}<br><small>/${m}</small></th>`).join('')}<th>Điểm</th></tr>${[...mine, ...theirs].map(tr).join('')}</table></div>
       <div class="pg-how"><p><b>Cách tính điểm trận (0–16):</b> Cơ bản 2 + Giao tranh tối đa 3 (KDA = (Hạ + 0,7 × Hỗ trợ) / Chết, đạt 6 là tối đa) + Tham gia tối đa 3 (góp mặt trong số mạng hạ của đội)
       + Sát thương lên tướng 2 + Chống chịu 1,5 + Kinh tế 1,5 + Mục tiêu (công trình + mục tiêu lớn) 1,5 + Hồi/khiên cho đồng đội 1,5 — năm mục này tính theo tỉ lệ so với người cao nhất đội — + Thắng 1.
       MVP: điểm cao nhất đội thắng (vàng) / đội thua (bạc). KDA trên bảng = (Hạ + Hỗ trợ) / Chết.</p>

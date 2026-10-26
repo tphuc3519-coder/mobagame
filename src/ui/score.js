@@ -41,7 +41,24 @@ export function scoreMatch(heroes, winner) {
     const best = team(t).sort((a, b) => b.score - a.score || b.k + b.a - (a.k + a.a))[0];
     if (best) best.mvp = t === winner ? 'gold' : 'silver';
   }
+  // phần trăm cho thẻ "Chi tiết": trong đội (1v1: cả trận) — sát thương lên tướng, gánh chịu cộng đúng 100; tham gia (1v1: tỉ lệ hạ)
+  const solo = [0, 1].every((t) => team(t).length <= 1);
+  for (const g of solo ? [rows] : [0, 1].map(team)) {
+    const d = pct100(g.map((r) => r.dmg)), tk = pct100(g.map((r) => r.taken)), kills = g.reduce((a, r) => a + r.k, 0);
+    g.forEach((r, i) => { r.pct = { dmg: d[i], taken: tk[i], kills, kp: kills > 0 ? Math.round(100 * Math.min(1, (solo ? r.k : r.k + r.a) / kills)) : 0 }; });
+  }
   return rows;
+}
+
+/** Chia 100 theo tỉ lệ thành số nguyên, tổng đúng 100 (phần dư lớn nhất được cộng trước, bằng nhau thì người đứng trước); tổng 0 → toàn 0. */
+export function pct100(vals) {
+  const v = vals.map((x) => Math.max(0, +x || 0)), sum = v.reduce((a, b) => a + b, 0);
+  if (sum <= 0) return v.map(() => 0);
+  const raw = v.map((x) => (100 * x) / sum), out = raw.map(Math.floor);
+  let left = 100 - out.reduce((a, b) => a + b, 0);
+  const order = raw.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  for (let k = 0; left > 0; k++, left--) out[order[k % order.length][1]]++;
+  return out;
 }
 
 const TITLES = [
