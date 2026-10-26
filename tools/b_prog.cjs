@@ -167,7 +167,7 @@ async function missions(browser, vp) {
   const o2 = await inView(page, ['.ui-panel [data-wb]']); ok(`${label}: thẻ Tuần không tràn ngang, cuộn tới được Rương tuần`, !hz && !o2.length, o2.slice(0, 3).join(' ; '));
   await page.click('.ui-panel [data-wb]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
   const wb = await page.evaluate(() => window.__rewards.items.map((x) => x.k + (x.id ? ':' + x.id : '')));
-  ok(`${label}: Rương tuần → vàng + Bùa Giữ Sao + rương`, wb.join() === 'gold,item:bua_giu_sao,chest', wb.join());
+  ok(`${label}: Rương tuần → vàng + ngọc + Bùa Giữ Sao + rương`, wb.join() === 'gold,gems,item:bua_giu_sao,chest', wb.join()); // GĐ5b: Rương tuần có ngọc
   await page.evaluate(() => window.__rewards.close());
   await page.click('.ui-panel [data-t="event"]'); await page.waitForSelector('.ui-panel [data-ev]', { timeout: T(5) });
   await page.click('.ui-panel [data-ev]'); await page.waitForSelector('#rewardScr .tl', { timeout: T(5) });
