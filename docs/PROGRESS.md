@@ -608,3 +608,6 @@ Còn lại:
   nào chồng nhau, cần điều khiển không đè nút, không lấn vùng an toàn, nút chính ≥ 44 px khi chạm. Ví dụ: iPhone 14 nút Đánh 87 · chiêu 59 · Ăn lính 44
   · cần R78 · bản đồ 133; iPad 118 · 80 · 53 · R104 · 233; Full HD 104 · 71 · 47 · R94 · 324.
 - **Tên tướng:** 14 tướng đợt 2 đổi về đúng tên nhân vật bên Multiverse Battler (xem DECISIONS); id, model, biệt danh, tên chiêu giữ nguyên.
+- **Kiểm thử:** node `tools/t_*.mjs` đạt; `b_layout` 14 lượt đạt; `b_flow` 93, `b_match` 36, `b_perf` 16 đạt. Bốn mục đo thời gian / bấm hết giờ lệch
+  mốc trên máy thử hôm nay — `b_gd3` đấu lại về phòng chờ (3,4 / 8,5 s), `b_pwa` mở lần hai (trung vị 3,1 s), một cú bấm trong `b_prog` — và **bản
+  `main` chạy cùng máy lệch y hệt** (5,8 / 8,2 s; 3,5 s; cùng cú bấm), nên là do máy không GPU đang chậm, không do đợt này.
