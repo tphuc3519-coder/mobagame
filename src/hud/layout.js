@@ -13,6 +13,8 @@ export const TOUCH_MIN = 44;
 const CAM = 50, HUDSET = 38, CLUSTER_MIN = 66;
 /** Thanh máu / mana / cấp của mình vẽ sát đáy trái (hud.js): đỉnh cách đáy SELF_BAR px, rộng min(220, 24% bề ngang). Cần điều khiển đứng trên nó. */
 export const SELF_BAR = 25;
+/** Bán kính cần nhỏ nhất: kéo gần hay xa đều chạy cùng tốc độ (joystick.js) nên R chủ yếu là phần nhìn — màn rất thấp (667×320) cho co tới 48 thay vì đè thanh máu. */
+export const JOY_MIN = 48;
 export const selfBarRect = (W, H, safeL = 0) => ({ l: 16 + safeL, t: H - SELF_BAR, r: 16 + safeL + Math.min(220, W * 0.24), b: H - 5 });
 const clamp = (lo, v, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(0, t, 1);
@@ -33,7 +35,7 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const hu = Math.max(200, H - sf.t - sf.b); // chiều cao dùng được
   const gp = Math.round(clamp(48, 0.15 * hu, 64)); // nút cửa hàng (giỏ + vàng)
   // khối góc phải trên: nút cài đặt / toàn màn hình; cửa hàng bên phải xếp ngay dưới (hàng ngang khi màn thấp, 2 dòng khi cao)
-  const topRight = top + (shopRight ? 50 + (H < 560 ? Math.max(gp, 60) : 124) : HUDSET); // 60 = một ô mua nhanh, 124 = hai ô xếp dọc
+  const topRight = top + (shopRight ? 50 + (H < 560 ? Math.max(gp, Math.min(60, gp + 4)) : 124) : HUDSET); // một ô mua nhanh (ảnh co theo nút giỏ, --qi) cao hơn nút giỏ 4 px; 124 = hai ô xếp dọc
   // nút Đánh: theo chiều cao (màn chạm to hơn — ngón cái; chuột nhỏ hơn — thấy được nhiều sân hơn), nhân cỡ người chơi chọn
   const k = HUD_SIZES[size] ?? 1;
   let d = clusterDims((touch ? clamp(84, 0.235 * hu, 118) : clamp(80, 0.15 * hu, 104)) * k, touch);
@@ -46,7 +48,7 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const mini = clamp(touch ? 46 : 40, 0.58 * d.a, 66), item = mini * 1.1;
   // bản đồ nhỏ: ~35% chiều cao trên điện thoại (chừa chỗ cửa hàng + cần điều khiển bên dưới), ~30% trên máy tính bảng / máy tính, tối đa 320
   const mmBox = clamp(104, lerp(0.35, 0.3, (hu - 400) / 400) * hu * (MM_SIZES[mm] ?? 1), 320);
-  const R = clamp(56, 0.9 * d.a, 104); // bán kính cần mong muốn — joystick đo chỗ trống thật rồi mới chốt
+  const R = clamp(JOY_MIN, 0.9 * d.a, 104); // bán kính cần mong muốn — joystick đo chỗ trống thật rồi mới chốt
   const r = (v) => Math.round(v * 10) / 10;
   return { touch, hu, safe: sf, top, right, bot, a: r(d.a), s: r(d.s), m: r(d.m), skw: r(d.skw), skh: r(d.skh), mini: r(mini), item: r(item), gp,
     camAbove, camR: r(camR), camB: r(camB), mm: Math.round(mmBox), R: Math.round(R), topRight };
@@ -54,11 +56,11 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
 
 /**
  * Chỗ nghỉ của cần điều khiển trong khoảng trống góc trái dưới: bên dưới các khối trên (bản đồ nhỏ, nút tín hiệu, cửa hàng),
- * bên trái hàng nút phụ, trên thanh máu của mình ở đáy. Trả { R, x, y }; khoảng trống quá hẹp thì giữ R tối thiểu 56 (đè ít nhất có thể).
+ * bên trái hàng nút phụ, trên thanh máu của mình ở đáy. Trả { R, x, y }; khoảng trống quá hẹp thì giữ R tối thiểu JOY_MIN (đè ít nhất có thể).
  */
 export function joyRest({ H, safe = {}, Rwant = 90, above = 0, extrasLeft = Infinity }) {
   const L = Math.max(8, safe.l || 0) + 10, B = H - Math.max(Math.max(8, safe.b || 0) + 8, SELF_BAR + 6), T = above + 8, Rt = extrasLeft - 10; // B: trên thanh máu của mình
-  const R = Math.round(clamp(56, Math.min(Rwant, (B - T) / 2, (Rt - L) / 2), Rwant));
+  const R = Math.round(clamp(JOY_MIN, Math.min(Rwant, (B - T) / 2, (Rt - L) / 2), Rwant));
   const x = Math.max(L + R, Math.min(Rt - R, (safe.l || 0) + 1.55 * R + 10));
   const y = Math.max(T + R, Math.min(B - R, H - (safe.b || 0) - 1.35 * R));
   return { R, x: Math.round(x), y: Math.round(y) };

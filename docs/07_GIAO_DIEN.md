@@ -179,7 +179,7 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Mua nhanh**: 1–2 ô cạnh minimap, sáng lên khi đủ tiền.
 - **Tỉ số**: hạ gục hai đội + đồng hồ ở trên giữa. Chạm mở **Bảng tỉ số** (10 tướng, cấp, K/D/A, đồ, vàng).
 - **Cửa hàng** (nút ≡): panel trượt từ phải, tab: Gợi ý / Tấn công / Phép / Phòng thủ / Giày / Rừng-Hỗ trợ. Chọn món → cây công thức → Mua.
-- **Joystick**: động, chạm bất kỳ ở 45% trái màn hình (trừ vùng nút). Bán kính theo thiết bị (`hud/layout.js`: ~0,9 × nút Đánh, 56–104 px, đặt vào khoảng trống góc trái dưới không đè nút / bản đồ nhỏ), vùng chết 10%.
+- **Joystick**: động, chạm bất kỳ ở 45% trái màn hình (trừ vùng nút). Bán kính theo thiết bị (`hud/layout.js`: ~0,9 × nút Đánh, 48–104 px, đặt vào khoảng trống góc trái dưới không đè nút / bản đồ nhỏ / thanh máu của mình), vùng chết 10%.
 - **Cỡ HUD theo thiết bị** (`hud/layout.js`): nút Đánh / chiêu / nút phụ / cửa hàng / bản đồ nhỏ tính từ chiều cao dùng được, vùng an toàn, màn chạm hay chuột; nút chính ≥ 44 px khi chạm. Cài đặt → Giao diện: *Cỡ nút bấm*, *Cỡ bản đồ nhỏ* (Nhỏ / Vừa / Lớn). Kiểm bằng `tools/b_layout.cjs`.
 - **Cụm nút phải**: ĐÁNH (lớn, 150), K1/K2/K3 (100) theo vòng cung, Phép bổ trợ (80), nút đồ kích hoạt (70, chỉ hiện khi có). Nút "+" nâng kỹ năng xuất hiện trên góc nút khi có điểm.
 - Mỗi nút kỹ năng: icon, lớp phủ hồi chiêu quét tròn + số giây, mờ khi thiếu mana, ổ khoá khi chưa học.

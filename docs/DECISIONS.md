@@ -980,8 +980,9 @@
   Cài đặt → Giao diện → *Cỡ nút bấm* / *Cỡ bản đồ nhỏ* (Nhỏ ×0,88 / Vừa / Lớn ×1,14; bản đồ ×0,85 / ×1,2), ghi biến CSS lên `:root`. Nút Đánh 84–118 px
   khi chạm (0,235 × chiều cao), 80–104 khi dùng chuột; Ăn lính / Đẩy trụ ≥ 44 px (trước 40); khung cụm bỏ ~70 px trống bên trái nút chiêu 1 nên hàng
   nút phụ dịch phải. Màn quá thấp (667×320) thì thu cụm dần cho tới khi không đè nút cài đặt / cửa hàng bên phải, nút camera vào góc trái trên khung cụm.
-  Bản đồ nhỏ 35% chiều cao trên điện thoại → 30% màn lớn (tối đa 320 px, trước kẹp 230). Cần điều khiển: R mong muốn 0,9 × nút Đánh (56–104), rồi
-  **đo khối thật** (bản đồ nhỏ, nút tín hiệu, cửa hàng trái, hàng nút phụ — gồm cả nút đồ kích hoạt khi mua) và đặt vào khoảng trống góc trái dưới;
+  Bản đồ nhỏ 35% chiều cao trên điện thoại → 30% màn lớn (tối đa 320 px, trước kẹp 230). Cần điều khiển: R mong muốn 0,9 × nút Đánh (48–104), rồi
+  **đo khối thật** (bản đồ nhỏ, nút tín hiệu, cửa hàng trái, hàng nút phụ — gồm cả nút đồ kích hoạt khi mua) và đặt vào khoảng trống góc trái dưới,
+  phía trên thanh máu / cấp của mình (thanh này giờ nằm trong vùng an toàn trái; trước nằm dưới tai thỏ);
   đo lại tối đa mỗi giây, không đổi lúc đang giữ cần. Trước: cần cố định 180 px đè cửa hàng / nút Biến về trên mọi điện thoại.
 - 2026-10-27: **Hộp thoại không cuộn khung.** Hoa văn góc `.fr::before` (inset −3 px) làm khung `.ui-dlg .box` cuộn được 3 px — chạm hơi xê dịch là hộp
   rung (hộp chọn vị trí). Khung giờ là cột flex không cuộn, chỉ `.txt` cuộn khi dài; dòng gợi ý chọn vị trí `contain: inline-size` + giữ chỗ 2 dòng (đổi

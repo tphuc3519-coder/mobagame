@@ -134,7 +134,7 @@
   #skills { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: var(--skw); height: var(--skh); z-index: 4; }
   /* số đo HUD: hud/layout.js tính theo khổ màn / vùng an toàn / màn chạm / Cài đặt cỡ nút rồi ghi đè trên :root; đây là giá trị lúc JS chưa chạy */
   :root { --a: clamp(88px, 22vh, 124px); --s: calc(var(--a) * 0.68); --m: max(44px, calc(var(--s) * 0.66)); --skw: calc(var(--a) + var(--m) * 0.95 + var(--s) + 22px); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 26px);
-    --mini: clamp(50px, 13vh, 66px); --item: calc(var(--mini) * 1.1); --gp: 64px; }
+    --mini: clamp(50px, 13vh, 66px); --item: calc(var(--mini) * 1.1); --gp: 64px; --qi: min(52px, calc(var(--gp) - 4px)); }
   .atk { right: 0; bottom: 0; width: var(--a); height: var(--a); background: radial-gradient(circle at 50% 35%, #8a3b32, #3a1416 70%); font-size: 17px; border: 3px solid #e9d9a8; box-shadow: 0 0 0 3px #0008, 0 4px 14px #000a; }
   .atk .ic, .atk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk { width: var(--s); height: var(--s); padding: 0; border: 0; background: none; box-shadow: 0 3px 10px #000a; }
@@ -181,10 +181,10 @@
   .qb { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   @media (max-height: 559px) { .qb { flex-direction: row; align-items: center; } .q.q2 { padding: 2px; background: none; } .q.q2 .qn { display: none; } .q.q2 > .ic { width: 44px; height: 44px; } .q.q2 .pr { width: 44px; left: 2px; bottom: 2px; font-size: 11px; } body.shop-right .qb { flex-direction: row-reverse; } }
   .q { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; background: linear-gradient(90deg, #1a1f3aee, #1a1f3a00); border: 0; border-radius: 10px; color: #f3e9d6; text-align: left; min-width: 0; }
-  .q > .ic { width: 52px; height: 52px; flex: none; border-radius: 10px; } .q.ready > .ic { border-color: #ffe08a; box-shadow: 0 0 12px #ffe08aaa; } .q:not(.ready) > .ic { filter: grayscale(0.6) brightness(0.75); }
+  .q > .ic { width: var(--qi); height: var(--qi); flex: none; border-radius: 10px; } /* ô mua nhanh co theo nút cửa hàng: hàng cửa hàng không cao hơn nút giỏ trên màn thấp */ .q.ready > .ic { border-color: #ffe08a; box-shadow: 0 0 12px #ffe08aaa; } .q:not(.ready) > .ic { filter: grayscale(0.6) brightness(0.75); }
   .q .qn { display: flex; flex-direction: column; min-width: 0; } .q .qn b { font: 800 14px 'Be Vietnam Pro', system-ui, sans-serif; color: #ffb84d; text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .q .qn small { font: 600 12px 'Be Vietnam Pro', system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .q .pr { position: absolute; left: 4px; bottom: 4px; width: 52px; text-align: center; font: 800 12px 'Be Vietnam Pro', ui-monospace, monospace; color: #ffe08a; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  .q .pr { position: absolute; left: 4px; bottom: 4px; width: var(--qi); text-align: center; font: 800 12px 'Be Vietnam Pro', ui-monospace, monospace; color: #ffe08a; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .shop header .inv { display: flex; align-items: center; gap: 8px; margin-left: 10px; } .shop header .inv small { color: #f3e9d688; font-size: 11px; }
   .bar { display: grid; grid-template-columns: repeat(6, 38px); grid-auto-rows: 38px; gap: 4px; }
   body.shop-right .shop { left: auto; right: 0; transform: translateX(104%); border-right: 0; border-left: 2px solid #f2c25a55; } body.shop-right .shop.on { transform: none; }

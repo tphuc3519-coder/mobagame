@@ -2,7 +2,7 @@
 // (vòng tròn ở vị trí nghỉ). Mỗi máy / mỗi kiểu (cửa hàng trái / phải, cỡ nút Lớn, bản đồ Lớn):
 //  - không khối nào chồng lên khối nào (trong cụm kỹ năng chỉ xét nút camera với các nút chiêu), cần điều khiển không đè nút / bản đồ nhỏ;
 //  - không gì ra ngoài màn hình hay lấn vùng an toàn (tai thỏ trái / phải, thanh vuốt);
-//  - màn chạm: nút chính ≥ 44 px (Đánh, chiêu, Ăn lính / Đẩy trụ, nút phụ, camera, tín hiệu, cửa hàng); cần ≥ 56 px bán kính;
+//  - màn chạm: nút chính ≥ 44 px (Đánh, chiêu, Ăn lính / Đẩy trụ, nút phụ, camera, tín hiệu, cửa hàng); cần ≥ 48 px bán kính;
 //  - bản đồ nhỏ 26–40% chiều cao dùng được trên điện thoại, ≥ 22% ở màn lớn; đổi Cài đặt cỡ nút / bản đồ áp dụng ngay giữa trận.
 // Chạy: python3 -m http.server <PORT> --bind 127.0.0.1 ở gốc repo, rồi node tools/b_layout.cjs <PORT> [se,ip14,…]
 let PW; try { PW = require('playwright'); } catch (_) { PW = require('/opt/node22/lib/node_modules/playwright'); }
@@ -74,7 +74,7 @@ async function run(browser, dk, pf) {
   const main = names.filter((n) => /^(sk:|btn:|camBtn|pingBtn|goldPill)/.test(n)), small = main.filter((n) => Math.min(E[n].w, E[n].h) < (d.touch ? 44 : 34) - 0.5);
   const sz = (n) => E[n] ? Math.round(E[n].w) : '-';
   ok(`${label}: nút chính đủ lớn để chạm (${d.touch ? '≥ 44' : '≥ 34'} px)`, !small.length, small.map((n) => `${n}=${sz(n)}`).join(' ') || `Đánh ${sz('sk:atk')} · chiêu ${sz('sk:s1')}/${sz('sk:s2')}/${sz('sk:s3')} · Ăn lính ${sz('sk:minion')} · nút phụ ${sz('btn:recall')} · camera ${sz('camBtn')} · cửa hàng ${sz('goldPill')}`);
-  ok(`${label}: cần điều khiển bán kính ≥ 56 px`, m.R >= 56, `R ${m.R} tại (${m.rest.x}, ${m.rest.y})`);
+  ok(`${label}: cần điều khiển bán kính ≥ 48 px`, m.R >= 48, `R ${m.R} tại (${m.rest.x}, ${m.rest.y})`);
   // 4. bản đồ nhỏ theo chiều cao dùng được
   const hu = m.vh - ins.top - ins.bottom, f = m.mmCss / hu, phone = hu < 500, mmBig = pf.mmSize === 'lg';
   ok(`${label}: bản đồ nhỏ ${Math.round(m.mmCss)} px = ${Math.round(f * 100)}% chiều cao`, phone ? f >= 0.26 && f <= (mmBig ? 0.46 : 0.4) : f >= 0.22 && f <= 0.36);
