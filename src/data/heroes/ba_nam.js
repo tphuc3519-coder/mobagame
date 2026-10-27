@@ -4,7 +4,7 @@ const P = { perHit: 0.04, max: 0.36, ttl: 6, critDmg: 2.1, ultStacks: 3 };
 const tiers = (e) => e.statuses.find((s) => s.id === 'chieu_chao')?.n || 0;
 const addCrit = (ctx, n) => { const k = Math.min(Math.round(P.max / P.perHit), tiers(ctx.self) + n); ctx.applyStatus(ctx.self, { status: 'statMod', id: 'chieu_chao', n: k, crit: k * P.perHit, duration: P.ttl }); };
 export default hero({
-  id: 'ba_nam', name: 'Bà Năm Chảo', title: 'Bà Nội Trợ Xóm Chợ', role: 'fighter', roles: ['fighter'], lanes: ['temple'], difficulty: 1,
+  id: 'ba_nam', name: 'ChiChi', title: 'Bà Nội Trợ Xóm Chợ', role: 'fighter', roles: ['fighter'], lanes: ['temple'], difficulty: 1,
   base: { range: 165, moveSpeed: 335, maxHp: 900, critDmg: P.critDmg }, basicAttack: { melee: true },
   origin: 'Cơ chế: cận chiến chí mạng tích dần, mắng xối phản lại đạn bay.',
   passive: { id: 'chieu_chao', name: 'Chiêu Chảo', desc: 'Mỗi đòn đánh trúng +4% tỉ lệ chí mạng (tối đa +36%, giữ 6s); chí mạng gây 210% sát thương.', params: P,

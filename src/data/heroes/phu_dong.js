@@ -2,7 +2,7 @@ import { hero } from './_make.js';
 // Giáp Sắt: giảm sát thương vật lý (không giảm đốt / độc theo thời gian) và lực đẩy (effects.js đọc knockbackReduce).
 const P = { physReduce: 0.2, knockbackReduce: 0.4 };
 export default hero({
-  id: 'phu_dong', name: 'Phù Đổng', title: 'Chàng Trai Ngựa Sắt', role: 'tank', roles: ['tank', 'fighter'], lanes: ['temple'], difficulty: 1,
+  id: 'phu_dong', name: 'Superman', title: 'Chàng Trai Ngựa Sắt', role: 'tank', roles: ['tank', 'fighter'], lanes: ['temple'], difficulty: 1,
   base: { range: 170, atk: 64, moveSpeed: 325 }, basicAttack: { melee: true },
   origin: 'Cơ chế: tướng đỡ đòn cứng cáp, giáp sắt giảm sát thương vật lý, phun lửa, thổi băng, lao từ trời xuống.',
   passive: { id: 'giap_sat', name: 'Giáp Sắt', desc: 'Giảm 20% sát thương vật lý và 40% lực đẩy; sát thương phép, chuẩn, đốt và độc theo thời gian vẫn nhận đủ.', params: P,

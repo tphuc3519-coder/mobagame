@@ -184,9 +184,16 @@ async function roleDialog(browser, vp) {
   ok(`${label}: nút vị trí nhắc "Chọn vị trí"`, (await page.textContent('#room .rl-chip'))?.includes('Chọn vị trí'));
   await page.click('#room [data-a="go"]');
   await page.waitForSelector('.rl-dlg', { timeout: T(5) });
-  const box = await page.evaluate(() => { const r = document.querySelector('.ui-dlg .box').getBoundingClientRect(); return { b: r.bottom, t: r.top, H: innerHeight, sh: document.querySelector('.ui-dlg .box').scrollHeight, ch: document.querySelector('.ui-dlg .box').clientHeight }; });
-  ok(`${label}: hộp chọn vị trí nằm trọn trong màn hình, không phải cuộn`, box.t >= 0 && box.b <= box.H && box.sh <= box.ch + 4, JSON.stringify(box)); // +3 px: hoa văn góc .fr::before (inset −3px) của mọi hộp thoại
+  // hiệu ứng mở hộp (scrIn / dlgIn .25s, phóng 0.9 → 1) chạy xong mới đo — máy thử không GPU có khi chậm cả giây
+  await page.waitForFunction(() => ['.ui-dlg', '.ui-dlg .box'].every((q) => document.querySelector(q).getAnimations().every((a) => a.playState !== 'running')), null, { timeout: T(15), polling: 100 });
+  const dlgRect = () => page.evaluate(() => { const bx = document.querySelector('.ui-dlg .box'), r = bx.getBoundingClientRect(), t = bx.querySelector('.txt'), cs = getComputedStyle(bx);
+    return { b: Math.round(r.bottom), t: Math.round(r.top), x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height), H: innerHeight, ov: cs.overflowY, tsh: t.scrollHeight, tch: t.clientHeight }; });
+  const box = await dlgRect();
+  // khung hộp KHÔNG được cuộn (hoa văn góc thò 3 px từng làm khung cuộn được 3 px ⇒ ngón tay xê dịch là hộp rung); nội dung vừa khít ở màn này
+  ok(`${label}: hộp chọn vị trí nằm trọn trong màn hình, khung không cuộn, nội dung không phải cuộn`, box.t >= 0 && box.b <= box.H && box.ov === 'visible' && box.tsh <= box.tch, JSON.stringify(box));
   await page.click('.rl-pick[data-k="pri"] [data-r="mid"]'); await page.click('.rl-pick[data-k="sec"] [data-r="river"]');
+  const box2 = await dlgRect(), same = ['x', 't', 'w', 'h'].every((k) => box2[k] === box[k]);
+  ok(`${label}: bấm chọn vị trí không làm hộp co giãn / dịch chỗ (đổi dòng gợi ý)`, same, `${JSON.stringify(box)} → ${JSON.stringify(box2)}`);
   ok(`${label}: vị trí phụ trùng vị trí chính bị khoá`, await page.isDisabled('.rl-pick[data-k="sec"] [data-r="mid"]'));
   await shot(page, label + '_dialog');
   await page.click('.ui-dlg .btns .btn-gold');

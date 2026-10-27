@@ -18,7 +18,7 @@ let M = await fresh({ gems: C0.price - 1 }), p = M.profile();
 ok('thiếu ngọc: không mua được, báo thiếu bao nhiêu', /Thiếu 1 ngọc/.test(M.buyCostume('kiem_thuy', C0.id).err) && !p.costumes.length);
 p.gems = 200;
 let r = M.buyCostume('kiem_thuy', C0.id);
-ok(`mua ${C0.name} cho Kiếm Thuỷ: trừ ${C0.price} ngọc, mặc luôn, phủ đúng màu`, Array.isArray(r) && r[0].k === 'costume' && p.gems === 200 - C0.price && skinTint(p, 'kiem_thuy') === C0.tint, JSON.stringify(r));
+ok(`mua ${C0.name} cho Tanjiro: trừ ${C0.price} ngọc, mặc luôn, phủ đúng màu`, Array.isArray(r) && r[0].k === 'costume' && p.gems === 200 - C0.price && skinTint(p, 'kiem_thuy') === C0.tint, JSON.stringify(r));
 ok('mua lại cùng món: từ chối', /Đã có/.test(M.buyCostume('kiem_thuy', C0.id).err) && p.gems === 200 - C0.price);
 ok('4 model cao cấp: không bán trang phục', SKIN_LOCKED.every((h) => M.buyCostume(h, C0.id).err) && p.gems === 200 - C0.price);
 ok('tướng / màu không tồn tại: từ chối', !!M.buyCostume('khong_co', C0.id).err && !!M.buyCostume('kiem_thuy', 'khong_co').err);

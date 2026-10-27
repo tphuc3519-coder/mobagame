@@ -2,7 +2,7 @@ import { hero } from './_make.js';
 // Xoáy Nhỏ: mỗi lần trúng tướng +1 Hứng; đủ 20 thì đòn đánh kế tiếp thành Xoáy Nhỏ (phép + hất lùi).
 const P = { need: 20, dmg: 120, ad: 0.6, knock: 120 };
 export default hero({
-  id: 'tieu_anh', name: 'Tiểu Ảnh', title: 'Cậu Bé Rối Giấy', role: 'marksman', roles: ['marksman'], lanes: ['river'], difficulty: 2,
+  id: 'tieu_anh', name: 'Konohamaru', title: 'Cậu Bé Rối Giấy', role: 'marksman', roles: ['marksman'], lanes: ['river'], difficulty: 2,
   base: { range: 500, moveSpeed: 330 }, basicAttack: { projectile: { speed: 1900, vfx: 'paper_dart' } },
   origin: 'Cơ chế: đánh xa, phân thân giấy, tích Hứng để tung đòn xoáy.',
   passive: { id: 'xoay_nho', name: 'Xoáy Nhỏ', desc: 'Mỗi lần trúng tướng +1 Hứng. Đủ 20 Hứng: đòn đánh kế tiếp thành Xoáy Nhỏ 120 (+0.6 Công) phép, hất lùi nhẹ.', params: P,

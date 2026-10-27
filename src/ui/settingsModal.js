@@ -55,6 +55,8 @@ function schema({ g, gfxSet, inMatch, onReset, onSave }) {
     ],
     ui: [
       radio('shop', 'Vị trí cửa hàng', [['left', 'Trái', 'dưới bản đồ nhỏ'], ['right', 'Phải']]),
+      { t: 'pill', label: 'Cỡ nút bấm', opts: [['sm', 'Nhỏ'], ['md', 'Vừa'], ['lg', 'Lớn']], ...P('hudSize'), note: 'Cụm kỹ năng, nút phụ, cần điều khiển — Vừa tự canh theo máy' },
+      { t: 'pill', label: 'Cỡ bản đồ nhỏ', opts: [['sm', 'Nhỏ'], ['md', 'Vừa'], ['lg', 'Lớn']], ...P('mmSize') },
       tog('recommend', 'Hiển thị trang bị đề cử', 'Món nên mua tiếp hiện cạnh nút cửa hàng'),
       tog('itemDesc', 'Ẩn/Hiện mô tả trang bị', 'Dòng mô tả công dụng trong cửa hàng'),
       tog('targetInfo', 'Thông số mục tiêu', 'Khung máu + chỉ số của mục tiêu đang đánh'),
@@ -111,7 +113,7 @@ function rowHtml(row, i, g) {
     }
     case 'radio': { const v = row.get(); return `<div class="rw"><h5>${row.label}</h5><div class="opts">${row.opts.map(([ov, n, sub]) => `<button type="button" class="rb ${ov === v ? 'on' : ''}" ${R} data-v="${esc(JSON.stringify(ov))}"><i></i><span>${n}${sub ? ` <small>(${sub})</small>` : ''}${isDef(row, ov) ? ' <em>(mặc định)</em>' : ''}</span></button>`).join('')}</div></div>`; }
     case 'toggle': return `<div class="rw inl"><span class="lbl">${row.label}${row.desc ? `<small>${row.desc}</small>` : ''}</span><button type="button" class="sw ${row.get() ? 'on' : ''}" ${R} aria-pressed="${!!row.get()}" aria-label="${esc(row.label)}"><i></i></button></div>`;
-    case 'pill': { const v = row.get(); return `<div class="rw inl"><span class="lbl">${row.label}</span><span class="pill">${row.opts.map(([ov, n]) => `<button type="button" class="${ov === v ? 'on' : ''}" ${R} data-v="${esc(JSON.stringify(ov))}">${n}</button>`).join('')}</span></div>`; }
+    case 'pill': { const v = row.get(); return `<div class="rw inl"><span class="lbl">${row.label}${row.note ? `<small>${row.note}</small>` : ''}</span><span class="pill">${row.opts.map(([ov, n]) => `<button type="button" class="${ov === v ? 'on' : ''}" ${R} data-v="${esc(JSON.stringify(ov))}">${n}</button>`).join('')}</span></div>`; }
     case 'sound': {
       const p = prefs(), on = p[row.k], vol = p[row.kv];
       return `<div class="rw inl snd"><span class="lbl">${row.label}<small>${row.sub}</small></span><button type="button" class="sw ${on ? 'on' : ''}" ${R} data-p="on" aria-label="${esc(row.label)}"><i></i></button>

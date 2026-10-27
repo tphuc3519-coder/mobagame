@@ -1,6 +1,6 @@
 // Kiểm tra model trước khi đưa vào game (11 §8, Mốc 14) cho 20 tướng + lính / quái — tự đọc GLB, không cần gói ngoài:
 // clip bắt buộc (02 §13.5), tam giác / vật liệu / xương / texture / dung lượng so với ngân sách 09 §3.1–3.2, chiều cao, hero.art.json khớp model.
-// Chiều cao: 09 §3.1 ghi 1,8–2,6 m cho model gửi vào; tướng sinh bằng code có dáng nhỏ CỐ Ý (Trạng Nhí trẻ con, Mèo Thần Tài, Tiểu Anh…) nên
+// Chiều cao: 09 §3.1 ghi 1,8–2,6 m cho model gửi vào; tướng sinh bằng code có dáng nhỏ CỐ Ý (Conan trẻ con, Doraemon, Konohamaru…) nên
 // nhận 1,2–2,6 m (DECISIONS GĐ5c). Vật liệu: không đếm lớp mặt `<id>_face` (mắt / miệng dán, face.js thay bằng vật liệu riêng).
 // Lính / quái hoạt ảnh bằng code trên khung xương (render/monsterModels.js) nên không cần clip — cần có xương.
 // 4 model cao cấp do chủ dự án gửi (luật 11) được kiểm clip + chiều cao nhưng ngân sách chỉ GHI LẠI (không được sửa model).

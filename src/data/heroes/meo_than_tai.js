@@ -3,7 +3,7 @@ import { hero } from './_make.js';
 const P = { cooldown: 25, flyTime: 1.5, haste: 0.3, chain: 3, chainStun: 0.6, chainReset: 5 };
 const FREE = ['stun', 'knockup', 'root', 'slow', 'silence', 'taunt', 'blind', 'noDash']; // áp chế / bất động thì không thoát được
 export default hero({
-  id: 'meo_than_tai', name: 'Mèo Thần Tài', title: 'Mèo Vẫy Tay Bảo Bối', role: 'tank', roles: ['tank', 'support'], lanes: ['support'], difficulty: 3,
+  id: 'meo_than_tai', name: 'Doraemon', title: 'Mèo Vẫy Tay Bảo Bối', role: 'tank', roles: ['tank', 'support'], lanes: ['support'], difficulty: 3,
   base: { range: 165, atk: 52, armor: 40 }, basicAttack: { melee: true },
   origin: 'Cơ chế: khống chế bằng bảo bối, cánh chong chóng thoát hiểm, chiêu cuối tua ngược thời gian.',
   passive: { id: 'chong_chong', name: 'Chong Chóng Thoát Hiểm', desc: 'Bị khống chế cứng: bay lên 1.5s, gỡ khống chế, miễn khống chế và +30% tốc chạy (hồi 25s).', params: P,

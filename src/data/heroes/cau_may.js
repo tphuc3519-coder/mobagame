@@ -2,7 +2,7 @@ import { hero } from './_make.js';
 // Cánh Sếu: dưới 35% HP thì giảm sát thương nhận, hồi chiêu trôi nhanh hơn 50%, kháng hiệu ứng — tới khi hồi lên trên 50%.
 const P = { hpBelow: 0.35, hpRecover: 0.5, dmgReduce: 0.35, castSpeed: 0.5, tenacity: 0.4 };
 export default hero({
-  id: 'cau_may', name: 'Cầu Mây', title: 'Chàng Đá Cầu Xóm Đình', role: 'marksman', roles: ['marksman'], lanes: ['river'], difficulty: 2,
+  id: 'cau_may', name: 'Ozora Tsubasa', title: 'Chàng Đá Cầu Xóm Đình', role: 'marksman', roles: ['marksman'], lanes: ['river'], difficulty: 2,
   base: { range: 520 }, basicAttack: { projectile: { speed: 1700, vfx: 'shuttlecock' } },
   origin: 'Cơ chế: sút xa, có phát Đá Lộn Ngược ngẫu nhiên, dưới 35% máu nổi Cánh Sếu mạnh hơn hẳn.',
   passive: { id: 'canh_seu', name: 'Cánh Sếu', desc: 'Dưới 35% HP tối đa: giảm 35% sát thương nhận, hồi chiêu trôi nhanh hơn 50%, kháng hiệu ứng 40%, cho đến khi hồi lên trên 50%.', params: P,

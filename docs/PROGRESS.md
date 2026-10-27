@@ -598,3 +598,13 @@ Còn lại:
   tới 120 s — sảnh tải nền 20 model tướng chặn luồng chính vài giây trên máy không GPU, bản `main` cũng vậy: 38,7 s). Đấu lại về phòng chờ 1,2 / 2,9 s
   (CPU giả lập chậm 4×): phần JS dọn trận + dựng phòng chờ chỉ vài ms, còn lại là chờ GPU giả lập xả hàng đợi khung hình khi đổi cỡ khung vẽ
   (`readPixels` sau khi màn kết quả đã dừng vẽ vẫn chờ ~10 s) — không có trên máy có GPU.
+
+## 27/10 — rung hộp chọn vị trí, HUD theo thiết bị, tên tướng gốc
+- **Rung hộp chọn vị trí:** hai nguyên nhân, đều đo được — khung hộp cuộn được 3 px (hoa văn góc thò ra) và hộp co giãn 503 ↔ 458 px khi dòng gợi ý đổi
+  chữ. Sửa ở `ui/css.js` (khung không cuộn, chỉ nội dung cuộn) + `ui/cssDraft.js` (dòng gợi ý không góp bề ngang). `b_flow` kiểm khung không cuộn và
+  hộp đứng yên khi bấm chọn.
+- **HUD theo thiết bị:** `hud/layout.js` + 2 mục Cài đặt (Cỡ nút bấm, Cỡ bản đồ nhỏ, áp dụng ngay giữa trận). Kiểm thử mới `node tools/b_layout.cjs
+  <cổng>`: 9 máy (iPhone SE / 14 tai thỏ / Pro Max, Android 20:9, Safari 667×320, iPad, iPad Air, laptop, Full HD) + cửa hàng phải + cỡ Lớn — không khối
+  nào chồng nhau, cần điều khiển không đè nút, không lấn vùng an toàn, nút chính ≥ 44 px khi chạm. Ví dụ: iPhone 14 nút Đánh 87 · chiêu 59 · Ăn lính 44
+  · cần R78 · bản đồ 133; iPad 118 · 80 · 53 · R104 · 233; Full HD 104 · 71 · 47 · R94 · 324.
+- **Tên tướng:** 14 tướng đợt 2 đổi về đúng tên nhân vật bên Multiverse Battler (xem DECISIONS); id, model, biệt danh, tên chiêu giữ nguyên.

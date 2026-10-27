@@ -14,7 +14,7 @@ export function computeStats(world, e) {
     mrPen: g('mrPen'), mrPenPct: g('mrPenPct'), crit: Math.min(1, g('crit')), lifesteal: g('lifesteal'), spellvamp: g('spellvamp'), cdr: Math.min(COMBAT_EXTRA.cdrCap, g('cdr')),
     tenacity: Math.min(COMBAT_EXTRA.tenacityCap, g('tenacity')), basicReduce: g('basicReduce') };
   s.atk = s.baseAtk + g('atk');
-  s.critDmg = (b.critDmg || COMBAT_EXTRA.critBase) + (bo.critDmg || 0); // b.critDmg: tướng có sát thương chí mạng gốc riêng (vd Bà Năm Chảo 210%)
+  s.critDmg = (b.critDmg || COMBAT_EXTRA.critBase) + (bo.critDmg || 0); // b.critDmg: tướng có sát thương chí mạng gốc riêng (vd ChiChi 210%)
   let asPct = (p.atkSpeedPct || 0) * L + g('atkSpeedPct'), msPct = 0, msAdd = 0, slow = 0, dmgReduce = 0, extraMana = 0, atkPct = 0, slowImmune = false, weaken = 0;
   for (const st of e.statuses) {
     if (st.kind === 'statMod') {

@@ -8,7 +8,7 @@ import { on, track } from '../core/scope.js';
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
 
-export function createMinimap({ world, player, map, cam, fog = null, portraits = null }) {
+export function createMinimap({ world, player, map, cam, fog = null, portraits = null, layout = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
   cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:2px solid #c9b47a;border-radius:6px;background:#0f1224;box-shadow:0 2px 12px #000a;touch-action:none';
@@ -44,7 +44,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
 
   function resize() {
     dpr = Math.min(devicePixelRatio, 2);
-    const box = Math.max(120, Math.min(230, Math.min(innerWidth, innerHeight) * 0.36)), long = map.w / map.h > 1.3 ? Math.min(box * 1.3, innerWidth * 0.3) : box; // bản 1v1 dẹt nên rộng hơn
+    const box = layout?.cur.mm ?? Math.max(120, Math.min(230, Math.min(innerWidth, innerHeight) * 0.36)), long = map.w / map.h > 1.3 ? Math.min(box * 1.3, innerWidth * 0.3) : box; // cỡ theo thiết bị (hud/layout.js); bản 1v1 dẹt nên rộng hơn
     W = Math.round(map.w >= map.h ? long : long * (map.w / map.h)); H = Math.round(map.w >= map.h ? long * (map.h / map.w) : long);
     sx = W / map.w; sy = H / map.h;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
@@ -53,7 +53,8 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     paintBackground(c);
     document.documentElement.style.setProperty('--mmh', H + 'px'); document.documentElement.style.setProperty('--mmw', W + 'px'); // cửa hàng xếp ngay dưới
   }
-  on(window, 'resize', resize); resize();
+  if (layout) layout.onChange(resize); else on(window, 'resize', resize); // bố cục đổi (khổ màn / Cài đặt cỡ bản đồ) thì vẽ lại
+  resize();
 
   const ray = new THREE.Raycaster(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];

@@ -22,7 +22,7 @@ export function applyInstant(world, t, eff, src, origin = null) {
     case 'knockback': {
       if (t.boss) return;
       let d = dirTo(o, t.pos); if (!d.x && !d.y) d = { x: Math.cos(src.facing), y: Math.sin(src.facing) };
-      const k = 1 - (t.data?.passive?.params?.knockbackReduce || 0) - (t.knockbackResist || 0); // Giáp Sắt (Phù Đổng) giảm 40% lực đẩy
+      const k = 1 - (t.data?.passive?.params?.knockbackReduce || 0) - (t.knockbackResist || 0); // Giáp Sắt (Superman) giảm 40% lực đẩy
       const dist = (eff.dist || 150) * Math.max(0.1, k);
       const time = forceMove(world, t, { x: t.pos.x + d.x * dist, y: t.pos.y + d.y * dist }, eff.speed || 1600) || 0;
       if (time > 0) applyStatus(world, t, { status: 'stun', id: 'knock_stun', duration: time }, src);

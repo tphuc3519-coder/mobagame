@@ -3,10 +3,10 @@ import { hero } from './_make.js';
 const P = { max: 4, ttl: 5, bonus: 50, ad: 0.3, healPct: 0.06 };
 const nu = (e) => e.statuses.find((s) => s.id === 'nu_mai')?.n || 0;
 export default hero({
-  id: 'hanh_hoa', name: 'Hạnh Hoa', title: 'Thầy Lang Mai Vàng', role: 'support', roles: ['support', 'fighter'], lanes: ['support'], difficulty: 2,
+  id: 'hanh_hoa', name: 'Haruno Sakura', title: 'Thầy Lang Mai Vàng', role: 'support', roles: ['support', 'fighter'], lanes: ['support'], difficulty: 2,
   base: { range: 170, moveSpeed: 325, atk: 62 }, basicAttack: { melee: true },
   origin: 'Cơ chế: thầy thuốc cận chiến, đánh tích nội lực để hồi máu, chiêu cuối mở trạng thái bùng nổ.',
-  passive: { id: 'nu_mai', name: 'Nụ Mai', desc: 'Mỗi đòn đánh trúng tướng tích 1 Nụ (tối đa 4, giữ 5s). Đủ 4 Nụ: đòn kế tiếp gây thêm 50 (+0.3 Công) phép và hồi cho Hạnh Hoa 6% HP tối đa.', params: P,
+  passive: { id: 'nu_mai', name: 'Nụ Mai', desc: 'Mỗi đòn đánh trúng tướng tích 1 Nụ (tối đa 4, giữ 5s). Đủ 4 Nụ: đòn kế tiếp gây thêm 50 (+0.3 Công) phép và hồi cho Sakura 6% HP tối đa.', params: P,
     gauge: (e) => ({ v: nu(e), max: P.max, label: 'Nụ' }),
     hooks: {
       onAttack(ctx) {

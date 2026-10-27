@@ -355,7 +355,7 @@ async function skin(browser) {
   const pairs = (c) => c.me.map((m, i) => [m, c.foe[i]]).filter(([, f]) => f && f.every((x) => x > 0.05));
   const a = await run('kiem_thuy'), A = pairs(a.c);
   const hit = A.filter(([m, f]) => m.every((x, i) => Math.abs(x / f[i] - tint[i]) < 0.01)).length;
-  ok(`${label}: Kiếm Thuỷ của mình phủ màu Hoàng Kim (màu = bên địch × #ffd98a, mọi vật liệu thân)`, a.c.me.length === a.c.foe.length && A.length >= 2 && hit === A.length, `${hit}/${A.length} vật liệu`);
+  ok(`${label}: Tanjiro của mình phủ màu Hoàng Kim (màu = bên địch × #ffd98a, mọi vật liệu thân)`, a.c.me.length === a.c.foe.length && A.length >= 2 && hit === A.length, `${hit}/${A.length} vật liệu`);
   const b = await run('nguyet_ha');
   ok(`${label}: Nguyệt Hạ (model cao cấp) — dữ liệu có trang phục vẫn KHÔNG phủ màu`, b.c.me.length === b.c.foe.length && b.c.me.every((m, i) => m.every((x, j) => Math.abs(x - b.c.foe[i][j]) < 1e-6)), `${b.c.me.length} vật liệu`);
   ok(`${label}: không lỗi trang / console`, !a.errs.length && !b.errs.length, [...a.errs, ...b.errs].slice(0, 3).join(' || '));

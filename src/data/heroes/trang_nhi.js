@@ -4,7 +4,7 @@ import { hero } from './_make.js';
 const P = { max: 3, ttl: 8, bonus: 15, ad: 0.2, perClue: 0.15, need: 2, ultRange: 800 };
 const clues = (t, e) => t.statuses.find((s) => s.id === 'manh_moi_' + e.id)?.n || 0;
 export default hero({
-  id: 'trang_nhi', name: 'Trạng Nhí', title: 'Thám Tử Nhí Phố Cổ', role: 'marksman', roles: ['marksman', 'support'], lanes: ['river'], difficulty: 2,
+  id: 'trang_nhi', name: 'Conan Edogawa', title: 'Thám Tử Nhí Phố Cổ', role: 'marksman', roles: ['marksman', 'support'], lanes: ['river'], difficulty: 2,
   base: { range: 500, moveSpeed: 335, maxHp: 620 }, basicAttack: { projectile: { speed: 1800, vfx: 'pebble' } },
   origin: 'Cơ chế: dùng bảo bối phá án — giày đá bóng, kim gây mê, ghép manh mối để kết án.',
   passive: { id: 'manh_moi', name: 'Manh Mối', desc: 'Mỗi kỹ năng trúng tướng đánh dấu 1 Manh Mối (8s, tối đa 3). Đòn đánh vào tướng có Manh Mối gây thêm 15 (+0.2 Công) sát thương chuẩn.', params: P,

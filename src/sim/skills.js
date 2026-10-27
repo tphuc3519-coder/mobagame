@@ -224,7 +224,7 @@ const HANDLERS = {
 };
 
 /** Mắng Xối: trong `win` giây, đạn của tướng địch bay vào vòng sóng bị hất ngược — đổi chủ, bay về phía người bắn, gây sát thương vật lý
- *  bằng 2 đợt sóng. Đạn của tướng có nội tại `unreflectable` (Lưỡng Cực) không hất được. */
+ *  bằng 2 đợt sóng. Đạn của tướng có nội tại `unreflectable` (Gojo) không hất được. */
 function reflectZone(world, e, cast, win) {
   const { skill, level } = cast, R = skill.radius;
   spawnZone(world, { owner: e.id, x: e.pos.x, y: e.pos.y, radius: R, until: world.tick + T(win), interval: 1, onTick: () => {
