@@ -6,6 +6,7 @@ import { floorAt } from '../render/env/floor.js';
 import { createKillBanner } from './killBanner.js';
 import { createHudExtras } from './hudExtras.js';
 import { on } from '../core/scope.js';
+import { selfBarRect } from './layout.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -249,7 +250,7 @@ export function createHud(canvas, input, portraits = null) {
         if (f.t >= 0) drawFloat(f, project(cam, f.x, 200 + (f.gy || 0) + Math.sqrt(f.t / f.life) * (f.crit ? 150 : 120), f.y, w, h)); // t < 0: số xem trước chờ tới lượt
       }
       // thanh máu / mana của mình
-      const bx = 16, by = h - 25, bw = Math.min(220, w * 0.24); // sát mép dưới, mảnh: không đè lên cần di chuyển
+      const { l: bx, t: by, r: br } = selfBarRect(w, h, input.layout?.cur.safe.l || 0), bw = br - bx; // sát mép dưới, mảnh, trong vùng an toàn (tai thỏ); cần di chuyển đứng phía trên (hud/layout.js)
       bar(bx, by, bw, 12, player.hp / player.stats.maxHp, '#3ecf74');
       const sh = player.shields.reduce((a, s) => a + s.amount, 0);
       if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
@@ -286,9 +287,9 @@ export function createHud(canvas, input, portraits = null) {
         ctx.beginPath(); ctx.arc(o.x, o.y, R, 0, 7); ctx.fill(); ctx.stroke();
         ctx.fillStyle = 'rgba(243,233,214,0.5)'; // 4 mũi chỉ hướng
         for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2, cx = o.x + Math.cos(a) * (R - 12), cy2 = o.y + Math.sin(a) * (R - 12); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * 6, cy2 + Math.sin(a) * 6); ctx.lineTo(cx + Math.cos(a + 2.3) * 6, cy2 + Math.sin(a + 2.3) * 6); ctx.lineTo(cx + Math.cos(a - 2.3) * 6, cy2 + Math.sin(a - 2.3) * 6); ctx.fill(); }
-        const kx = o.x + dx * k, ky = o.y + dy * k, kg = ctx.createRadialGradient(kx - 8, ky - 10, 4, kx, ky, 34);
+        const kr = Math.round(R * 0.38), kx = o.x + dx * k, ky = o.y + dy * k, kg = ctx.createRadialGradient(kx - kr * 0.24, ky - kr * 0.3, 4, kx, ky, kr); // núm cần theo cỡ cần
         kg.addColorStop(0, 'rgba(255,236,190,0.95)'); kg.addColorStop(1, js.active ? 'rgba(255,170,60,0.9)' : 'rgba(200,170,120,0.75)');
-        ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, 34, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(60,30,0,0.45)'; ctx.stroke();
+        ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(60,30,0,0.45)'; ctx.stroke();
         ctx.globalAlpha = 1;
       }
       if (debugLines?.length) {

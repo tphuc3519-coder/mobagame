@@ -9,8 +9,8 @@
 
 | Nhóm | Số tướng | Ý nghĩa |
 |---|---|---|
-| ✅ Hiện có (chơi được) | 6 | Có dữ liệu + engine chạy đủ nội tại/kỹ năng, có trong màn chọn tướng, 1v1 và 5v5 (`ALPHA` trong `src/data/heroes/index.js`). |
-| 🔜 Sắp có | 14 | Đã có file dữ liệu + model, hiện trong lưới chọn tướng nhưng **bị khoá**; cơ chế riêng (`params`) mới khai báo, engine làm ở Mốc 10. |
+| ✅ Hiện có (chơi được) | 20 | Có dữ liệu + engine chạy đủ nội tại/kỹ năng, có trong màn chọn tướng, 1v1 và 5v5 (`ALPHA` trong `src/data/heroes/index.js`). |
+| 🔜 Sắp có | 0 | Đã có file dữ liệu + model, hiện trong lưới chọn tướng nhưng **bị khoá**; cơ chế riêng (`params`) mới khai báo, engine làm ở Mốc 10. |
 | ⏳ Hàng chờ | 10 | Chỉ có thiết kế trong docs/04 §6 + model 3D; **chưa có file dữ liệu**. |
 | **Tổng** | **30** | 30 model GLB trong `assets/heroes/`. |
 
@@ -22,20 +22,20 @@
 | 4 | `nguyet_ha` | Moonstream | Guide of the Moon River | Pháp sư | Giữa | ★ | ✅ Hiện có |
 | 5 | `canh_dieu` | Kitewing | Windchasing Archer | Xạ thủ | Sông | ★ | ✅ Hiện có |
 | 6 | `long_dang` | Lanternward | The Lamp Keeper | Trợ thủ | Hỗ trợ | ★ | ✅ Hiện có |
-| 7 | `hanh_hoa` | Hạnh Hoa | Thầy Lang Mai Vàng | Trợ thủ / Đấu sĩ | Hỗ trợ | ★★ | 🔜 Sắp có |
-| 8 | `tieu_anh` | Tiểu Ảnh | Cậu Bé Rối Giấy | Xạ thủ | Sông | ★★ | 🔜 Sắp có |
-| 9 | `ba_nam` | Bà Năm Chảo | Bà Nội Trợ Xóm Chợ | Đấu sĩ | Đền | ★ | 🔜 Sắp có |
-| 10 | `cau_may` | Cầu Mây | Chàng Đá Cầu Xóm Đình | Xạ thủ | Sông | ★★ | 🔜 Sắp có |
-| 11 | `bong_den` | Bóng Đèn | Nghệ Nhân Rối Bóng | Pháp sư | Giữa | ★★★ | 🔜 Sắp có |
-| 12 | `thay_do` | Thầy Đồ | Ông Đồ Chữ Nghĩa | Đấu sĩ / Pháp sư | Đền | ★★★ | 🔜 Sắp có |
-| 13 | `kep_cheo` | Kép Chèo | Ông Kép Múa Hài | Đấu sĩ | Đền | ★★★ | 🔜 Sắp có |
-| 14 | `meo_than_tai` | Mèo Thần Tài | Mèo Vẫy Tay Bảo Bối | Đỡ đòn / Trợ thủ | Hỗ trợ | ★★★ | 🔜 Sắp có |
-| 15 | `phu_dong` | Phù Đổng | Chàng Trai Ngựa Sắt | Đỡ đòn / Đấu sĩ | Đền | ★ | 🔜 Sắp có |
-| 16 | `thu_linh` | Thư Linh | Nàng Sách Cổ | Pháp sư | Giữa | ★★ | 🔜 Sắp có |
-| 17 | `kiem_thuy` | Kiếm Thuỷ | Kiếm Sĩ Sông Xanh | Đấu sĩ / Sát thủ | Đền, Rừng | ★★★ | 🔜 Sắp có |
-| 18 | `luong_cuc` | Lưỡng Cực | Đạo Sĩ Âm Dương | Pháp sư | Giữa | ★★★ | 🔜 Sắp có |
-| 19 | `nhan_su` | Nhãn Sư | Thợ Săn Thấu Nhãn | Xạ thủ / Sát thủ | Sông | ★★★ | 🔜 Sắp có |
-| 20 | `trang_nhi` | Trạng Nhí | Thám Tử Nhí Phố Cổ | Xạ thủ / Trợ thủ | Sông | ★★ | 🔜 Sắp có |
+| 7 | `hanh_hoa` | Haruno Sakura | Thầy Lang Mai Vàng | Trợ thủ / Đấu sĩ | Hỗ trợ | ★★ | ✅ Hiện có |
+| 8 | `tieu_anh` | Konohamaru | Cậu Bé Rối Giấy | Xạ thủ | Sông | ★★ | ✅ Hiện có |
+| 9 | `ba_nam` | ChiChi | Bà Nội Trợ Xóm Chợ | Đấu sĩ | Đền | ★ | ✅ Hiện có |
+| 10 | `cau_may` | Ozora Tsubasa | Chàng Đá Cầu Xóm Đình | Xạ thủ | Sông | ★★ | ✅ Hiện có |
+| 11 | `bong_den` | Shikamaru | Nghệ Nhân Rối Bóng | Pháp sư | Giữa | ★★★ | ✅ Hiện có |
+| 12 | `thay_do` | Horikita Suzune | Ông Đồ Chữ Nghĩa | Đấu sĩ / Pháp sư | Đền | ★★★ | ✅ Hiện có |
+| 13 | `kep_cheo` | Captain Ginyu | Ông Kép Múa Hài | Đấu sĩ | Đền | ★★★ | ✅ Hiện có |
+| 14 | `meo_than_tai` | Doraemon | Mèo Vẫy Tay Bảo Bối | Đỡ đòn / Trợ thủ | Hỗ trợ | ★★★ | ✅ Hiện có |
+| 15 | `phu_dong` | Superman | Chàng Trai Ngựa Sắt | Đỡ đòn / Đấu sĩ | Đền | ★ | ✅ Hiện có |
+| 16 | `thu_linh` | Beatrice | Nàng Sách Cổ | Pháp sư | Giữa | ★★ | ✅ Hiện có |
+| 17 | `kiem_thuy` | Tanjiro Kamado | Kiếm Sĩ Sông Xanh | Đấu sĩ / Sát thủ | Đền, Rừng | ★★★ | ✅ Hiện có |
+| 18 | `luong_cuc` | Satoru Gojo | Đạo Sĩ Âm Dương | Pháp sư | Giữa | ★★★ | ✅ Hiện có |
+| 19 | `nhan_su` | Isagi Yoichi | Thợ Săn Thấu Nhãn | Xạ thủ / Sát thủ | Sông | ★★★ | ✅ Hiện có |
+| 20 | `trang_nhi` | Conan Edogawa | Thám Tử Nhí Phố Cổ | Xạ thủ / Trợ thủ | Sông | ★★ | ✅ Hiện có |
 | 21 | `trau_dong` | Trâu Đồng | Chiến Binh Trống Trận | Đỡ đòn / Đấu sĩ | Đền | ★ | ⏳ Hàng chờ |
 | 22 | `co_thu` | Cổ Thụ | Cây Đa Nghìn Tuổi | Đỡ đòn / Trợ thủ | Hỗ trợ | ★★ | ⏳ Hàng chờ |
 | 23 | `kiem_may` | Kiếm Mây | Kiếm Khách Trên Mây | Đấu sĩ / Sát thủ | Đền, Rừng | ★★★ | ⏳ Hàng chờ |
@@ -51,16 +51,16 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 
 ## 1. Cần sửa / chưa khớp (phát hiện khi tổng hợp)
 
-1. **Build trỏ tới đồ không tồn tại** trong `src/data/items.js` (bị `cleanBuild` lọc bỏ âm thầm): `giay_xa_thu` (tieu_anh, cau_may, nhan_su, trang_nhi); `kiem_nhanh` (tieu_anh, ba_nam, cau_may, kiem_thuy, nhan_su, trang_nhi); `ao_giap_nhe` (tieu_anh, cau_may, nhan_su, trang_nhi); `nhan_bao_kich` (tieu_anh, cau_may, nhan_su, trang_nhi); `giay_giap` (meo_than_tai, phu_dong); `ao_giap_dong` (meo_than_tai, phu_dong); `ngoc_binh_an` (meo_than_tai, phu_dong).
+1. **Build trỏ tới đồ không tồn tại** trong `src/data/items.js` (bị `cleanBuild` lọc bỏ âm thầm): `giay_xa_thu` (tieu_anh, cau_may, nhan_su, trang_nhi); `kiem_nhanh` (tieu_anh, ba_nam, cau_may, kiem_thuy, nhan_su, trang_nhi); `ao_giap_nhe` (tieu_anh, cau_may, trang_nhi); `nhan_bao_kich` (tieu_anh, cau_may, nhan_su, trang_nhi); `giay_giap` (meo_than_tai, phu_dong); `ao_giap_dong` (meo_than_tai, phu_dong).
 2. **Mossback (`thach_quy`)**: code + model đã đổi sang "thợ lặn" (Móc Neo / Dậm Áp Suất / Xoáy Nước Sâu, nội tại Bình Dưỡng Khí) nhưng docs/04 §6.1 vẫn ghi bộ cũ (Mai Đá / Húc Núi / Chấn Địa / Đền Thiêng) và docs/09 §4.1 vẫn tả "rùa đá khổng lồ".
 3. **Tên không đồng bộ**: 6 tướng Alpha dùng tên tiếng Anh (Emberforge, Mossback, Bamboo Shade, Moonstream, Kitewing, Lanternward), 24 tướng còn lại tên tiếng Việt. id vẫn tiếng Việt (`hoa_ren`, `thach_quy`…).
-4. **Mèo Thần Tài**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".
+4. **Doraemon**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".
 5. **Build khác docs/04**: Mossback, Bamboo Shade, Kitewing, Lanternward có build trong code khác build ghi trong docs/04 §6 (code là nguồn đang chạy).
 6. **docs/PROGRESS.md**: bảng thông số model chỉ có 16 tướng gốc; 14 model đợt 2 chưa được ghi. Số liệu 3 model nhập (Mossback, Emberforge, Bamboo Shade) đã thay đổi so với bảng.
 7. **Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 4 model nhập (Mossback, Emberforge, Bamboo Shade, Moonstream); nên ưu tiên làm lại khi mở khoá.
 8. **Hàng chờ (10 tướng)**: cần tạo `src/data/heroes/<id>.js` (dùng khuôn `hero()` trong `_make.js`) và thêm vào `HEROES` trong `index.js`; Kiếm Mây và Sói Núi dùng tài nguyên "Không" (không mana) — khuôn `_make.js` hiện mặc định `resource: 'mana'`.
 
-## 2. ✅ Tướng hiện có (6)
+## 2. ✅ Tướng hiện có (20)
 
 ### 1. Emberforge — "Blacksmith of Furnace Village" `hoa_ren`
 
@@ -89,10 +89,10 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 ![hoa_ren](previews/heroes/hoa_ren.jpg)
 
 - **Ngoại hình model:** thợ rèn cơ bắp, tạp dề da cháy sém, găng tay sắt, tóc buộc cao, mắt ánh lửa, cánh tay có đường vân kim loại nóng đỏ khi tích Nhiệt. Vũ khí: búa rèn lớn, đầu búa nung đỏ, cán quấn da.
-- **File:** `assets/heroes/hoa_ren/hoa_ren.glb` (1763 KB) · model nhập (`tools/modelgen/imports/hammer_pbr_20000.glb`, có texture, 3 ảnh)
+- **File:** `assets/heroes/hoa_ren/hoa_ren.glb` (1809 KB) · model nhập (`tools/modelgen/imports/hammer_pbr_20000.glb`, có texture, 3 ảnh)
 - **Thông số:** 19,967 tam giác · 24 xương · 1 vật liệu · cao 250 cm · runRefSpeed 320
 - **Màu:** viền sáng `#ff7a1a` · bảng màu `#2a2a2e` `#ff7a1a` `#ffd166` `#6b3b1e`
-- **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
+- **Clip (12):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase, ShowIdle
 
 ### 2. Mossback — "Guardian of the Mossy Temple" `thach_quy`
 
@@ -122,8 +122,8 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 ![thach_quy](previews/heroes/thach_quy.jpg)
 
 - **Ngoại hình model:** Thợ lặn canh đền chìm: bộ đồ lặn đồng thau, mũ lặn tròn, bình dưỡng khí sau lưng, vác ống đồng dài làm vũ khí (⚠️ khác mô tả "rùa đá" cũ trong docs/09 §4.1).
-- **File:** `assets/heroes/thach_quy/thach_quy.glb` (2421 KB) · model nhập (`tools/modelgen/imports/diver_pbr_20000.glb`, có texture, 3 ảnh)
-- **Thông số:** 19,994 tam giác · 20 xương · 1 vật liệu · cao 250 cm · runRefSpeed 310
+- **File:** `assets/heroes/thach_quy/thach_quy.glb` (2422 KB) · model nhập (`tools/modelgen/imports/diver_pbr_20000.glb`, có texture, 3 ảnh)
+- **Thông số:** 19,998 tam giác · 20 xương · 1 vật liệu · cao 250 cm · runRefSpeed 310
 - **Màu:** viền sáng `#ffab47` · bảng màu `#405c57` `#ff8a1e` `#a66119` `#1c302e`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
@@ -152,7 +152,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 ![bong_tre](previews/heroes/bong_tre.jpg)
 
 - **Ngoại hình model:** sát thủ nữ, áo bó màu lục đậm, khăn che nửa mặt, nón lá tre cắt vát, lá tre khô gắn trên vai áo. Vũ khí: hai dao ngắn hình lá tre.
-- **File:** `assets/heroes/bong_tre/bong_tre.glb` (2830 KB) · model nhập (`tools/modelgen/imports/ronin_pbr_100000.glb`, có texture, 3 ảnh)
+- **File:** `assets/heroes/bong_tre/bong_tre.glb` (2832 KB) · model nhập (`tools/modelgen/imports/ronin_pbr_100000.glb`, có texture, 3 ảnh)
 - **Thông số:** 27,732 tam giác · 24 xương · 1 vật liệu · cao 220 cm · runRefSpeed 345
 - **Màu:** viền sáng `#6fbf73` · bảng màu `#1f3b2a` `#6fbf73` `#d8e8b0` `#0f1a14`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
@@ -183,9 +183,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 ![nguyet_ha](previews/heroes/nguyet_ha.jpg)
 
 - **Ngoại hình model:** pháp sư nữ tóc bạc trắng dài quá hông, hai kẹp tóc; váy dài xanh đêm chạm đất, tay áo phồng, vạt trước xẻ lộ lớp váy trắng, dải lụa trắng uốn cong bên vạt váy (model có texture do hoạ sĩ gửi, 2026-10-06; ý tưởng cũ: áo lụa hoạ tiết sóng, vương miện trăng khuyết, dải lụa nước trôi quanh người). Vũ khí: chiếc bình bạc nhỏ cầm tay phải (rót dòng nước bạc); điều khiển nước bằng tay.
-- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (3051 KB) · model nhập (`tools/modelgen/imports/moonstream_pbr_game.glb`, có texture, 8 ảnh)
-- **Thông số:** 31,589 tam giác · 24 xương · 3 vật liệu · cao 200 cm · runRefSpeed 315
-- **Bản sảnh (chọn tướng):** `assets/heroes/nguyet_ha/nguyet_ha_showcase.glb` (7763 KB, 113,957 tam giác, từ `tools/modelgen/imports/moonstream_pbr_hq.glb`)
+- **File:** `assets/heroes/nguyet_ha/nguyet_ha.glb` (3048 KB) · model nhập (`tools/modelgen/imports/moonstream_pbr_game.glb`, có texture, 8 ảnh)
+- **Thông số:** 30,987 tam giác · 24 xương · 3 vật liệu · cao 200 cm · runRefSpeed 315
+- **Bản sảnh (chọn tướng):** `assets/heroes/nguyet_ha/nguyet_ha_showcase.glb` (7561 KB, 112,129 tam giác, từ `tools/modelgen/imports/moonstream_pbr_hq.glb`)
 - **Cách tô:** trong trận `pbr` + viền đen · sảnh `pbr`, không viền đen
 - **Màu:** viền sáng `#8fd3ff` · bảng màu `#1d2b64` `#8fd3ff` `#e8f4ff` `#c9a24a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
@@ -243,40 +243,19 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Khiên đồng minh: 200 (+100/cấp) + 0.8 Phép trong 4s
   - Hiệu ứng: đồng minh: tăng tốc 25% 3s
 - **Bot:** combo K2 → K1 → K3 · giữ cự ly 520 · vào giao tranh khi HP ≥ 80%
-- **Phép mặc định:** Hồi Phục · **Build:** Giày Tĩnh Tâm → Giáp Đèn Lồng → Áo Choàng Sương → Trượng Sông → Khiên Đá → Tim Cổ Thụ
+- **Phép mặc định:** Hồi Phục · **Build:** Giày Tĩnh Tâm → Giáp Đèn Lồng → Áo Choàng Sương → Trượng Sông → Lọng Hộ Mệnh → Tim Cổ Thụ
 
 ![long_dang](previews/heroes/long_dang.jpg)
 
 - **Ngoại hình model:** cô gái dịu dàng, áo dài trắng ngà viền vàng, tóc đen dài thắt dải lụa, cầm đèn lồng giấy lớn phát sáng ấm, đom đóm bay quanh. Vũ khí: đèn lồng treo trên cán gỗ dài.
-- **File:** `assets/heroes/long_dang/long_dang.glb` (756 KB) · sinh bằng code (`tools/modelgen/heroes/long_dang.mjs`, màu theo đỉnh, chưa texture)
+- **File:** `assets/heroes/long_dang/long_dang.glb` (759 KB) · sinh bằng code (`tools/modelgen/heroes/long_dang.mjs`, màu theo đỉnh, chưa texture)
 - **Thông số:** 10,938 tam giác · 26 xương · 3 vật liệu · cao 172 cm · runRefSpeed 315
 - **Màu:** viền sáng `#ffc15e` · bảng màu `#fff4e0` `#ffc15e` `#e0513b` `#2b2b52`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-## 3. 🔜 Tướng sắp có (14)
+### 7. Haruno Sakura — "Thầy Lang Mai Vàng" `hanh_hoa`
 
-**Ghi chú — nguồn cơ chế.** 14 tướng này lấy cơ chế từ các đấu thủ bên repo autobattle. Chỉ lấy cơ chế; tên, ngoại hình và tên chiêu phải là nội dung gốc (docs/04 §8), khi sửa model hay mô tả đừng để lộ nét nhân vật gốc.
-
-| Tướng hiện tại | Nhân vật gốc bên autobattle |
-|---|---|
-| Hạnh Hoa — Thầy Lang Mai Vàng | Sakura (Naruto) |
-| Tiểu Ảnh — Cậu Bé Rối Giấy | Konohamaru (Naruto) |
-| Bà Năm Chảo — Bà Nội Trợ Xóm Chợ | ChiChi (Dragon Ball) |
-| Cầu Mây — Chàng Đá Cầu Xóm Đình | Tsubasa (Captain Tsubasa) |
-| Bóng Đèn — Nghệ Nhân Rối Bóng | Shikamaru (Naruto) |
-| Thầy Đồ — Ông Đồ Chữ Nghĩa | Suzune |
-| Kép Chèo — Ông Kép Múa Hài | Ginyu (Dragon Ball) |
-| Mèo Thần Tài — Mèo Vẫy Tay Bảo Bối | Doraemon |
-| Phù Đổng — Chàng Trai Ngựa Sắt | Superman |
-| Thư Linh — Nàng Sách Cổ | Beatrice (Re:Zero) |
-| Kiếm Thuỷ — Kiếm Sĩ Sông Xanh | Tanjiro (Thanh Gươm Diệt Quỷ) |
-| Lưỡng Cực — Đạo Sĩ Âm Dương | Gojo (Jujutsu Kaisen) |
-| Nhãn Sư — Thợ Săn Thấu Nhãn | Isagi (Blue Lock) |
-| Trạng Nhí — Thám Tử Nhí Phố Cổ | Conan (Thám Tử Lừng Danh Conan) |
-
-### 7. Hạnh Hoa — "Thầy Lang Mai Vàng" `hanh_hoa`
-
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Trợ thủ / Đấu sĩ · **Đường:** Hỗ trợ · **Độ khó:** ★★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Trợ thủ / Đấu sĩ · **Đường:** Hỗ trợ · **Độ khó:** ★★ · **Đánh thường:** cận chiến
 
 *Cơ chế: thầy thuốc cận chiến, đánh tích nội lực để hồi máu, chiêu cuối mở trạng thái bùng nổ.*
 
@@ -284,7 +263,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 720 (+92) | Mana 420 (+42) | Công 62 (+3.6) | Giáp 26 (+3.2) | KP 30 (+1.8) | Tốc đánh 0.62 (+1.2%/cấp) | Chạy 325 | Tầm 170 |
 
-- **Nội tại – Nụ Mai** `nu_mai`: Mỗi đòn đánh trúng tướng tích 1 Nụ (tối đa 4, giữ 5s). Đủ 4 Nụ: đòn kế tiếp gây thêm 50 (+0.3 Công) phép và hồi cho Hạnh Hoa 6% HP tối đa.
+- **Nội tại – Nụ Mai** `nu_mai`: Mỗi đòn đánh trúng tướng tích 1 Nụ (tối đa 4, giữ 5s). Đủ 4 Nụ: đòn kế tiếp gây thêm 50 (+0.3 Công) phép và hồi cho Sakura 6% HP tối đa.
 - **K1 – Đấm Mai** `dam_mai` · kiểu `dash` · tầm 380
   - Hồi chiêu: 7/6.6/6.2/5.8/5.4/5s · Tiêu hao: 40/40/45/45/50/50 mana
   - Sát thương: 80 (+40/cấp) + 0.9 Công VL
@@ -296,7 +275,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Mô tả: Hồi máu đồng minh (hoặc chính mình) và xoá khống chế.
 - **K3 (chiêu cuối) – Ấn Trăm Mai** `an_tram_mai` · kiểu `selfBuff` · kéo dài 8s
   - Hồi chiêu: 70/60/50s · Tiêu hao: 100 mana
-  - Hiệu ứng: đổi chỉ số tenacity +30% hotPctPerSec +3% atkPct +30%
+  - Hiệu ứng: đổi chỉ số tenacity +30% atkPct +30%, hot
   - Mô tả: 8 giây: +30% Công, hồi 3% HP mỗi giây, kháng hiệu ứng 30%.
 - **Bot:** combo K1 → K3 → K2 · giữ cự ly 170 · vào giao tranh khi HP ≥ 70%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Chiến → Búa Thần Rèn → Huyết Kiếm → Khiên Đá → Thương Phá Giáp → Mặt Nạ Hồi Sinh
@@ -309,9 +288,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#f2c14e` · bảng màu `#f6e9c4` `#f2c14e` `#6b4a2a` `#7fae5a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 8. Tiểu Ảnh — "Cậu Bé Rối Giấy" `tieu_anh`
+### 8. Konohamaru — "Cậu Bé Rối Giấy" `tieu_anh`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Xạ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1900, vfx `paper_dart`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Xạ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1900, vfx `paper_dart`)
 
 *Cơ chế: đánh xa, phân thân giấy, tích Hứng để tung đòn xoáy.*
 
@@ -323,11 +302,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **K1 – Phi Tiêu Giấy** `phi_tieu_giay` · kiểu `skillshot` · tầm 850, rộng 60, tốc đạn 1800
   - Hồi chiêu: 5/4.7/4.4/4.1/3.8/3.5s · Tiêu hao: 40/42/44/46/48/50 mana
   - Sát thương: 70 (+35/cấp) + 0.9 Công VL
-  - Mô tả: 25% số phát thành Pháo Giấy nổ vùng 200, sát thương tối đa ở tâm.
+  - Mô tả: 25% số phát thành Pháo Giấy nổ vùng 200, sát thương tối đa ở tâm, còn 50% ở mép.
 - **K2 – Phân Thân Giấy** `phan_than_giay` · kiểu `recast` · tầm 500
   - Hồi chiêu: 13/12/11/10/9/8s · Tiêu hao: 60 mana
-  - Sát thương: 40 (+20/cấp) + 0.5 Công VL
-  - Mô tả: Tung 2 phân thân giấy đánh địch trong 4s; kích hoạt lại để đổi chỗ với một phân thân.
+  - Sát thương: 18 (+9/cấp) + 0.22 Công VL
+  - Mô tả: Tung 2 phân thân giấy tự bắn địch gần nhất trong 4s; kích hoạt lại để đổi chỗ với một phân thân (tối đa 2 lần).
 - **K3 (chiêu cuối) – Xoáy Gió** `xoay_gio` · kiểu `dash` · tầm 550
   - Hồi chiêu: 55/47/40s · Tiêu hao: 100 mana
   - Sát thương: 180 (+100/cấp) + 1.1 Công P
@@ -344,9 +323,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#ff8a7a` · bảng màu `#f7f1e3` `#d64a3a` `#2a2a3a` `#4a78c8`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 9. Bà Năm Chảo — "Bà Nội Trợ Xóm Chợ" `ba_nam`
+### 9. ChiChi — "Bà Nội Trợ Xóm Chợ" `ba_nam`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đấu sĩ · **Đường:** Đền · **Độ khó:** ★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đấu sĩ · **Đường:** Đền · **Độ khó:** ★ · **Đánh thường:** cận chiến
 
 *Cơ chế: cận chiến chí mạng tích dần, mắng xối phản lại đạn bay.*
 
@@ -363,12 +342,12 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **K2 – Mắng Xối** `mang_xoi` · kiểu `aoeSelf` · bán kính 380
   - Hồi chiêu: 16/15/14/13/12/11s · Tiêu hao: 60 mana
   - Sát thương: 20 (+10/cấp) + 0.25 Công VL
-  - Mô tả: 5 đợt sóng xung kích trong 1s; đạn bay chạm sóng bị phản ngược về phía địch.
-- **K3 (chiêu cuối) – Dép Bay** `dep_bay` · kiểu `targetedDash` · tầm 650
+  - Mô tả: 5 đợt sóng xung kích trong 1s; đạn của tướng địch bay vào sóng bị hất ngược về phía người bắn.
+- **K3 (chiêu cuối) – Dép Bay** `dep_bay` · kiểu `targetedDash` · tầm 650, tốc đạn 2200
   - Hồi chiêu: 45/40/35s · Tiêu hao: 90 mana
   - Sát thương: 190 (+90/cấp) + 1.2 Công VL
   - Hiệu ứng: choáng 1s
-  - Mô tả: Lao đá vào mục tiêu đã khoá: choáng 1s, tích thêm 3 chí mạng.
+  - Mô tả: Lao đá vào mục tiêu đã khoá — không thể bị cản (miễn khống chế, không bị đẩy) khi đang lao: choáng 1s, tích thêm 3 tầng chí mạng.
 - **Bot:** combo K3 → K1 → K2 · giữ cự ly 160 · vào giao tranh khi HP ≥ 75%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Chiến → ⚠️`kiem_nhanh` (không có trong items.js) → Huyết Kiếm → Khiên Đá → Thương Phá Giáp → Mặt Nạ Hồi Sinh
 
@@ -380,21 +359,21 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#ff7a8a` · bảng màu `#8a3a52` `#f2ead8` `#2b2b30` `#e04a5a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 10. Cầu Mây — "Chàng Đá Cầu Xóm Đình" `cau_may`
+### 10. Ozora Tsubasa — "Chàng Đá Cầu Xóm Đình" `cau_may`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Xạ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `shuttlecock`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Xạ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `shuttlecock`)
 
-*Cơ chế: sút xa, chưa sung thì hay trượt, dưới 35% máu nổi Cánh Sếu mạnh hơn hẳn.*
+*Cơ chế: sút xa, có phát Đá Lộn Ngược ngẫu nhiên, dưới 35% máu nổi Cánh Sếu mạnh hơn hẳn.*
 
 | | | | | | | | |
 |---|---|---|---|---|---|---|---|
 | HP 640 (+78) | Mana 300 (+30) | Công 66 (+5.5) | Giáp 22 (+3) | KP 26 (+1.5) | Tốc đánh 0.75 (+3%/cấp) | Chạy 320 | Tầm 520 |
 
-- **Nội tại – Cánh Sếu** `canh_seu`: Dưới 35% HP tối đa: giảm 35% sát thương nhận, +50% tốc ra chiêu, kháng hiệu ứng 40%, cho đến khi hồi lên trên 50%.
+- **Nội tại – Cánh Sếu** `canh_seu`: Dưới 35% HP tối đa: giảm 35% sát thương nhận, hồi chiêu trôi nhanh hơn 50%, kháng hiệu ứng 40%, cho đến khi hồi lên trên 50%.
 - **K1 – Tạt Cầu** `tat_cau` · kiểu `skillshot` · tầm 800, rộng 50, tốc đạn 1800
   - Hồi chiêu: 4/3.8/3.6/3.4/3.2/3s · Tiêu hao: 30/30/35/35/40/40 mana
   - Sát thương: 60 (+30/cấp) + 0.8 Công VL
-  - Mô tả: 30% số phát thành Đá Lộn Ngược 140 sát thương kèm choáng ngắn.
+  - Mô tả: 30% số phát thành Đá Lộn Ngược: thêm 80 sát thương kèm choáng 0.5s.
 - **K2 – Đá Xoáy Lửa** `da_xoay_lua` · kiểu `skillshot` · tầm 900, rộng 70, tốc đạn 2100
   - Hồi chiêu: 9/8.5/8/7.5/7/6.5s · Tiêu hao: 55/55/60/60/65/65 mana
   - Sát thương: 90 (+45/cấp) + 1 Công VL
@@ -403,7 +382,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **K3 (chiêu cuối) – Song Cầu Thắng** `song_cau_thang` · kiểu `skillshot` · tầm 950, rộng 90, tốc đạn 2400
   - Hồi chiêu: 42/36/30s · Tiêu hao: 90 mana
   - Sát thương: 130 (+70/cấp) + 0.9 Công VL
-  - Mô tả: Hai phát liên tiếp, phát thứ hai theo dấu phát đầu.
+  - Mô tả: Hai phát liên tiếp; phát đầu trúng tướng thì phát thứ hai bám theo người đó.
 - **Bot:** combo K3 → K2 → K1 · giữ cự ly 520 · vào giao tranh khi HP ≥ 90%
 - **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_xa_thu` (không có trong items.js) → Cung Gió → ⚠️`kiem_nhanh` (không có trong items.js) → ⚠️`ao_giap_nhe` (không có trong items.js) → ⚠️`nhan_bao_kich` (không có trong items.js) → Mặt Nạ Hồi Sinh
 
@@ -415,11 +394,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#6fd6a0` · bảng màu `#fafafa` `#2d6fd6` `#ffd23a` `#d9412f`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 11. Bóng Đèn — "Nghệ Nhân Rối Bóng" `bong_den`
+### 11. Shikamaru — "Nghệ Nhân Rối Bóng" `bong_den`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `shadow_dart`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `shadow_dart`)
 
-*Cơ chế: khống chế bằng bóng, trói cổ rồi choáng, mở lãnh địa rối bóng làm cả nhóm địch chậm.*
+*Cơ chế: khống chế bằng bóng, áp chế bằng bóng rồi choáng, mở lãnh địa rối bóng làm cả nhóm địch chậm.*
 
 | | | | | | | | |
 |---|---|---|---|---|---|---|---|
@@ -431,16 +410,16 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Sát thương: 35 (+20/cấp) + 0.4 Phép P
   - Hiệu ứng: sát thương theo thời gian 12/s 3s
   - Mô tả: Hai phi tiêu, mỗi cái kèm chảy máu 3s.
-- **K2 – Trói Bóng** `troi_bong` · kiểu `tether` · tầm 700, kéo dài 2s
-  - Hồi chiêu: 12/11.5/11/10.5/10/9.5s · Tiêu hao: 70/70/75/75/80/80 mana
+- **K2 – Trói Bóng** `troi_bong` · kiểu `tether` · tầm 700, rộng 70, kéo dài 1.25s, tốc đạn 1800
+  - Hồi chiêu: 13/12.5/12/11.5/11/10.5s · Tiêu hao: 70/70/75/75/80/80 mana
   - Sát thương: 60 (+30/cấp) + 0.5 Phép P
-  - Hiệu ứng: trói 2s, choáng 0.8s khi hết thời gian
-  - Mô tả: Bóng quấn cổ 2s (trói, sát thương theo thời gian) rồi choáng 0.8s nếu còn trong tầm.
+  - Hiệu ứng: choáng 0.8s khi hết thời gian
+  - Mô tả: Bóng quấn cổ tướng địch trúng đầu tiên: áp chế 1,25s (không cử động, không đánh, không dùng chiêu / phép / đồ; không giảm bởi kháng hiệu ứng, Giải Trói không gỡ) — Shikamaru đứng niệm giữ dây suốt lúc đó, giữ đủ thì choáng thêm 0,8s. Shikamaru bị khống chế cứng, câm lặng, bị cắt chiêu, chết, hoặc tự dùng phép / đồ thì dây đứt.
 - **K3 (chiêu cuối) – Lãnh Địa Bóng** `lanh_dia_bong` · kiểu `zone` · tầm 600, bán kính 480, kéo dài 5s
   - Hồi chiêu: 70/62/54s · Tiêu hao: 120 mana
   - Sát thương: 30 (+20/cấp) + 0.25 Phép P
-  - Hiệu ứng: chậm 40% 0.6s, cấm lướt
-  - Mô tả: Vùng rối bóng 5s: địch bên trong chậm 40% và không thể lướt.
+  - Hiệu ứng: chậm 40% 0.6s, noDash 0.6s
+  - Mô tả: Vùng rối bóng 5s: địch bên trong chậm 40% và không thể lướt / Chớp Bước.
 - **Bot:** combo K3 → K2 → K1 · giữ cự ly 520 · vào giao tranh khi HP ≥ 90%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Pháp Sư → Trượng Sông → Mũ Sấm → Sách Phá Giới → Bình Sương Đông → Ngọc Băng
 
@@ -452,9 +431,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#b08aff` · bảng màu `#3a2a5a` `#ffb85a` `#b8763a` `#0e0a18`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 12. Thầy Đồ — "Ông Đồ Chữ Nghĩa" `thay_do`
+### 12. Horikita Suzune — "Ông Đồ Chữ Nghĩa" `thay_do`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đấu sĩ / Pháp sư · **Đường:** Đền · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đấu sĩ / Pháp sư · **Đường:** Đền · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
 
 *Cơ chế: tiến hoá theo điểm Học, ba cấp Nghĩa; mỗi cấp mạnh và tầm xa hơn.*
 
@@ -462,11 +441,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 860 (+102) | Mana 300 (+32) | Công 62 (+6.8) | Giáp 28 (+3.4) | KP 28 (+1.9) | Tốc đánh 0.7 (+2.5%/cấp) | Chạy 320 | Tầm 200 |
 
-- **Nội tại – Điểm Học** `diem_hoc`: Đòn đánh và kỹ năng trúng tướng +1 Điểm. 12 Điểm: lên Nghĩa II (+15% tốc đánh, +40 tầm, đòn đánh +25 phép). 30 Điểm: Nghĩa III (+30% sát thương kỹ năng, đòn đánh xuyên 1 mục tiêu).
+- **Nội tại – Điểm Học** `diem_hoc`: Đòn đánh và kỹ năng trúng tướng +1 Điểm. 12 Điểm: lên Nghĩa II (+15% tốc đánh, +40 tầm, đòn đánh +25 phép). 30 Điểm: Nghĩa III (+30% sát thương kỹ năng, đòn đánh lan 60% sang một địch cạnh mục tiêu).
 - **K1 – Nét Bút** `net_but` · kiểu `line` · tầm 650, rộng 110
   - Hồi chiêu: 6/5.6/5.2/4.8/4.4/4s · Tiêu hao: 40/40/45/45/50/50 mana
   - Sát thương: 70 (+35/cấp) + 0.5 Công + 0.5 Phép P
-  - Mô tả: Vạch một nét mực thẳng; ở Nghĩa II để lại vệt chậm 1s.
+  - Mô tả: Vạch một nét mực thẳng; từ Nghĩa II, tướng trúng nét mực bị chậm 30% trong 1s.
 - **K2 – Quyết Sách** `quyet_sach` · kiểu `selfBuff` · kéo dài 5s
   - Hồi chiêu: 16/15/14/13/12/11s · Tiêu hao: 50 mana
   - Khiên: 90 (+40/cấp) + 0.4 Phép
@@ -487,9 +466,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#c9a24a` · bảng màu `#1e2238` `#c9a24a` `#f2e8cc` `#b8322a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 13. Kép Chèo — "Ông Kép Múa Hài" `kep_cheo`
+### 13. Captain Ginyu — "Ông Kép Múa Hài" `kep_cheo`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đấu sĩ · **Đường:** Đền · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đấu sĩ · **Đường:** Đền · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
 
 *Cơ chế: đánh có tỉ lệ choáng, sáu tia sáng đẩy lùi, chiêu cuối đổi vai (hoán đổi máu) khi sắp chết.*
 
@@ -497,7 +476,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 860 (+102) | Mana 300 (+32) | Công 68 (+6.8) | Giáp 28 (+3.4) | KP 28 (+1.9) | Tốc đánh 0.7 (+2.5%/cấp) | Chạy 325 | Tầm 175 |
 
-- **Nội tại – Hào Quang Sân Khấu** `hao_quang_san_khau`: Địch trong 400 quanh Kép Chèo có 10% đòn đánh trượt; bản thân +8% tốc đánh khi có địch trong vùng. Đòn đánh 25% kèm choáng 0.3s.
+- **Nội tại – Hào Quang Sân Khấu** `hao_quang_san_khau`: Tướng địch trong 400 quanh Ginyu có 10% đòn đánh trượt; bản thân +8% tốc đánh khi có tướng địch trong vùng. Đòn đánh 25% kèm choáng 0.3s.
 - **K1 – Quyền Chèo** `quyen_cheo` · kiểu `cone` · tầm 300, góc 110°
   - Hồi chiêu: 5/4.7/4.4/4.1/3.8/3.5s · Tiêu hao: 30/30/35/35/40/40 mana
   - Sát thương: 65 (+35/cấp) + 0.9 Công VL
@@ -506,10 +485,10 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Hồi chiêu: 11/10.5/10/9.5/9/8.5s · Tiêu hao: 60/60/65/65/70/70 mana
   - Sát thương: 25 (+12/cấp) + 0.3 Công P
   - Hiệu ứng: đẩy lùi 140
-  - Mô tả: Bắn xối 6 tia, mỗi tia đẩy lùi; trúng đủ 3 tia thì địch kiệt sức (chậm mạnh 1.5s).
+  - Mô tả: Bắn xối 6 tia toả trong quạt, mỗi tia trúng gây sát thương, đẩy lùi; trúng đủ 3 tia thì địch kiệt sức (chậm 60% trong 1.5s).
 - **K3 (chiêu cuối) – Đổi Vai** `doi_vai` · kiểu `skillshot` · tầm 750, rộng 80, tốc đạn 2200
   - Hồi chiêu: 90/80/70s · Tiêu hao: 80 mana
-  - Mô tả: Khi HP dưới 30%: bắn tia đổi vai. Trúng thì hai bên đổi phần trăm máu rồi cùng về ít nhất 20%; trượt thì Kép Chèo còn 10% máu.
+  - Mô tả: Khi HP dưới 30%: bắn tia đổi vai. Trúng tướng thì hai bên đổi phần trăm máu rồi cùng về ít nhất 20%; trượt thì Ginyu còn 10% máu.
 - **Bot:** combo K1 → K2 → K3 · giữ cự ly 200 · vào giao tranh khi HP ≥ 70% · luật chiêu cuối `hpBelow0.3`
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Chiến → Búa Thần Rèn → Huyết Kiếm → Khiên Đá → Thương Phá Giáp → Mặt Nạ Hồi Sinh
 
@@ -521,9 +500,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#f0c040` · bảng màu `#c8302a` `#f0c040` `#2a8a5a` `#181418`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 14. Mèo Thần Tài — "Mèo Vẫy Tay Bảo Bối" `meo_than_tai`
+### 14. Doraemon — "Mèo Vẫy Tay Bảo Bối" `meo_than_tai`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đỡ đòn / Trợ thủ · **Đường:** Hỗ trợ · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đỡ đòn / Trợ thủ · **Đường:** Hỗ trợ · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
 
 *Cơ chế: khống chế bằng bảo bối, cánh chong chóng thoát hiểm, chiêu cuối tua ngược thời gian.*
 
@@ -531,12 +510,12 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 1000 (+130) | Mana 320 (+35) | Công 52 (+4.5) | Giáp 40 (+4.2) | KP 32 (+2.2) | Tốc đánh 0.62 (+1.5%/cấp) | Chạy 310 | Tầm 165 |
 
-- **Nội tại – Chong Chóng Thoát Hiểm** `chong_chong`: Bị khống chế cứng: bay lên 1.5s, gỡ khống chế và +30% tốc chạy (hồi 25s).
+- **Nội tại – Chong Chóng Thoát Hiểm** `chong_chong`: Bị khống chế cứng: bay lên 1.5s, gỡ khống chế, miễn khống chế và +30% tốc chạy (hồi 25s).
 - **K1 – Nện Bụng** `nen_bung` · kiểu `cone` · tầm 260, góc 100°
   - Hồi chiêu: 6/5.6/5.2/4.8/4.4/4s · Tiêu hao: 30/30/35/35/40/40 mana
   - Sát thương: 60 (+30/cấp) + 0.8 Công VL
   - Hiệu ứng: đẩy lùi 100
-  - Mô tả: Húc bụng: đẩy lùi; đòn thứ ba của mỗi chuỗi choáng 0.6s.
+  - Mô tả: Húc bụng: đẩy lùi; lần thứ ba của mỗi chuỗi choáng 0.6s.
 - **K2 – Súng Hơi** `sung_hoi` · kiểu `skillshot` · tầm 750, rộng 90, tốc đạn 1700
   - Hồi chiêu: 10/9.5/9/8.5/8/7.5s · Tiêu hao: 55/55/60/60/65/65 mana
   - Sát thương: 70 (+35/cấp) + 0.5 Phép P
@@ -544,9 +523,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Mô tả: Vòng khí nén: đẩy lùi, cắt ngang chiêu đang gồng.
 - **K3 (chiêu cuối) – Đồng Hồ Ngược** `dong_ho_nguoc` · kiểu `selfBuff`
   - Hồi chiêu: 130/110/90s · Tiêu hao: 100 mana
-  - Mô tả: Tua ngược 4s: quay lại vị trí và máu của 4 giây trước (không hồi thêm khi HP hiện tại cao hơn).
-- **Bot:** combo K2 → K1 · giữ cự ly 180 · vào giao tranh khi HP ≥ 60% · luật chiêu cuối `hpBelow0.25`
-- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_giap` (không có trong items.js) → Khiên Đá → ⚠️`ao_giap_dong` (không có trong items.js) → ⚠️`ngoc_binh_an` (không có trong items.js) → Giáp Gai → Mặt Nạ Hồi Sinh
+  - Mô tả: Tua ngược 4s: quay lại vị trí và máu của 4 giây trước (không mất máu khi HP hiện tại cao hơn).
+- **Bot:** combo K2 → K1 → K3 · giữ cự ly 180 · vào giao tranh khi HP ≥ 60% · luật chiêu cuối `hpBelow0.25`
+- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_giap` (không có trong items.js) → Khiên Đá → ⚠️`ao_giap_dong` (không có trong items.js) → Lọng Hộ Mệnh → Giáp Gai → Mặt Nạ Hồi Sinh
 
 ![meo_than_tai](previews/heroes/meo_than_tai.jpg)
 
@@ -556,9 +535,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#f0c040` · bảng màu `#f0c45a` `#f0c040` `#d63a30` `#3a78c8`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 15. Phù Đổng — "Chàng Trai Ngựa Sắt" `phu_dong`
+### 15. Superman — "Chàng Trai Ngựa Sắt" `phu_dong`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đỡ đòn / Đấu sĩ · **Đường:** Đền · **Độ khó:** ★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đỡ đòn / Đấu sĩ · **Đường:** Đền · **Độ khó:** ★ · **Đánh thường:** cận chiến
 
 *Cơ chế: tướng đỡ đòn cứng cáp, giáp sắt giảm sát thương vật lý, phun lửa, thổi băng, lao từ trời xuống.*
 
@@ -566,12 +545,12 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 1000 (+130) | Mana 320 (+35) | Công 64 (+4.5) | Giáp 36 (+4.2) | KP 32 (+2.2) | Tốc đánh 0.62 (+1.5%/cấp) | Chạy 325 | Tầm 170 |
 
-- **Nội tại – Giáp Sắt** `giap_sat`: Giảm 20% sát thương vật lý và 40% lực đẩy; sát thương phép, đốt, độc và theo %HP vẫn nhận đủ.
+- **Nội tại – Giáp Sắt** `giap_sat`: Giảm 20% sát thương vật lý và 40% lực đẩy; sát thương phép, chuẩn, đốt và độc theo thời gian vẫn nhận đủ.
 - **K1 – Lửa Ngựa Sắt** `lua_ngua_sat` · kiểu `line` · tầm 700, rộng 120
   - Hồi chiêu: 8/7.5/7/6.5/6/5.5s · Tiêu hao: 45/45/50/50/55/55 mana
   - Sát thương: 25 (+12/cấp) + 0.25 Công + 0.2 Phép P
   - Hiệu ứng: sát thương theo thời gian 30/s 3s
-  - Mô tả: Hai tia lửa bốn nhịp; trúng đủ bốn nhịp thì địch bốc cháy 3s.
+  - Mô tả: Tia lửa bốn nhịp; trúng đủ bốn nhịp thì địch bốc cháy 3s.
 - **K2 – Gió Băng Núi Sóc** `gio_bang_nui_soc` · kiểu `cone` · tầm 550, góc 70°
   - Hồi chiêu: 12/11.5/11/10.5/10/9.5s · Tiêu hao: 60/60/65/65/70/70 mana
   - Sát thương: 60 (+30/cấp) + 0.4 Phép P
@@ -581,9 +560,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Hồi chiêu: 60/52/44s · Tiêu hao: 100 mana
   - Sát thương: 220 (+110/cấp) + 1 Công VL
   - Hiệu ứng: hất tung 0.8s
-  - Mô tả: Bay lên rồi lao xuống điểm chỉ định: không thể chọn khi bay, hất tung mục tiêu ở tâm, vùng chấn động quanh điểm rơi.
+  - Mô tả: Bay lên rồi lao xuống điểm chỉ định: không thể bị chọn khi bay, hất tung mọi địch trong vùng rơi.
 - **Bot:** combo K3 → K2 → K1 · giữ cự ly 190 · vào giao tranh khi HP ≥ 70%
-- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_giap` (không có trong items.js) → Khiên Đá → ⚠️`ao_giap_dong` (không có trong items.js) → ⚠️`ngoc_binh_an` (không có trong items.js) → Giáp Gai → Mặt Nạ Hồi Sinh
+- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_giap` (không có trong items.js) → Khiên Đá → ⚠️`ao_giap_dong` (không có trong items.js) → Xích Đồng → Giáp Gai → Mặt Nạ Hồi Sinh
 
 ![phu_dong](previews/heroes/phu_dong.jpg)
 
@@ -593,9 +572,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#ff7a3a` · bảng màu `#5a5e6a` `#ff6a2a` `#c9a24a` `#c8302a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 16. Thư Linh — "Nàng Sách Cổ" `thu_linh`
+### 16. Beatrice — "Nàng Sách Cổ" `thu_linh`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `glyph`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1700, vfx `glyph`)
 
 *Cơ chế: pháp sư khống chế tầm xa, mở sách dựng kết giới.*
 
@@ -607,7 +586,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **K1 – Tinh Thể Chữ** `tinh_the_chu` · kiểu `skillshot` · tầm 900, rộng 65, tốc đạn 1900
   - Hồi chiêu: 4.5/4.3/4.1/3.9/3.7/3.5s · Tiêu hao: 45/47/49/51/53/55 mana
   - Sát thương: 75 (+40/cấp) + 0.7 Phép P
-  - Mô tả: Bắn tinh thể chữ xuyên một mục tiêu.
+  - Mô tả: Bắn tinh thể chữ xuyên qua mục tiêu đầu tiên, dừng ở mục tiêu thứ hai.
 - **K2 – Ấn Giữ** `an_giu` · kiểu `aoeCircle` · tầm 700, bán kính 240, trễ 0.5s
   - Hồi chiêu: 13/12.3/11.6/10.9/10.2/9.5s · Tiêu hao: 70/70/75/75/80/80 mana
   - Sát thương: 60 (+30/cấp) + 0.5 Phép P
@@ -616,8 +595,8 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **K3 (chiêu cuối) – Vòng Kết Giới** `vong_ket_gioi` · kiểu `zone` · tầm 750, bán kính 340, kéo dài 4s
   - Hồi chiêu: 70/60/50s · Tiêu hao: 120 mana
   - Sát thương: 30 (+20/cấp) + 0.3 Phép P
-  - Hiệu ứng: chậm 30% 0.6s
-  - Mô tả: Mở sách dựng kết giới 4s: địch trong vùng chậm, không lướt được; đồng minh nhận khiên.
+  - Hiệu ứng: chậm 30% 0.6s, noDash 0.6s
+  - Mô tả: Mở sách dựng kết giới 4s: địch trong vùng chậm, không lướt / Chớp Bước được; Beatrice và đồng minh đứng trong vùng có khiên.
 - **Bot:** combo K2 → K1 → K3 · giữ cự ly 560 · vào giao tranh khi HP ≥ 90%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Pháp Sư → Trượng Sông → Mũ Sấm → Sách Phá Giới → Bình Sương Đông → Ngọc Băng
 
@@ -629,9 +608,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#7ad0ff` · bảng màu `#2a5aa8` `#7ad0ff` `#f6ecd0` `#d9b25a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 17. Kiếm Thuỷ — "Kiếm Sĩ Sông Xanh" `kiem_thuy`
+### 17. Tanjiro Kamado — "Kiếm Sĩ Sông Xanh" `kiem_thuy`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Đấu sĩ / Sát thủ · **Đường:** Đền, Rừng · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
+**Trạng thái:** ✅ Hiện có · **Vai:** Đấu sĩ / Sát thủ · **Đường:** Đền, Rừng · **Độ khó:** ★★★ · **Đánh thường:** cận chiến
 
 *Cơ chế: đổi thế kiếm theo dòng nước; tích Ấn rồi tung chuỗi mười ba nhát.*
 
@@ -639,7 +618,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 860 (+102) | Mana 300 (+32) | Công 70 (+6.8) | Giáp 28 (+3.4) | KP 28 (+1.9) | Tốc đánh 0.7 (+2.5%/cấp) | Chạy 325 | Tầm 175 |
 
-- **Nội tại – Thế Thuỷ** `the_thuy`: Mỗi kỹ năng chuyển sang thế kế tiếp: Sông (+15% tốc chạy), Thác (+20% sát thương đòn kế), Xoáy (làm chậm 20% 1s). Kỹ năng trúng tướng +1 Ấn (tối đa 5).
+- **Nội tại – Thế Thuỷ** `the_thuy`: Mỗi kỹ năng chuyển sang thế kế tiếp: Sông (+15% tốc chạy 3s), Thác (+20% sát thương đòn kế), Xoáy (đòn kế làm chậm 20% 1s). Kỹ năng trúng tướng +1 Ấn (tối đa 5).
 - **K1 – Nhát Sông** `nhat_song` · kiểu `line` · tầm 500, rộng 130
   - Hồi chiêu: 5/4.7/4.4/4.1/3.8/3.5s · Tiêu hao: 30/30/35/35/40/40 mana
   - Sát thương: 45 (+25/cấp) + 0.6 Công VL
@@ -649,11 +628,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Sát thương: 80 (+40/cấp) + 0.8 Công VL
   - Hiệu ứng: đẩy lùi 100
   - Mô tả: Xoay kiếm quanh mình, hất lùi nhẹ.
-- **K3 (chiêu cuối) – Nhật Vũ Mười Ba Thức** `nhat_vu` · kiểu `dash` · tầm 700
+- **K3 (chiêu cuối) – Nhật Vũ Mười Ba Thức** `nhat_vu` · kiểu `dash` · tầm 700, tốc đạn 2400
   - Hồi chiêu: 60/50/40s · Tiêu hao: 0 mana
-  - Sát thương: 30 (+20/cấp) + 0.35 Công VL
+  - Sát thương: 18 (+12/cấp) + 0.18 Công VL
   - Điều kiện: Ấn đủ 5
-  - Mô tả: Cần đủ 5 Ấn: lướt và chém 13 nhát liên hoàn, nhát cuối gây thêm 50%.
+  - Mô tả: Cần đủ 5 Ấn: lướt tới (không thể bị cản khi lướt, dừng ở tướng đầu tiên) rồi chém 13 nhát quanh mình, không thể bị chọn trong lúc chém; nhát cuối gây thêm 50%.
 - **Bot:** combo K1 → K2 → K3 · giữ cự ly 180 · vào giao tranh khi HP ≥ 75%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Chiến → ⚠️`kiem_nhanh` (không có trong items.js) → Huyết Kiếm → Khiên Đá → Thương Phá Giáp → Mặt Nạ Hồi Sinh
 
@@ -665,9 +644,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#6ad4ff` · bảng màu `#e8f2f0` `#2a9a9a` `#1a3a52` `#6ad4ff`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 18. Lưỡng Cực — "Đạo Sĩ Âm Dương" `luong_cuc`
+### 18. Satoru Gojo — "Đạo Sĩ Âm Dương" `luong_cuc`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 1800, vfx `yin_yang`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Pháp sư · **Đường:** Giữa · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 1800, vfx `yin_yang`)
 
 *Cơ chế: điều khiển không gian — hút, đẩy, rồi hợp Thái Cực; chiêu cuối mở cõi giam địch.*
 
@@ -675,7 +654,7 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 650 (+80) | Mana 470 (+46) | Công 50 (+3.2) | Giáp 21 (+2.8) | KP 28 (+1.6) | Tốc đánh 0.62 (+1.2%/cấp) | Chạy 315 | Tầm 520 |
 
-- **Nội tại – Vô Hạn** `vo_han`: Đòn đánh của Lưỡng Cực không bị chặn bởi đạn/khiên đường bay; +10% tốc chạy khi không có địch trong 700.
+- **Nội tại – Vô Hạn** `vo_han`: Đòn đánh và kỹ năng của Gojo không bị hất ngược; +10% tốc chạy khi không có tướng địch trong 700.
 - **K1 – Âm Hút** `am_hut` · kiểu `aoeCircle` · tầm 750, bán kính 230, trễ 0.4s
   - Hồi chiêu: 9/8.5/8/7.5/7/6.5s · Tiêu hao: 60/60/65/65/70/70 mana
   - Sát thương: 60 (+30/cấp) + 0.5 Phép P
@@ -685,12 +664,12 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Hồi chiêu: 9/8.5/8/7.5/7/6.5s · Tiêu hao: 60/60/65/65/70/70 mana
   - Sát thương: 60 (+30/cấp) + 0.5 Phép P
   - Hiệu ứng: đẩy lùi 300
-  - Mô tả: Đẩy văng địch; tung sau Âm Hút trong 3s thì hợp Chùm Thái Cực.
+  - Mô tả: Đẩy văng địch ra khỏi tâm vùng; tung trong 3s sau Âm Hút thì hợp Chùm Thái Cực: thêm 120 (+0.6 Phép) sát thương chuẩn.
 - **K3 (chiêu cuối) – Thái Cực Giới** `thai_cuc_gioi` · kiểu `zone` · tầm 700, bán kính 520, kéo dài 4s
   - Hồi chiêu: 100/90/80s · Tiêu hao: 140 mana
   - Sát thương: 30 (+20/cấp) + 0.25 Phép P
-  - Hiệu ứng: câm lặng 0.6s, chậm 60% 0.6s
-  - Mô tả: Mở cõi 4s: địch trong vùng bị câm lặng và chậm mạnh; Lưỡng Cực không bị chọn làm mục tiêu bởi đòn đánh thường trong lúc mở.
+  - Hiệu ứng: câm lặng 0.6s, chậm 60% 0.6s; bản thân: basicImmune
+  - Mô tả: Mở cõi 4s: địch trong vùng bị câm lặng và chậm mạnh; Gojo không bị chọn làm mục tiêu bởi đòn đánh thường trong lúc mở.
 - **Bot:** combo K1 → K2 → K3 · giữ cự ly 540 · vào giao tranh khi HP ≥ 90%
 - **Phép mặc định:** Chớp Bước · **Build:** Giày Pháp Sư → Trượng Sông → Mũ Sấm → Sách Phá Giới → Bình Sương Đông → Ngọc Băng
 
@@ -702,9 +681,9 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#8a7aff` · bảng màu `#f4f4f0` `#16161e` `#6a7aff` `#ff5a6a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 19. Nhãn Sư — "Thợ Săn Thấu Nhãn" `nhan_su`
+### 19. Isagi Yoichi — "Thợ Săn Thấu Nhãn" `nhan_su`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Xạ thủ / Sát thủ · **Đường:** Sông · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 2000, vfx `bolt`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Xạ thủ / Sát thủ · **Đường:** Sông · **Độ khó:** ★★★ · **Đánh thường:** đạn bay (tốc 2000, vfx `bolt`)
 
 *Cơ chế: tích Tầm Nhìn bằng thông tin, đủ 100 thì thấy điểm yếu và tung loạt bắn quyết định.*
 
@@ -712,22 +691,22 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 |---|---|---|---|---|---|---|---|
 | HP 640 (+78) | Mana 300 (+30) | Công 66 (+5.5) | Giáp 22 (+3) | KP 26 (+1.5) | Tốc đánh 0.75 (+3%/cấp) | Chạy 330 | Tầm 500 |
 
-- **Nội tại – Tầm Nhìn** `tam_nhin`: Tích Tầm Nhìn khi thấy tướng địch (tối đa 27/giây, dừng khi bị khống chế cứng). Đủ 100: Thấu Nhãn — lộ điểm yếu địch, +12% tốc chạy, né đòn trực tiếp đầu tiên.
+- **Nội tại – Tầm Nhìn** `tam_nhin`: Tích Tầm Nhìn khi thấy tướng địch (tối đa 27/giây, dừng khi bị khống chế cứng). Đủ 100: Thấu Nhãn — +12% tốc chạy, né đòn trực tiếp đầu tiên, mở Hai Nòng Liên Xạ.
 - **K1 – Chạy Mù Điểm** `chay_mu_diem` · kiểu `dash` · tầm 450
   - Hồi chiêu: 9/8.5/8/7.5/7/6.5s · Tiêu hao: 40/40/45/45/50/50 mana
   - Hiệu ứng: đổi chỉ số slowImmune true dmgReducePct +30% 1s
-  - Mô tả: Chạy vòng sườn: giảm 30% sát thương, miễn nhiễm làm chậm 1s; phát bắn kế tiếp được nạp.
+  - Mô tả: Chạy vòng sườn: giảm 30% sát thương, miễn nhiễm làm chậm 1s; Phát Bắn Thẳng trong 3s sau đó được nạp.
 - **K2 – Phát Bắn Thẳng** `phat_ban_thang` · kiểu `skillshot` · tầm 900, rộng 55, tốc đạn 2600
   - Hồi chiêu: 7/6.6/6.2/5.8/5.4/5s · Tiêu hao: 50/50/55/55/60/60 mana
   - Sát thương: 62 (+30/cấp) + 0.9 Công VL
-  - Mô tả: Phát bắn chính xác; đúng thời điểm (sau Chạy Mù Điểm) gây 80 và làm địch ngã ngắn.
+  - Mô tả: Phát bắn chính xác; được nạp (trong 3s sau Chạy Mù Điểm) thì gốc 80 và làm địch ngã 0.5s.
 - **K3 (chiêu cuối) – Hai Nòng Liên Xạ** `hai_nong_lien_xa` · kiểu `skillshot` · tầm 1000, rộng 80, tốc đạn 3000
   - Hồi chiêu: 55/47/40s · Tiêu hao: 0 mana
   - Sát thương: 135 (+60/cấp) + 1 Công VL
   - Điều kiện: Tầm Nhìn 100
-  - Mô tả: Cần Tầm Nhìn 100: loạt bắn 135 xuyên 15% giáp (157 nếu địch đang hở).
+  - Mô tả: Cần Tầm Nhìn 100: loạt bắn 135 xuyên 15% giáp (×157/135 nếu địch đang bị khống chế / làm chậm).
 - **Bot:** combo K1 → K2 → K3 · giữ cự ly 500 · vào giao tranh khi HP ≥ 90%
-- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_xa_thu` (không có trong items.js) → Cung Gió → ⚠️`kiem_nhanh` (không có trong items.js) → ⚠️`ao_giap_nhe` (không có trong items.js) → ⚠️`nhan_bao_kich` (không có trong items.js) → Mặt Nạ Hồi Sinh
+- **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_xa_thu` (không có trong items.js) → Cung Gió → ⚠️`kiem_nhanh` (không có trong items.js) → Dải Lụa Gió → ⚠️`nhan_bao_kich` (không có trong items.js) → Mặt Nạ Hồi Sinh
 
 ![nhan_su](previews/heroes/nhan_su.jpg)
 
@@ -737,17 +716,17 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Màu:** viền sáng `#5affd0` · bảng màu `#22362e` `#5affd0` `#5a3a26` `#8a9aa0`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
-### 20. Trạng Nhí — "Thám Tử Nhí Phố Cổ" `trang_nhi`
+### 20. Conan Edogawa — "Thám Tử Nhí Phố Cổ" `trang_nhi`
 
-**Trạng thái:** 🔜 Sắp có (khoá trong màn chọn tướng) · **Vai:** Xạ thủ / Trợ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1800, vfx `pebble`)
+**Trạng thái:** ✅ Hiện có · **Vai:** Xạ thủ / Trợ thủ · **Đường:** Sông · **Độ khó:** ★★ · **Đánh thường:** đạn bay (tốc 1800, vfx `pebble`)
 
-*Cơ chế: dùng bảo bối phá án — giày đá bóng, kim gây mê, ván trượt, ghép manh mối để kết án.*
+*Cơ chế: dùng bảo bối phá án — giày đá bóng, kim gây mê, ghép manh mối để kết án.*
 
 | | | | | | | | |
 |---|---|---|---|---|---|---|---|
 | HP 620 (+78) | Mana 300 (+30) | Công 66 (+5.5) | Giáp 22 (+3) | KP 26 (+1.5) | Tốc đánh 0.75 (+3%/cấp) | Chạy 335 | Tầm 500 |
 
-- **Nội tại – Manh Mối** `manh_moi`: Mỗi kỹ năng trúng đánh dấu 1 Manh Mối lên địch (8s, tối đa 3). Đòn đánh vào mục tiêu có Manh Mối gây thêm 15 (+0.2 Công) sát thương chuẩn.
+- **Nội tại – Manh Mối** `manh_moi`: Mỗi kỹ năng trúng tướng đánh dấu 1 Manh Mối (8s, tối đa 3). Đòn đánh vào tướng có Manh Mối gây thêm 15 (+0.2 Công) sát thương chuẩn.
 - **K1 – Đá Bóng Giày Lực** `da_bong_giay_luc` · kiểu `skillshot` · tầm 850, rộng 70, tốc đạn 2000
   - Hồi chiêu: 6/5.6/5.2/4.8/4.4/4s · Tiêu hao: 40/40/45/45/50/50 mana
   - Sát thương: 75 (+38/cấp) + 0.9 Công VL
@@ -758,11 +737,11 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
   - Sát thương: 30 (+15/cấp) + 0.3 Công VL
   - Hiệu ứng: choáng 1s
   - Mô tả: Bắn kim gây mê: choáng 1s.
-- **K3 (chiêu cuối) – Chân Lý Duy Nhất** `chan_ly_duy_nhat` · kiểu `targetedDash` · tầm 800
+- **K3 (chiêu cuối) – Chân Lý Duy Nhất** `chan_ly_duy_nhat` · kiểu `targeted` · tầm 800, tốc đạn 2600
   - Hồi chiêu: 65/55/45s · Tiêu hao: 100 mana
   - Sát thương: 200 (+100/cấp) + 1.1 Công C
   - Điều kiện: Mục tiêu có ít nhất 2 Manh Mối
-  - Mô tả: Kết án mục tiêu có từ 2 Manh Mối: sát thương chuẩn, mỗi Manh Mối cộng thêm 15%; trượt thì không mất Manh Mối.
+  - Mô tả: Bắn chứng cứ khoá vào tướng có từ 2 Manh Mối: sát thương chuẩn, mỗi Manh Mối cộng thêm 15%; trượt thì không mất Manh Mối.
 - **Bot:** combo K2 → K1 → K3 · giữ cự ly 500 · vào giao tranh khi HP ≥ 85%
 - **Phép mặc định:** Chớp Bước · **Build:** ⚠️`giay_xa_thu` (không có trong items.js) → Cung Gió → ⚠️`kiem_nhanh` (không có trong items.js) → ⚠️`ao_giap_nhe` (không có trong items.js) → ⚠️`nhan_bao_kich` (không có trong items.js) → Mặt Nạ Hồi Sinh
 
@@ -773,6 +752,27 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 - **Thông số:** 10,088 tam giác · 22 xương · 3 vật liệu · cao 135 cm · runRefSpeed 335
 - **Màu:** viền sáng `#7ad8ff` · bảng màu `#3a5aa8` `#e0a030` `#f4f0e4` `#c8302a`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
+
+## 3. Nguồn cơ chế 14 tướng đợt 2
+
+**Ghi chú — nguồn cơ chế.** 14 tướng đợt 2 lấy cơ chế từ các đấu thủ bên repo autobattle (Multiverse Battler) và mang đúng tên nhân vật đó; ngoại hình (model), biệt danh và tên chiêu vẫn là nội dung gốc (docs/04 §8).
+
+| Tướng | Nhân vật gốc bên Multiverse Battler |
+|---|---|
+| Haruno Sakura — Thầy Lang Mai Vàng | Sakura (Naruto) |
+| Konohamaru — Cậu Bé Rối Giấy | Konohamaru (Naruto) |
+| ChiChi — Bà Nội Trợ Xóm Chợ | ChiChi (Dragon Ball) |
+| Ozora Tsubasa — Chàng Đá Cầu Xóm Đình | Tsubasa (Captain Tsubasa) |
+| Shikamaru — Nghệ Nhân Rối Bóng | Shikamaru (Naruto) |
+| Horikita Suzune — Ông Đồ Chữ Nghĩa | Suzune |
+| Captain Ginyu — Ông Kép Múa Hài | Ginyu (Dragon Ball) |
+| Doraemon — Mèo Vẫy Tay Bảo Bối | Doraemon |
+| Superman — Chàng Trai Ngựa Sắt | Superman |
+| Beatrice — Nàng Sách Cổ | Beatrice (Re:Zero) |
+| Tanjiro Kamado — Kiếm Sĩ Sông Xanh | Tanjiro (Thanh Gươm Diệt Quỷ) |
+| Satoru Gojo — Đạo Sĩ Âm Dương | Gojo (Jujutsu Kaisen) |
+| Isagi Yoichi — Thợ Săn Thấu Nhãn | Isagi (Blue Lock) |
+| Conan Edogawa — Thám Tử Nhí Phố Cổ | Conan (Thám Tử Lừng Danh Conan) |
 
 ## 4. ⏳ Tướng trong hàng chờ (10)
 

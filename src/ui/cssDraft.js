@@ -87,7 +87,9 @@ em.rl { display: inline-flex; flex: none; align-items: center; gap: 3px; width: 
 .rl-tile { height: 54px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 6px; background: linear-gradient(180deg, rgba(30,40,90,.8), rgba(8,12,34,.9)); box-shadow: inset 0 0 0 1px rgba(150,190,255,.3); font: 700 11.5px/1 var(--u-disp); color: #dfe6ff; }
 .rl-tile .rl-ic { width: 22px; height: 22px; } .rl-tile.on { box-shadow: inset 0 0 0 1.5px #ffd36a, 0 0 12px rgba(255,180,70,.5); color: var(--u-gc); background: linear-gradient(180deg, rgba(120,80,20,.7), rgba(40,24,6,.9)); }
 .rl-tile[disabled] { opacity: .35; }
-.rl-hint { margin: 2px 0 0; min-height: 1.4em; font-size: 11.5px; line-height: 1.35; color: var(--u-dim); }
+/* contain: inline-size — dòng gợi ý đổi chữ theo vị trí vừa bấm mà KHÔNG được góp bề ngang vào hộp (trước: hộp co 503 ↔ 458 px rồi canh giữa
+   lại = rung ngang mỗi lần chọn); giữ sẵn chỗ 2 dòng để câu dài lúc chưa chọn xuống dòng cũng không đẩy hộp cao thấp. */
+.rl-hint { margin: 2px 0 0; min-height: 2.7em; contain: inline-size; font-size: 11.5px; line-height: 1.35; color: var(--u-dim); }
 .rl-got { margin-top: 6px; display: flex; gap: 5px; align-items: center; justify-content: center; color: #fff2cc; } .rl-got .rl-ic { width: 18px; height: 18px; color: var(--u-gc); } .rl-got b { color: var(--u-gc); } .rl-got small { color: var(--u-dim); }
 @media (max-height: 420px) { .rl-tile { height: 46px; } .rl-tile .rl-ic { width: 18px; height: 18px; } .ui-dlg .txt:has(.rl-dlg) + .btns { margin-top: 8px; } }
 `;

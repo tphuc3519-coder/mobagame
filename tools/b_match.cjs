@@ -1,8 +1,8 @@
 // Kiểm thử trình duyệt (Playwright) cho đồ kích hoạt / áp chế / chiêu khoá mục tiêu trong trận 5v5 thật (?hero=<id>&mode=5v5):
 //  items    — mua Xích Đồng + Lọng Hộ Mệnh: 2 nút đồ không đè nút nào / thanh máu / mép màn; chạm Xích Giữ áp chế tướng địch (nút kỹ năng xám);
 //             giữ nút Lọng xem mô tả, phím Q dùng Lọng (có khiên); bán Xích mua Dải Lụa Gió, kéo nút sang phải → lướt ~320.
-//  lockon   — Trạng Nhí: kéo K3 về phía tướng địch có 2 Manh Mối → dấu vàng xem trước hiện, lệnh tung mang aim.id đúng tướng đó.
-//  suppress — Bóng Đèn: chạm K2 → tướng địch bị áp chế, Bóng Đèn niệm giữ dây.
+//  lockon   — Conan: kéo K3 về phía tướng địch có 2 Manh Mối → dấu vàng xem trước hiện, lệnh tung mang aim.id đúng tướng đó.
+//  suppress — Shikamaru: chạm K2 → tướng địch bị áp chế, Shikamaru niệm giữ dây.
 //  pings    — nút cờ mở vòng 4 tín hiệu (không đè bản đồ nhỏ / nút kỹ năng / mép màn); chọn Tập hợp rồi chạm bản đồ nhỏ → tín hiệu vào
 //             mô phỏng, dòng báo bên trái, bot đồng đội nhận lệnh; chạm Rút lui hai lần → tín hiệu ngay chỗ mình.
 // Mỗi cảnh chạy ở 844×390 rồi 1280×720 (đổi cỡ trên cùng trang — dịch shader một lần), chụp ảnh đáy HUD, đếm lỗi trang / console.
@@ -148,7 +148,7 @@ async function suppress(browser) {
     await waitFor(page, () => window.__t.foe.seenBy?.[window.__game.player.team] !== false, 30);
     console.log(`  (chạm ${await tap(page, '#skills [data-k="s2"]')}ms)`);
     const t = await waitFor(page, () => { const g = window.__game, f = window.__t.foe; return f.statuses.some((s) => s.kind === 'suppress' && s.src === g.player.id) && g.player.channel?.target === f.id; }, 40);
-    ok(`${tag}: chạm Trói Bóng → địch bị áp chế, Bóng Đèn niệm giữ dây`, t >= 0, `${t} tick`);
+    ok(`${tag}: chạm Trói Bóng → địch bị áp chế, Shikamaru niệm giữ dây`, t >= 0, `${t} tick`);
     await shot(page, `bongden_${tag}.png`);
     const t2 = await waitFor(page, () => window.__t.foe.statuses.some((s) => s.id === 'troi_bong_stun') || !window.__game.player.channel, 90);
     ok(`${tag}: dây kết thúc (choáng cuối / thả)`, t2 >= 0);

@@ -179,7 +179,8 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Mua nhanh**: 1–2 ô cạnh minimap, sáng lên khi đủ tiền.
 - **Tỉ số**: hạ gục hai đội + đồng hồ ở trên giữa. Chạm mở **Bảng tỉ số** (10 tướng, cấp, K/D/A, đồ, vàng).
 - **Cửa hàng** (nút ≡): panel trượt từ phải, tab: Gợi ý / Tấn công / Phép / Phòng thủ / Giày / Rừng-Hỗ trợ. Chọn món → cây công thức → Mua.
-- **Joystick**: động, chạm bất kỳ ở 45% trái màn hình (trừ vùng nút). Bán kính 90 đơn vị UI, vùng chết 10%.
+- **Joystick**: động, chạm bất kỳ ở 45% trái màn hình (trừ vùng nút). Bán kính theo thiết bị (`hud/layout.js`: ~0,9 × nút Đánh, 48–104 px, đặt vào khoảng trống góc trái dưới không đè nút / bản đồ nhỏ / thanh máu của mình), vùng chết 10%.
+- **Cỡ HUD theo thiết bị** (`hud/layout.js`): nút Đánh / chiêu / nút phụ / cửa hàng / bản đồ nhỏ tính từ chiều cao dùng được, vùng an toàn, màn chạm hay chuột; nút chính ≥ 44 px khi chạm. Cài đặt → Giao diện: *Cỡ nút bấm*, *Cỡ bản đồ nhỏ* (Nhỏ / Vừa / Lớn). Kiểm bằng `tools/b_layout.cjs`.
 - **Cụm nút phải**: ĐÁNH (lớn, 150), K1/K2/K3 (100) theo vòng cung, Phép bổ trợ (80), nút đồ kích hoạt (70, chỉ hiện khi có). Nút "+" nâng kỹ năng xuất hiện trên góc nút khi có điểm.
 - Mỗi nút kỹ năng: icon, lớp phủ hồi chiêu quét tròn + số giây, mờ khi thiếu mana, ổ khoá khi chưa học.
 - **Chỉ báo ngắm** vẽ trong cảnh 3D, sát mặt đất (02 §13.7): mũi tên (skillshot/dash), vòng tròn + điểm (aoeCircle/zone/blink), hình nón (cone), vòng tầm bắn quanh tướng. Màu ngọc lam; chuyển đỏ khi kéo vào vùng Huỷ.
@@ -208,7 +209,7 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 Kho cài đặt `src/core/prefs.js` (bảng Cài đặt kiểu Liên Quân). Mọi mục đọc lúc dùng hoặc nghe `onPref` → đổi giữa trận áp dụng ngay.
 Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nút / ngón giữ lượt riêng: 5 ngón cùng lúc (cần + Đánh + kỹ năng + phép + camera) vẫn chạy.
 - **Lệnh di chuyển** `stick` (`hud/joystick.js`, vẽ ở `hud/hud.js`): `follow` — chạm bất kỳ ở 45% trái là cần dời tới chỗ chạm;
-  **mới**: kéo quá bán kính 90 px thì đế cần trượt theo ngón (đổi hướng không phải kéo ngược cả đoạn). `fixed` — đế đứng yên ở vị trí nghỉ
+  **mới**: kéo quá bán kính cần thì đế cần trượt theo ngón (đổi hướng không phải kéo ngược cả đoạn). `fixed` — đế đứng yên ở vị trí nghỉ
   góc trái dưới, hướng = ngón − tâm đế (chạm chỗ nào trong 45% trái cũng được).
 - **Độ nhạy xoay chiêu** `aimSens` 0..1 (`hud/aimPad.js`): kéo hết tầm = 150 − 80 × độ nhạy px (0 → 150, 0,5 → 110 như cũ, 1 → 70); vòng
   ngắm to/nhỏ theo. Dùng cho kỹ năng, phép có hướng và kéo nút Đánh.

@@ -5,7 +5,7 @@ const P = { maxGainPerSec: 27, perHero: 9, sight: 1600, need: 100, haste: 0.12, 
 const OPEN = new Set(['stun', 'knockup', 'root', 'slow', 'suppress', 'stasis']); // địch "đang hở": bị khống chế / làm chậm
 const vis = (e) => e.flags.vision || 0;
 export default hero({
-  id: 'nhan_su', name: 'Nhãn Sư', title: 'Thợ Săn Thấu Nhãn', role: 'marksman', roles: ['marksman', 'assassin'], lanes: ['river'], difficulty: 3,
+  id: 'nhan_su', name: 'Isagi Yoichi', title: 'Thợ Săn Thấu Nhãn', role: 'marksman', roles: ['marksman', 'assassin'], lanes: ['river'], difficulty: 3,
   base: { range: 500, moveSpeed: 330 }, basicAttack: { projectile: { speed: 2000, vfx: 'bolt' } },
   origin: 'Cơ chế: tích Tầm Nhìn bằng thông tin, đủ 100 thì thấy điểm yếu và tung loạt bắn quyết định.',
   passive: { id: 'tam_nhin', name: 'Tầm Nhìn', desc: 'Tích Tầm Nhìn khi thấy tướng địch (tối đa 27/giây, dừng khi bị khống chế cứng). Đủ 100: Thấu Nhãn — +12% tốc chạy, né đòn trực tiếp đầu tiên, mở Hai Nòng Liên Xạ.', params: P,

@@ -970,3 +970,20 @@
   phòng chờ (~750 KB) chuyển sang tải nền 0,8 s sau khi vào Sảnh (Tiết kiệm dữ liệu: tải khi màn cần).
 - **Deploy.** `tools/build_site.mjs` là bước dựng chung; GitHub Pages (bản chính), `netlify.toml`, `vercel.json` cùng gọi nó (sw.js / index.html không
   giữ đệm, tệp khác đã có `?v=<băm>`). Bọc Capacitor ra APK: chưa làm (tuỳ chọn trong lộ trình).
+- 2026-10-27: **14 tướng đợt 2 mang đúng tên nhân vật bên Multiverse Battler** (chủ dự án chốt: *"đúng tên nhân vật như vậy, đừng đổi sang tên Việt hay
+  Anh"*): Haruno Sakura, Konohamaru, ChiChi, Ozora Tsubasa, Shikamaru, Horikita Suzune, Captain Ginyu, Doraemon, Superman, Beatrice, Tanjiro Kamado,
+  Satoru Gojo, Isagi Yoichi, Conan Edogawa — trường `name` lấy nguyên chuỗi `name` của autobattle; câu mô tả chiêu gọi tên ngắn (Sakura, Ginyu, Gojo…).
+  Thay cho quyết định 2026-09-30 đặt tên dân gian. **Mã tướng (`id`) giữ nguyên** (hồ sơ, thành thạo, trang phục, trang bùa đã lưu đọc theo id); **model,
+  biệt danh (`title`), tên chiêu chưa đổi** (người dùng chỉ nêu tên) — `tools/modelgen` và GLB vẫn ghi tên cũ trong metadata, không dựng lại model.
+  `tools/hero_catalog.mjs` sửa theo hiện trạng (14 tướng đã mở khoá từ GĐ1a, không còn "Sắp có").
+- 2026-10-27: **Bố cục HUD theo thiết bị — `hud/layout.js`.** Một hàm thuần tính cỡ từ chiều cao dùng được (trừ vùng an toàn), loại màn (chạm / chuột) và
+  Cài đặt → Giao diện → *Cỡ nút bấm* / *Cỡ bản đồ nhỏ* (Nhỏ ×0,88 / Vừa / Lớn ×1,14; bản đồ ×0,85 / ×1,2), ghi biến CSS lên `:root`. Nút Đánh 84–118 px
+  khi chạm (0,235 × chiều cao), 80–104 khi dùng chuột; Ăn lính / Đẩy trụ ≥ 44 px (trước 40); khung cụm bỏ ~70 px trống bên trái nút chiêu 1 nên hàng
+  nút phụ dịch phải. Màn quá thấp (667×320) thì thu cụm dần cho tới khi không đè nút cài đặt / cửa hàng bên phải, nút camera vào góc trái trên khung cụm.
+  Bản đồ nhỏ 35% chiều cao trên điện thoại → 30% màn lớn (tối đa 320 px, trước kẹp 230). Cần điều khiển: R mong muốn 0,9 × nút Đánh (48–104), rồi
+  **đo khối thật** (bản đồ nhỏ, nút tín hiệu, cửa hàng trái, hàng nút phụ — gồm cả nút đồ kích hoạt khi mua) và đặt vào khoảng trống góc trái dưới,
+  phía trên thanh máu / cấp của mình (thanh này giờ nằm trong vùng an toàn trái; trước nằm dưới tai thỏ);
+  đo lại tối đa mỗi giây, không đổi lúc đang giữ cần. Trước: cần cố định 180 px đè cửa hàng / nút Biến về trên mọi điện thoại.
+- 2026-10-27: **Hộp thoại không cuộn khung.** Hoa văn góc `.fr::before` (inset −3 px) làm khung `.ui-dlg .box` cuộn được 3 px — chạm hơi xê dịch là hộp
+  rung (hộp chọn vị trí). Khung giờ là cột flex không cuộn, chỉ `.txt` cuộn khi dài; dòng gợi ý chọn vị trí `contain: inline-size` + giữ chỗ 2 dòng (đổi
+  chữ không làm hộp co 503 ↔ 458 px nữa).

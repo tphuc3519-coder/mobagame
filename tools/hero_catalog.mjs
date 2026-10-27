@@ -148,7 +148,7 @@ function queueMd(id, n) {
     ...sec.slice(1), '', modelMd(id, lookOf09(`4.${NUM[id]}`)), ''].join('\n');
 }
 
-const live = ALPHA, soon = ORDER2;
+const live = ALPHA, soon = ORDER2.filter((id) => !ALPHA.includes(id)); // 14 tướng đợt 2 đã mở khoá (GĐ1a) — nằm trong ALPHA
 const lookAlpha = (id) => (id === 'thach_quy'
   ? 'Thợ lặn canh đền chìm: bộ đồ lặn đồng thau, mũ lặn tròn, bình dưỡng khí sau lưng, vác ống đồng dài làm vũ khí (⚠️ khác mô tả "rùa đá" cũ trong docs/09 §4.1).'
   : lookOf09(`4.${NUM[id]}`));
@@ -181,7 +181,7 @@ for (const [id, h] of Object.entries(HEROES)) for (const it of h.recommendedBuil
 issues.push(`**Build trỏ tới đồ không tồn tại** trong \`src/data/items.js\` (bị \`cleanBuild\` lọc bỏ âm thầm): ${Object.entries(bad).map(([it, ids]) => `\`${it}\` (${ids.join(', ')})`).join('; ')}.`);
 issues.push('**Mossback (`thach_quy`)**: code + model đã đổi sang "thợ lặn" (Móc Neo / Dậm Áp Suất / Xoáy Nước Sâu, nội tại Bình Dưỡng Khí) nhưng docs/04 §6.1 vẫn ghi bộ cũ (Mai Đá / Húc Núi / Chấn Địa / Đền Thiêng) và docs/09 §4.1 vẫn tả "rùa đá khổng lồ".');
 issues.push('**Tên không đồng bộ**: 6 tướng Alpha dùng tên tiếng Anh (Emberforge, Mossback, Bamboo Shade, Moonstream, Kitewing, Lanternward), 24 tướng còn lại tên tiếng Việt. id vẫn tiếng Việt (`hoa_ren`, `thach_quy`…).');
-issues.push('**Mèo Thần Tài**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".');
+issues.push('**Doraemon**: danh hiệu trong data là "Mèo Vẫy Tay Bảo Bối", trong `tools/modelgen/heroes/meo_than_tai.mjs` là "Mèo Vẫy Tay Chiêu Tài".');
 issues.push('**Build khác docs/04**: Mossback, Bamboo Shade, Kitewing, Lanternward có build trong code khác build ghi trong docs/04 §6 (code là nguồn đang chạy).');
 issues.push('**docs/PROGRESS.md**: bảng thông số model chỉ có 16 tướng gốc; 14 model đợt 2 chưa được ghi. Số liệu 3 model nhập (Mossback, Emberforge, Bamboo Shade) đã thay đổi so với bảng.');
 issues.push('**Model đợt 2 (14 tướng)** còn ở dạng khối nguyên thuỷ tô màu đỉnh, chưa có mặt chi tiết/texture như 4 model nhập (Mossback, Emberforge, Bamboo Shade, Moonstream); nên ưu tiên làm lại khi mở khoá.');
@@ -189,13 +189,13 @@ issues.push('**Hàng chờ (10 tướng)**: cần tạo `src/data/heroes/<id>.js
 out.push(...issues.map((s, i) => `${i + 1}. ${s}`), '');
 
 n = 0;
-out.push('## 2. ✅ Tướng hiện có (6)', '');
-for (const id of live) out.push(heroMd(id, ++n, '✅ Hiện có', lookAlpha(id)));
-out.push('## 3. 🔜 Tướng sắp có (14)', '');
-// Nhân vật gốc bên autobattle mà mỗi tướng đợt 2 lấy cơ chế (chỉ cơ chế; tên, ngoại hình, tên chiêu là nội dung gốc — 04 §8).
+out.push(`## 2. ✅ Tướng hiện có (${live.length})`, '');
+for (const id of live) out.push(heroMd(id, ++n, '✅ Hiện có', ORDER2.includes(id) ? LOOK2[id] : lookAlpha(id)));
+out.push(soon.length ? `## 3. 🔜 Tướng sắp có (${soon.length})` : '## 3. Nguồn cơ chế 14 tướng đợt 2', '');
+// Nhân vật gốc bên autobattle mà mỗi tướng đợt 2 lấy cơ chế (tên tướng = tên nhân vật đó; ngoại hình, biệt danh, tên chiêu là nội dung gốc — 04 §8).
 const ORIGIN = { hanh_hoa: 'Sakura (Naruto)', tieu_anh: 'Konohamaru (Naruto)', ba_nam: 'ChiChi (Dragon Ball)', cau_may: 'Tsubasa (Captain Tsubasa)', bong_den: 'Shikamaru (Naruto)', thay_do: 'Suzune', kep_cheo: 'Ginyu (Dragon Ball)', meo_than_tai: 'Doraemon', phu_dong: 'Superman', thu_linh: 'Beatrice (Re:Zero)', kiem_thuy: 'Tanjiro (Thanh Gươm Diệt Quỷ)', luong_cuc: 'Gojo (Jujutsu Kaisen)', nhan_su: 'Isagi (Blue Lock)', trang_nhi: 'Conan (Thám Tử Lừng Danh Conan)' };
-out.push('**Ghi chú — nguồn cơ chế.** 14 tướng này lấy cơ chế từ các đấu thủ bên repo autobattle. Chỉ lấy cơ chế; tên, ngoại hình và tên chiêu phải là nội dung gốc (docs/04 §8), khi sửa model hay mô tả đừng để lộ nét nhân vật gốc.', '',
-  '| Tướng hiện tại | Nhân vật gốc bên autobattle |', '|---|---|', ...soon.map((id) => `| ${HEROES[id].name} — ${HEROES[id].title} | ${ORIGIN[id]} |`), '');
+out.push('**Ghi chú — nguồn cơ chế.** 14 tướng đợt 2 lấy cơ chế từ các đấu thủ bên repo autobattle (Multiverse Battler) và mang đúng tên nhân vật đó; ngoại hình (model), biệt danh và tên chiêu vẫn là nội dung gốc (docs/04 §8).', '',
+  '| Tướng | Nhân vật gốc bên Multiverse Battler |', '|---|---|', ...ORDER2.map((id) => `| ${HEROES[id].name} — ${HEROES[id].title} | ${ORIGIN[id]} |`), '');
 for (const id of soon) out.push(heroMd(id, ++n, '🔜 Sắp có (khoá trong màn chọn tướng)', LOOK2[id]));
 out.push('## 4. ⏳ Tướng trong hàng chờ (10)', '');
 for (const id of QUEUE) out.push(queueMd(id, ++n));

@@ -127,12 +127,17 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 .ui-toast::before, .ui-toast::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, rgba(232,184,90,0), #e8b85a 22%, #fff3c4 50%, #e8b85a 78%, rgba(232,184,90,0)); }
 .ui-toast::before { top: 0; } .ui-toast::after { bottom: 0; } .ui-toast.on { transform: translate(-50%, 0); }
 .ui-dlg { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: radial-gradient(70% 70% at 50% 50%, rgba(10,14,40,.72), rgba(2,3,12,.9)); animation: scrIn .2s; }
-.ui-dlg .box { min-width: min(380px, 86vw); max-width: 92vw; max-height: 92vh; overflow: auto; padding: 0 22px 18px; text-align: center; animation: dlgIn .25s cubic-bezier(.2,.9,.3,1.2); }
+.ui-dlg .box { min-width: min(380px, 86vw); max-width: 92vw; max-height: 92vh; display: flex; flex-direction: column; padding: 0 22px 18px; text-align: center; animation: dlgIn .25s cubic-bezier(.2,.9,.3,1.2); }
 @keyframes dlgIn { from { transform: scale(.9); opacity: 0; } }
 .ui-dlg h3 { position: relative; margin: 0 -22px 14px; padding: 13px 22px 11px; font: 800 italic 24px/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; background: radial-gradient(60% 100% at 50% 0, rgba(255,190,90,.18), rgba(255,190,90,0)); }
 .ui-dlg h3::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 0; height: 1px; background: var(--u-line); }
 .ui-dlg .box > :first-child:not(h3) { margin-top: 18px; }
 .ui-dlg .txt { font-size: 14px; color: #dfe6ff; line-height: 1.5; } .ui-dlg .txt p { margin: 6px 0; }
+/* Khung hộp thoại KHÔNG cuộn — chỉ nội dung cuộn khi dài: hoa văn góc .fr::before thò ra 3 px làm cả khung cuộn được 3 px, ngón tay hơi
+   xê dịch lúc chạm là hộp rung lên xuống (hộp chọn vị trí). Tiêu đề + nút luôn hiện; nội dung tràn hai bên 22 px để quầng sáng ô chọn không bị cắt. */
+.ui-dlg .box > h3, .ui-dlg .box > .btns { flex: none; }
+.ui-dlg .box > .txt { min-height: 0; margin-inline: -22px; padding-inline: 22px; overflow: hidden auto; overscroll-behavior: contain; }
+.ui-dlg .box > .txt > :first-child { margin-top: 0; } .ui-dlg .box > .txt > :last-child { margin-bottom: 0; } /* như lúc lề còn gộp với tiêu đề / hàng nút */
 .ui-dlg .btns { display: flex; gap: 12px; justify-content: center; margin-top: 16px; } .ui-dlg .btns button { min-width: 120px; height: 42px; padding: 0 18px; font-size: 19px; }
 .ui-dlg input { -webkit-user-select: text; user-select: text; touch-action: manipulation; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,214,140,.5); background: rgba(4,6,20,.9); color: #fff; font: 600 16px var(--u-body); outline: none; }
 .ui-dlg input:focus { box-shadow: 0 0 0 2px rgba(255,190,90,.35); }

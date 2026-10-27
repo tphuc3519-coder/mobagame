@@ -30,6 +30,7 @@ import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
 import { createTowerRanges } from './render/towerRange.js';
 import { createInput } from './hud/joystick.js';
+import { createHudLayout } from './hud/layout.js';
 import { createHud } from './hud/hud.js';
 import { createSkillButtons } from './hud/skillButtons.js';
 import { createShop } from './hud/shop.js';
@@ -121,12 +122,13 @@ cam.resize(innerWidth, innerHeight);
 const fogOfWar = map.vision ? createFog(scene, map, player.team) : null;
 if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.near = map.w * OVERVIEW * 0.9; scene.fog.far = map.w * OVERVIEW * 2.6; }
 const portraits = createPortraits(renderer);
-const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits });
+const layout = createHudLayout(); // cỡ nút / bản đồ nhỏ / cần điều khiển theo thiết bị — trước bản đồ nhỏ (nó đọc cỡ từ đây)
+const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits, layout });
 createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30, gfx, onGfx: (k) => applyGfx(k) });
 const post = q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, { bloom: gfx.bloom, aa: gfx.aa, strength: gfx.detail === 'high' ? 0.55 : 0.45, sharp: gfx.detail === 'high' ? 0.4 : 0.32 }); // luôn vẽ qua hậu kỳ (render/post.js; tắt ánh sáng rực chỉ bỏ lượt bloom) → đổi cài đặt không phải dịch lại shader
 on(window, 'resize', () => cam.resize(innerWidth, innerHeight));
 
-const input = createInput(document.body);
+const input = createInput(document.body, layout);
 const hud = createHud(document.getElementById('hud'), input, portraits);
 const sounds = createGameSounds({ team: player.team, me: player.id }); // tiếng trận theo sự kiện mô phỏng (audio/gameSounds.js)
 // cài đặt chung đổi được ngay trong trận (bảng Cài đặt → Thiết lập): góc camera gần/xa, độ sáng (độ phơi sáng tone map), hiệu ứng sương mù
@@ -319,7 +321,7 @@ function disposeMatch() {
   holdMaterials([...c.materials, ...postMats]); rend.park();
   if (window.__game === api) window.__game = null; delete window.__fxdbg;
 }
-const api = window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, env, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
+const api = window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, env, input, layout, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
 
 on(document, 'visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;

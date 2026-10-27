@@ -6,7 +6,7 @@ const pts = (e) => e.flags.hoc || 0;
 const tierOf = (e) => (pts(e) >= P.tiers[2] ? 3 : pts(e) >= P.tiers[1] ? 2 : 1);
 function addPts(ctx, n) { const s = ctx.self, before = tierOf(s); s.flags.hoc = pts(s) + n; const t = tierOf(s); if (t > before) ctx.emit('proc', { kind: 'nghia', tier: t }); }
 export default hero({
-  id: 'thay_do', name: 'Thầy Đồ', title: 'Ông Đồ Chữ Nghĩa', role: 'fighter', roles: ['fighter', 'mage'], lanes: ['temple'], difficulty: 3,
+  id: 'thay_do', name: 'Horikita Suzune', title: 'Ông Đồ Chữ Nghĩa', role: 'fighter', roles: ['fighter', 'mage'], lanes: ['temple'], difficulty: 3,
   base: { range: 200, atk: 62, ap: 0, moveSpeed: 320 }, basicAttack: { melee: true },
   origin: 'Cơ chế: tiến hoá theo điểm Học, ba cấp Nghĩa; mỗi cấp mạnh và tầm xa hơn.',
   passive: { id: 'diem_hoc', name: 'Điểm Học', desc: 'Đòn đánh và kỹ năng trúng tướng +1 Điểm. 12 Điểm: lên Nghĩa II (+15% tốc đánh, +40 tầm, đòn đánh +25 phép). 30 Điểm: Nghĩa III (+30% sát thương kỹ năng, đòn đánh lan 60% sang một địch cạnh mục tiêu).', params: P,

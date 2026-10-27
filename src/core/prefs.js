@@ -22,6 +22,8 @@ export const PREF_DEFAULTS = Object.freeze({
   camAim: false,       // Góc quay theo định vị: camera lệch dần về chỗ đang ngắm chiêu tầm xa
   // —— Giao diện ——
   shop: 'left',        // Vị trí cửa hàng: 'left' dưới bản đồ nhỏ | 'right'
+  hudSize: 'md',       // Cỡ nút bấm (cụm kỹ năng, nút phụ, cần điều khiển): 'sm' | 'md' tự theo máy | 'lg' — hud/layout.js
+  mmSize: 'md',        // Cỡ bản đồ nhỏ: 'sm' | 'md' tự theo máy | 'lg'
   recommend: true,     // Đồ đề cử cạnh nút cửa hàng
   itemDesc: true,      // Mô tả trang bị trong cửa hàng
   targetInfo: false,   // Thông số mục tiêu (khung máu / chỉ số mục tiêu đang đánh)
@@ -46,7 +48,7 @@ export const PREF_DEFAULTS = Object.freeze({
 /** Các mục có danh sách lựa chọn cố định. */
 export const PREF_CHOICES = Object.freeze({
   camMode: ['off', 'hold', 'slide'], atkMode: ['auto', 'farm', 'manual'], targetBy: ['pct', 'hp', 'near'], flashDir: ['move', 'skill', 'enemy'],
-  castMode: ['aim', 'auto'], aimAt: ['button', 'finger'], cancelBy: ['zone', 'distance'], stick: ['follow', 'fixed'], shop: ['left', 'right'], camDist: ['near', 'far'],
+  castMode: ['aim', 'auto'], aimAt: ['button', 'finger'], cancelBy: ['zone', 'distance'], stick: ['follow', 'fixed'], shop: ['left', 'right'], hudSize: ['sm', 'md', 'lg'], mmSize: ['sm', 'md', 'lg'], camDist: ['near', 'far'],
 });
 /** Các mục số: [nhỏ nhất, lớn nhất, bước]. */
 export const PREF_RANGES = Object.freeze({ aimSens: [0, 1, 0], camSpeed: [0, 1, 0], bright: [1, 5, 1], musicVol: [0, 1, 0], sfxVol: [0, 1, 0] });

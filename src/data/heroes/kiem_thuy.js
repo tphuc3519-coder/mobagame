@@ -4,7 +4,7 @@ import { hero } from './_make.js';
 const P = { stances: ['song', 'thac', 'xoay'], sealMax: 5, songHaste: 0.15, thacBonus: 0.2, xoaySlow: 0.2 };
 const seals = (e) => e.flags.seals || 0;
 export default hero({
-  id: 'kiem_thuy', name: 'Kiếm Thuỷ', title: 'Kiếm Sĩ Sông Xanh', role: 'fighter', roles: ['fighter', 'assassin'], lanes: ['temple', 'jungle'], difficulty: 3,
+  id: 'kiem_thuy', name: 'Tanjiro Kamado', title: 'Kiếm Sĩ Sông Xanh', role: 'fighter', roles: ['fighter', 'assassin'], lanes: ['temple', 'jungle'], difficulty: 3,
   base: { range: 175 }, basicAttack: { melee: true },
   origin: 'Cơ chế: đổi thế kiếm theo dòng nước; tích Ấn rồi tung chuỗi mười ba nhát.',
   passive: { id: 'the_thuy', name: 'Thế Thuỷ', desc: 'Mỗi kỹ năng chuyển sang thế kế tiếp: Sông (+15% tốc chạy 3s), Thác (+20% sát thương đòn kế), Xoáy (đòn kế làm chậm 20% 1s). Kỹ năng trúng tướng +1 Ấn (tối đa 5).', params: P,
