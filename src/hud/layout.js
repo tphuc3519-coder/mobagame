@@ -57,7 +57,7 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
  * bên trái hàng nút phụ, trên thanh máu của mình ở đáy. Trả { R, x, y }; khoảng trống quá hẹp thì giữ R tối thiểu 56 (đè ít nhất có thể).
  */
 export function joyRest({ H, safe = {}, Rwant = 90, above = 0, extrasLeft = Infinity }) {
-  const L = Math.max(8, safe.l || 0) + 10, B = H - Math.max(Math.max(8, safe.b || 0) + 8, SELF_BAR + 6), // trên thanh máu của mình, T = above + 8, Rt = extrasLeft - 10;
+  const L = Math.max(8, safe.l || 0) + 10, B = H - Math.max(Math.max(8, safe.b || 0) + 8, SELF_BAR + 6), T = above + 8, Rt = extrasLeft - 10; // B: trên thanh máu của mình
   const R = Math.round(clamp(56, Math.min(Rwant, (B - T) / 2, (Rt - L) / 2), Rwant));
   const x = Math.max(L + R, Math.min(Rt - R, (safe.l || 0) + 1.55 * R + 10));
   const y = Math.max(T + R, Math.min(B - R, H - (safe.b || 0) - 1.35 * R));

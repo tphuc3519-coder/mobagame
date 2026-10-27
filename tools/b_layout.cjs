@@ -97,7 +97,9 @@ async function run(browser, dk, pf) {
 
 (async () => {
   const browser = await PW.chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  for (const [dk, pf] of RUNS) if (!only.length || only.includes(dk)) await run(browser, dk, pf);
+  for (const [dk, pf] of RUNS) if (!only.length || only.includes(dk)) {
+    try { await run(browser, dk, pf); } catch (e) { ok(`${dk} ${JSON.stringify(pf)}: chạy hết kịch bản`, false, e.message.split('\n')[0]); }
+  }
   await browser.close();
   console.log(fail ? `LỖI: ${fail} mục` : 'Tất cả đạt');
   process.exit(fail ? 1 : 0);
