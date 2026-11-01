@@ -14,7 +14,7 @@ const ST = { slow: 'chậm', stun: 'choáng', root: 'trói', knockup: 'hất tun
 
 // Mô tả ngoại hình model cho 14 tướng đợt 2 (đọc từ tools/modelgen/heroes/<id>.mjs, chưa có trong docs/09).
 const LOOK2 = {
-  hanh_hoa: 'Thầy lang nữ áo kem/vàng mai, bầu thuốc xanh đeo hông, ba cặp kim châm trên ngực, đấm tay không.',
+  hanh_hoa: 'Model có texture do chủ dự án gửi (thân 2026-10-29, đầu mới ghép vào 2026-11-01): cô gái tóc hồng bob ngang cằm, băng đô có tấm kim loại, mắt xanh lục; áo đỏ không tay cổ cao, váy ngắn hồng xẻ tà trên quần short đen, găng tay nâu, băng trắng + túi đồ đen bên đùi phải, bốt nâu cao. Tư thế gốc: đứng dạng chân, tay phải gập ngang ngực cầm kunai trên vai trái, tay trái duỗi chéo trước người; đánh bằng tay không (chưởng / chém tay). (Ý tưởng cũ: thầy lang áo kem/vàng mai, bầu thuốc, kim châm.)',
   tieu_anh: 'Cậu bé thấp (1.5 m), mũ giấy hình nón, phi tiêu giấy lớn đeo sau lưng, vài phân thân giấy nhỏ bên cạnh.',
   ba_nam: 'Bà nội trợ, lô uốn tóc hai bên, lông mày cau, chảo lớn tay phải, chiếc dép tay trái.',
   cau_may: 'Chàng trai áo trắng–xanh, cánh sếu lông vũ trên lưng, quả cầu mây (đế xu + lông) bay cạnh chân phải.',

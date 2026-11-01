@@ -282,10 +282,12 @@ Ký hiệu: **VL** vật lý · **P** phép · **C** chuẩn. `80 (+40/cấp) + 
 
 ![hanh_hoa](previews/heroes/hanh_hoa.jpg)
 
-- **Ngoại hình model:** Thầy lang nữ áo kem/vàng mai, bầu thuốc xanh đeo hông, ba cặp kim châm trên ngực, đấm tay không.
-- **File:** `assets/heroes/hanh_hoa/hanh_hoa.glb` (660 KB) · sinh bằng code (`tools/modelgen/heroes/hanh_hoa.mjs`, màu theo đỉnh, chưa texture)
-- **Thông số:** 10,124 tam giác · 24 xương · 3 vật liệu · cao 172 cm · runRefSpeed 325
-- **Màu:** viền sáng `#f2c14e` · bảng màu `#f6e9c4` `#f2c14e` `#6b4a2a` `#7fae5a`
+- **Ngoại hình model:** Model có texture do chủ dự án gửi (thân 2026-10-29, đầu mới ghép vào 2026-11-01): cô gái tóc hồng bob ngang cằm, băng đô có tấm kim loại, mắt xanh lục; áo đỏ không tay cổ cao, váy ngắn hồng xẻ tà trên quần short đen, găng tay nâu, băng trắng + túi đồ đen bên đùi phải, bốt nâu cao. Tư thế gốc: đứng dạng chân, tay phải gập ngang ngực cầm kunai trên vai trái, tay trái duỗi chéo trước người; đánh bằng tay không (chưởng / chém tay). (Ý tưởng cũ: thầy lang áo kem/vàng mai, bầu thuốc, kim châm.)
+- **File:** `assets/heroes/hanh_hoa/hanh_hoa.glb` (2330 KB) · model nhập (`tools/modelgen/imports/sakura_pbr_game.glb`, có texture, 6 ảnh)
+- **Thông số:** 14,198 tam giác · 24 xương · 2 vật liệu · cao 180 cm · runRefSpeed 325
+- **Bản sảnh (chọn tướng):** `assets/heroes/hanh_hoa/hanh_hoa_showcase.glb` (5447 KB, 56,000 tam giác, từ `tools/modelgen/imports/sakura_pbr_hq.glb`)
+- **Cách tô:** trong trận `pbr` + viền đen · sảnh `pbr`, không viền đen
+- **Màu:** viền sáng `#ff8fb1` · bảng màu `#b3202a` `#ff8fb1` `#ffd1dc` `#4a3326`
 - **Clip (11):** Idle, Run, Attack1, Attack2, Cast1, Cast2, Ult, Death, Recall, Victory, Showcase
 
 ### 8. Konohamaru — "Cậu Bé Rối Giấy" `tieu_anh`
