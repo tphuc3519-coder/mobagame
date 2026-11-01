@@ -145,7 +145,7 @@ Việc bạn (hoặc hoạ sĩ) làm song song, theo `11_HUONG_DAN_MODEL_3D.md`:
 ---
 
 ## Sau 1.0
-1. **Online PvP:** server Node.js chạy chính `src/sim/` (authoritative), WebSocket, client gửi Command, server gửi snapshot 15–20Hz, client dự đoán chuyển động tướng mình + nội suy tướng khác. Ghép trận, phòng tuỳ chỉnh, bạn bè thật.
+1. **Online PvP:** ✅ bản thử 01/11 — lockstep có máy chủ Node làm nhịp (thay cho snapshot; lý do ở DECISIONS 2026-11-01, cách chạy `docs/ONLINE.md`): phòng theo mã, 1v1 / 5v5 hai người + bot, rớt mạng / vào lại. Còn: dự đoán chuyển động tướng mình, ghép trận, nhiều người mỗi đội, bạn bè thật, chống gian lận sương mù.
 2. Trang phục (đổi `art` + hiệu ứng, không đổi chỉ số).
 3. Mắt (ward), chế độ mới, tướng mới mỗi mùa.
 

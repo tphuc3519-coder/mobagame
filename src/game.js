@@ -52,12 +52,15 @@ import { endTarget, createEndCam } from './render/endCam.js';
 import { prefs, onPref } from './core/prefs.js';
 
 import { CHARM_PAGES } from './data/charms.js';
+import { setupOnline } from './net/protocol.js';
 /**
  * Vào trận với bot. opts: { mode: '1v1' | '5v5', heroId, enemyId (1v1), allies/foes (5v5: id tướng), playerRole/allyRoles/foeRoles (5v5:
  * vị trí chốt ở màn chọn — data/roles.js), loadout ({ spellId, charm: trang bùa, emblem: phù hiệu } — world.setLoadout; không có thì dùng
  * spellId, charmId), difficulty, seed,
  * bot=true, dummies (1v1: 3 hình nộm), names: [{ heroId → tên người chơi } đội 0, đội 1], onGameOver({ world, player, winner }) }
  * Không có onGameOver (vào thẳng bằng ?hero=): hiện bảng THẮNG/THUA đơn giản, Chơi lại = tải lại trang.
+ * online: phiên chơi online (net/session.js) — trận dựng theo online.cfg (máy chủ gửi), mô phỏng chạy theo khung máy chủ phát, lệnh của mình gửi
+ * lên máy chủ (DECISIONS 2026-11-01).
  * Tham số URL dành cho kiểm thử: ?mode=5v5, ?debug=1, ?seed=, ?q=, ?dummies=1, ?ff=<giây>, ?shop=1, ?camdist=, ?nobot=1
  */
 export function startMatch(opts) {
@@ -68,16 +71,21 @@ export function startMatch(opts) {
 function buildMatch(opts, scope) {
 const q = new URLSearchParams(location.search);
 const debug = q.has('debug');
-const seed = opts.seed ?? parseInt(q.get('seed') || '1', 10);
+const online = opts.online || null;
+const seed = online ? online.cfg.seed : opts.seed ?? parseInt(q.get('seed') || '1', 10);
 const gfx = loadGfx(), level = gfx.detail; // cài đặt đồ hoạ (render/quality.js); level = chi tiết cảnh (mật độ cây cỏ, shader nền/sông)
 const heroId = opts.heroId;
 
-const arena = (opts.mode || q.get('mode')) === '5v5';
+const arena = (online ? online.cfg.mode : opts.mode || q.get('mode')) === '5v5';
 const map = arena ? ARENA : DUEL;
 // 1v1: bản đồ một đường. 5v5: ba đường, 10 tướng (người chơi + 4 bot cùng đội, 5 bot đối thủ). ?dummies=1 (1v1) thêm 3 hình nộm.
 const world = createWorld({ map, seed });
 let player, enemy = null;
-if (arena) {
+if (online) { // trận online: mọi máy dựng y hệt nhau từ cấu hình máy chủ (net/protocol.js) — tướng mình là người thứ online.me
+  player = setupOnline(world, online.cfg).humans[online.me];
+  if (!arena) enemy = world.entities.find((e) => e.kind === 'hero' && e.team !== player.team) || null;
+  online.attach(world, player); // từ đây lệnh của tướng mình (HUD) đi lên máy chủ
+} else if (arena) {
   const lineup = setupTeams(world, { heroId, difficulty: opts.difficulty || 'normal', allies: opts.allies, foes: opts.foes, playerRole: opts.playerRole, allyRoles: opts.allyRoles, foeRoles: opts.foeRoles });
   player = lineup.player;
 } else {
@@ -91,11 +99,11 @@ if (arena) {
   if (opts.dummies || q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
 // tên người chơi (sảnh đặt: mình + máy) — hiện trên đầu tướng, bảng tỉ số, màn kết quả
-if (opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
+if (!online && opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
 // phép + bảng bùa + phù hiệu đã chọn trước trận (ui/loadout.js); vào thẳng bằng ?hero= thì theo spellId/charmId (phù hiệu mặc định theo vai)
-world.setLoadout(player, opts.loadout || { spellId: opts.spellId, charm: opts.charmId ? CHARM_PAGES[opts.charmId] : undefined });
+if (!online) world.setLoadout(player, opts.loadout || { spellId: opts.spellId, charm: opts.charmId ? CHARM_PAGES[opts.charmId] : undefined });
 // người chơi tự cộng điểm kỹ năng: đầu trận có 1 điểm, nút + hiện trên K1/K2 để chọn; mỗi lần lên cấp lại hiện + (bot vẫn tự cộng)
-player.autoLevel = false; player.skillLevels = { s1: 0, s2: 0, s3: 0 }; player.skillPoints = player.level;
+if (!online) { player.autoLevel = false; player.skillLevels = { s1: 0, s2: 0, s3: 0 }; player.skillPoints = player.level; } // online: setupOnline đã làm cho mọi người chơi
 
 let ctxLost = false; // mất ngữ cảnh WebGL (máy yếu/hết bộ nhớ): dừng mô phỏng tới khi khôi phục
 const scene = new THREE.Scene();
@@ -124,7 +132,7 @@ if (OVERVIEW) { if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; scene.fog.nea
 const portraits = createPortraits(renderer);
 const layout = createHudLayout(); // cỡ nút / bản đồ nhỏ / cần điều khiển theo thiết bị — trước bản đồ nhỏ (nó đọc cỡ từ đây)
 const minimap = createMinimap({ world, player, map, cam, fog: fogOfWar, portraits, layout });
-createHudSettings({ surrender: () => world.surrender(player.team), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30, gfx, onGfx: (k) => applyGfx(k) });
+createHudSettings({ surrender: () => (online ? online.cmd({ type: 'surrender' }) : world.surrender(player.team)), surrenderAfter: opts.surrenderAfter || 0, now: () => world.tick / 30, gfx, onGfx: (k) => applyGfx(k) });
 const post = q.has('nobloom') ? null : createPost(renderer, scene, cam.camera, { bloom: gfx.bloom, aa: gfx.aa, strength: gfx.detail === 'high' ? 0.55 : 0.45, sharp: gfx.detail === 'high' ? 0.4 : 0.32 }); // luôn vẽ qua hậu kỳ (render/post.js; tắt ánh sáng rực chỉ bỏ lượt bloom) → đổi cài đặt không phải dịch lại shader
 on(window, 'resize', () => cam.resize(innerWidth, innerHeight));
 
@@ -144,12 +152,12 @@ const spells = createSpellButtons(document.getElementById('extras'), { world, pl
 const shop = createShop(document.getElementById('shopRoot'), { world, player });
 warmItemArt((id) => ITEMS[id].tier); // vẽ sẵn icon trang bị lúc rảnh để mở shop không khựng
 preloadMonsters(); // nạp sẵn model quái rừng + lính (lính ra từ giây 20, quái từ giây 30)
-for (const id of starterFor(HEROES[heroId], player.role, player.spell?.id)) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vị trí / vai (05 §5)
+if (!online) for (const id of starterFor(HEROES[heroId], player.role, player.spell?.id)) world.command(player.id, { type: 'buy', item: id }); // đồ khởi đầu theo vị trí / vai (05 §5)
 if (q.has('shop')) shop.open(true);
 
 // bảng thử (chỉ khi ?debug=1)
 const panel = document.getElementById('lab');
-panel.hidden = !debug;
+panel.hidden = !debug || !!online; // online: bảng thử sửa thẳng trạng thái → lệch đồng bộ
 panel.innerHTML = `<button id="labCd">Hồi chiêu 0</button><button id="labLv">Lên cấp 15</button><button id="labHeal">Hồi đầy</button><button id="labGold">+3000 vàng</button><button id="labDmg">Số sát thương</button>`;
 document.getElementById('labGold').onclick = () => { player.gold += 3000; };
 document.getElementById('labDmg').onclick = () => hud.previewDamage(player); // xem 6 kiểu số sát thương (vật lý / phép / chuẩn, thường + chí mạng)
@@ -201,6 +209,21 @@ const makeAuto = () => {
 let auto = makeAuto();
 // FPS góc trên (Cài đặt → Hiện FPS): số khung/giây thực + bậc tự giảm đang dùng
 const fpsTag = document.createElement('div'); fpsTag.id = 'fpsTag'; fpsTag.hidden = !gfx.showFps; document.body.append(track(fpsTag));
+// online: độ trễ tới máy chủ (xanh < 80 ms, vàng < 160, đỏ hơn / mất kết nối) + màn chờ người chơi khác tải xong
+let netTag = null, waitTag = null;
+if (online) {
+  netTag = document.createElement('div'); netTag.id = 'netTag';
+  netTag.style.cssText = 'position:fixed;z-index:6;top:max(6px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:2px 9px;border-radius:9px;background:#0009;font:700 11px "Be Vietnam Pro",system-ui,sans-serif;pointer-events:none;color:#9fe3a0';
+  document.body.append(track(netTag));
+  waitTag = document.createElement('div'); waitTag.id = 'netWait'; waitTag.textContent = 'Đang chờ người chơi khác vào trận…';
+  waitTag.style.cssText = 'position:fixed;z-index:55;left:50%;top:38%;transform:translate(-50%,-50%);padding:10px 18px;border-radius:12px;background:#0b0e1acc;color:#e8dcc0;font:700 15px "Be Vietnam Pro",system-ui,sans-serif;pointer-events:none';
+  document.body.append(track(waitTag));
+}
+function netStatus() {
+  const st = online.stats(), ms = Math.round(st.rtt);
+  netTag.textContent = st.online ? `${ms} ms${st.buffer > 6 ? ' · đang bắt kịp' : ''}${st.desync ? ' · lệch' : ''}` : 'Mất kết nối…';
+  netTag.style.color = !st.online || ms >= 160 ? '#ff8a7a' : ms >= 80 ? '#f2d16b' : '#9fe3a0';
+}
 /** Áp cài đặt đồ hoạ vừa đổi trong trận (bảng cài đặt hud/settings.js). Chi tiết cảnh áp dụng từ trận sau. */
 function applyGfx(k) {
   if (k === 'detail') return;
@@ -219,6 +242,7 @@ if (!post) document.body.classList.add('nopost'); // không hậu kỳ (?nobloom
 const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
   update() {
+    if (online) { online.input(input.dir()); if (online.step(world) && waitTag) { waitTag.remove(); waitTag = null; } return; } // online: chạy theo khung máy chủ (net/session.js)
     const d = input.dir();
     if (!player.bot) world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } }); // (kiểm thử: bot điều khiển thay người chơi)
     world.update(loop.tick);
@@ -250,7 +274,7 @@ const loopCfg = {
     orbViews.update(world, dt, performance.now() / 1000);
     if (post) post.render(); else renderer.render(scene, cam.camera);
     fpsAcc += dt; fpsN++;
-    if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; if (!fpsTag.hidden) fpsTag.textContent = `${fps} FPS${auto?.step ? ` · tự giảm ${auto.step}` : ''}`; }
+    if (fpsAcc >= 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; if (!fpsTag.hidden) fpsTag.textContent = `${fps} FPS${auto?.step ? ` · tự giảm ${auto.step}` : ''}`; if (netTag) netStatus(); }
     const i = renderer.info.render;
     fogOfWar?.update(world, dt);
     if (force || now - lastMini > 45) { lastMini = now; minimap.draw(); } // bản đồ nhỏ ~20 lần/giây là đủ
@@ -259,7 +283,7 @@ const loopCfg = {
   },
 };
 const loop = createLoop(loopCfg);
-if (q.has('ff')) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
+if (q.has('ff') && !online) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
 /** Dịch sẵn shader trước khi vào trận: trước đây khung đầu đứng hình, rồi lần đầu lính / quái / mỗi loại hiệu ứng chiêu / vùng bản đồ mới
  *  (ô cảnh ngoài màn hình) xuất hiện lại khựng — iPhone dịch mỗi shader 0,05–0,3 giây. Dựng tạm lính 4 loại × 2 đội, quái mọi loại, mỗi
  *  loại hình hiệu ứng một cái, compileAsync cả cảnh (gồm chỉ báo chiêu đang ẩn), vẽ thử một khung (bóng đổ, hậu kỳ) sau màn che
@@ -297,7 +321,7 @@ async function warmUp() {
   cover.remove(); warmMs = Math.round(performance.now() - t0);
 }
 let warmMs = 0, disposed = false; const warmRoots = [];
-warmUp().then(() => { if (disposed) return; loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
+warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();
@@ -309,7 +333,7 @@ const liveMaterials = () => { const c = collectGpu([scene, ...views.roots()]); f
  *  (render/dispose.js), cất renderer (render/renderer.js park). Gọi lại lần hai không làm gì. */
 function disposeMatch() {
   if (disposed) return; disposed = true;
-  loop.stop(); scope.dispose(); closeSettings(); hideTip(); aimReset(); sounds.dispose(); stopVoices(0.1); hud.dispose();
+  loop.stop(); online?.dispose(); scope.dispose(); closeSettings(); hideTip(); aimReset(); sounds.dispose(); stopVoices(0.1); hud.dispose();
   for (const id of ['skills', 'extras', 'shopRoot']) { const el = document.getElementById(id); if (el) el.textContent = ''; }
   panel.hidden = true; document.getElementById('lost')?.classList.remove('on'); document.getElementById('result')?.classList.remove('on');
   document.body.classList.remove('over', 'post', 'dead', 'nopost');
@@ -321,8 +345,8 @@ function disposeMatch() {
   holdMaterials([...c.materials, ...postMats]); rend.park();
   if (window.__game === api) window.__game = null; delete window.__fxdbg;
 }
-const api = window.__game = { world, player, enemy, loop, renderer, advance, portraits, scene, views, cam, env, input, layout, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
+const api = window.__game = { world, player, enemy, online, loop, renderer, advance, portraits, scene, views, cam, env, input, layout, get auto() { return auto; }, sun, post, gfx, indicators, pingHud, get warmMs() { return warmMs; }, dispose: disposeMatch }; // phục vụ kiểm thử tự động
 
-on(document, 'visibilitychange', () => { auto?.reset(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
+on(document, 'visibilitychange', () => { auto?.reset(); if (online && document.hidden) online.release(); return document.hidden ? loop.pause() : !ctxLost && !manual && !document.body.classList.contains('post') && loop.resume(); }); // chuyển tab về: không chạy tiếp khi đồ hoạ còn mất / đã sang màn kết quả
 return window.__game;
 }

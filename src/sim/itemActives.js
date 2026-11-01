@@ -1,5 +1,6 @@
 // Đồ kích hoạt (05 §4): mỗi loại `active.id` một hàm (world, e, act, aim) → { ok, reason?, ev? }. Số liệu nằm ở data/items.js; ở đây chỉ là
 // luật chung, không gọi tên món nào. Không mục tiêu / mục tiêu miễn khống chế → không tính hồi (items.js chỉ nạp hồi khi ok).
+import { D } from '../core/dmath.js';
 import { dist, norm } from './util.js';
 import { applyStatus, isRooted, isSilenced, cannotDash, isCcImmune } from './status.js';
 import { addShield } from './damage.js';
@@ -44,9 +45,9 @@ export const ACTIVES = {
     if (cannotDash(e)) return { ok: false, reason: 'noDash' };
     if (e.dash) return { ok: false, reason: 'busy' };
     let d = aim && (aim.x || aim.y) ? norm(aim.x, aim.y) : null;
-    if (!d) { const m = Math.hypot(e.moveDir.x, e.moveDir.y); d = m > 0.1 ? norm(e.moveDir.x, e.moveDir.y) : { x: Math.cos(e.facing), y: Math.sin(e.facing) }; }
+    if (!d) { const m = D.hypot(e.moveDir.x, e.moveDir.y); d = m > 0.1 ? norm(e.moveDir.x, e.moveDir.y) : { x: D.cos(e.facing), y: D.sin(e.facing) }; }
     e.dash = { dx: d.x, dy: d.y, perTick: act.speed / 30, left: act.range, along: false, stop: false, noHit: false, hit: new Set(), cast: { skill: {}, slot: 'item' } };
-    e.facing = Math.atan2(d.y, d.x);
+    e.facing = D.atan2(d.y, d.x);
     if (act.haste) applyStatus(world, e, { status: 'haste', id: 'lua_gio', pct: act.haste.pct, duration: act.haste.duration }, e);
     return { ok: true, ev: { dx: d.x, dy: d.y } };
   },

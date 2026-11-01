@@ -1,4 +1,5 @@
 // Bot dùng kỹ năng/phép/đồ: ngắm dự đoán có sai số theo độ khó (06 §4.5).
+import { D } from '../core/dmath.js';
 import { dist, norm } from '../sim/util.js';
 import { smiteTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS } from '../data/spells.js';
@@ -12,7 +13,7 @@ import { canSee } from '../sim/vision.js';
 import { spellFight, spellSurvive } from './botSpells.js';
 
 const D2R = Math.PI / 180;
-function rotate(d, deg) { const a = deg * D2R, c = Math.cos(a), s = Math.sin(a); return { x: d.x * c - d.y * s, y: d.x * s + d.y * c }; }
+function rotate(d, deg) { const a = deg * D2R, c = D.cos(a), s = D.sin(a); return { x: d.x * c - d.y * s, y: d.x * s + d.y * c }; }
 
 /** Điểm dự đoán của mục tiêu sau thời gian bay. */
 export function predict(e, t, speed) {

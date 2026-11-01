@@ -18,17 +18,18 @@ import { openDraft } from './draft.js';
 import { openLineup } from './lineup.js';
 import { openLoading } from './loading.js';
 import { openPostgame } from './postgame.js';
+import { openOnline } from './online.js';
 import { screenSound } from '../audio/uiSounds.js';
 import { END } from '../data/endgame.js';
 import { pwaLobby } from './pwa.js';
 
-const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading };
+const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading, online: openOnline };
 const NEXT = 'la.next';
 const ui = () => document.getElementById('ui');
 let cur = null, match = null, played = 0;
 
 export const nav = {
-  /** Mở màn `name` (home | room | pick | draft (cấm/chọn đấu hạng) | lineup | loading), đóng màn đang mở. */
+  /** Mở màn `name` (home | room | pick | draft (cấm/chọn đấu hạng) | lineup | loading | online), đóng màn đang mở. */
   go(name, args = {}) {
     const prev = cur; cur = null;
     try { prev?.close?.(); } catch (e) { console.warn(e); }
@@ -56,7 +57,29 @@ export const nav = {
       onGameOver: gameOver,
     });
   },
+  /** Vào trận online (màn Chơi online → máy chủ gửi cấu hình trận): session = net/session.js. */
+  startOnline(session) {
+    try { cur?.close?.(); } catch (e) { console.warn(e); }
+    cur = null; stageDispose();
+    const u = ui(); u.hidden = true; u.querySelectorAll(':scope > :not(#show)').forEach((x) => x.remove());
+    const me = session.cfg.players[session.me];
+    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), onGameOver: onlineOver });
+  },
 };
+
+/** Hết trận online: màn kết quả (bản thử chưa tính thưởng), Đấu lại → về màn Chơi online. */
+function onlineOver({ world, player, winner }) {
+  const heroes = world.entities.filter((e) => e.kind === 'hero');
+  const rows = scoreMatch(heroes, winner), names = {};
+  for (const h of heroes) names[h.id] = h.online ? h.playerName : `${HEROES[h.heroId].name} ${botLabel}`;
+  try { sessionStorage.removeItem('la.online'); } catch (_) { /* */ }
+  openPostgame({
+    rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: 'online', modeName: `Online ${world.map.lanes.length > 1 ? '5v5' : '1v1'}`, rewards: {},
+    surrender: world.over?.surrender === undefined ? null : world.over.surrender === player.team ? 'Đội ta đầu hàng' : 'Đối thủ đầu hàng',
+    onHome: () => leave({ to: 'home' }), onAgain: () => leave({ to: 'online' }),
+  });
+  window.__flow.result = { rows };
+}
 
 function gameOver({ world, player, winner }) {
   const heroes = world.entities.filter((e) => e.kind === 'hero');

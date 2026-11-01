@@ -1,4 +1,5 @@
 // Lính: sinh theo đợt, đi dọc đường, đánh mục tiêu gần nhất (03 §A5, §B3).
+import { D } from '../core/dmath.js';
 import { MINIONS, scaleFor } from '../data/units.js';
 import { T, dist, norm, clampToMap } from './util.js';
 import { TICK } from '../core/loop.js';
@@ -17,7 +18,7 @@ export function spawnMinion(world, type, team, laneIdx = 0, off = 0) {
   const o = pointAt(path, s0), pos = { x: o.x - o.dy * off, y: o.y + o.dx * off };
   const e = world.spawnEntity({ kind: 'minion', minionType: type, team, data: { name: d.name, base, perLevel: {}, basicAttack: { melee: d.melee, delay: d.delay }, skills: {}, towerPct: d.towerPct },
     radius: d.radius, pos, height: type === 'giant' ? 250 : type === 'siege' ? 210 : 195, lane: laneIdx, laneOff: off, target: null, wp: 1, wpSync: 0 });
-  e.hp = e.stats.maxHp; e.facing = Math.atan2(o.dy, o.dx);
+  e.hp = e.stats.maxHp; e.facing = D.atan2(o.dy, o.dx);
   return e;
 }
 
@@ -85,7 +86,7 @@ function pickTarget(world, e) {
 
 function attack(world, e, t) {
   e.attackReady = world.tick + T(1 / e.stats.atkSpeed);
-  e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
+  e.facing = D.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
   world.emit('attack', { id: e.id, n: 1, interval: 1 / e.stats.atkSpeed });
   const ba = e.data.basicAttack, d = MINIONS[e.minionType];
   world.pending.push({ tick: world.tick + T(ba.delay), run: () => {
@@ -107,7 +108,7 @@ function followLane(world, e) {
     e.wp = i;
   }
   while (e.wp < last && dist(e.pos, path.pts[e.wp]) < 110) e.wp++;
-  const tgt = path.pts[e.wp], a = path.pts[Math.max(0, e.wp - 1)], dxs = tgt.x - a.x, dys = tgt.y - a.y, L = Math.hypot(dxs, dys) || 1;
+  const tgt = path.pts[e.wp], a = path.pts[Math.max(0, e.wp - 1)], dxs = tgt.x - a.x, dys = tgt.y - a.y, L = D.hypot(dxs, dys) || 1;
   const goal = { x: tgt.x - (dys / L) * e.laneOff, y: tgt.y + (dxs / L) * e.laneOff };
   if (e.wp >= last && dist(e.pos, goal) < 110) return norm(dxs, dys);
   return norm(goal.x - e.pos.x, goal.y - e.pos.y);
@@ -121,12 +122,12 @@ export function updateMinions(world) {
     let move = null;
     if (t) {
       const d = dist(t.pos, e.pos) - t.radius;
-      if (d <= e.stats.range) { if (world.tick >= e.attackReady) attack(world, e, t); e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x); }
+      if (d <= e.stats.range) { if (world.tick >= e.attackReady) attack(world, e, t); e.facing = D.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x); }
       else move = norm(t.pos.x - e.pos.x, t.pos.y - e.pos.y);
     } else move = followLane(world, e);
     if (move && !isRooted(e)) {
       const step = e.stats.moveSpeed * TICK;
-      e.pos.x += move.x * step; e.pos.y += move.y * step; e.facing = Math.atan2(move.y, move.x); e.speed = e.stats.moveSpeed;
+      e.pos.x += move.x * step; e.pos.y += move.y * step; e.facing = D.atan2(move.y, move.x); e.speed = e.stats.moveSpeed;
     } else e.speed = 0;
   }
   // tách nhau nhẹ và không xuyên công trình
@@ -136,10 +137,10 @@ export function updateMinions(world) {
     for (let j = i + 1; j < minions.length; j++) {
       const b = minions[j], dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y, min = (a.radius + b.radius) * 0.9;
       if (dx >= min || -dx >= min || dy >= min || -dy >= min) continue; // xa theo một trục thì chắc chắn d ≥ min (bỏ qua hypot đắt)
-      const d = Math.hypot(dx, dy);
+      const d = D.hypot(dx, dy);
       if (d < min && d > 0.01) { const p = Math.min(8, (min - d) / 2); a.pos.x -= (dx / d) * p; a.pos.y -= (dy / d) * p; b.pos.x += (dx / d) * p; b.pos.y += (dy / d) * p; }
     }
-    for (const s of solids) { const dx = a.pos.x - s.pos.x, dy = a.pos.y - s.pos.y, min = a.radius + s.radius; if (dx >= min || -dx >= min || dy >= min || -dy >= min) continue; const d = Math.hypot(dx, dy); if (d < min && d > 0.01) { a.pos.x = s.pos.x + (dx / d) * min; a.pos.y = s.pos.y + (dy / d) * min; } }
+    for (const s of solids) { const dx = a.pos.x - s.pos.x, dy = a.pos.y - s.pos.y, min = a.radius + s.radius; if (dx >= min || -dx >= min || dy >= min || -dy >= min) continue; const d = D.hypot(dx, dy); if (d < min && d > 0.01) { a.pos.x = s.pos.x + (dx / d) * min; a.pos.y = s.pos.y + (dy / d) * min; } }
     clampToMap(world.map, a.pos, a.radius);
   }
 }

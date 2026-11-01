@@ -4,6 +4,7 @@
 //  - nó đang trong bụi cỏ thì chỉ thấy khi có đơn vị phe mình đứng cùng bụi (hoặc sát bên, dưới 220).
 // Công trình luôn hiện (bản đồ đã biết). Kết quả ghi vào e.seenBy[team] (cập nhật mỗi 3 tick); nơi nào cần "thấy được" thì hỏi canSee/canTarget.
 // Chỉ bật khi map.vision có khai báo (bản 5v5); bản 1v1 hiện mọi thứ như cũ.
+import { D } from '../core/dmath.js';
 import { bushRects, inBush } from '../data/maps.js';
 import { dist, wallsNear } from './util.js';
 import { isTargetable } from './targeting.js';
@@ -24,7 +25,7 @@ function blocked(map, a, b) {
   const segs = map.walls?.segs; if (!segs) return false;
   const n = Math.max(1, Math.ceil(dist(a, b) / 150)), th = map.walls.thickness;
   const hit = (w, x, y) => { const dx = w.x2 - w.x1, dy = w.y2 - w.y1, L2 = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - w.x1) * dx + (y - w.y1) * dy) / L2));
-    return Math.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < (w.w ?? th) / 2; };
+    return D.hypot(x - (w.x1 + dx * t), y - (w.y1 + dy * t)) < (w.w ?? th) / 2; };
   for (let i = 1; i < n; i++) {
     const x = a.x + (b.x - a.x) * (i / n), y = a.y + (b.y - a.y) * (i / n), near = wallsNear(map, x, y);
     if (near) { for (let k = 0; k < near.length; k++) if (hit(segs[near[k]], x, y)) return true; }

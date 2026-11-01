@@ -1,4 +1,5 @@
 // Đòn đánh thường: hẹn giờ theo tốc đánh, gây sát thương ở thời điểm `delay` (animation chỉ để nhìn — 02 §13.5).
+import { D } from '../core/dmath.js';
 import { T, dist } from './util.js';
 import { isHardCC, removeStatus, tauntSource, applyStatus, missChance } from './status.js';
 import { dealDamage } from './damage.js';
@@ -77,14 +78,14 @@ export function pickByMode(world, e, range, mode) {
 /** Đòn vung không mục tiêu: cận chiến trúng địch đầu tiên trong nửa quạt phía trước; đánh xa bắn đạn thẳng theo hướng nhìn, trúng địch đầu tiên. */
 function whiff(world, e, range) {
   if (!e.alive || isHardCC(e)) return;
-  const fx = Math.cos(e.facing), fy = Math.sin(e.facing), ba = e.data.basicAttack;
+  const fx = D.cos(e.facing), fy = D.sin(e.facing), ba = e.data.basicAttack;
   const pay = { amount: e.stats.atk, bonusMagic: 0, ambush: null, level: Math.max(1, e.skillLevels.s3), hooks: false };
   if (ba.melee) {
     let best = null, bd = Infinity;
     for (const t of world.entities) {
       if (t.team === e.team || !t.alive || t.noTarget || t.structure && t.kind === 'fountain' || basicSkip(t)) continue;
-      const dx = t.pos.x - e.pos.x, dy = t.pos.y - e.pos.y, d = Math.hypot(dx, dy) - t.radius;
-      if (d > range + 30 || (dx * fx + dy * fy) < 0.5 * Math.hypot(dx, dy)) continue;
+      const dx = t.pos.x - e.pos.x, dy = t.pos.y - e.pos.y, d = D.hypot(dx, dy) - t.radius;
+      if (d > range + 30 || (dx * fx + dy * fy) < 0.5 * D.hypot(dx, dy)) continue;
       if (d < bd) { bd = d; best = t; }
     }
     if (best && nearestEnemy(world, e, range + 30 + best.radius, best.id) === best) resolveHit(world, e, best, pay);
@@ -112,7 +113,7 @@ export function updateCombat(world) {
     const iv = 1 / e.stats.atkSpeed;
     e.attackReady = world.tick + T(iv);
     e.atkIndex = (e.atkIndex || 0) + 1;
-    e.facing = Math.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
+    e.facing = D.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
     const delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
     if (e.kind === 'hero') { e.swingUntil = world.tick + T(delay) + 1; e.swingTarget = target.id; } // vung đòn: đứng lại, quay mặt về địch tới lúc đòn chạm
     world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay }); // delay: thời điểm gây sát thương, để animation khớp cú chạm

@@ -1,6 +1,7 @@
 // Kiểu kỹ năng mở rộng (04 §2) cho 14 tướng mở khoá ở đợt kiểm toán: đường thẳng nhiều nhịp, trói nối, phân thân kích hoạt lại,
 // lao khoá mục tiêu, đạn khoá mục tiêu; cùng các phần chạy mỗi tick (dây trói, phân thân, lịch sử vị trí cho tua ngược).
 // Mọi con số nằm trong file tướng (src/data/heroes); đây chỉ là luật chung, không gọi tên tướng nào.
+import { D } from '../core/dmath.js';
 import { T, dist, norm, dirTo, clampToMap } from './util.js';
 import { applyStatus, isHardCC } from './status.js';
 import { heal } from './damage.js';
@@ -18,7 +19,7 @@ const missHook = (world, e, cast) => e.data.passive?.hooks?.onSkillMiss?.(makeCt
  *  aim.id: mục tiêu chỉ định (người chơi khoá trên HUD / đang xem trước khi kéo / bot chọn) — dùng nếu qua đúng các điều kiện trên, không thì
  *  chọn như thường (không bất ngờ báo "không có mục tiêu"). skill.heroOnly: chỉ tướng; skill.canTarget(e, t, world): điều kiện riêng. */
 export function pickSkillTarget(world, e, skill, aim) {
-  const R = skill.range || 600, dir = aim && (aim.x || aim.y) && Math.hypot(aim.x, aim.y) <= 1.5 ? norm(aim.x, aim.y) : null;
+  const R = skill.range || 600, dir = aim && (aim.x || aim.y) && D.hypot(aim.x, aim.y) <= 1.5 ? norm(aim.x, aim.y) : null;
   const valid = (t) => !!t && t.team !== e.team && !t.structure && isTargetable(e, t) && canSee(e.team, t) && (!skill.heroOnly || t.isHero)
     && dist(t.pos, e.pos) - t.radius <= R && (!skill.canTarget || skill.canTarget(e, t, world));
   if (aim?.id != null) { const t = world.byId(aim.id); if (valid(t)) return t; } // mục tiêu chỉ định (khoá trên HUD / xem trước khi kéo / bot)
@@ -176,7 +177,7 @@ export function updateClones(world) {
     }
     if (!t) { c.speed = 0; continue; }
     const d = dist(c.pos, t.pos) - t.radius;
-    c.facing = Math.atan2(t.pos.y - c.pos.y, t.pos.x - c.pos.x);
+    c.facing = D.atan2(t.pos.y - c.pos.y, t.pos.x - c.pos.x);
     if (d > CLONE_RANGE) { const dd = dirTo(c.pos, t.pos), s = CLONE_SPEED / 30; c.pos.x += dd.x * s; c.pos.y += dd.y * s; clampToMap(world.map, c.pos, c.radius); c.speed = CLONE_SPEED; continue; }
     c.speed = 0;
     if (world.tick < c.atkReady) continue;

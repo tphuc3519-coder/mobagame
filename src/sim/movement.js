@@ -1,3 +1,4 @@
+import { D } from '../core/dmath.js';
 import { TICK } from '../core/loop.js';
 import { dist, dirTo, clampToMap } from './util.js';
 import { isRooted, isHardCC, removeStatus, isCcImmune } from './status.js';
@@ -18,7 +19,7 @@ function updateDash(world, e) {
     if (!t || !t.alive || !isTargetable(e, t)) { endDash(e, null); return; }
     const gap = dist(e.pos, t.pos) - e.radius - t.radius;
     if (gap <= 6) { d.hit.add(t.id); skillHit(world, e, t, d.cast); endDash(e, t); return; }
-    const dd = dirTo(e.pos, t.pos); d.dx = dd.x; d.dy = dd.y; e.facing = Math.atan2(dd.y, dd.x); step = Math.min(step, gap);
+    const dd = dirTo(e.pos, t.pos); d.dx = dd.x; d.dy = dd.y; e.facing = D.atan2(dd.y, dd.x); step = Math.min(step, gap);
   }
   const n = Math.ceil(step / 30); // chia bước nhỏ: lướt nhanh không xuyên qua bệ đá mỏng
   for (let i = 0; i < n; i++) { e.pos.x += d.dx * step / n; e.pos.y += d.dy * step / n; clampToMap(world.map, e.pos, e.radius); }
@@ -48,10 +49,10 @@ function updateForced(world) {
   for (const e of world.entities) {
     const f = e.forced; if (!f) continue;
     if (!e.alive) { e.forced = null; continue; }
-    const dx = f.x - e.pos.x, dy = f.y - e.pos.y, d = Math.hypot(dx, dy), step = Math.min(d, f.perTick);
+    const dx = f.x - e.pos.x, dy = f.y - e.pos.y, d = D.hypot(dx, dy), step = Math.min(d, f.perTick);
     const n = Math.max(1, Math.ceil(step / 30));
     for (let i = 0; i < n; i++) { if (d > 0.01) { e.pos.x += (dx / d) * step / n; e.pos.y += (dy / d) * step / n; } clampToMap(world.map, e.pos, e.radius); }
-    const left = Math.hypot(f.x - e.pos.x, f.y - e.pos.y);
+    const left = D.hypot(f.x - e.pos.x, f.y - e.pos.y);
     if (left <= 0.5 || d - left < step * 0.3) e.forced = null; // tới đích, hoặc bị tường chặn (trước đây kẹt mãi, không đi được nữa)
   }
 }
@@ -69,20 +70,20 @@ export function updateMovement(world) {
         e.facing = e.castFacing ?? e.facing; x = 0; y = 0;
       } else if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn
         const t = e.swingTarget != null ? world.byId(e.swingTarget) : null;
-        if (t && t.alive) e.facing = Math.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
+        if (t && t.alive) e.facing = D.atan2(t.pos.y - e.pos.y, t.pos.x - e.pos.x);
         x = 0; y = 0;
       }
-      const m = Math.hypot(x, y);
+      const m = D.hypot(x, y);
       if (m > 0.001) { x /= m; y /= m; } // chỉ hướng có nghĩa: mọi tướng chạy đúng tốc độ của mình, không chậm lại khi kéo cần ngắn
       if (isRooted(e) || m < 0.001) { e.speed = 0; }
       else {
         const step = e.stats.moveSpeed * TICK;
         e.pos.x += x * step; e.pos.y += y * step;
         e.speed = e.stats.moveSpeed;
-        e.facing = Math.atan2(y, x);
+        e.facing = D.atan2(y, x);
       }
     }
-    for (const s of solids) { const dx = e.pos.x - s.pos.x, dy = e.pos.y - s.pos.y, d = Math.hypot(dx, dy), min = e.radius + s.radius * 0.8; if (d < min && d > 0.01) { e.pos.x = s.pos.x + (dx / d) * min; e.pos.y = s.pos.y + (dy / d) * min; } }
+    for (const s of solids) { const dx = e.pos.x - s.pos.x, dy = e.pos.y - s.pos.y, d = D.hypot(dx, dy), min = e.radius + s.radius * 0.8; if (d < min && d > 0.01) { e.pos.x = s.pos.x + (dx / d) * min; e.pos.y = s.pos.y + (dy / d) * min; } }
     clampToMap(world.map, e.pos, e.radius);
   }
 }

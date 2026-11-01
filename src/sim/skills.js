@@ -1,5 +1,6 @@
 // Tung kỹ năng: kiểm tra hồi chiêu/mana/khống chế, rồi chạy theo kiểu (skillTypes) — 04 §2.
 // Kiểu cơ bản ở đây; kiểu mới (đường thẳng, trói nối, phân thân, lao khoá mục tiêu, đạn khoá mục tiêu) ở skillTypes.js.
+import { D } from '../core/dmath.js';
 import { lv } from '../data/heroes/_levels.js';
 import { T, dist, norm, dirTo, clampToMap } from './util.js';
 import { applyStatus, removeStatus, isSilenced, isHardCC, isRooted, cannotDash } from './status.js';
@@ -66,9 +67,9 @@ export const selfEffects = (world, e, list, level, duration = null) => {
 };
 export const inRadius = (world, e, pos, r) => enemiesOf(world, e).filter((t) => dist(t.pos, pos) - t.radius <= r);
 
-export function aimDir(e, aim) { return aim && (aim.x || aim.y) ? norm(aim.x, aim.y) : { x: Math.cos(e.facing), y: Math.sin(e.facing) }; }
+export function aimDir(e, aim) { return aim && (aim.x || aim.y) ? norm(aim.x, aim.y) : { x: D.cos(e.facing), y: D.sin(e.facing) }; }
 export function aimPoint(world, e, aim, range) {
-  const p = aim ? { x: aim.x, y: aim.y } : { x: e.pos.x + Math.cos(e.facing) * range * 0.7, y: e.pos.y + Math.sin(e.facing) * range * 0.7 };
+  const p = aim ? { x: aim.x, y: aim.y } : { x: e.pos.x + D.cos(e.facing) * range * 0.7, y: e.pos.y + D.sin(e.facing) * range * 0.7 };
   const d = dist(p, e.pos);
   if (d > range) { p.x = e.pos.x + ((p.x - e.pos.x) / d) * range; p.y = e.pos.y + ((p.y - e.pos.y) / d) * range; }
   return clampToMap(world.map, p);
@@ -177,14 +178,14 @@ const HANDLERS = {
   cone(world, e, cast, aim) {
     const { skill, level } = cast, d = aimDir(e, aim), half = ((skill.angle || 90) / 2) * Math.PI / 180, beams = skill.beams || 0, P = skill.params || {};
     world.emit('cone', { id: e.id, x: e.pos.x, y: e.pos.y, dx: d.x, dy: d.y, range: skill.range, angle: skill.angle, slot: cast.slot, team: e.team, beams });
-    const base = Math.atan2(d.y, d.x);
+    const base = D.atan2(d.y, d.x);
     for (const t of enemiesOf(world, e)) {
       const td = dist(t.pos, e.pos); if (td - t.radius > skill.range) continue;
-      const dd = dirTo(e.pos, t.pos), off = Math.acos(Math.max(-1, Math.min(1, dd.x * d.x + dd.y * d.y)));
-      if (off > half + (beams ? Math.atan2(t.radius, Math.max(1, td)) : 0)) continue;
+      const dd = dirTo(e.pos, t.pos), off = D.acos(Math.max(-1, Math.min(1, dd.x * d.x + dd.y * d.y)));
+      if (off > half + (beams ? D.atan2(t.radius, Math.max(1, td)) : 0)) continue;
       if (!beams) { skillHit(world, e, t, cast); continue; }
       // nhiều tia toả đều trong quạt: mỗi tia trúng thì tính một lần sát thương; trúng đủ N tia thì kiệt sức
-      const ta = Math.atan2(dd.y, dd.x), w = Math.atan2(t.radius + 40, Math.max(1, td));
+      const ta = D.atan2(dd.y, dd.x), w = D.atan2(t.radius + 40, Math.max(1, td));
       let hits = 0;
       for (let i = 0; i < beams; i++) { const a = base - half + (beams > 1 ? (2 * half * i) / (beams - 1) : half); let da = Math.abs(a - ta); if (da > Math.PI) da = 2 * Math.PI - da; if (da <= w) hits++; }
       if (!hits) hits = 1;
@@ -267,8 +268,8 @@ export function castSkill(world, e, slot, aim) {
   cancelRecall(world, e); onCastSkill(world, e); // huỷ Biến về kèm sự kiện (dừng tiếng niệm, vòng sáng)
   if (skill.type !== 'selfBuff') removeStatus(e, 'stealth'); // ra đòn làm lộ hình
   if (skill.unstoppable) { const d = lv(skill.unstoppable, level); applyStatus(world, e, { status: 'ccImmune', id: 'unstoppable', duration: d }, e); world.emit('unstoppable', { id: e.id, dur: d, slot }); } // không thể cản (lướt: hết khi cú lướt dừng — movement.js)
-  if (target) e.facing = Math.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
-  else if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = Math.atan2(d.y, d.x); }
+  if (target) e.facing = D.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
+  else if (skill.aim === 'direction' || skill.aim === 'point') { const d = skill.aim === 'point' && aim ? norm(aim.x - e.pos.x, aim.y - e.pos.y) : aim ? norm(aim.x, aim.y) : null; if (d && (d.x || d.y)) e.facing = D.atan2(d.y, d.x); }
   // khoá ra chiêu: đứng yên, mặt giữ hướng chiêu tới lúc chiêu phát ra (+ một nhịp ngắn), sau đó mới đi/quay theo cần di chuyển.
   // Lướt tự di chuyển nên không khoá; chiêu nhảy tới điểm (Đe Trời) khoá suốt lúc bay; chiêu nhiều nhịp (đường thẳng) khoá tới nhịp cuối.
   const moving = skill.type === 'dash' || skill.type === 'targetedDash', aimed = skill.aim === 'direction' || skill.aim === 'point' || skill.aim === 'target';

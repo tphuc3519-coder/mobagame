@@ -1,3 +1,4 @@
+import { D } from '../core/dmath.js';
 import { CELL } from './navgrid.js';
 
 // A* 8 hướng + làm mượt bằng kiểm tra đường thẳng (string pulling), cache theo (ô đầu, ô cuối) — 02 §8.
@@ -9,7 +10,7 @@ const DIRS = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.414], [1, -
 const H_WEIGHT = 2, MAX_EXPAND = 1500, CACHE_MAX = 256;
 
 export function lineClear(grid, a, b) {
-  const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / (CELL / 2));
+  const n = Math.ceil(D.hypot(b.x - a.x, b.y - a.y) / (CELL / 2));
   for (let i = 0; i <= n; i++) { const t = n ? i / n : 0; if (grid.isBlocked(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)) return false; }
   return true;
 }
@@ -62,7 +63,7 @@ export function findPath(grid, from, to) {
       if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || grid.blocked[idx(nx, ny)]) continue;
       if (dx && dy && (grid.blocked[idx(x + dx, y)] || grid.blocked[idx(x, y + dy)])) continue; // không cắt góc
       const ni = idx(nx, ny), ng = gi + c;
-      if (ng < getG(ni)) { g[ni] = ng; seen[ni] = run; par[ni] = i; push(ng + H_WEIGHT * Math.hypot(nx - gx, ny - gy), ni); }
+      if (ng < getG(ni)) { g[ni] = ng; seen[ni] = run; par[ni] = i; push(ng + H_WEIGHT * D.hypot(nx - gx, ny - gy), ni); }
     }
   }
   const remember = (v) => { if (grid.cache.size >= CACHE_MAX) grid.cache.delete(grid.cache.keys().next().value); grid.cache.set(key, v); };

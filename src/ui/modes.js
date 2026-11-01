@@ -1,4 +1,4 @@
-// Các chế độ chơi + bảng "Chọn chế độ" (từ sảnh): Đấu thường 5v5, Đấu hạng, Đấu đơn 1v1, Luyện tập. Đối thủ và đồng đội đều là máy;
+// Các chế độ chơi + bảng "Chọn chế độ" (từ sảnh): Đấu thường 5v5, Đấu hạng, Đấu đơn 1v1, Luyện tập, Chơi online (người thật — ui/online.js). Đối thủ và đồng đội đều là máy;
 // độ khó máy: đấu thường = Thường, đấu hạng theo bậc hạng, đấu đơn / luyện tập tự chọn (lưu trong hồ sơ).
 import { DIFFICULTY } from '../data/ai.js';
 import { panel, rankBadge, toast } from './kit.js';
@@ -31,6 +31,8 @@ const CARDS = [
   { mode: 'peak', tag: 'ĐỈNH CAO', pos: '62%', badge: true, peak: true, desc: () => { const s = peakNow(); return s.open ? `Máy ${DIFFICULTY.nightmare.name}, cấm/chọn đầy đủ, thắng ×1,5 Hào Quang. Mở tới 24:00.` : s.tierOk ? `${s.reason}. Máy ${DIFFICULTY.nightmare.name}, thắng ×1,5 Hào Quang.` : `Từ Nguyệt Quang, mở ${PEAK.from}:00–24:00. Máy ${DIFFICULTY.nightmare.name}.`; } },
   { mode: 'solo', tag: '1V1', pos: '78%', diff: true, desc: () => 'Một đường, đối đầu tay đôi với máy. Nhận 70% vàng.' },
   { mode: 'training', tag: 'TẬP', pos: '50%', img: 'room.jpg', diff: true, desc: () => 'Tự chọn đối thủ hoặc hình nộm, không tính thưởng.' },
+  // chơi với người thật qua máy chủ (ui/online.js, docs/ONLINE.md) — không phải một MODES (không có phòng chờ / chọn tướng kiểu bot)
+  { mode: 'online', tag: 'ONLINE', pos: '30%', name: 'Chơi online', desc: () => 'Đấu với người thật: tạo phòng, gửi mã cho bạn. 1v1 hoặc 5v5.' },
 ];
 
 /** Bảng chọn chế độ; chạm thẻ → phòng chờ (hoặc thẳng màn chọn tướng với Luyện tập). */
@@ -41,7 +43,7 @@ export function openModes(nav) {
     pn.body.innerHTML = `<div class="md-list">${CARDS.map((c) => {
       const r = rankNow(), lock = c.peak && !peakNow().open;
       return `<button type="button" class="md-card fr ${c.hot ? 'hot' : ''} ${lock ? 'lock' : ''}" data-m="${c.mode}" ${lock ? 'aria-disabled="true"' : ''}><i class="pic" style="background-image:url(./assets/ui/${c.img || 'keyart.jpg'});background-size:${c.img ? 'auto 100%' : 'auto 135%'};background-position:${c.pos} ${c.img ? '30%' : '78%'}"></i>
-      <em class="tagr ${c.hot ? 'gold' : c.mode === 'training' ? 'blue' : ''}">${c.tag}</em><div class="in">${c.badge ? `<span class="md-rank">${rankBadge(r, 50)}${r.name}</span>` : ''}<h3 class="gt">${MODES[c.mode].short}</h3><p>${c.desc()}</p>
+      <em class="tagr ${c.hot ? 'gold' : c.mode === 'training' ? 'blue' : ''}">${c.tag}</em><div class="in">${c.badge ? `<span class="md-rank">${rankBadge(r, 50)}${r.name}</span>` : ''}<h3 class="gt">${c.name || MODES[c.mode].short}</h3><p>${c.desc()}</p>
       ${c.diff ? `<div class="md-diff">${Object.entries(DIFFICULTY).map(([k, d]) => `<span role="button" data-d="${k}" class="${k === (p.diff || 'normal') ? 'on' : ''}">${d.name}</span>`).join('')}</div>` : ''}</div></button>`;
     }).join('')}</div>`;
   };
@@ -50,6 +52,7 @@ export function openModes(nav) {
     const d = e.target.closest('[data-d]');
     if (d) { e.stopPropagation(); p.diff = d.dataset.d; saveProfile(); render(); return; }
     const c = e.target.closest('[data-m]'); if (!c) return;
+    if (c.dataset.m === 'online') { pn.close(); nav.go('online'); return; }
     if (c.dataset.m === 'peak') { const s = peakNow(); if (!s.open) { toast(s.reason); return; } }
     pn.close(); nav.go(MODES[c.dataset.m].room ? 'room' : 'pick', { mode: c.dataset.m });
   };

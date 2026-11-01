@@ -1,4 +1,5 @@
 // Lưới đi được ô 80 đơn vị, dựng từ tường và biên bản đồ lúc tải (02 §8).
+import { D } from '../core/dmath.js';
 export const CELL = 80;
 
 export function buildNavGrid(map) {
@@ -18,7 +19,7 @@ export function buildNavGrid(map) {
       for (let cy = Math.floor((Math.min(w.y1, w.y2) - hw) / CELL); cy <= Math.floor((Math.max(w.y1, w.y2) + hw) / CELL); cy++) for (let cx = Math.floor((Math.min(w.x1, w.x2) - hw) / CELL); cx <= Math.floor((Math.max(w.x1, w.x2) + hw) / CELL); cx++) {
         if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
         const px = (cx + 0.5) * CELL, py = (cy + 0.5) * CELL, t = Math.max(0, Math.min(1, ((px - w.x1) * dx + (py - w.y1) * dy) / L2));
-        if (Math.hypot(px - w.x1 - dx * t, py - w.y1 - dy * t) < hw) blocked[cy * cols + cx] = 1;
+        if (D.hypot(px - w.x1 - dx * t, py - w.y1 - dy * t) < hw) blocked[cy * cols + cx] = 1;
       }
     }
   }

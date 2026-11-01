@@ -1,0 +1,4 @@
+# Docker chỉ cần src/ + server/ (Dockerfile)
+*
+!src
+!server

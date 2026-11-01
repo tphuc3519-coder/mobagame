@@ -1,4 +1,5 @@
 // Dựng đội hình 5v5: chọn tướng cho đồng đội và đối thủ, phân đường theo vai, đặt vị trí xuất phát quanh Suối Đèn, gắn bot.
+import { D } from '../core/dmath.js';
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { starterFor } from '../data/items.js';
 import { botSpellOf } from '../data/ai.js';
@@ -33,29 +34,31 @@ function pick(rng, n, exclude = []) {
 
 /**
  * Spawn đủ 10 tướng. opts: { heroId (người chơi), difficulty, allies?: [id×4], foes?: [id×5], playerRole?, allyRoles?: [vị trí×4],
- * foeRoles?: [vị trí×5] } — vị trí (id trong SLOTS) chốt ở màn chọn; thiếu / sai thì phân theo đường ưu tiên của tướng như cũ.
+ * foeRoles?: [vị trí×5], foePlayer?: { heroId, role? } (online: người chơi ở đội 1) } — vị trí (id trong SLOTS) chốt ở màn chọn; thiếu / sai thì phân theo đường ưu tiên của tướng như cũ.
  * Trả về { player, teams: [[hero…], [hero…]] }; tướng người chơi không có bot.
  */
 export function setupTeams(world, opts) {
   const map = world.map, rng = world.rng;
   const allyIds = opts.allies || pick(rng, 4, [opts.heroId]);
-  const foeIds = opts.foes || pick(rng, 5, []);
+  const fp = opts.foePlayer; // online: người chơi thứ hai ở đội 1 ({ heroId, role? }) — không có bot
+  const foeIds = opts.foes || (fp ? [fp.heroId, ...pick(rng, 4, [fp.heroId])] : pick(rng, 5, []));
   const teams = [[], []];
   [[0, [opts.heroId, ...allyIds]], [1, foeIds]].forEach(([team, ids]) => {
-    const fixed = team ? (opts.foeRoles || []) : [opts.playerRole, ...(opts.allyRoles || [])];
+    const fixed = team ? (fp && !opts.foes ? [fp.role, ...(opts.foeRoles || [])] : (opts.foeRoles || [])) : [opts.playerRole, ...(opts.allyRoles || [])];
     const slots = assignSlots(ids, fixed);
     const f = team ? map.mirror(map.fountain.x, map.fountain.y) : { x: map.fountain.x, y: map.fountain.y };
     slots.forEach((sl, k) => {
       // xếp thành cung quanh Suối, hướng ra cổng nhà chính
       const toCore = team ? map.mirror(map.structures[0].x, map.structures[0].y) : map.structures[0];
-      const bx = toCore.x - f.x, by = toCore.y - f.y, L = Math.hypot(bx, by) || 1, ang = Math.atan2(by, bx) + (k - 2) * 0.5, r = 330;
-      const e = world.spawnHero(sl.hero, team, { x: f.x + Math.cos(ang) * r, y: f.y + Math.sin(ang) * r });
+      const bx = toCore.x - f.x, by = toCore.y - f.y, L = D.hypot(bx, by) || 1, ang = D.atan2(by, bx) + (k - 2) * 0.5, r = 330;
+      const e = world.spawnHero(sl.hero, team, { x: f.x + D.cos(ang) * r, y: f.y + D.sin(ang) * r });
       e.slot = k; e.laneId = sl.lane; e.role = sl.lane;
       const laneIdx = map.lanes.findIndex((l) => l.id === (LANE_BASE[sl.lane] || sl.lane));
       e.laneIdx = laneIdx;
       const byRole = SLOTS.includes(opts.playerRole); // có vị trí người chơi: nhận ra người chơi theo vị trí (đồng đội có thể trùng tướng)
       const mine = team === 0 && !teams[0].some((h) => h.isPlayer) && (byRole ? sl.lane === opts.playerRole : sl.hero === opts.heroId);
-      if (mine) e.isPlayer = true; // đồ khởi đầu của người chơi do game.js mua
+      const mine2 = team === 1 && fp && !teams[1].some((h) => h.isPlayer) && (SLOTS.includes(fp.role) ? sl.lane === fp.role : sl.hero === fp.heroId);
+      if (mine || mine2) e.isPlayer = true; // đồ khởi đầu của người chơi do game.js / net/protocol.js mua
       else {
         world.setLoadout(e, { spellId: botSpellOf(sl.hero, sl.lane) }); // vị trí → phép (rừng: Trừng Trị) + phù hiệu mặc định theo vai
         const start = starterFor(HEROES[sl.hero], sl.lane, e.spell?.id); // đồ khởi đầu theo vị trí
@@ -64,5 +67,5 @@ export function setupTeams(world, opts) {
       teams[team].push(e);
     });
   });
-  return { player: teams[0].find((h) => h.isPlayer), teams };
+  return { player: teams[0].find((h) => h.isPlayer), player2: teams[1].find((h) => h.isPlayer) || null, teams };
 }

@@ -1,3 +1,4 @@
+import { D } from '../../core/dmath.js';
 import { hero } from './_make.js';
 // Manh Mối: mỗi chiêu trúng tướng để 1 Manh Mối (8s, tối đa 3); đòn đánh vào tướng có Manh Mối gây thêm sát thương chuẩn.
 // Chân Lý Duy Nhất: chỉ khoá được tướng có ≥ 2 Manh Mối; mỗi Manh Mối +15% sát thương; trúng mới tiêu Manh Mối.
@@ -23,7 +24,7 @@ export default hero({
     s2: { id: 'dong_ho_kim_me', name: 'Đồng Hồ Kim Mê', type: 'skillshot', aim: 'direction', range: 800, width: 40, speed: 2400, cooldown: [12, 11.3, 10.6, 9.9, 9.2, 8.5], cost: [50, 50, 55, 55, 60, 60], damage: { base: 30, perLevel: 15, ad: 0.3, type: 'physical' }, effects: [{ status: 'stun', duration: 1 }], desc: 'Bắn kim gây mê: choáng 1s.' },
     s3: { id: 'chan_ly_duy_nhat', name: 'Chân Lý Duy Nhất', type: 'targeted', aim: 'target', range: P.ultRange, speed: 2600, heroOnly: true, requires: 'Mục tiêu có ít nhất 2 Manh Mối',
       canTarget: (e, t) => clues(t, e) >= P.need,
-      canCast: (e, w) => w.entities.some((t) => t.kind === 'hero' && t.alive && t.team !== e.team && clues(t, e) >= P.need && Math.hypot(t.pos.x - e.pos.x, t.pos.y - e.pos.y) - t.radius <= P.ultRange),
+      canCast: (e, w) => w.entities.some((t) => t.kind === 'hero' && t.alive && t.team !== e.team && clues(t, e) >= P.need && D.hypot(t.pos.x - e.pos.x, t.pos.y - e.pos.y) - t.radius <= P.ultRange),
       cooldown: [65, 55, 45], cost: [100, 100, 100], damage: { base: 200, perLevel: 100, ad: 1.1, type: 'true' }, params: { perClueBonus: P.perClue }, desc: 'Bắn chứng cứ khoá vào tướng có từ 2 Manh Mối: sát thương chuẩn, mỗi Manh Mối cộng thêm 15%; trượt thì không mất Manh Mối.' },
   },
   ai: { combo: ['s2', 's1', 's3'], preferredRange: 500, engageHpRatio: 0.85 },

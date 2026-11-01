@@ -1,3 +1,4 @@
+import { D } from '../../core/dmath.js';
 import { hero } from './_make.js';
 // Tầm Nhìn: tích khi thấy tướng địch (9/giây mỗi tướng trong 1600, tối đa 27/giây, dừng khi bị khống chế cứng). Đủ 100: Thấu Nhãn —
 // +12% tốc chạy, né hẳn đòn trực tiếp đầu tiên từ tướng / trụ; mở Hai Nòng Liên Xạ (tung xong về 0).
@@ -16,7 +17,7 @@ export default hero({
         if (s.flags.thau) { if (w.tick % 15 === 0) ctx.applyStatus(s, { status: 'haste', id: 'thau_nhan', pct: P.haste, duration: 0.6 }); return; }
         if (ctx.isHardCC(s)) return;
         let n = 0;
-        for (const t of w.entities) if (t.kind === 'hero' && t.alive && t.team !== s.team && t.seenBy?.[s.team] && Math.hypot(t.pos.x - s.pos.x, t.pos.y - s.pos.y) <= P.sight) n++;
+        for (const t of w.entities) if (t.kind === 'hero' && t.alive && t.team !== s.team && t.seenBy?.[s.team] && D.hypot(t.pos.x - s.pos.x, t.pos.y - s.pos.y) <= P.sight) n++;
         if (!n) return;
         s.flags.vision = Math.min(P.need, vis(s) + Math.min(P.maxGainPerSec, P.perHero * n) / 30);
         if (vis(s) >= P.need) { s.flags.thau = true; s.flags.dodge = true; ctx.emit('proc', { kind: 'thau_nhan' }); }
