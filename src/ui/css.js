@@ -59,7 +59,7 @@ i.ini { display: grid; place-items: center; font: 800 16px var(--u-disp); color:
 img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 
 /* —— chữ —— */
-.gt, .gs { -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; padding-top: .18em; margin-top: -.18em; padding-bottom: .05em; margin-bottom: -.05em; } /* chừa chỗ dấu tiếng Việt chồng (Ễ, Ồ) trên chữ hoa — ngoài hộp chữ thì nền dải vàng không phủ tới */
+.gt, .gs { -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; padding-top: .28em; margin-top: -.28em; padding-bottom: .05em; margin-bottom: -.05em; } /* chừa chỗ dấu tiếng Việt chồng (Ễ, Ồ) trên chữ hoa — ngoài hộp chữ thì nền dải vàng không phủ tới */
 .gt { background-image: var(--u-gold); filter: drop-shadow(0 1px 0 rgba(36,16,2,.95)) drop-shadow(0 0 7px rgba(255,180,80,.2)); }
 .gs { background-image: var(--u-silver); filter: drop-shadow(0 1px 0 rgba(8,12,30,.95)) drop-shadow(0 0 7px rgba(120,150,230,.2)); }
 .hd { display: flex; align-items: center; gap: 8px; margin: 0; font: 700 13px/1 var(--u-disp); letter-spacing: .14em; text-transform: uppercase; color: var(--u-gc); white-space: nowrap; }
@@ -412,7 +412,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #gover::after { content: ''; position: absolute; left: 10%; right: 10%; top: 50%; height: 2px; margin-top: calc(clamp(120px, 36vh, 200px) / 2); background: linear-gradient(90deg, rgba(232,184,90,0), #e8b85a 22%, #fff3c4 50%, #e8b85a 78%, rgba(232,184,90,0)); animation: goBand .45s backwards; }
 #gover.lose::after { background: linear-gradient(90deg, rgba(150,170,230,0), #9aa8d8 22%, #eef2ff 50%, #9aa8d8 78%, rgba(150,170,230,0)); }
 @keyframes goBand { from { transform: translateY(-50%) scaleX(0); } }
-#gover b { position: relative; display: block; font: 800 clamp(56px, 19vh, 118px)/1 var(--u-disp); letter-spacing: .05em; padding: 0 .1em; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: goIn .6s cubic-bezier(.2,.9,.3,1.2) .1s backwards; }
+#gover b { position: relative; display: block; font: 800 clamp(56px, 19vh, 118px)/1 var(--u-disp); letter-spacing: .05em; padding: .3em .1em .06em; margin-top: -.3em; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: goIn .6s cubic-bezier(.2,.9,.3,1.2) .1s backwards; }
 #gover.win b { background-image: linear-gradient(180deg, #fffbe8 0%, #ffe7a6 30%, #f4bf55 58%, #c98428 84%, #eebb5c 100%); filter: drop-shadow(0 4px 0 #4a2204) drop-shadow(0 0 26px rgba(255,170,60,.8)); }
 #gover.lose b { background-image: linear-gradient(180deg, #ffffff 0%, #e8eeff 34%, #a8b4d4 62%, #6e7aa0 86%, #c4cce8 100%); filter: drop-shadow(0 4px 0 #121a36) drop-shadow(0 0 22px rgba(110,140,230,.6)); }
 #gover small { position: relative; margin-top: 6px; font: 700 clamp(13px, 4vh, 20px)/1 var(--u-disp); letter-spacing: .7em; color: #fff; opacity: .85; animation: scrIn .6s .3s backwards; }

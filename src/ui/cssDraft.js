@@ -47,7 +47,7 @@ const CSS = `
 #draft .hc { position: relative; padding: 0; border: 1.5px solid transparent; border-radius: 5px; overflow: hidden; background: linear-gradient(180deg, #1c2050, #0c0f2a) padding-box, linear-gradient(180deg, rgba(200,214,255,.55), rgba(90,110,170,.3)) border-box; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
 #draft .hc img, #draft .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 #draft .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 5px 3px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
-#draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 12px/1 var(--u-disp); letter-spacing: .01em; text-transform: uppercase; overflow: hidden; overflow-wrap: anywhere; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
+#draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 11.5px/1 var(--u-disp); letter-spacing: 0; text-transform: uppercase; overflow: hidden; word-break: keep-all; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt; không bẻ giữa chữ */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
 #draft .hc.on { background: linear-gradient(180deg, #2a2050, #120c2a) padding-box, var(--u-rim) border-box; box-shadow: 0 0 0 1px rgba(255,214,120,.4), 0 0 14px rgba(255,176,64,.65); }
 #draft .hc.hide { display: none; }
 #draft .hc.ban { filter: grayscale(1) brightness(.5); }
@@ -59,7 +59,7 @@ const CSS = `
 #draft .dr-info { flex: 1; min-width: 0; }
 #draft .dr-info b { display: block; font: 800 clamp(16px, 5.4vh, 22px)/1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; color: #f4f6fb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000; }
 #draft .dr-info small { display: block; margin-top: 3px; font-size: 11px; color: var(--u-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#draft .dr-go { flex: none; width: clamp(120px, 18vw, 170px); height: clamp(40px, 11vh, 48px); padding: 0 10px; font-size: clamp(18px, 5.6vh, 22px); }
+#draft .dr-go { flex: none; width: clamp(124px, 18vw, 170px); height: clamp(40px, 11vh, 48px); padding: 0 8px; font-size: clamp(16px, 5vh, 21px); letter-spacing: .04em; }
 #draft .dr-skip { flex: none; height: 32px; padding: 0 12px; font-size: 13px; } #draft .dr-skip[hidden] { display: none; }
 #draft .btn-red[disabled] { filter: grayscale(.75) brightness(.6); }
 #draft .dr-prep { position: absolute; left: calc(var(--l) + var(--colw) + 10px); right: calc(var(--r) + var(--colw) + 10px); bottom: calc(var(--b) + 4px); display: flex; align-items: center; gap: 10px; justify-content: center; }

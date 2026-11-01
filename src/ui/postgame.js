@@ -22,7 +22,7 @@ const STYLE = `
 #pg.lose .glow { background: radial-gradient(60% 55% at 50% 56%, rgba(90,120,210,.22), rgba(90,120,210,0) 70%), linear-gradient(0deg, rgba(5,6,26,.92), rgba(5,6,26,0) 42%); }
 #pg .tap { position: absolute; left: 50%; bottom: max(6px, env(safe-area-inset-bottom)); transform: translateX(-50%); margin: 0; font: 700 13px/1 var(--u-disp); letter-spacing: .2em; text-transform: uppercase; color: rgba(243,240,230,.75); animation: tapb 1.6s ease-in-out infinite; pointer-events: none; z-index: 3; } @keyframes tapb { 50% { opacity: .3; } }
 #pg .res { position: absolute; left: 0; right: 0; top: max(4px, env(safe-area-inset-top)); z-index: 2; text-align: center; pointer-events: none; }
-#pg .res b { display: inline-block; font: 800 clamp(40px, 13.5vh, 74px)/1 var(--u-disp); letter-spacing: .06em; padding: 0 .14em; }
+#pg .res b { display: inline-block; font: 800 clamp(40px, 13.5vh, 74px)/1 var(--u-disp); letter-spacing: .06em; padding: .3em .14em .06em; margin-top: -.3em; } /* chừa chỗ dấu chồng (Ế, Ắ) của Saira — padding 0 từng cắt mất dấu */
 #pg .res small { display: block; margin-top: 2px; font: 700 clamp(11px, 3.2vh, 14px)/1 var(--u-disp); letter-spacing: .6em; color: #fff; opacity: .8; }
 #pg .res::after { content: ''; display: block; width: min(440px, 60vw); height: 2px; margin: 6px auto 0; background: var(--u-line); } #pg.lose .res::after { background: linear-gradient(90deg, rgba(150,170,230,0), #9aa8d8 22%, #eef2ff 50%, #9aa8d8 78%, rgba(150,170,230,0)); }
 #pg .in { animation: pgIn .5s backwards cubic-bezier(.2,.8,.3,1); } @keyframes pgIn { from { opacity: 0; transform: translateY(24px) scale(.96); } }
@@ -86,7 +86,7 @@ const STYLE = `
 #pg .col.foe .pr { background: linear-gradient(90deg, rgba(150,30,30,.62), rgba(60,10,10,.3)); box-shadow: inset 0 0 0 1px rgba(255,138,122,.22); }
 #pg .pr.me { background: linear-gradient(90deg, rgba(150,96,24,.72), rgba(60,36,8,.35)); box-shadow: inset 0 0 0 1px rgba(255,214,120,.75), 0 0 10px rgba(255,180,70,.3); }
 #pg .pr .face, #pg .pr .ini { width: clamp(32px, 9.5vh, 42px); height: clamp(32px, 9.5vh, 42px); border-radius: 50%; box-shadow: 0 0 0 1.5px rgba(143,211,255,.6); } #pg .col.foe .pr .face { box-shadow: 0 0 0 1.5px rgba(255,138,122,.7); } #pg .pr.me .face { box-shadow: 0 0 0 1.5px #ffd36a; }
-#pg .pr .hn { display: flex; flex-direction: column; min-width: 0; } #pg .pr .hn b { font: 700 13.5px/1.1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #pg .pr .hn small { font-size: 10px; color: #a8c4ff; }
+#pg .pr .hn { display: flex; flex-direction: column; min-width: 0; } #pg .pr .hn b { font: 700 15px/1.1 var(--u-disp); letter-spacing: .01em; text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #pg .pr .hn small { font-size: 10px; color: #a8c4ff; }
 #pg .pr .sc { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 800 17px/1 var(--u-disp); } #pg .pr .sc .mvp { font-size: 9px; padding: 1px 4px; }
 #pg .pr .pn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e8ecff; } #pg .pr.me .pn { color: #ffe08a; font-weight: 700; }
 #pg .pr .kd { font: 700 15px/1 var(--u-disp); letter-spacing: .03em; text-align: center; white-space: nowrap; }
