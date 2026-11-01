@@ -1,6 +1,7 @@
 // Kiểu dáng các màn ngoài trận (sảnh, chọn chế độ, phòng chờ, chọn tướng, đội hình, tải trận) — chèn một lần bằng <style> (trang
-// chơi thử dạng artifact chỉ cho phép CSS nội tuyến). Bộ nhận diện "UI v2": nền xanh đêm trong mờ, khung viền vàng kim có hoa văn
-// góc (.fr), chữ tiêu đề Barlow Condensed nghiêng phủ dải vàng kim (.gt) / bạc (.gs), nút vàng bóng có vệt sáng lướt (.btn-gold),
+// chơi thử dạng artifact chỉ cho phép CSS nội tuyến). Bộ nhận diện "UI v3" (2026-11): nền xanh đêm trong mờ, khung viền vàng mảnh 1px
+// (.fr; hoa văn góc chỉ ở hộp thoại + thẻ sự kiện), chữ tiêu đề Saira Condensed ĐỨNG phủ dải vàng (.gt) / bạc (.gs) — src/ui/fonts.js,
+// nút vàng bóng (.btn-gold; vệt sáng lướt chỉ ở nút vào trận),
 // nút lam (.btn-blue), nút kính (.btn-ghost), nút tròn viền vàng (.icb), viên tiền tệ (.cur), huy hiệu hạng vẽ sẵn (.rkb), biểu tượng
 // vẽ sẵn (img.ui-ic, assets/ui/icons). Kích thước theo chiều cao màn (vh) có kẹp min/max để điện thoại ngang 360–430 px cao vẫn vừa.
 const svgUrl = (s) => `url("data:image/svg+xml,${encodeURIComponent(s)}")`;
