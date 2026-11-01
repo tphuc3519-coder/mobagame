@@ -47,7 +47,7 @@ const CSS = `
 #draft .hc { position: relative; padding: 0; border: 1.5px solid transparent; border-radius: 5px; overflow: hidden; background: linear-gradient(180deg, #1c2050, #0c0f2a) padding-box, linear-gradient(180deg, rgba(200,214,255,.55), rgba(90,110,170,.3)) border-box; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
 #draft .hc img, #draft .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 #draft .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 5px 3px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
-#draft .hc b { display: block; font: 700 12px/1.05 var(--u-disp); letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
+#draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 12px/1 var(--u-disp); letter-spacing: .01em; text-transform: uppercase; overflow: hidden; overflow-wrap: anywhere; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
 #draft .hc.on { background: linear-gradient(180deg, #2a2050, #120c2a) padding-box, var(--u-rim) border-box; box-shadow: 0 0 0 1px rgba(255,214,120,.4), 0 0 14px rgba(255,176,64,.65); }
 #draft .hc.hide { display: none; }
 #draft .hc.ban { filter: grayscale(1) brightness(.5); }
