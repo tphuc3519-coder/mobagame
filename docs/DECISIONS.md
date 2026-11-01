@@ -987,3 +987,28 @@
 - 2026-10-27: **Hộp thoại không cuộn khung.** Hoa văn góc `.fr::before` (inset −3 px) làm khung `.ui-dlg .box` cuộn được 3 px — chạm hơi xê dịch là hộp
   rung (hộp chọn vị trí). Khung giờ là cột flex không cuộn, chỉ `.txt` cuộn khi dài; dòng gợi ý chọn vị trí `contain: inline-size` + giữ chỗ 2 dòng (đổi
   chữ không làm hộp co 503 ↔ 458 px nữa).
+- 2026-10-29: **Haruno Sakura (`hanh_hoa`) dùng model có texture do chủ dự án gửi** (`base_basic_pbr_6.glb`; bản `base_basic_shaded_8.glb` cùng
+  lưới, màu nướng sẵn sáng tối — không dùng) thay model sinh bằng code. Model vẽ nhân vật của tác phẩm khác (luật 8): chủ dự án đã chốt tên gốc
+  (2026-10-27) và tự gửi model; `assets/LICENSES.md` ghi rõ chưa xác nhận quyền dùng. Chủ dự án đề nghị **vẽ lại mắt / miệng** cho nét — Claude không
+  vẽ lại mặt nhân vật có bản quyền; chủ dự án tự tạo đầu mới và gửi (xem 2026-11-01).
+  - **Bản trong trận: uv mới + nướng lại texture.** File gốc 1 triệu tam giác có ~27 000 mảnh uv: giữ đường may uv thì meshopt chỉ giảm được tới
+    ~84 000 tam giác; cho phép vắt qua đường may (Permissive) thì ~8 % bề mặt mang texture của chỗ khác (vệt đỏ trên váy, mắt nhoè). Lưới hàn đỉnh rồi
+    giảm theo vị trí + pháp tuyến, chia mảnh theo 6 hướng chiếu, xếp kệ; màu, kim loại-nhám và normal map nướng từ bản gốc (điểm gần nhất cùng phía mặt;
+    vùng đầu bắn tia theo pháp tuyến bản thấp, 4 mẫu / texel; normal map đổi khung tiếp tuyến đúng cách three.js tự dựng khi không có attribute
+    tangent; pháp tuyến đỉnh bản thấp tính từ chính bản thấp — lấy pháp tuyến bản gốc tại đỉnh giữ lại thì normal map phải bù góc lớn, ra vết loang).
+  - **Gắn xương:** tay phải + kunai dính liền vai trái / cằm trong lưới gốc → gộp cả cánh tay phải vào ngực (`merge`), găng + kunai gắn cứng ngực
+    (`weapon`, chỉ đỉnh màu tối) — tính theo khoảng cách thì kunai ăn trọng số cánh tay trái, bay theo mỗi cú đánh. 4 xương váy.
+  - **Animation viết tay** (`hanh_hoa.anim.mjs`): mọi đòn dùng tay trái, thân, hông, chân; góc tay từ IK trên đúng bộ xương. Mặt trong cánh tay trái
+    liền sườn nên cánh tay trên không nhấc quá ~40° (giơ cao là rách nách) — Victory (sảnh / chọn tướng, nhìn cận) là xoay một vòng rồi thế thủ, không
+    giơ tay. Hông hạ thì gối gập theo IK hai đoạn để bàn chân đứng yên (trước đó chân lún 5–12 cm).
+  - Cao 1,8 m (09 §3.1 cho model gửi vào; bản sinh bằng code 1,72 m). Tô `pbr` như Nguyệt Hạ; viền / bảng màu đổi sang hồng – đỏ; chỉ số, chiêu, hiệu
+    ứng giữ nguyên. Không phải model cao cấp (luật 11 không áp dụng: `build.mjs`, `render.cjs` vẫn dựng lại được); `build()` cũ giữ làm tham khảo.
+- 2026-11-01: **Sakura: ghép đầu mới chủ dự án gửi vào thân** (`base_basic_pbr.glb` — tượng bán thân: đầu, tóc, cổ, vai áo trắng; bản `shaded` không
+  dùng). Đầu mới xoay về đúng hướng nhìn của đầu cũ (mặt quay 17,6° sang trái nhân vật), co theo chiều cao đầu cũ (đỉnh tóc → cằm, ×0,233), mắt đặt
+  đúng chỗ mắt cũ; cắt bán thân ở giữa cổ, bỏ vai áo trắng. Thân bỏ mặt / tóc / băng đô cũ (giữ găng + kunai cạnh cằm theo màu và vùng), cắt phẳng mép
+  cổ áo đỏ (gai tóc cũ dính vào), rồi kéo mép lỗ cổ (r ~10–15 cm) ôm vào cổ mới (r ~5 cm) — cổ áo thành cổ lọ, không còn lỗ nhìn xuống trong thân;
+  không kéo sát găng tay (khỏi tam giác sợi chỉ). Không vẽ thêm gì: mặt là của file đầu chủ dự án gửi.
+  - Vật liệu `head` = **cả đầu mới** (mặt, tóc, cổ) để gắn xương theo chuỗi Head → Neck (`hair.pick`); trong atlas đầu, các mảnh mặt chiếm 60 % diện
+    tích (~2 000 px/m trong trận, ~4 000 px/m bản sảnh), tóc ~750 / 1 500 px/m; thân ~450 / 930 px/m.
+  - Ngân sách lưới trong trận tách riêng: thân 9 400, đầu 4 800 (giảm tóc trước khi khoá vùng mặt, rồi cả đầu với mặt được ưu tiên — mặt giữ ~2 100
+    tam giác). Bản sảnh: thân 38 000, đầu 18 000, cũng nướng lại (giữ uv gốc thì tóc lốm đốm trắng — nền atlas đầu màu trắng — và mặt thô).

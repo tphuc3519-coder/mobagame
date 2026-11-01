@@ -1,22 +1,23 @@
 {
   "model": "hanh_hoa.glb",
+  "showcase": "hanh_hoa_showcase.glb",
   "scale": 100,
-  "height": 172,
+  "height": 180,
   "runRefSpeed": 325,
   "hitTime": {
-    "Attack1": 0.24,
-    "Attack2": 0.24
+    "Attack1": 0.26,
+    "Attack2": 0.26
   },
   "attach": {
     "weapon_tip": "Bone_HandR_Tip",
     "head": "Bone_Head"
   },
-  "rim": "#f2c14e",
+  "rim": "#ff8fb1",
   "palette": [
-    "#f6e9c4",
-    "#f2c14e",
-    "#6b4a2a",
-    "#7fae5a"
+    "#b3202a",
+    "#ff8fb1",
+    "#ffd1dc",
+    "#4a3326"
   ],
   "clips": [
     "Idle",
@@ -31,5 +32,13 @@
     "Victory",
     "Showcase"
   ],
-  "generator": "tools/modelgen"
+  "generator": "tools/modelgen/import_fused.mjs",
+  "source": "sakura_pbr_game.glb",
+  "showcaseSource": "sakura_pbr_hq.glb",
+  "portrait": {
+    "dist": 1.45,
+    "dy": 0.02
+  },
+  "shading": "pbr",
+  "showcaseOutline": false
 }

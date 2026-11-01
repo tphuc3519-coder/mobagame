@@ -611,3 +611,13 @@ Còn lại:
 - **Kiểm thử:** node `tools/t_*.mjs` đạt; `b_layout` 14 lượt đạt; `b_flow` 93, `b_match` 36, `b_perf` 16 đạt. Bốn mục đo thời gian / bấm hết giờ lệch
   mốc trên máy thử hôm nay — `b_gd3` đấu lại về phòng chờ (3,4 / 8,5 s), `b_pwa` mở lần hai (trung vị 3,1 s), một cú bấm trong `b_prog` — và **bản
   `main` chạy cùng máy lệch y hệt** (5,8 / 8,2 s; 3,5 s; cùng cú bấm), nên là do máy không GPU đang chậm, không do đợt này.
+
+## 01/11 — Haruno Sakura: model chủ dự án gửi + đầu mới
+- **Model:** `hanh_hoa` đổi từ model sinh bằng code sang model có texture chủ dự án gửi (thân 29/10, đầu mới ghép vào 01/11 — DECISIONS 2026-10-29,
+  2026-11-01). Nguồn nhập: `tools/modelgen/imports/sakura_pbr_game.glb` (14 200 tam giác) và `sakura_pbr_hq.glb` (56 000 tam giác), cả hai trải uv lại
+  + nướng texture từ bản ghép 1,6 triệu tam giác. Bản trong trận 14 198 tam giác · 24 xương · 2 vật liệu · texture ≤ 1024² · 2,28 MB — trong ngân sách
+  09 §3.1; bản sảnh 5,3 MB (nén meshopt, ≤ 8 MB).
+- **Mặt:** không vẽ lại; mặt là của file đầu chủ dự án gửi, giữ nét nhờ atlas riêng cho đầu (mặt ~2 000 px/m trong trận).
+- **Animation:** 11 clip viết tay (`tools/modelgen/heroes/hanh_hoa.anim.mjs`), đòn chạm 0,26 s; bàn chân giữ trên đất khi chùng gối (lún ≤ 2 cm, trừ
+  cú lướt Cast1 ~6 cm lúc bước); độ giãn lưới ≤ 10 tam giác > 2× mỗi clip ở bản trong trận.
+- **Ảnh:** thẻ / chân dung / ảnh toàn thân (`tools/uiart/render.cjs`), ảnh xem trước trong `docs/previews/`, `docs/TONG_HOP_TUONG.md` sinh lại.
