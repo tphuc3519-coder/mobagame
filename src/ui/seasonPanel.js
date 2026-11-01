@@ -8,10 +8,10 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { BAG } from '../data/rewards.js';
 import { showRewards } from './rewards.js';
 
-const STYLE = `.ss-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .ss-head b { font: 800 italic 24px/1 var(--u-disp); letter-spacing: .03em; color: var(--u-gc); } .ss-head small { color: #a8b4d8; font-size: 13px; }
+const STYLE = `.ss-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .ss-head b { font: 800 24px/1 var(--u-disp); letter-spacing: .03em; color: var(--u-gc); } .ss-head small { color: #a8b4d8; font-size: 13px; }
 .ss-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-bottom: 12px; }
-.ss-card { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 6px; background: linear-gradient(90deg, rgba(30,38,90,.78), rgba(12,16,42,.62)); box-shadow: inset 0 0 0 1px rgba(255,214,140,.16); }
-.ss-card > div { flex: 1; min-width: 0; } .ss-card b { display: block; font: 700 16px/1.2 var(--u-disp); letter-spacing: .02em; color: #fff0c8; } .ss-card small { display: block; font-size: 12px; color: #b8c4e8; }
+.ss-card { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 6px; background: var(--u-surf); box-shadow: inset 0 0 0 1px var(--u-edge); }
+.ss-card > div { flex: 1; min-width: 0; } .ss-card b { display: block; font: 700 16px/1.2 var(--u-disp); letter-spacing: .02em; color: #f4f6fb; } .ss-card small { display: block; font-size: 12px; color: #b8c4e8; }
 .ss-rings { display: flex; gap: 8px; margin-top: 6px; } .ss-rings i { position: relative; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font: 700 10px var(--u-disp); color: #9fb0d8; box-shadow: inset 0 0 0 2px rgba(160,176,220,.35); overflow: hidden; }
 .ss-rings i.done { box-shadow: inset 0 0 0 2px #7dffa8, 0 0 8px rgba(125,255,168,.5); } .ss-rings i .face { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); border-radius: 50%; opacity: .85; }
 .ss-rings i em { position: absolute; bottom: -1px; left: 0; right: 0; text-align: center; font-style: normal; font: 700 10px/1.2 var(--u-disp); color: #fff; background: rgba(0,0,0,.6); }

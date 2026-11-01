@@ -6,18 +6,18 @@
 import { HEROES } from '../data/heroes/index.js';
 import { play } from '../audio/audio.js';
 import { prefs } from '../core/prefs.js';
+import { DISP, BODY } from '../ui/fonts.js';
 
 export const MULTI = { 2: 'Double Kill', 3: 'Triple Kill', 4: 'Quadra Kill', 5: 'Penta Kill' };
 const STREAK = { 3: 'Liên tục hạ gục', 4: 'Hủy diệt', 5: 'Không thể cản phá', 6: 'Thần thánh' };
 export const streakName = (n) => (n >= 7 ? 'Truyền thuyết' : STREAK[n] || '');
-const BODY = '"Be Vietnam Pro", system-ui, sans-serif', DISP = '"Barlow Condensed", "Be Vietnam Pro", system-ui, sans-serif';
 const THEME = {
   ally: { mid: 'rgba(14,36,78,0.9)', edge: 'rgba(30,80,150,0.55)', line: '#6fd0ff', glow: [90, 200, 255], ring: '#38b8ff' },
   foe: { mid: 'rgba(78,14,20,0.9)', edge: 'rgba(150,34,30,0.55)', line: '#ff7a64', glow: [255, 100, 80], ring: '#ff4a3a' },
 };
 const now = () => performance.now() / 1000;
 const ease = (x) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
-try { document.fonts?.load(`italic 800 24px ${DISP}`); document.fonts?.load(`700 18px ${BODY}`); } catch (_) { /* không có DOM */ }
+try { document.fonts?.load(`800 24px ${DISP}`); document.fonts?.load(`700 18px ${DISP}`); } catch (_) { /* không có DOM */ }
 
 /** Tiêu đề của một sự kiện chết (tướng): { title, sub, tier } — tier ≥ 2: hạ liên tiếp (chữ lớn vàng), 1: đặc biệt, 0: thường. */
 export function titleOf(ev) {
@@ -73,7 +73,7 @@ export function createKillBanner(portraits) {
   }
   const face = (ctx, f, x, y, r, ring, me) => {
     if (f.heroId && portraits) portraits.draw(ctx, f.heroId, f.name, x, y, r, ring, { me });
-    else if (f.heroId) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#1a1d33'; ctx.fill(); ctx.lineWidth = r * 0.2; ctx.strokeStyle = ring; ctx.stroke(); ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r)}px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((f.name || '?')[0], x, y + 1); ctx.restore(); }
+    else if (f.heroId) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#1a1d33'; ctx.fill(); ctx.lineWidth = r * 0.2; ctx.strokeStyle = ring; ctx.stroke(); ctx.fillStyle = '#eef1f8'; ctx.font = `800 ${Math.round(r)}px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((f.name || '?')[0], x, y + 1); ctx.restore(); }
     else glyph(ctx, f.kind, x, y, r, ring);
   };
 
@@ -111,19 +111,19 @@ export function createKillBanner(portraits) {
     const pop = big ? 1 + 0.5 * (1 - ease((t - 0.05) / 0.22)) : 1;
     ctx.save(); ctx.translate(cx, cy + 1); ctx.scale(pop, pop); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     if (big) {
-      ctx.font = `italic 800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
+      ctx.font = `800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
       const txt = it.title.toUpperCase();
       ctx.lineWidth = 9; ctx.strokeStyle = 'rgba(255,170,40,0.28)'; ctx.strokeText(txt, 0, 0); // quầng sáng rẻ (shadowBlur chậm trên điện thoại)
       ctx.lineWidth = 3.5; ctx.strokeStyle = '#3a1800'; ctx.strokeText(txt, 0, 0);
       gr = ctx.createLinearGradient(0, -14, 0, 14); gr.addColorStop(0, '#fffbe0'); gr.addColorStop(0.45, '#ffd76a'); gr.addColorStop(1, '#e88a12'); ctx.fillStyle = gr; ctx.fillText(txt, 0, 0);
     } else {
-      ctx.font = `700 ${it.title.length > 15 ? 16 : 18}px ${BODY}`;
+      ctx.font = `700 ${it.title.length > 15 ? 17 : 19}px ${DISP}`;
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.strokeText(it.title, 0, 0);
       gr = ctx.createLinearGradient(0, -10, 0, 10); gr.addColorStop(0, '#fff8e4'); gr.addColorStop(1, it.tier >= 1 ? '#ffd27a' : '#ecd29a'); ctx.fillStyle = gr; ctx.fillText(it.title, 0, 0);
     }
     ctx.restore();
     if (it.sub) { // dòng phụ dưới dải (chiến công đầu / chuỗi / chặn đứng kèm theo)
-      ctx.font = `700 11px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.font = `700 12px ${DISP}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
       ctx.strokeText(it.sub, cx, cy + bh / 2 + 4); ctx.fillStyle = it.tier >= 1.5 || /Truyền thuyết/.test(it.sub) ? '#ffd86a' : '#f3e6c8'; ctx.fillText(it.sub, cx, cy + bh / 2 + 4);
     }
     // chân dung: người hạ (trái), bị hạ (phải); trượt từ giữa ra

@@ -25,8 +25,15 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 }
 ```
 
+**Bản đang chạy — UI v3 (2026-11, `src/ui/css.js` `:root`):** nền xanh đêm `--u-glass` / thẻ `--u-surf`, viền thẻ trung tính `--u-edge`
+(trắng 9%), viền vàng mảnh 1px chỉ cho khung lớn và mục đang chọn (`--u-edge-g`), vàng sâm-panh `--u-gc #f6c86e`, chữ trắng lạnh `--u-txt #eef1f8`
+/ phụ `--u-dim #9aa6c6`, bóng `--u-sh`. Nút vàng / lam / đỏ cùng khuôn (bo 6px, viền tối 1px, vệt sáng mép trên); nút kính `.btn-ghost`
+cùng bo góc. Hoa văn góc chỉ ở hộp thoại và thẻ sự kiện sảnh. Bảng Cài đặt (`ui/settingsModal.js`), cửa hàng / bảng tỉ số / HUD trong trận
+(`index.html`) dùng cùng bảng màu — trước đây Cài đặt tông tím lam riêng.
+
 ### 1.2 Chữ
-- Font: **"Be Vietnam Pro"** (Google Fonts, giấy phép OFL) cho nội dung; **"Bai Jamjuree"** hoặc **"Chakra Petch"** (OFL) cho tiêu đề và số. Tải từ Google Fonts hoặc tự host trong `assets/fonts/` (ghi giấy phép).
+- Font (đang dùng, UI v3 — 2026-11): **"Saira Condensed"** 600/700/800 cho tiêu đề, nút, nhãn chữ hoa và **mọi con số** (đồng hồ, vàng, máu, sát thương, K/D/A); **"Be Vietnam Pro"** 500–800 cho câu chữ thường. Cả hai SIL OFL, tự host trong `assets/fonts/` (`OFL.txt`, `assets/LICENSES.md`). Một nguồn tên phông: `src/ui/fonts.js` (canvas dùng `font(w, px)`, CSS dùng `--u-disp` / `--u-body`, HUD dùng `--f-disp` / `--f-body`); `main.js` nạp trước khi vào sảnh để canvas không đệm chữ phông dự phòng.
+- **Chữ luôn đứng**, không nghiêng. Dải vàng `.gt` chỉ cho tiêu đề màn / tên tướng lớn; chữ to có dấu chồng (Ế, Ắ) cần chừa `padding-top` ~.28em khi phủ dải màu (background-clip: text) — đừng đặt `padding: 0 …` đè lên.
 - Cỡ tối thiểu trên điện thoại ngang: 12px; nút chính 22–26px đậm.
 
 ### 1.3 Thành phần dùng chung (`ui/components/`)

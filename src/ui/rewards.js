@@ -39,7 +39,7 @@ const CSS = `
 #rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 12% 30%, #ffe7a8, transparent), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
   radial-gradient(2px 2px at 34% 72%, #ffd06a, transparent), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), radial-gradient(2.5px 2.5px at 88% 58%, #ffe7a8, transparent), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
   animation: rwTw 3.2s ease-in-out infinite alternate; opacity: .8; }
-#rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 italic clamp(26px, 5.4vh, 44px)/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; }
+#rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 clamp(26px, 5.4vh, 44px)/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; }
 #rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, 16vw, 200px); height: 2px; background: linear-gradient(90deg, rgba(255,214,140,0), #ffd68c); }
 #rewardScr h2::after { transform: scaleX(-1); }
 #rewardScr h2 i { position: absolute; left: 50%; bottom: -14px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: #ffd68c; box-shadow: 0 0 10px #ffb84a; }
@@ -48,7 +48,7 @@ const CSS = `
   background: radial-gradient(70% 70% at 50% 35%, rgba(255,214,140,.22), rgba(20,26,64,.92)), #141a40; box-shadow: inset 0 0 0 2px rgba(255,214,140,.55), 0 6px 16px rgba(0,0,0,.45);
   animation: rwPop .42s cubic-bezier(.2,.9,.3,1.35) both; animation-delay: calc(var(--i) * 120ms); }
 #rewardScr .tl img.ui-ic { width: 58%; height: 58%; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
-#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 italic 17px/1 var(--u-disp); color: #fff; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.8); }
+#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 17px/1 var(--u-disp); color: #fff; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.8); }
 #rewardScr .tl em { position: absolute; left: 0; right: 0; top: -9px; margin: auto; width: max-content; padding: 1px 7px; border-radius: 8px; font: 700 10px/1.5 var(--u-body); font-style: normal; color: #1c1206; background: #ffc85a; }
 #rewardScr .tl.on { box-shadow: inset 0 0 0 2px #ffe7a8, 0 0 18px rgba(255,200,90,.6); }
 #rewardScr .tip { position: absolute; z-index: 2; width: min(260px, 70vw); padding: 10px 12px; text-align: left; border-radius: 10px; background: rgba(8,10,30,.97); box-shadow: inset 0 0 0 1px rgba(255,214,140,.5), 0 8px 22px rgba(0,0,0,.6); font-size: 13px; color: #dfe6ff; line-height: 1.45; pointer-events: none; }

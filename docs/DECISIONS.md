@@ -1012,3 +1012,11 @@
     tích (~2 000 px/m trong trận, ~4 000 px/m bản sảnh), tóc ~750 / 1 500 px/m; thân ~450 / 930 px/m.
   - Ngân sách lưới trong trận tách riêng: thân 9 400, đầu 4 800 (giảm tóc trước khi khoá vùng mặt, rồi cả đầu với mặt được ưu tiên — mặt giữ ~2 100
     tam giác). Bản sảnh: thân 38 000, đầu 18 000, cũng nướng lại (giữ uv gốc thì tóc lốm đốm trắng — nền atlas đầu màu trắng — và mặt thô).
+- 2026-11-01: **Giao diện UI v3 + đổi font** (chủ dự án: *"thay đổi lại giao diện trong game và font chữ cho chuyên nghiệp hơn nữa, nâng cấp
+  toàn bộ giao diện từ trong ra ngoài"*). Font tiêu đề / nút / số: **Saira Condensed** (OFL, gói @fontsource 5.3.0, tự host) thay **Barlow
+  Condensed nghiêng** — so 7 ứng viên có dấu tiếng Việt trên nền game (Oswald, Saira Condensed, Barlow Semi Condensed, Chakra Petch, Exo 2,
+  Archivo), Saira Condensed đứng gọn kiểu esports, hẹp vừa nút nhỏ, dấu chồng rõ; giữ **Be Vietnam Pro** cho chữ thường (thiết kế riêng cho
+  tiếng Việt). Bỏ hẳn chữ nghiêng; dải vàng chỉ cho tiêu đề; viền thẻ trung tính, vàng chỉ cho mục đang chọn; hoa văn góc chỉ ở hộp thoại +
+  thẻ sự kiện; vệt sáng lướt chỉ ở nút vào trận; bảng Cài đặt bỏ tông tím lam riêng; HUD trong trận (nút chiêu có vòng kim loại, chiêu chưa
+  học vẫn thấy hình, bản đồ nhỏ, đồng hồ trận, cửa hàng, bảng tỉ số) và chữ vẽ trên canvas (tên, máu, sát thương, thông báo hạ gục) cùng hệ.
+  Không đổi bố cục, id hay selector (mọi kiểm thử trình duyệt giữ nguyên); không đụng model.

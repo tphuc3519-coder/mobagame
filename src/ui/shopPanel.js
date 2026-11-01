@@ -17,10 +17,10 @@ const STYLE = `.sh-cur { display: flex; gap: 10px; } .sh-cur .cur { display: inl
 .sh-heroes button .face { width: 100%; height: 100%; border-radius: 50%; } .sh-heroes button.on { background: var(--u-gold); box-shadow: 0 0 10px rgba(255,190,80,.6); }
 .sh-heroes button i { position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px #10132a; }
 .sh-looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.sh-look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 8px; background: linear-gradient(180deg, rgba(30,38,90,.8), rgba(12,16,42,.75)); box-shadow: inset 0 0 0 1px rgba(255,214,140,.18); }
+.sh-look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 8px; background: var(--u-surf); box-shadow: inset 0 0 0 1px var(--u-edge); }
 .sh-look.wear { box-shadow: inset 0 0 0 2px #7dffa8, 0 0 12px rgba(125,255,168,.35); }
 .sh-look .sw { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); } .sh-look .sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
-.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #fff0c8; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
+.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #f4f6fb; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
 .pn-row .go img.ui-ic { width: 20px; height: 20px; margin: 0 4px 0 0; vertical-align: -4px; filter: none; }`;
 let styled = false;
 const cur = (k, n) => `<span class="cur" title="${CURRENCY[k].name}">${icon(CURRENCY[k].icon)}<b>${fmt(n)}</b></span>`;
@@ -38,7 +38,7 @@ export function openShop(onChange, tab0 = 'costume') {
       const wear = p.skinOn?.[hero];
       body.innerHTML = tabs + `<div class="sh-heroes">${HEROS().map((h) => { const w = p.skinOn?.[h], c = typeof w === 'string' ? COSTUMES.find((x) => x.id === w) : null;
         return `<button type="button" data-h="${h}" class="${h === hero ? 'on' : ''}" aria-label="${HEROES[h].name}">${face(h)}${c ? `<i style="background:${c.tint}"></i>` : ''}</button>`; }).join('')}</div>
-        <p class="pn-note" style="margin:0 2px 10px"><b style="color:#fff0c8">${HEROES[hero].name}</b> — phối màu vĩnh viễn, không đổi chỉ số. Mặc trong trận và ở sảnh.</p>
+        <p class="pn-note" style="margin:0 2px 10px"><b style="color:#f4f6fb">${HEROES[hero].name}</b> — phối màu vĩnh viễn, không đổi chỉ số. Mặc trong trận và ở sảnh.</p>
         <div class="sh-looks">${COSTUMES.map((c) => { const own = ownsCostume(p, hero, c.id), on = wear === c.id;
           const btn = !own ? `<button type="button" class="btn-gold go" data-buy="${c.id}" ${(p.gems || 0) >= c.price ? '' : 'disabled'}>${icon('gem')}${c.price}</button>`
             : `<button type="button" class="${on ? 'btn-blue' : 'btn-gold'} go" data-wear="${c.id}">${on ? 'Cởi' : 'Mặc'}</button>`;

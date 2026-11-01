@@ -621,3 +621,10 @@ Còn lại:
 - **Animation:** 11 clip viết tay (`tools/modelgen/heroes/hanh_hoa.anim.mjs`), đòn chạm 0,26 s; bàn chân giữ trên đất khi chùng gối (lún ≤ 2 cm, trừ
   cú lướt Cast1 ~6 cm lúc bước); độ giãn lưới ≤ 10 tam giác > 2× mỗi clip ở bản trong trận.
 - **Ảnh:** thẻ / chân dung / ảnh toàn thân (`tools/uiart/render.cjs`), ảnh xem trước trong `docs/previews/`, `docs/TONG_HOP_TUONG.md` sinh lại.
+
+## 01/11 — UI v3: giao diện + font chuyên nghiệp hơn
+- Font Saira Condensed (tiêu đề / nút / số) + Be Vietnam Pro (chữ thường); `src/ui/fonts.js` là nguồn tên phông chung cho CSS và canvas;
+  gỡ Barlow Condensed. Tổng dung lượng phông mới 119 KB (9 tệp woff2).
+- Token màu mới, chữ đứng, nút / khung / tab / thẻ nhất quán; bảng Cài đặt, cửa hàng, bảng tỉ số, đồng hồ trận, nút chiêu, bản đồ nhỏ cùng hệ.
+- Soi tràn chữ tự động ở 667 / 844 / 1280 px trên mọi màn ngoài trận: sửa tiêu đề "CHIẾN THẮNG" mất dấu, tên dài bị cắt ở màn cấm chọn /
+  bảng tỉ số / bảng tổng kết, nút màn cấm chọn tràn ở máy 667 px.

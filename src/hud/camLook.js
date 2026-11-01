@@ -8,7 +8,7 @@
 import { pref, onPref } from '../core/prefs.js';
 import { aimFocus } from './aimPad.js';
 import { on, track } from '../core/scope.js';
-const EYE = '<svg viewBox="0 0 32 32"><path d="M3 16c3.5-5.5 8-8.5 13-8.5S25.5 10.5 29 16c-3.5 5.5-8 8.5-13 8.5S6.5 21.5 3 16z" fill="none" stroke="#f3e9d6" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="4.6" fill="#ffd27a"/><circle cx="16" cy="16" r="1.9" fill="#1a1200"/></svg>';
+const EYE = '<svg viewBox="0 0 32 32"><path d="M3 16c3.5-5.5 8-8.5 13-8.5S25.5 10.5 29 16c-3.5 5.5-8 8.5-13 8.5S6.5 21.5 3 16z" fill="none" stroke="#eef1f8" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="4.6" fill="#ffd27a"/><circle cx="16" cy="16" r="1.9" fill="#1a1200"/></svg>';
 const MAX_X = 1700, MAX_Z = 1300; // độ lệch tối đa (đơn vị thế giới) — đủ thấy "đoạn sau" ngoài mép màn hình
 
 export function createCamLook({ minimap, map }) {
