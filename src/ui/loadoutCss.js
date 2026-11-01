@@ -13,7 +13,7 @@ const CSS = `
 .lo-pg.on { background: linear-gradient(90deg, rgba(255,190,90,.24), rgba(255,190,90,.05)); box-shadow: inset 0 0 0 1.5px rgba(255,214,120,.8); }
 .lo-pg.add { align-items: center; color: var(--u-gc); font: 700 13px var(--u-disp); } .lo-pg.add:disabled { opacity: .4; }
 .lo-board { --sl: clamp(34px, 10.5vh, 48px); display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; overflow-y: auto; }
-.lo-bh { display: flex; align-items: center; gap: 8px; } .lo-bh .lo-name { font: 800 italic 18px/1.1 var(--u-disp); color: #ffe6a6; letter-spacing: .03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lo-bh { display: flex; align-items: center; gap: 8px; } .lo-bh .lo-name { font: 800 18px/1.1 var(--u-disp); color: #ffe6a6; letter-spacing: .03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lo-bh .icb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: #ffe08a; font-size: 14px; }
 .lo-bh .lo-lv { margin-left: auto; font: 700 12px var(--u-disp); color: #9ad0ff; white-space: nowrap; }
 .lo-row { display: flex; align-items: center; gap: 6px; }

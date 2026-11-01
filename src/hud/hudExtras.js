@@ -8,6 +8,7 @@ import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
 import { cardSrc } from '../ui/kit.js';
 import { on, currentScope } from '../core/scope.js';
+import { DISP, font as cf } from '../ui/fonts.js';
 
 const STYLE = `
 body.no-rec #qb { display: none !important; }
@@ -63,12 +64,12 @@ export function createHudExtras({ portraits = null } = {}) {
     ctx.fillStyle = 'rgba(12,14,32,0.82)'; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = 'rgba(255,120,100,0.6)'; ctx.fillRect(x, y, 2, bh);
     let nx = x + 10;
     if (t.kind === 'hero' && portraits) { portraits.draw(ctx, t.heroId, t.data.name, x + 26, y + bh / 2, 17, foe, {}); nx = x + 50; }
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#ffd8d0';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = cf(700, 12); ctx.fillStyle = '#ffd8d0';
     ctx.fillText(t.kind === 'hero' ? (t.playerName || t.data.name) : t.data?.name || '', nx, y + 15);
     const hw = x + bw - 8 - nx, pct = Math.max(0, t.hp / t.stats.maxHp);
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(nx, y + 20, hw, 9); ctx.fillStyle = foe; ctx.fillRect(nx, y + 20, hw * pct, 9);
-    ctx.font = '700 8.5px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(`${Math.ceil(t.hp)} / ${Math.round(t.stats.maxHp)}`, nx + hw / 2, y + 28);
-    ctx.textAlign = 'left'; ctx.font = '600 10px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#c8cff5';
+    ctx.font = cf(700, 9.5); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(`${Math.ceil(t.hp)} / ${Math.round(t.stats.maxHp)}`, nx + hw / 2, y + 28);
+    ctx.textAlign = 'left'; ctx.font = cf(600, 11); ctx.fillStyle = '#c8cff5';
     ctx.fillText(`Công ${Math.round(t.stats.atk || 0)} · Giáp ${Math.round(t.stats.armor || 0)} · KP ${Math.round(t.stats.mr || 0)}`, nx, y + 43);
   }
 

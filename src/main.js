@@ -15,6 +15,7 @@ import { LITE } from './render/assets.js';
 import { loadAudio } from './audio/audio.js';
 import { hookUiSounds } from './audio/uiSounds.js';
 import { prefs } from './core/prefs.js';
+import { PRELOAD as FONT_PRELOAD } from './ui/fonts.js';
 
 const q = new URLSearchParams(location.search);
 // Nhiều ngón cùng lúc (cần, nút đánh, kỹ năng, phép, kéo camera — 5 ngón trở lên): chặn cử chỉ của trình duyệt khi có từ 2 ngón
@@ -47,7 +48,7 @@ if (q.has('hero')) {
   const next = takeNext(), p = profile();
   bootStart(next ? 'Đang trở về sảnh…' : undefined);
   await bootRun([
-    { w: 1, run: () => Promise.all([...['500', '600', '700', '800'].map((w) => `${w} 16px "Be Vietnam Pro"`), '700 16px "Barlow Condensed"', 'italic 800 16px "Barlow Condensed"'].map((f) => document.fonts?.load?.(f, 'ĐẤU HẠNG'))) },
+    { w: 1, run: () => Promise.all(FONT_PRELOAD.map((f) => document.fonts?.load?.(f, 'ĐẤU HẠNG 0123456789'))) }, // ui/fonts.js
     { w: 2, run: () => Promise.all([...new Set([...ALPHA, ...FRIENDS.map((f) => f.avatar)])].map((id) => loadImg(faceSrc(id)))) },
     { w: 2, run: () => Promise.all(['./assets/ui/lobby.jpg', './assets/ui/lobby_soft.jpg', './assets/ui/keyart.jpg'].map(loadImg)) }, // chỉ ảnh Sảnh cần (Mốc 14: tải theo nhu cầu)
     { w: 1, run: () => Promise.all([...ICONS, 'rank_' + rankOf(p.stars).id].map((n) => loadImg(iconSrc(n)))) },

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { loadHero, instantiate } from '../render/assets.js';
+import { DISP, font as cf } from '../ui/fonts.js';
 
 // Chân dung tướng (khung đầu-vai) chụp từ model thật bằng renderer của trận, một lần cho mỗi tướng, dùng cho bản đồ nhỏ, bảng tỉ số…
 // get(id) trả canvas khi đã chụp xong, null khi đang chụp (lần đầu gọi sẽ bắt đầu nạp/chụp).
@@ -49,7 +50,7 @@ export function createPortraits(renderer, size = 96) {
       const p = this.get(id);
       ctx.save(); ctx.clip();
       if (p) ctx.drawImage(p, x - r * 1.15, y - r * 1.05, r * 2.3, r * 2.3);
-      else { ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r * 1.1)}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
+      else { ctx.fillStyle = '#eef1f8'; ctx.font = `800 ${Math.round(r * 1.1)}px ${DISP}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((name || '?')[0], x, y + 1); }
       if (dead) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
       ctx.restore();
       ctx.lineWidth = Math.max(2, r * 0.22); ctx.strokeStyle = ring; ctx.stroke();

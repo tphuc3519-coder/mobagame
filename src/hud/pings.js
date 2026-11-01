@@ -21,12 +21,12 @@ const CSS = `
 #pingWheel{position:fixed;z-index:6;left:0;top:0;width:0;height:0;pointer-events:none}
 #pingWheel button{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--c);background:#11142aee;color:#fff;display:grid;place-items:center;padding:0;pointer-events:auto;touch-action:none}
 #pingWheel button.armed{background:var(--c);box-shadow:0 0 14px var(--c)} #pingWheel button svg{width:22px;height:22px}
-#pingWheel small{position:absolute;top:44px;left:50%;transform:translateX(-50%);font:700 10px 'Be Vietnam Pro',system-ui,sans-serif;white-space:nowrap;color:#f3e9d6;text-shadow:0 1px 2px #000}
+#pingWheel small{position:absolute;top:44px;left:50%;transform:translateX(-50%);font:700 10px 'Be Vietnam Pro',system-ui,sans-serif;white-space:nowrap;color:#eef1f8;text-shadow:0 1px 2px #000}
 #pingHint{position:fixed;z-index:6;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 48px));transform:translateX(-50%);font:700 13px 'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:#11142acc;border:1px solid #c9b47a88;border-radius:14px;padding:4px 12px;pointer-events:none}
 #pingFeed{position:fixed;z-index:4;left:calc(max(8px,env(safe-area-inset-left)));top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 80px);width:min(300px,38vw);pointer-events:none;display:flex;flex-direction:column;gap:3px}
 @media (min-height:560px){#pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 146px)}}
 body.shop-right #pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 8px)}
-#pingFeed div{font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;color:#f3e9d6;text-shadow:0 1px 2px #000;background:linear-gradient(90deg,#0b0e1ecc,#0b0e1e00);padding:2px 6px;border-radius:6px;transition:opacity .5s}
+#pingFeed div{font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;color:#eef1f8;text-shadow:0 1px 2px #000;background:linear-gradient(90deg,#0b0e1ecc,#0b0e1e00);padding:2px 6px;border-radius:6px;transition:opacity .5s}
 #pingFeed div i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0} #pingFeed div b{color:#9fd8ff} #pingFeed div b.me{color:#ffd27a} #pingFeed div.fail{color:#aab;font-style:italic}`;
 /** Biểu tượng từng loại (SVG trong nút, vẽ lại bằng canvas trên huy hiệu). */
 const ICON = {

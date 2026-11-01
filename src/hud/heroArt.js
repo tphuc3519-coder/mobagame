@@ -64,7 +64,7 @@ const TH = {
   bong_tre: { bg: ['#1a5a34', '#082414', '#020a06'], glow: '#5dffa0', rim: ['#e2ffe8', '#3f8a5a', '#0e2a18'] },
   nguyet_ha: { bg: ['#2a3a7a', '#0e1440', '#04061a'], glow: '#a8d4ff', rim: ['#ffffff', '#9aa8c4', '#3a4460'] },
   canh_dieu: { bg: ['#2a6aa8', '#0e2c54', '#040e1e'], glow: '#d8f4ff', rim: ['#ffffff', '#d8ccaa', '#6a5a36'] },
-  long_dang: { bg: ['#7a3010', '#2e0e06', '#0c0402'], glow: '#ffbe4a', rim: ['#fff2cc', '#d8a040', '#5a3008'] },
+  long_dang: { bg: ['#7a3010', '#2e0e06', '#0c0402'], glow: '#ffbe4a', rim: ['#f4f6fb', '#d8a040', '#5a3008'] },
 };
 
 /** Từng chiêu: trả về [body, fx, (tuỳ chọn) glowAt]. */

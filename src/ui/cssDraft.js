@@ -16,9 +16,9 @@ const CSS = `
 #draft .dr-timer { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; }
 #draft .dr-timer svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 #draft .dr-timer .tr { fill: rgba(4,6,20,.82); stroke: rgba(255,255,255,.12); stroke-width: 5; } #draft .dr-timer .tp { fill: none; stroke: #8fd8ff; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset .22s linear; filter: drop-shadow(0 0 4px #4fa8ff); }
-#draft .dr-timer b { position: relative; font: 800 italic 20px/1 var(--u-disp); color: #fff; text-shadow: 0 0 10px #4fa8ff; }
+#draft .dr-timer b { position: relative; font: 800 20px/1 var(--u-disp); color: #fff; text-shadow: 0 0 10px #4fa8ff; }
 #draft .dr-timer.low .tp { stroke: #ff6a5a; filter: drop-shadow(0 0 4px #ff3a2a); } #draft .dr-timer.low b { color: #ffd8d0; text-shadow: 0 0 10px #ff3a2a; }
-#draft .dr-tt { min-width: 0; } #draft .dr-phase { display: inline-block; font: 800 italic clamp(18px, 6vh, 26px)/1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; padding-right: 4px; white-space: nowrap; }
+#draft .dr-tt { min-width: 0; } #draft .dr-phase { display: inline-block; font: 800 clamp(18px, 6vh, 26px)/1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; padding-right: 4px; white-space: nowrap; }
 #draft .dr-who { display: block; margin-top: 2px; font: 600 11px var(--u-body); color: var(--u-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #draft .dr-who.me { color: var(--u-gc); font-weight: 700; }
 #draft .dr-col { position: absolute; top: calc(var(--t) + var(--top) + 4px); bottom: var(--b); width: var(--colw); display: flex; flex-direction: column; gap: 4px; }
 #draft .dr-col.blue { left: var(--l); } #draft .dr-col.red { right: var(--r); }
@@ -32,7 +32,7 @@ const CSS = `
 #draft .dr-row.now { animation: pickP 1.2s ease-in-out infinite; } #draft .dr-row.me.now { animation-name: pickG; }
 #draft .dr-row .face, #draft .dr-row .ini, #draft .dr-row .qm { width: clamp(30px, 9vh, 40px); height: clamp(30px, 9vh, 40px); border-radius: 50%; flex: none; box-shadow: 0 0 0 1.5px rgba(143,211,255,.6); }
 #draft .red .dr-row .face, #draft .red .dr-row .qm { box-shadow: 0 0 0 1.5px rgba(255,138,122,.7); } #draft .dr-row.me .face, #draft .dr-row.me .ini { box-shadow: 0 0 0 1.5px #ffd36a; }
-#draft .dr-row .qm { display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #2a3666, #10163a); color: #6f8ae8; font: 800 italic 18px var(--u-disp); }
+#draft .dr-row .qm { display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #2a3666, #10163a); color: #6f8ae8; font: 800 18px var(--u-disp); }
 #draft .dr-row .hov { opacity: .45; }
 #draft .dr-row > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 #draft .red .dr-row > div { align-items: flex-end; }
@@ -54,10 +54,10 @@ const CSS = `
 #draft .hc.ban::after, #draft .hc.ally::after, #draft .hc.mine::after, #draft .hc.foe::after { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.66); font: 700 12px var(--u-disp); letter-spacing: .06em; text-transform: uppercase; color: #ffcf8a; }
 #draft .hc.ban::after { content: 'Bị cấm'; background: linear-gradient(45deg, transparent 46%, rgba(255,58,42,.9) 46% 54%, transparent 54%), rgba(0,0,0,.62); color: #ffb4a4; }
 #draft .hc.ally::after { content: 'Đồng đội'; } #draft .hc.mine::after { content: 'Bạn'; color: #ffe08a; } #draft .hc.foe::after { content: 'Đối thủ'; color: #ff9a8a; }
-.hc em.rec, #pick .hc em.rec, #draft .hc em.rec { position: absolute; top: 3px; left: 3px; right: auto; padding: 1px 5px; border-radius: 4px; background: var(--u-gold); color: #3b1a02; font: 800 italic 9.5px/1.2 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; }
+.hc em.rec, #pick .hc em.rec, #draft .hc em.rec { position: absolute; top: 3px; left: 3px; right: auto; padding: 1px 5px; border-radius: 4px; background: var(--u-gold); color: #3b1a02; font: 800 9.5px/1.2 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; }
 #draft .dr-bar { position: absolute; left: calc(var(--l) + var(--colw) + 10px); right: calc(var(--r) + var(--colw) + 10px); bottom: var(--b); height: var(--bar); display: flex; align-items: center; gap: 8px; }
 #draft .dr-info { flex: 1; min-width: 0; }
-#draft .dr-info b { display: block; font: 800 italic clamp(16px, 5.4vh, 22px)/1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; color: #fff2cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000; }
+#draft .dr-info b { display: block; font: 800 clamp(16px, 5.4vh, 22px)/1 var(--u-disp); letter-spacing: .03em; text-transform: uppercase; color: #f4f6fb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000; }
 #draft .dr-info small { display: block; margin-top: 3px; font-size: 11px; color: var(--u-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #draft .dr-go { flex: none; width: clamp(120px, 18vw, 170px); height: clamp(40px, 11vh, 48px); padding: 0 10px; font-size: clamp(18px, 5.6vh, 22px); }
 #draft .dr-skip { flex: none; height: 32px; padding: 0 12px; font-size: 13px; } #draft .dr-skip[hidden] { display: none; }
@@ -66,7 +66,7 @@ const CSS = `
 #draft:not(.ph-prep) .dr-prep, #draft.ph-prep .dr-mid, #draft.ph-prep .dr-bar { display: none; }
 #draft .dr-spell { position: relative; flex: none; width: 46px; height: 46px; padding: 2px; border: 0; border-radius: 50%; background: var(--u-rim); box-shadow: 0 0 0 1px #2a1606, 0 4px 8px rgba(0,0,0,.6); margin-bottom: 12px; }
 #draft .dr-spell svg, #draft .dr-spell img, #draft .dr-spell canvas { width: 100%; height: 100%; border-radius: 50%; }
-#draft .dr-spell small { position: absolute; left: 50%; top: 100%; margin-top: 2px; transform: translateX(-50%); font: 700 10.5px/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; color: #f3e9d6; text-shadow: 0 1px 2px #000; }
+#draft .dr-spell small { position: absolute; left: 50%; top: 100%; margin-top: 2px; transform: translateX(-50%); font: 700 10.5px/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; color: #eef1f8; text-shadow: 0 1px 2px #000; }
 #draft .dr-pill { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 17px; background: linear-gradient(180deg, rgba(30,36,80,.92), rgba(8,12,34,.92)); box-shadow: inset 0 0 0 1px rgba(255,214,140,.45), 0 3px 8px rgba(0,0,0,.5); font: 600 12.5px var(--u-body); color: #f3ead2; white-space: nowrap; }
 #draft .dr-pill b { font: 700 13px var(--u-disp); letter-spacing: .06em; text-transform: uppercase; color: var(--u-gc); margin-right: 6px; }
 #draft .dr-ready { flex: none; width: clamp(130px, 20vw, 180px); padding: 0 10px; }
@@ -90,7 +90,7 @@ em.rl { display: inline-flex; flex: none; align-items: center; gap: 3px; width: 
 /* contain: inline-size — dòng gợi ý đổi chữ theo vị trí vừa bấm mà KHÔNG được góp bề ngang vào hộp (trước: hộp co 503 ↔ 458 px rồi canh giữa
    lại = rung ngang mỗi lần chọn); giữ sẵn chỗ 2 dòng để câu dài lúc chưa chọn xuống dòng cũng không đẩy hộp cao thấp. */
 .rl-hint { margin: 2px 0 0; min-height: 2.7em; contain: inline-size; font-size: 11.5px; line-height: 1.35; color: var(--u-dim); }
-.rl-got { margin-top: 6px; display: flex; gap: 5px; align-items: center; justify-content: center; color: #fff2cc; } .rl-got .rl-ic { width: 18px; height: 18px; color: var(--u-gc); } .rl-got b { color: var(--u-gc); } .rl-got small { color: var(--u-dim); }
+.rl-got { margin-top: 6px; display: flex; gap: 5px; align-items: center; justify-content: center; color: #f4f6fb; } .rl-got .rl-ic { width: 18px; height: 18px; color: var(--u-gc); } .rl-got b { color: var(--u-gc); } .rl-got small { color: var(--u-dim); }
 @media (max-height: 420px) { .rl-tile { height: 46px; } .rl-tile .rl-ic { width: 18px; height: 18px; } .ui-dlg .txt:has(.rl-dlg) + .btns { margin-top: 8px; } }
 `;
 

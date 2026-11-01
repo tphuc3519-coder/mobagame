@@ -7,6 +7,7 @@ import { createKillBanner } from './killBanner.js';
 import { createHudExtras } from './hudExtras.js';
 import { on } from '../core/scope.js';
 import { selfBarRect } from './layout.js';
+import { DISP, font as cf } from '../ui/fonts.js';
 
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
@@ -55,7 +56,7 @@ export function createHud(canvas, input, portraits = null) {
     if (!document.fonts || document.fonts.check(font, text)) { tags.set(key, c); if (tags.size > 160) tags.delete(tags.keys().next().value); } // check theo chữ: phần dấu tiếng Việt là tệp phông riêng
     return c;
   }
-  const NAME_F = '700 12px "Be Vietnam Pro", system-ui, sans-serif', LV_F = '800 10px "Be Vietnam Pro", system-ui, sans-serif';
+  const NAME_F = cf(700, 12), LV_F = cf(800, 11);
   /** Tên trên đầu tướng: chữ trắng xanh / hồng viền tối, căn giữa, đáy chữ tại (x, y). */
   const nameTag = (nm, fill) => { mctx.font = NAME_F; const bw = Math.ceil(mctx.measureText(nm).width) + 8, bh = 18;
     return tag('n' + nm + fill, NAME_F, nm, bw, bh, (x) => { x.font = NAME_F; x.textAlign = 'center'; x.textBaseline = 'bottom'; x.lineJoin = 'round'; x.lineWidth = 3; x.strokeStyle = 'rgba(0,0,0,0.75)'; x.strokeText(nm, bw / 2, bh - 2); x.fillStyle = fill; x.fillText(nm, bw / 2, bh - 2); }); };
@@ -82,15 +83,15 @@ export function createHud(canvas, input, portraits = null) {
     ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a0c10'; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.stroke();
     ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#ffb84d'; ctx.stroke();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff3d6'; ctx.font = `800 ${left >= 10 ? 21 : 24}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.fillText(String(left), rx, ry + 1);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff3d6'; ctx.font = `800 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);
     // kẻ hạ
-    ctx.textAlign = 'left'; ctx.fillStyle = '#ffcf9a'; ctx.font = '700 11px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#ffcf9a'; ctx.font = cf(700, 12); ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
     let nx = rx + 34;
     const col = d.team == null ? '#e8d48a' : d.team === player.team ? '#38b8ff' : '#ff4a3a';
     if (d.heroId && portraits) { portraits.draw(ctx, d.heroId, d.name, nx + 11, ry + 9, 11, col, {}); nx += 27; }
-    ctx.font = '800 15px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = d.kind === 'monster' ? '#ffe8b0' : d.team === player.team ? '#cfe8ff' : '#ffd0c8';
+    ctx.font = cf(800, 15); ctx.fillStyle = d.kind === 'monster' ? '#ffe8b0' : d.team === player.team ? '#cfe8ff' : '#ffd0c8';
     ctx.fillText(d.name, nx, ry + 9);
-    ctx.fillStyle = 'rgba(255,230,190,0.75)'; ctx.font = '600 10px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,230,190,0.75)'; ctx.font = cf(600, 11); ctx.textAlign = 'center';
     ctx.fillText('Vẫn mua đồ được · giữ bản đồ nhỏ để xem trận', cx, y + ph + 10);
   }
 
@@ -102,10 +103,10 @@ export function createHud(canvas, input, portraits = null) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     const st = f.st;
     if (!st) { // hồi máu, chặn bằng khiên
-      ctx.font = `800 ${size}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.strokeText(f.text, 0, 0);
+      ctx.font = `800 ${size}px ${DISP}`; ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.strokeText(f.text, 0, 0);
       ctx.fillStyle = f.color || '#f4f4f4'; ctx.fillText(f.text, 0, 0); ctx.restore(); return;
     }
-    const font = (px) => `${f.crit ? 'italic 900' : '800'} ${px}px "Be Vietnam Pro", system-ui, sans-serif`;
+    const font = (px) => `${f.crit ? 800 : 700} ${px}px ${DISP}`; // chí mạng đậm hơn + to hơn (không nghiêng)
     if (f.crit) { // hình nổ răng cưa sau số + biểu tượng loại sát thương bên trái
       if (f.tw1 == null) { ctx.font = font(100); f.tw1 = ctx.measureText(f.text).width / 100; } // đo một lần (bề rộng tỉ lệ cỡ chữ) — measureText mỗi khung tốn
       const tw = f.tw1 * size; ctx.font = font(size);
@@ -177,7 +178,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       // thanh máu trên đầu
-      ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.font = cf(600, 12); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       let ccPill = null; // khống chế đang dính trên tướng mình: vẽ thêm ô đếm giờ to dưới chân
       for (const e of world.entities) {
         if (!e.alive || e.noTarget || (e.team !== player.team && e.statuses.some((s) => s.kind === 'stealth')) || !canSee(player.team, e)) continue;
@@ -187,6 +188,7 @@ export function createHud(canvas, input, portraits = null) {
           const bw = 86, bh = 8, x0 = p.x - bw / 2 + 8, y0 = p.y - 14; // gọn, cao trên đầu: tên không bị đầu tướng che
           ctx.fillStyle = 'rgba(8,10,20,0.85)'; ctx.fillRect(x0 - 1.5, y0 - 1.5, bw + 3, bh + 7);
           ctx.fillStyle = e.invulnerable ? '#9a9aa8' : col; ctx.fillRect(x0, y0, bw * Math.max(0, Math.min(1, e.hp / e.stats.maxHp)), bh);
+          ctx.fillStyle = 'rgba(255,255,255,0.26)'; ctx.fillRect(x0, y0, bw * Math.max(0, Math.min(1, e.hp / e.stats.maxHp)), 2); // vệt sáng mép trên: thanh có khối
           const sh = e.shields.reduce((a, q) => a + q.amount, 0);
           if (sh > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 + bw * Math.min(1, e.hp / e.stats.maxHp), y0, Math.min(bw, bw * sh / e.stats.maxHp), bh); }
           ctx.fillStyle = 'rgba(8,10,20,0.75)'; for (let v = 250; v < e.stats.maxHp; v += 250) { const tx = x0 + bw * v / e.stats.maxHp; ctx.fillRect(tx, y0, v % 1000 ? 1 : 2, v % 1000 ? bh * 0.55 : bh); }
@@ -196,7 +198,7 @@ export function createHud(canvas, input, portraits = null) {
           const lt = levelTag(e.level, col); ctx.drawImage(lt, hx - 12, hy - 12, lt.w, lt.h);
           const nm = e.playerName || e.data.name; // tên người chơi (như Liên Quân); vào thẳng trận không có tên thì hiện tên tướng
           const nt = nameTag(nm, e.team === player.team ? '#e8f4ff' : '#ffd8d0'); ctx.drawImage(nt, p.x + 8 - nt.w / 2, y0 - 4 - (nt.h - 2), nt.w, nt.h);
-          ctx.textBaseline = 'bottom'; ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
+          ctx.textBaseline = 'bottom'; ctx.font = cf(600, 12);
           const buffs = e.statuses.filter((q) => q.buff); // huy hiệu bùa rừng cạnh huy hiệu cấp
           buffs.forEach((q, i) => { const bx2 = x0 - 10, by2 = y0 - 20 - i * 18, c2 = { an_thuy: '#3fa8ff', an_hoa: '#ff5a2a', uy_ho: '#b98aff' }[q.buff] || '#fff';
             ctx.beginPath(); ctx.arc(bx2, by2, 8, 0, 7); ctx.fillStyle = '#141830'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = c2; ctx.stroke();
@@ -210,9 +212,9 @@ export function createHud(canvas, input, portraits = null) {
             bar(x0, y0, bw, bh, pct, '#f2b33a');
             if (tr.v > pct + 0.002) { ctx.fillStyle = 'rgba(255,248,232,0.85)'; ctx.fillRect(x0 + bw * pct, y0, bw * (tr.v - pct), bh); }
             const hot = e.aggro != null || tn - (monHit.get(e.id) ?? -99) < 4;
-            if (hot) { ctx.font = `800 ${e.boss ? 16 : 12}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.lineWidth = e.boss ? 4 : 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); } // boss: số to hơn
-            if (e.boss || bw > 90) { const ny = hot ? y0 - (e.boss ? 20 : 16) : p.y - 10; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
-            ctx.font = '600 11px "Be Vietnam Pro", system-ui, sans-serif';
+            if (hot) { ctx.font = `800 ${e.boss ? 16 : 12}px ${DISP}`; ctx.lineWidth = e.boss ? 4 : 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); } // boss: số to hơn
+            if (e.boss || bw > 90) { const ny = hot ? y0 - (e.boss ? 20 : 16) : p.y - 10; ctx.font = cf(700, 12); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
+            ctx.font = cf(600, 12);
             continue;
           }
           bar(p.x - bw / 2, p.y - 6, bw, e.kind === 'minion' ? 4 : 7, e.hp / e.stats.maxHp, e.invulnerable ? '#9a9aa8' : col);
@@ -224,14 +226,14 @@ export function createHud(canvas, input, portraits = null) {
         const cc = hardCc(e, world.tick); // khống chế cứng mạnh nhất: chữ + (tướng) dải thời gian rút dần dưới thanh năng lượng
         if (cc) {
           const [label, ccol] = CC_STYLE[cc.kind];
-          ctx.fillStyle = ccol; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText(label, p.x, p.y - (isHero ? 48 : 24));
+          ctx.fillStyle = ccol; ctx.font = cf(800, 13); ctx.fillText(label, p.x, p.y - (isHero ? 48 : 24));
           if (isHero) { const bw = 86, x0 = p.x - bw / 2 + 8, yb = p.y - 14 + 8 + (e.channel && world.tick < e.channel.until ? 8 : 5), th = e.id === player.id ? 5 : 4;
             ctx.fillStyle = 'rgba(8,10,20,0.85)'; ctx.fillRect(x0 - 1, yb - 1, bw + 2, th + 2); ctx.fillStyle = ccol; ctx.fillRect(x0, yb, bw * cc.frac, th); }
           if (e.id === player.id) ccPill = { cc, x: p.x };
         }
-        else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
-        else if (isHero && e.statuses.some((s) => s.kind === 'weaken' && s.until > world.tick)) { ctx.fillStyle = '#c89aff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('SUY YẾU', p.x, p.y - 48); } // Bùa Mỏi
-        if (e.structure && world.tick < (e.disabledUntil || 0)) { ctx.fillStyle = '#9ad0ff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillText('TẮT ĐÈN ' + Math.ceil((e.disabledUntil - world.tick) / 30) + 's', p.x, p.y - 14); } // Tắt Đèn
+        else if (e.statuses.some((s) => s.id === 'unstoppable')) { ctx.fillStyle = '#ffcf6a'; ctx.font = cf(800, 13); ctx.fillText('KHÔNG THỂ CẢN', p.x, p.y - (isHero ? 48 : 24)); }
+        else if (isHero && e.statuses.some((s) => s.kind === 'weaken' && s.until > world.tick)) { ctx.fillStyle = '#c89aff'; ctx.font = cf(800, 13); ctx.fillText('SUY YẾU', p.x, p.y - 48); } // Bùa Mỏi
+        if (e.structure && world.tick < (e.disabledUntil || 0)) { ctx.fillStyle = '#9ad0ff'; ctx.font = cf(800, 13); ctx.fillText('TẮT ĐÈN ' + Math.ceil((e.disabledUntil - world.tick) / 30) + 's', p.x, p.y - 14); } // Tắt Đèn
       }
       if (ccPill) { // ô khống chế của mình: viền + nền màu loại khống chế rút dần, chữ "CHOÁNG 1,2s", nằm dưới chân, kẹp trong màn
         const fp = project(cam, player.pos.x, floorAt(world.map, player.pos.x, player.pos.y), player.pos.y, w, h), [label, ccol] = CC_STYLE[ccPill.cc.kind];
@@ -239,7 +241,7 @@ export function createHud(canvas, input, portraits = null) {
         ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = 'rgba(10,12,24,0.85)'; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.fill();
         ctx.beginPath(); ctx.roundRect(px, py, Math.max(ph, pw * ccPill.cc.frac), ph, 12); ctx.fillStyle = ccol + '80'; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = ccol; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 12); ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.font = '800 13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff'; ctx.font = cf(800, 13); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(`${label} ${ccPill.cc.left.toFixed(1).replace('.', ',')}s`, px + pw / 2, py + ph / 2 + 0.5); ctx.restore();
         ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       }
@@ -255,7 +257,7 @@ export function createHud(canvas, input, portraits = null) {
       const sh = player.shields.reduce((a, s) => a + s.amount, 0);
       if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
       bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 10px "Be Vietnam Pro", ui-monospace, monospace'; ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = cf(700, 11); ctx.fillStyle = '#fff';
       const gg = player.data.passive?.gauge?.(player, world); // thanh nội tại của tướng (Nụ, Ấn, Tầm Nhìn…)
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}${gg ? `    ${gg.label}${gg.max > 1 ? ` ${gg.v}${gg.unit || ''}/${gg.max}${gg.unit || ''}` : ''}` : ''}`, bx + 6, by + 6);
       // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
@@ -266,7 +268,7 @@ export function createHud(canvas, input, portraits = null) {
         if (!player.alive) continue;
         const p = project(cam, player.pos.x, HERO_BAR_Y + 70 + floorAt(world.map, player.pos.x, player.pos.y) + Math.sqrt(t / life) * 110, player.pos.y, w, h); if (!p.visible) continue;
         const big = g.amount >= 150, sz = (big ? 21 : 14) * (1 + 0.35 * Math.max(0, 1 - t / 0.12)), txt = '+' + g.amount;
-        ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+        ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px ${DISP}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
         const tw = ctx.measureText(txt).width, cr = sz * 0.42, x0 = p.x - (tw + cr * 2 + 3) / 2, cyy = p.y - (i % 3) * 6;
         const cg = ctx.createRadialGradient(x0 + cr - cr * 0.3, cyy - cr * 0.3, cr * 0.1, x0 + cr, cyy, cr); cg.addColorStop(0, '#fff6c0'); cg.addColorStop(0.6, '#ffc83a'); cg.addColorStop(1, '#c47a00');
         ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = cg; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#5a3200'; ctx.stroke();
@@ -293,7 +295,7 @@ export function createHud(canvas, input, portraits = null) {
         ctx.globalAlpha = 1;
       }
       if (debugLines?.length) {
-        ctx.font = '12px "Be Vietnam Pro", ui-monospace, monospace'; ctx.fillStyle = '#f3e9d6'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+        ctx.font = '12px "Be Vietnam Pro", ui-monospace, monospace'; ctx.fillStyle = '#eef1f8'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
         debugLines.forEach((t, i) => ctx.fillText(t, 260, 56 + i * 15));
       }
     },
