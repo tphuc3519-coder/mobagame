@@ -6,11 +6,11 @@ import { BAG, CHEST, SHARD_SHOP, CURRENCY } from '../data/rewards.js';
 import { showRewards } from './rewards.js';
 import { panelCss } from './panels.js';
 
-const STYLE = `.bg-cur { display: flex; gap: 10px; } .bg-cur .cur { display: inline-flex; align-items: center; gap: 4px; font: 700 15px/1 var(--u-disp); color: #ffe8a8; } .bg-cur img.ui-ic { width: 22px; height: 22px; }
-.pn-row .lim { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font: 700 10.5px/1.5 var(--u-body); font-style: normal; color: #1c1206; background: #ffc85a; vertical-align: 2px; }
+const STYLE = `.bg-cur { display: flex; gap: 10px; } .bg-cur .cur { display: inline-flex; align-items: center; gap: 4px; font: 700 15px/1 var(--u-disp); color: var(--c-yel); } .bg-cur img.ui-ic { width: 22px; height: 22px; }
+.pn-row .lim { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font: 700 10.5px/1.5 var(--u-body); font-style: normal; color: var(--ink); background: var(--c-yel); vertical-align: 2px; }
 .pn-row .lim.on { background: #7dffa8; } .pn-row .btns2 { display: flex; gap: 8px; flex: none; } .pn-row .btns2 .go { min-width: 84px; }
 .pn-row .go img.ui-ic { width: 20px; height: 20px; margin: 0 4px 0 0; vertical-align: -4px; filter: none; }
-.pn-row.chest { background: linear-gradient(90deg, rgba(110,70,20,.8), rgba(40,24,6,.6)); box-shadow: inset 0 0 0 1px rgba(255,214,120,.55), 0 3px 8px rgba(0,0,0,.35); }`;
+.pn-row.chest { background: #4a3f7a; box-shadow: 0 0 0 3px var(--c-yel), 0 3px 0 var(--ink); }`;
 let styled = false;
 const left = (exp, now) => { const ms = exp - now, h = Math.floor(ms / 3600000); return h >= 48 ? `${Math.floor(h / 24)} ngày` : h >= 1 ? `${h} giờ` : `${Math.max(1, Math.ceil(ms / 60000))} phút`; };
 const cur = (k, n) => `<span class="cur" title="${CURRENCY[k].name}">${icon(CURRENCY[k].icon)}<b>${fmt(n)}</b></span>`;

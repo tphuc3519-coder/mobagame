@@ -38,8 +38,8 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     const members = [...S.party.map((f) => ({ kind: 'fr', f })), ...[...pending.keys()].map((f) => ({ kind: 'wait', f }))];
     members.forEach((m, i) => { if (order[i] !== undefined) cells[order[i]] = m; });
     return cells.map((c) => {
-      if (c.kind === 'me') { const r = rankNow(); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}${r.name}</span>${M.map === '5v5' ? roleChip(p) : ''}</div>`; }
-      if (c.kind === 'fr') return `<div class="seat mate"><div class="box fr blue">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="sn">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 22)}${c.f.rank.name}</span></div>`;
+      if (c.kind === 'me') { const r = rankNow(); return `<div class="seat me"><div class="box fr hot">${face(p.avatar)}</div>${icon('star', 'host')}<b class="sn">${p.name}</b><span class="rk">${rankBadge(r, 22)}<em>${r.name}</em></span>${M.map === '5v5' ? roleChip(p) : ''}</div>`; }
+      if (c.kind === 'fr') return `<div class="seat mate"><div class="box fr blue">${face(c.f.avatar)}</div>${mm ? '' : `<button type="button" class="kick" data-kick="${c.f.id}" aria-label="Mời ra">✕</button>`}<b class="sn">${c.f.name}</b><span class="rk">${rankBadge(c.f.rank, 22)}<em>${c.f.rank.name}</em></span></div>`;
       if (c.kind === 'wait') return `<div class="seat wait"><div class="box fr blue">${face(c.f.avatar)}</div><b class="sn">${c.f.name}</b><span class="rk">Đang mời…</span></div>`;
       return `<div class="seat empty"><div class="box" data-a="invite"><i class="plus">+</i></div><b class="sn">Mời bạn</b></div>`;
     }).join('');

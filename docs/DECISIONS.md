@@ -1020,3 +1020,11 @@
   thẻ sự kiện; vệt sáng lướt chỉ ở nút vào trận; bảng Cài đặt bỏ tông tím lam riêng; HUD trong trận (nút chiêu có vòng kim loại, chiêu chưa
   học vẫn thấy hình, bản đồ nhỏ, đồng hồ trận, cửa hàng, bảng tỉ số) và chữ vẽ trên canvas (tên, máu, sát thương, thông báo hạ gục) cùng hệ.
   Không đổi bố cục, id hay selector (mọi kiểm thử trình duyệt giữ nguyên); không đụng model.
+- 2026-11-02: **UI v4 "hoạt hình phẳng"** thay UI v3 (chủ dự án: *"giao diện đậm AI quá, thay đổi font màu, font chữ, UI toàn bộ để ko bị
+  đậm AI nữa"*). Dựng 3 mẫu thử (A tối giản chuyên nghiệp, B giấy mực, C hoạt hình phẳng), chủ dự án chọn **C**. Lý do UI v3 trông "AI": dải
+  vàng kim + quầng sáng + kính mờ + chữ in hoa giãn chữ trên mọi khung — mẫu đặc trưng của giao diện sinh tự động. UI v4: màu phẳng, viền mực
+  dày 3px, bóng cứng không nhoè, bo góc 12–16px, chữ tròn đậm **Baloo 2** (OFL, gói @fontsource 5.3.0, tự host) cho tiêu đề / nút / số, giữ
+  **Be Vietnam Pro** cho chữ thường; mục đang chọn là vàng đặc chữ mực. Áp cho mọi màn ngoài trận, bảng Cài đặt, HUD trong trận và chữ vẽ
+  trên canvas. Chuyển phần lớn quy tắc bằng một lượt máy (bỏ nhoè / dải màu / in hoa, ánh xạ màu vàng kim sang vàng phẳng / mực) rồi chỉnh
+  tay từng màn theo ảnh chụp. Tên token cũ giữ lại (ánh xạ sang màu phẳng) để không phải sửa mọi màn; id / selector / bố cục không đổi;
+  không đụng model.
