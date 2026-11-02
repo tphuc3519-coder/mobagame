@@ -35,26 +35,26 @@ const left = (exp) => { const ms = exp - Date.now(), h = Math.floor(ms / 3600000
 
 const CSS = `
 #rewardScr { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  background: radial-gradient(60% 60% at 50% 45%, rgba(40,32,80,.93), rgba(3,4,14,.98)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: rwIn .25s ease-out; overflow: hidden; }
-#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 12% 30%, #ffe7a8, transparent), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
-  radial-gradient(2px 2px at 34% 72%, #ffd06a, transparent), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), radial-gradient(2.5px 2.5px at 88% 58%, #ffe7a8, transparent), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
+  background: radial-gradient(60% 60% at 50% 45%, rgba(40,32,80,.93), rgba(3,4,14,.98));   animation: rwIn .25s ease-out; overflow: hidden; }
+#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
+  linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
   animation: rwTw 3.2s ease-in-out infinite alternate; opacity: .8; }
-#rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 clamp(26px, 5.4vh, 44px)/1 var(--u-disp); letter-spacing: .04em; text-transform: uppercase; }
-#rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, 16vw, 200px); height: 2px; background: linear-gradient(90deg, rgba(255,214,140,0), #ffd68c); }
+#rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 clamp(26px, 5.4vh, 44px)/1 var(--u-disp);   }
+#rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, 16vw, 200px); height: 4px; border-radius: 2px; background: var(--c-yel); box-shadow: 0 2px 0 var(--ink); }
 #rewardScr h2::after { transform: scaleX(-1); }
-#rewardScr h2 i { position: absolute; left: 50%; bottom: -14px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: #ffd68c; box-shadow: 0 0 10px #ffb84a; }
+#rewardScr h2 i { position: absolute; left: 50%; bottom: -14px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: var(--c-yel); box-shadow: none; }
 #rewardScr .rw { display: grid; grid-template-columns: repeat(var(--cols), clamp(78px, 15vh, 112px)); gap: clamp(10px, 2.4vh, 18px); justify-content: center; }
 #rewardScr .tl { position: relative; aspect-ratio: 1; display: grid; place-items: center; border-radius: 12px; cursor: pointer; padding: 0; border: 0;
-  background: radial-gradient(70% 70% at 50% 35%, rgba(255,214,140,.22), rgba(20,26,64,.92)), #141a40; box-shadow: inset 0 0 0 2px rgba(255,214,140,.55), 0 6px 16px rgba(0,0,0,.45);
+  background: radial-gradient(70% 70% at 50% 35%, rgba(255,210,63,0.22), rgba(20,26,64,.92)), #141a40; box-shadow: inset 0 0 0 2px var(--ink), 0 4px 0 var(--ink);
   animation: rwPop .42s cubic-bezier(.2,.9,.3,1.35) both; animation-delay: calc(var(--i) * 120ms); }
-#rewardScr .tl img.ui-ic { width: 58%; height: 58%; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
-#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 17px/1 var(--u-disp); color: #fff; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.8); }
-#rewardScr .tl em { position: absolute; left: 0; right: 0; top: -9px; margin: auto; width: max-content; padding: 1px 7px; border-radius: 8px; font: 700 10px/1.5 var(--u-body); font-style: normal; color: #1c1206; background: #ffc85a; }
-#rewardScr .tl.on { box-shadow: inset 0 0 0 2px #ffe7a8, 0 0 18px rgba(255,200,90,.6); }
-#rewardScr .tip { position: absolute; z-index: 2; width: min(260px, 70vw); padding: 10px 12px; text-align: left; border-radius: 10px; background: rgba(8,10,30,.97); box-shadow: inset 0 0 0 1px rgba(255,214,140,.5), 0 8px 22px rgba(0,0,0,.6); font-size: 13px; color: #dfe6ff; line-height: 1.45; pointer-events: none; }
-#rewardScr .tip h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 800 15px/1.2 var(--u-body); color: #ffe08a; } #rewardScr .tip h4 img { width: 22px; height: 22px; }
-#rewardScr .tip small { display: block; color: #9fb0d8; } #rewardScr .tip .x { color: #ffb070; font-weight: 700; }
-#rewardScr .go { padding: 9px 26px; border-radius: 22px; font-size: 14px; color: #dfe6ff; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); animation: rwIn .4s ease-out both; animation-delay: calc(var(--n) * 120ms + 300ms); }
+#rewardScr .tl img.ui-ic { width: 58%; height: 58%; filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); }
+#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 17px/1 var(--u-disp); color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); }
+#rewardScr .tl em { position: absolute; left: 0; right: 0; top: -9px; margin: auto; width: max-content; padding: 1px 7px; border-radius: 8px; font: 700 10px/1.5 var(--u-body); font-style: normal; color: var(--ink); background: var(--c-yel); }
+#rewardScr .tl.on { box-shadow: inset 0 0 0 2px var(--c-yel), 0 0 0 3px var(--c-yel); }
+#rewardScr .tip { position: absolute; z-index: 2; width: min(260px, 70vw); padding: 10px 12px; text-align: left; border-radius: 10px; background: rgba(8,10,30,.97); box-shadow: inset 0 0 0 2px var(--ink), 0 4px 0 var(--ink); font-size: 13px; color: #dfe6ff; line-height: 1.45; pointer-events: none; }
+#rewardScr .tip h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 800 15px/1.2 var(--u-body); color: var(--c-yel); } #rewardScr .tip h4 img { width: 22px; height: 22px; }
+#rewardScr .tip small { display: block; color: #9fb0d8; } #rewardScr .tip .x { color: var(--c-yel); font-weight: 700; }
+#rewardScr .go { padding: 9px 26px; border-radius: 22px; font-size: 14px; color: #dfe6ff; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px var(--ink); animation: rwIn .4s ease-out both; animation-delay: calc(var(--n) * 120ms + 300ms); }
 @keyframes rwIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rwPop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes rwTw { from { opacity: .45; } to { opacity: .95; } }

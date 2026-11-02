@@ -12,9 +12,9 @@ import { DISP, font as cf } from '../ui/fonts.js';
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
 export const DMG_STYLE = {
-  physical: { top: '#fff1cf', bot: '#ff9426', stroke: '#3c1500', burst: '#ff6a1c', icon: 'slash' },
-  magic: { top: '#f0e4ff', bot: '#8f6bff', stroke: '#1c0d4c', burst: '#a64dff', icon: 'spark' },
-  true: { top: '#ffffff', bot: '#d4dbef', stroke: '#2a2d3c', burst: '#e8f0ff', icon: 'gem', glow: true },
+  physical: { fill: '#ffa53a', top: '#fff1cf', bot: '#ff9426', stroke: '#0f1729', burst: '#ff6a1c', icon: 'slash' },
+  magic: { fill: '#b48cff', top: '#f0e4ff', bot: '#8f6bff', stroke: '#0f1729', burst: '#a64dff', icon: 'spark' },
+  true: { fill: '#ffffff', top: '#ffffff', bot: '#d4dbef', stroke: '#0f1729', burst: '#e8f0ff', icon: 'gem' },
 };
 const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
 /** Chữ khống chế trên đầu (áp chế ưu tiên cao nhất, màu tím riêng). */
@@ -75,17 +75,18 @@ export function createHud(canvas, input, portraits = null) {
   function drawDeath(world, player) {
     const leftT = Math.max(0, (player.respawnTick - world.tick) / 30), left = Math.ceil(leftT), d = death || { name: 'Bị hạ gục', total: leftT || 1 };
     const cx = w / 2, y = 10, pw = 268, ph = 58, x = cx - pw / 2;
-    const g = ctx.createLinearGradient(x, 0, x + pw, 0); g.addColorStop(0, 'rgba(70,12,16,0.0)'); g.addColorStop(0.18, 'rgba(70,12,16,0.88)'); g.addColorStop(0.82, 'rgba(70,12,16,0.88)'); g.addColorStop(1, 'rgba(70,12,16,0.0)');
-    ctx.fillStyle = g; ctx.fillRect(x, y, pw, ph);
-    ctx.fillStyle = 'rgba(255,190,110,0.55)'; ctx.fillRect(x + 30, y, pw - 60, 1.5); ctx.fillRect(x + 30, y + ph - 1.5, pw - 60, 1.5);
+    // thẻ phẳng kiểu hoạt hình (UI v4): đỏ đặc, viền mực dày, bóng cứng
+    const card = () => { const r = 16; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + pw, y, x + pw, y + ph, r); ctx.arcTo(x + pw, y + ph, x, y + ph, r); ctx.arcTo(x, y + ph, x, y, r); ctx.arcTo(x, y, x + pw, y, r); ctx.closePath(); };
+    ctx.save(); ctx.translate(0, 4); card(); ctx.fillStyle = '#0f1729'; ctx.fill(); ctx.restore();
+    card(); ctx.fillStyle = '#7a2a36'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#0f1729'; ctx.stroke();
     // vòng đếm ngược
     const rx = x + 62, ry = y + ph / 2, rr = 22;
-    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a0c10'; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.stroke();
-    ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#ffb84d'; ctx.stroke();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff3d6'; ctx.font = `800 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);
+    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a2640'; ctx.fill();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#0f1729'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#ffd23f'; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = `800 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);
     // kẻ hạ
-    ctx.textAlign = 'left'; ctx.fillStyle = '#ffcf9a'; ctx.font = cf(700, 12); ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#ffd23f'; ctx.font = cf(700, 12); ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
     let nx = rx + 34;
     const col = d.team == null ? '#e8d48a' : d.team === player.team ? '#38b8ff' : '#ff4a3a';
     if (d.heroId && portraits) { portraits.draw(ctx, d.heroId, d.name, nx + 11, ry + 9, 11, col, {}); nx += 27; }
@@ -114,13 +115,12 @@ export function createHud(canvas, input, portraits = null) {
       ctx.beginPath();
       for (let j = 0; j < n * 2; j++) { const a = spin + (j / (n * 2)) * Math.PI * 2, r = j % 2 ? 0.62 : 1; ctx.lineTo(Math.cos(a) * rx * r, Math.sin(a) * ry * r); }
       ctx.closePath(); ctx.globalAlpha *= 0.85; ctx.fillStyle = st.burst; ctx.fill(); ctx.globalAlpha /= 0.85;
-      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#0f1729'; ctx.stroke();
       critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
     } else ctx.font = font(size);
-    const g = ctx.createLinearGradient(0, -size * 0.45, 0, size * 0.45); g.addColorStop(0, st.top); g.addColorStop(1, st.bot);
-    if (st.glow) { ctx.lineWidth = f.crit ? 13 : 9; ctx.strokeStyle = 'rgba(205,220,255,0.32)'; ctx.strokeText(f.text, 0, 0); } // quầng sáng rẻ (shadowBlur chậm trên điện thoại)
-    ctx.lineWidth = f.crit ? 5 : 3.5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);
-    ctx.fillStyle = g; ctx.fillText(f.text, 0, 0);
+    // UI v4 hoạt hình phẳng: màu đặc theo loại sát thương, viền mực dày — không dải màu, không quầng sáng
+    ctx.lineJoin = 'round'; ctx.lineWidth = f.crit ? 7 : 5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);
+    ctx.fillStyle = st.fill || st.top; ctx.fillText(f.text, 0, 0);
     ctx.restore();
   }
   /** Biểu tượng chí mạng: vết chém (vật lý), sao bốn cánh (phép), viên kim cương (chuẩn). */
@@ -133,7 +133,7 @@ export function createHud(canvas, input, portraits = null) {
       if (kind === 'spark') for (let j = 0; j < 8; j++) { const a = (j / 8) * Math.PI * 2 - Math.PI / 2, r = j % 2 ? s * 0.22 : s * 0.62; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
       else { ctx.moveTo(0, -s * 0.62); ctx.lineTo(s * 0.46, 0); ctx.lineTo(0, s * 0.62); ctx.lineTo(-s * 0.46, 0); }
       ctx.closePath(); ctx.lineWidth = s * 0.2; ctx.strokeStyle = st.stroke; ctx.stroke();
-      const g = ctx.createLinearGradient(0, -s * 0.6, 0, s * 0.6); g.addColorStop(0, '#ffffff'); g.addColorStop(1, st.bot); ctx.fillStyle = g; ctx.fill();
+      ctx.fillStyle = st.fill || st.top; ctx.fill();
     }
     ctx.restore();
   }
@@ -270,10 +270,9 @@ export function createHud(canvas, input, portraits = null) {
         const big = g.amount >= 150, sz = (big ? 21 : 14) * (1 + 0.35 * Math.max(0, 1 - t / 0.12)), txt = '+' + g.amount;
         ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px ${DISP}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
         const tw = ctx.measureText(txt).width, cr = sz * 0.42, x0 = p.x - (tw + cr * 2 + 3) / 2, cyy = p.y - (i % 3) * 6;
-        const cg = ctx.createRadialGradient(x0 + cr - cr * 0.3, cyy - cr * 0.3, cr * 0.1, x0 + cr, cyy, cr); cg.addColorStop(0, '#fff6c0'); cg.addColorStop(0.6, '#ffc83a'); cg.addColorStop(1, '#c47a00');
-        ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = cg; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#5a3200'; ctx.stroke();
-        ctx.lineWidth = big ? 4 : 3; ctx.strokeStyle = '#3a2000'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
-        const tg = ctx.createLinearGradient(0, cyy - sz / 2, 0, cyy + sz / 2); tg.addColorStop(0, '#fffbe0'); tg.addColorStop(1, '#ffc23a'); ctx.fillStyle = tg; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
+        ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = '#ffd23f'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#0f1729'; ctx.stroke();
+        ctx.lineWidth = big ? 6 : 4.5; ctx.strokeStyle = '#0f1729'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
+        ctx.fillStyle = '#ffd23f'; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
         ctx.restore();
       }
       extras.draw(ctx, w, h, world, cam, player);

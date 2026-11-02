@@ -8,19 +8,19 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { BAG } from '../data/rewards.js';
 import { showRewards } from './rewards.js';
 
-const STYLE = `.ss-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .ss-head b { font: 800 24px/1 var(--u-disp); letter-spacing: .03em; color: var(--u-gc); } .ss-head small { color: #a8b4d8; font-size: 13px; }
+const STYLE = `.ss-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .ss-head b { font: 800 24px/1 var(--u-disp);  color: var(--u-gc); } .ss-head small { color: #a8b4d8; font-size: 13px; }
 .ss-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-bottom: 12px; }
-.ss-card { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 6px; background: var(--u-surf); box-shadow: inset 0 0 0 1px var(--u-edge); }
-.ss-card > div { flex: 1; min-width: 0; } .ss-card b { display: block; font: 700 16px/1.2 var(--u-disp); letter-spacing: .02em; color: #f4f6fb; } .ss-card small { display: block; font-size: 12px; color: #b8c4e8; }
-.ss-rings { display: flex; gap: 8px; margin-top: 6px; } .ss-rings i { position: relative; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font: 700 10px var(--u-disp); color: #9fb0d8; box-shadow: inset 0 0 0 2px rgba(160,176,220,.35); overflow: hidden; }
-.ss-rings i.done { box-shadow: inset 0 0 0 2px #7dffa8, 0 0 8px rgba(125,255,168,.5); } .ss-rings i .face { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); border-radius: 50%; opacity: .85; }
+.ss-card { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 6px; background: var(--u-surf); box-shadow: inset 0 0 0 2px var(--ink); }
+.ss-card > div { flex: 1; min-width: 0; } .ss-card b { display: block; font: 700 16px/1.2 var(--u-disp);  color: #f4f6fb; } .ss-card small { display: block; font-size: 12px; color: #b8c4e8; }
+.ss-rings { display: flex; gap: 8px; margin-top: 6px; } .ss-rings i { position: relative; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font: 700 10px var(--u-disp); color: #9fb0d8; box-shadow: inset 0 0 0 2px var(--ink); overflow: hidden; }
+.ss-rings i.done { box-shadow: inset 0 0 0 2px #7dffa8; } .ss-rings i .face { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); border-radius: 50%; opacity: .85; }
 .ss-rings i em { position: absolute; bottom: -1px; left: 0; right: 0; text-align: center; font-style: normal; font: 700 10px/1.2 var(--u-disp); color: #fff; background: rgba(0,0,0,.6); }
-.ss-sw { width: 44px; height: 44px; flex: none; border-radius: 10px; display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 2px rgba(255,255,255,.4); }
+.ss-sw { width: 44px; height: 44px; flex: none; border-radius: 10px; display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 2px var(--ink); }
 .ss-sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
 .ss-card .go { flex: none; min-width: 92px; height: 34px; padding: 0 12px; font-size: 15px; }
 .ss-frames { display: flex; flex-wrap: wrap; gap: 8px; } .ss-frames button { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 17px; border: 0; background: rgba(20,26,64,.9); color: #dfe6ff; font: 700 13px var(--u-body); box-shadow: inset 0 0 0 2px var(--fc); }
 .ss-frames button.on { background: var(--fc); color: #10121e; }
-.ss-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; color: #cfd6ef; } .ss-tbl td { padding: 4px 6px; border-bottom: 1px solid rgba(255,214,140,.12); } .ss-tbl td:last-child { color: #ffe08a; }
+.ss-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; color: #cfd6ef; } .ss-tbl td { padding: 4px 6px; border-bottom: 1px solid rgba(255,210,63,0.12); } .ss-tbl td:last-child { color: var(--c-yel); }
 .ss-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; max-height: 50vh; overflow: auto; padding: 4px; } .ss-pick button { padding: 2px; border: 0; border-radius: 50%; background: rgba(160,176,220,.3); aspect-ratio: 1; } .ss-pick button .face { width: 100%; height: 100%; border-radius: 50%; } .ss-pick small { display: block; font-size: 10.5px; color: #cfd6ef; }`;
 let styled = false;
 const rewText = (r) => [r.gold ? `${fmt(r.gold)} vàng` : '', r.gems ? `${r.gems} ngọc` : '', r.manh ? `${r.manh} Mảnh Tướng` : '', r.item ? BAG[r.item].name : '', r.frame ? FRAMES[r.frame.id || r.frame]?.name : ''].filter(Boolean).join(' + ');

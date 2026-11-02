@@ -16,18 +16,18 @@ const KEYS = { z: 'attack', x: 'gather', c: 'retreat', v: 'careful' };
 const SND = { attack: ['ui_lock', 1.2], gather: ['horn', 1.15], retreat: ['ui_back', 1], careful: ['ui_tick', 0.8] };
 const CSS = `
 #pingBtn{position:fixed;z-index:5;left:calc(max(8px,env(safe-area-inset-left)) + var(--mmw,140px) + 6px);top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) - 44px);
-  width:44px;height:44px;border-radius:50%;border:2px solid #c9b47a;background:radial-gradient(circle at 50% 35%,#2a3050,#11142a);display:grid;place-items:center;padding:0;touch-action:none}
-#pingBtn svg{width:24px;height:24px} #pingBtn.on{box-shadow:0 0 12px #ffd27acc;border-color:#ffd27a}
+  width:44px;height:44px;border-radius:50%;border:2px solid var(--c-yel);background:linear-gradient(#1a2640, #1a2640);display:grid;place-items:center;padding:0;touch-action:none}
+#pingBtn svg{width:24px;height:24px} #pingBtn.on{box-shadow: 0 0 0 3px var(--c-yel);border-color:var(--c-yel)}
 #pingWheel{position:fixed;z-index:6;left:0;top:0;width:0;height:0;pointer-events:none}
 #pingWheel button{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--c);background:#11142aee;color:#fff;display:grid;place-items:center;padding:0;pointer-events:auto;touch-action:none}
-#pingWheel button.armed{background:var(--c);box-shadow:0 0 14px var(--c)} #pingWheel button svg{width:22px;height:22px}
-#pingWheel small{position:absolute;top:44px;left:50%;transform:translateX(-50%);font:700 10px 'Be Vietnam Pro',system-ui,sans-serif;white-space:nowrap;color:#eef1f8;text-shadow:0 1px 2px #000}
-#pingHint{position:fixed;z-index:6;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 48px));transform:translateX(-50%);font:700 13px 'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:#11142acc;border:1px solid #c9b47a88;border-radius:14px;padding:4px 12px;pointer-events:none}
+#pingWheel button.armed{background:var(--c);box-shadow: none} #pingWheel button svg{width:22px;height:22px}
+#pingWheel small{position:absolute;top:44px;left:50%;transform:translateX(-50%);font:700 10px 'Be Vietnam Pro',system-ui,sans-serif;white-space:nowrap;color:#eef1f8;text-shadow: 0 2px 0 rgba(15,23,41,.8)}
+#pingHint{position:fixed;z-index:6;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 48px));transform:translateX(-50%);font:700 13px 'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:#1a2640;border:3px solid #0f1729;border-radius:14px;box-shadow:0 3px 0 #0f1729;padding:4px 12px;pointer-events:none}
 #pingFeed{position:fixed;z-index:4;left:calc(max(8px,env(safe-area-inset-left)));top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 80px);width:min(300px,38vw);pointer-events:none;display:flex;flex-direction:column;gap:3px}
 @media (min-height:560px){#pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 146px)}}
 body.shop-right #pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 8px)}
-#pingFeed div{font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;color:#eef1f8;text-shadow:0 1px 2px #000;background:linear-gradient(90deg,#0b0e1ecc,#0b0e1e00);padding:2px 6px;border-radius:6px;transition:opacity .5s}
-#pingFeed div i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0} #pingFeed div b{color:#9fd8ff} #pingFeed div b.me{color:#ffd27a} #pingFeed div.fail{color:#aab;font-style:italic}`;
+#pingFeed div{font:600 12px 'Be Vietnam Pro',system-ui,sans-serif;color:#eef1f8;text-shadow: 0 2px 0 rgba(15,23,41,.8);background:linear-gradient(90deg,#0b0e1ecc,#0b0e1e00);padding:2px 6px;border-radius:6px;transition:opacity .5s}
+#pingFeed div i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0} #pingFeed div b{color:#9fd8ff} #pingFeed div b.me{color:var(--c-yel)} #pingFeed div.fail{color:#aab;font-style:italic}`;
 /** Biểu tượng từng loại (SVG trong nút, vẽ lại bằng canvas trên huy hiệu). */
 const ICON = {
   attack: 'M5 5l14 14M19 5L5 19', gather: 'M12 3v9M12 12l-5 5M12 12l5 5M6 21h12', retreat: 'M12 4v14M6 12l6 6 6-6', careful: 'M12 4v10M12 18v2',
