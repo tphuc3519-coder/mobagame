@@ -46,9 +46,8 @@ const CSS = `
 #draft .dr-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); grid-auto-rows: clamp(58px, 17vh, 84px); gap: 6px; align-content: start; padding: 2px; -webkit-overflow-scrolling: touch; }
 #draft .hc { position: relative; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: #1a2640; box-shadow: 0 2px 0 var(--ink); }
 #draft .hc img, #draft .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
-#draft .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 5px 3px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
-#draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 11.5px/1 var(--u-disp); letter-spacing: 0;  overflow: hidden; word-break: keep-all; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt; không bẻ giữa chữ */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
-@media (max-width: 720px) { #draft .hc b { font-size: 10px; letter-spacing: -.01em; } #draft .hc span { padding-inline: 3px; } } /* Baloo 2 rộng hơn Saira: tên một từ dài (Moonstream, Lanternward) phải vừa ô hẹp máy 667 px */
+#draft .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 3px 3px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
+#draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 10.5px/1.05 var(--u-disp); letter-spacing: -.01em; overflow: hidden; word-break: keep-all; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt; không bẻ giữa chữ */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
 #draft .hc.on { box-shadow: 0 0 0 3px var(--c-yel); }
 #draft .hc.hide { display: none; }
 #draft .hc.ban { filter: grayscale(1) brightness(.5); }

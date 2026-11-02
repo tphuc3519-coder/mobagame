@@ -628,3 +628,20 @@ Còn lại:
 - Token màu mới, chữ đứng, nút / khung / tab / thẻ nhất quán; bảng Cài đặt, cửa hàng, bảng tỉ số, đồng hồ trận, nút chiêu, bản đồ nhỏ cùng hệ.
 - Soi tràn chữ tự động ở 667 / 844 / 1280 px trên mọi màn ngoài trận: sửa tiêu đề "CHIẾN THẮNG" mất dấu, tên dài bị cắt ở màn cấm chọn /
   bảng tỉ số / bảng tổng kết, nút màn cấm chọn tràn ở máy 667 px.
+
+## 02/11 — UI v4: giao diện hoạt hình phẳng (bỏ chất "AI")
+- Chủ dự án chê UI v3 *"đậm AI quá"*; dựng 3 mẫu thử, chọn **C — hoạt hình phẳng**: màu phẳng, viền mực dày 3px, bóng cứng không nhoè,
+  bo góc 12–16px, chữ tròn đậm **Baloo 2** (tiêu đề / nút / số) + Be Vietnam Pro (chữ thường). Gỡ Saira Condensed.
+- Áp cho toàn bộ: sảnh, mọi bảng (Tướng, Túi đồ, Nhiệm vụ, Sự kiện, Hồ sơ, Bảng Bùa, Bạn bè, Thư, Lịch sử, Xếp hạng, Cửa hàng ngọc),
+  chọn chế độ, phòng chờ, hộp chọn vị trí, cấm chọn, đội hình, tải trận, màn nhận thưởng, tổng kết trận, bảng Cài đặt; trong trận:
+  nút chiêu / Đánh / Ăn lính / Đẩy trụ, cửa hàng, tỉ số, bảng tỉ số, bản đồ nhỏ, nút camera, gợi ý; chữ canvas: thông báo hạ gục, số sát
+  thương, vàng nhặt được, bảng bị hạ; màn tải đầu game.
+- Baloo 2 rộng hơn: soi tràn chữ tự động ở 667 / 844 / 1280 px — sửa nút Đấu hạng tràn ở 667 px, tên tướng một từ dài bị cắt ở ô cấm chọn,
+  nhãn hạng ở phòng chờ (giờ cắt bằng "…"), tab Trò chuyện xuống dòng; cả ba cỡ màn không còn chữ bị cắt / ra ngoài màn.
+- Kiểm thử trình duyệt bắt được một lỗi thật: cửa hàng đặt bên phải thì bảng tỉ số (thêm viền 3px) đè lên ô mua nhanh — bỏ đệm dọc cho
+  bằng chiều cao cũ.
+- **Kiểm thử:** node `tools/t_*.mjs` 40/40 đạt (gồm `t_premium` — 4 model cao cấp không đổi, `t_licenses` — giấy phép Baloo 2); `b_layout` 86,
+  `b_flow` 93, `b_match` 36, `b_perf` 16, `b_pwa` 11 đạt. Hai mục lệch, **bản `main` chạy cùng máy lệch y hệt**: `b_gd3` đấu lại về phòng chờ
+  (mới 3,7 / 3,4 s — `main` 3,3 / 3,8 s, mốc 3 s, CPU chậm 4×) và một cú bấm "Bắt đầu" / "Chấp nhận" ở phòng Đấu Đỉnh Cao trong `b_prog`
+  (đồng hồ giả + máy không GPU; thử 3 lượt mỗi bản: mới hỏng 1, `main` hỏng 1).
+
