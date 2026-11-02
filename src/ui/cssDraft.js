@@ -24,15 +24,15 @@ const CSS = `
 #draft .dr-col.blue { left: var(--l); } #draft .dr-col.red { right: var(--r); }
 #draft .dr-col .hd { margin: 0; flex: none; } #draft .dr-col .hd.foe { color: #ff9a8a; } 
 #draft .dr-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
-#draft .dr-row { position: relative; display: flex; align-items: center; gap: 7px; height: clamp(40px, 11.5vh, 52px); flex: none; padding: 0 6px 0 8px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: #2a4f86; }
+#draft .dr-row { position: relative; display: flex; align-items: center; gap: 7px; height: clamp(40px, 11.5vh, 52px); flex: none; padding: 0 6px 0 8px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-tb); }
 
-#draft .red .dr-row { background: #7a2a36; flex-direction: row-reverse; text-align: right; padding: 0 8px 0 6px; }
+#draft .red .dr-row { background: var(--g-tr); flex-direction: row-reverse; text-align: right; padding: 0 8px 0 6px; }
 
-#draft .dr-row.me { background: #3e5a8e; box-shadow: 0 0 0 3px var(--c-yel), 0 3px 0 var(--ink); } #draft .dr-row.me::before { background: var(--c-yel); }
+#draft .dr-row.me { background: var(--g-me); box-shadow: 0 0 0 3px var(--c-yel), 0 3px 0 var(--ink); } #draft .dr-row.me::before { background: var(--g-yel); }
 #draft .dr-row.now { animation: pickP 1.2s ease-in-out infinite; } #draft .dr-row.me.now { animation-name: pickG; }
 #draft .dr-row .face, #draft .dr-row .ini, #draft .dr-row .qm { width: clamp(30px, 9vh, 40px); height: clamp(30px, 9vh, 40px); border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--ink); }
 #draft .red .dr-row .face, #draft .red .dr-row .qm { box-shadow: 0 0 0 2px var(--ink); } #draft .dr-row.me .face, #draft .dr-row.me .ini { box-shadow: 0 0 0 2px var(--c-yel); }
-#draft .dr-row .qm { display: grid; place-items: center; background: linear-gradient(#1a2640, #1a2640); color: #6f8ae8; font: 800 18px var(--u-disp); }
+#draft .dr-row .qm { display: grid; place-items: center; background: var(--g-head); color: #6f8ae8; font: 800 18px var(--u-disp); }
 #draft .dr-row .hov { opacity: .45; }
 #draft .dr-row > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 #draft .red .dr-row > div { align-items: flex-end; }
@@ -42,9 +42,9 @@ const CSS = `
 #draft .dr-mid { position: absolute; left: calc(var(--l) + var(--colw) + 10px); right: calc(var(--r) + var(--colw) + 10px); top: calc(var(--t) + var(--top) + 4px); bottom: calc(var(--b) + var(--bar) + 6px); display: flex; flex-direction: column; gap: 5px; }
 #draft .dr-tabs { flex: none; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; } #draft .dr-tabs::-webkit-scrollbar { display: none; }
 #draft .dr-tabs button { flex: none; height: 26px; padding: 0 8px; border: 0; border-radius: 13px; background: rgba(255,255,255,.06); display: inline-flex; align-items: center; gap: 4px; font: 700 12px/1 var(--u-disp);  color: #aeb8de; }
-#draft .dr-tabs button.on { background: var(--c-yel); color: var(--ink); }
+#draft .dr-tabs button.on { background: var(--g-yel); color: var(--ink); }
 #draft .dr-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); grid-auto-rows: clamp(58px, 17vh, 84px); gap: 6px; align-content: start; padding: 2px; -webkit-overflow-scrolling: touch; }
-#draft .hc { position: relative; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: #1a2640; box-shadow: 0 2px 0 var(--ink); }
+#draft .hc { position: relative; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--g-head); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #draft .hc img, #draft .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 #draft .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 3px 3px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
 #draft .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 10.5px/1.05 var(--u-disp); letter-spacing: -.01em; overflow: hidden; word-break: keep-all; } /* tên dài (HARUNO SAKURA) xuống 2 dòng thay vì bị cắt; không bẻ giữa chữ */ #draft .hc small { font-size: 9.5px; color: #cdb8ff; }
@@ -84,8 +84,8 @@ em.rl { display: inline-flex; flex: none; align-items: center; gap: 3px; width: 
 #room .rl-chip.need { animation: seatP 1.2s ease-in-out infinite; }
 .rl-dlg .rl-lab { text-align: left; margin: 2px 0 5px; font: 700 12px var(--u-disp);   color: var(--u-gc); } .rl-dlg .rl-lab small { font: 500 11px var(--u-body); letter-spacing: 0; text-transform: none; color: var(--u-dim); }
 .rl-pick { display: grid; grid-template-columns: repeat(6, minmax(50px, 64px)); gap: 6px; justify-content: center; margin-bottom: 8px; }
-.rl-tile { height: 54px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: #33476e; box-shadow: 0 3px 0 var(--ink); font: 700 12.5px/1 var(--u-disp); color: #fff; }
-.rl-tile .rl-ic { width: 22px; height: 22px; } .rl-tile.on { color: var(--ink); background: var(--c-yel); }
+.rl-tile { height: 54px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-card); box-shadow: var(--hl), 0 3px 0 var(--ink); font: 700 12.5px/1 var(--u-disp); color: #fff; }
+.rl-tile .rl-ic { width: 22px; height: 22px; } .rl-tile.on { color: var(--ink); background: var(--g-yel); }
 .rl-tile[disabled] { opacity: .35; }
 /* contain: inline-size — dòng gợi ý đổi chữ theo vị trí vừa bấm mà KHÔNG được góp bề ngang vào hộp (trước: hộp co 503 ↔ 458 px rồi canh giữa
    lại = rung ngang mỗi lần chọn); giữ sẵn chỗ 2 dòng để câu dài lúc chưa chọn xuống dòng cũng không đẩy hộp cao thấp. */

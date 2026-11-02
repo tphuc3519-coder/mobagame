@@ -33,6 +33,11 @@ kim, quầng sáng, kính mờ, chữ in hoa giãn) và chọn mẫu C trong ba 
 - **Mục đang chọn:** vàng đặc chữ mực (tab, ô vị trí, ô bảng Cài đặt) hoặc vòng vàng 3px quanh thẻ (thẻ tướng, dòng "tôi").
 - **Không:** quầng sáng (`box-shadow` nhoè, `drop-shadow` nhoè, `text-shadow` nhoè), kính mờ (`backdrop-filter`), hoa văn góc, vệt sáng
   lướt, chữ in hoa giãn chữ. Bóng chữ chỉ là bóng cứng `0 2px 0` để đọc được trên cảnh 3D.
+- **UI v4.1 "nổi khối" (cùng ngày, chủ dự án: *"vẫn 3d đẹp đẹp nhưng ko bị AI"*):** giữ viền mực + bóng cứng, thêm độ khối kiểu game
+  mobile — thân khối sáng trên tối dưới (`--g-yel / --g-blu / --g-red / --g-grn / --g-card / --g-card2 / --g-head / --g-tb / --g-tr`), nút
+  có mặt bóng nửa trên kiểu kẹo (`--gloss`) + mép sáng trong / gờ tối dưới (`--hl2`), thẻ có mép sáng trong ở đỉnh (`--hl`), chữ tiêu đề đắp
+  nổi 4 lớp bóng cứng (`--extrude`). Canvas cùng hệ: dải thông báo hạ gục và bảng bị hạ có nửa trên sáng + gờ tối, số sát thương / vàng nhặt
+  đắp nổi. Khác UI v3: dải màu chỉ trong một sắc (không ánh kim), không nhoè, không phát sáng.
 - Tên token cũ (`--u-gold`, `--u-rim`, `--u-surf`, `--u-gc`…) vẫn còn, ánh xạ sang màu phẳng — các màn cũ đọc chúng không phải sửa.
 - Cùng hệ cho bảng Cài đặt (`ui/settingsModal.js`), cửa hàng / bảng tỉ số / HUD trong trận (`index.html`), bản đồ nhỏ (`hud/minimap.js`) và
   chữ vẽ trên canvas: thông báo hạ gục (`hud/killBanner.js` — dải viên thuốc màu phe, viền mực), số sát thương (màu đặc theo loại: vật lý

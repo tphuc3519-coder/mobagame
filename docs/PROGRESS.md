@@ -645,3 +645,11 @@ Còn lại:
   (mới 3,7 / 3,4 s — `main` 3,3 / 3,8 s, mốc 3 s, CPU chậm 4×) và một cú bấm "Bắt đầu" / "Chấp nhận" ở phòng Đấu Đỉnh Cao trong `b_prog`
   (đồng hồ giả + máy không GPU; thử 3 lượt mỗi bản: mới hỏng 1, `main` hỏng 1).
 
+## 02/11 — UI v4.1: nổi khối 3D, vẫn không "AI"
+- Chủ dự án muốn *"vẫn 3d đẹp đẹp nhưng ko bị AI"*: thêm độ khối lên UI v4 — nút kiểu kẹo (thân sáng trên tối dưới + mặt bóng nửa trên + gờ
+  tối dưới), thẻ / đầu bảng / dòng có mép sáng trong ở đỉnh, nền bảng phủ có quầng tối dần ra mép, chữ tiêu đề đắp nổi; HUD trong trận và
+  chữ canvas (thông báo hạ gục, bảng bị hạ, số sát thương, vàng nhặt) cùng hệ. Không đổi kích thước, id, selector; không đụng model.
+- **Kiểm thử:** node `tools/t_*.mjs` 40/40 đạt; `b_layout` 86, `b_flow` 92 đạt. `b_match` lệch 5 mục đo nhịp thời gian (vòng tín hiệu tự đóng
+  sau 4 s ở màn 1280, kéo K3 khoá mục tiêu ở màn 844) — **bản `main` (UI v4) chạy cùng lúc trên cùng máy lệch đúng 5 mục đó**, nên do máy thử
+  không GPU đang chậm, không do lớp khối (lớp này chỉ đổi màu nền / bóng, không đổi kích thước hay vùng chạm).
+

@@ -78,7 +78,9 @@ export function createHud(canvas, input, portraits = null) {
     // thẻ phẳng kiểu hoạt hình (UI v4): đỏ đặc, viền mực dày, bóng cứng
     const card = () => { const r = 16; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + pw, y, x + pw, y + ph, r); ctx.arcTo(x + pw, y + ph, x, y + ph, r); ctx.arcTo(x, y + ph, x, y, r); ctx.arcTo(x, y, x + pw, y, r); ctx.closePath(); };
     ctx.save(); ctx.translate(0, 4); card(); ctx.fillStyle = '#0f1729'; ctx.fill(); ctx.restore();
-    card(); ctx.fillStyle = '#7a2a36'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#0f1729'; ctx.stroke();
+    card(); ctx.fillStyle = '#7a2a36'; ctx.fill();
+    ctx.save(); card(); ctx.clip(); ctx.fillStyle = 'rgba(255,255,255,0.13)'; ctx.fillRect(x, y, pw, ph * 0.46); ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(x, y + ph - 5, pw, 5); ctx.restore();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#0f1729'; ctx.stroke();
     // vòng đếm ngược
     const rx = x + 62, ry = y + ph / 2, rr = 22;
     ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a2640'; ctx.fill();
@@ -119,7 +121,7 @@ export function createHud(canvas, input, portraits = null) {
       critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
     } else ctx.font = font(size);
     // UI v4 hoạt hình phẳng: màu đặc theo loại sát thương, viền mực dày — không dải màu, không quầng sáng
-    ctx.lineJoin = 'round'; ctx.lineWidth = f.crit ? 7 : 5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, 0);
+    ctx.lineJoin = 'round'; ctx.lineWidth = f.crit ? 7 : 5; ctx.strokeStyle = st.stroke; ctx.strokeText(f.text, 0, size * 0.12); ctx.strokeText(f.text, 0, 0); // đắp nổi
     ctx.fillStyle = st.fill || st.top; ctx.fillText(f.text, 0, 0);
     ctx.restore();
   }
@@ -271,7 +273,7 @@ export function createHud(canvas, input, portraits = null) {
         ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px ${DISP}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
         const tw = ctx.measureText(txt).width, cr = sz * 0.42, x0 = p.x - (tw + cr * 2 + 3) / 2, cyy = p.y - (i % 3) * 6;
         ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = '#ffd23f'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#0f1729'; ctx.stroke();
-        ctx.lineWidth = big ? 6 : 4.5; ctx.strokeStyle = '#0f1729'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
+        ctx.lineWidth = big ? 6 : 4.5; ctx.strokeStyle = '#0f1729'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy + 2); ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
         ctx.fillStyle = '#ffd23f'; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
         ctx.restore();
       }
