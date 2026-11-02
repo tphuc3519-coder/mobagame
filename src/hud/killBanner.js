@@ -92,17 +92,19 @@ export function createKillBanner(portraits) {
     // dải phẳng kiểu hoạt hình (UI v4): nền màu phe đặc, viền mực dày, bóng cứng dưới — không quầng sáng, không dải màu
     const rr = bh / 2, pill = () => { ctx.beginPath(); ctx.moveTo(x0 + rr, cy - rr); ctx.lineTo(x1 - rr, cy - rr); ctx.arc(x1 - rr, cy, rr, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x0 + rr, cy + rr); ctx.arc(x0 + rr, cy, rr, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); };
     ctx.fillStyle = INK; ctx.translate(0, 4); pill(); ctx.fill(); ctx.translate(0, -4);
-    ctx.fillStyle = th.flat; pill(); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = th.flat; pill(); ctx.fill();
+    ctx.save(); pill(); ctx.clip(); ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.92); ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x0, cy + rr - 4, x1 - x0, 4); ctx.restore(); // khối: nửa trên sáng, gờ tối dưới
+    ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
     // tiêu đề
     const pop = big ? 1 + 0.5 * (1 - ease((t - 0.05) / 0.22)) : 1;
     ctx.save(); ctx.translate(cx, cy + 1); ctx.scale(pop, pop); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     if (big) {
       ctx.font = `800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
       const txt = it.title.toUpperCase();
-      ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText(txt, 0, 0); ctx.fillStyle = YEL; ctx.fillText(txt, 0, 0);
+      ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText(txt, 0, 3); ctx.strokeText(txt, 0, 0); ctx.fillStyle = YEL; ctx.fillText(txt, 0, 0); // chữ đắp nổi
     } else {
       ctx.font = `700 ${it.title.length > 15 ? 17 : 19}px ${DISP}`;
-      ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.strokeText(it.title, 0, 0); ctx.fillStyle = it.tier >= 1 ? YEL : '#fff'; ctx.fillText(it.title, 0, 0);
+      ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.strokeText(it.title, 0, 2.5); ctx.strokeText(it.title, 0, 0); ctx.fillStyle = it.tier >= 1 ? YEL : '#fff'; ctx.fillText(it.title, 0, 0);
     }
     ctx.restore();
     if (it.sub) { // dòng phụ dưới dải (chiến công đầu / chuỗi / chặn đứng kèm theo)

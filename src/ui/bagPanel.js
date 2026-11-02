@@ -7,7 +7,7 @@ import { showRewards } from './rewards.js';
 import { panelCss } from './panels.js';
 
 const STYLE = `.bg-cur { display: flex; gap: 10px; } .bg-cur .cur { display: inline-flex; align-items: center; gap: 4px; font: 700 15px/1 var(--u-disp); color: var(--c-yel); } .bg-cur img.ui-ic { width: 22px; height: 22px; }
-.pn-row .lim { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font: 700 10.5px/1.5 var(--u-body); font-style: normal; color: var(--ink); background: var(--c-yel); vertical-align: 2px; }
+.pn-row .lim { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font: 700 10.5px/1.5 var(--u-body); font-style: normal; color: var(--ink); background: var(--g-yel); vertical-align: 2px; }
 .pn-row .lim.on { background: #7dffa8; } .pn-row .btns2 { display: flex; gap: 8px; flex: none; } .pn-row .btns2 .go { min-width: 84px; }
 .pn-row .go img.ui-ic { width: 20px; height: 20px; margin: 0 4px 0 0; vertical-align: -4px; filter: none; }
 .pn-row.chest { background: #4a3f7a; box-shadow: 0 0 0 3px var(--c-yel), 0 3px 0 var(--ink); }`;

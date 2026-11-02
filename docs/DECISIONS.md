@@ -1028,3 +1028,7 @@
   trên canvas. Chuyển phần lớn quy tắc bằng một lượt máy (bỏ nhoè / dải màu / in hoa, ánh xạ màu vàng kim sang vàng phẳng / mực) rồi chỉnh
   tay từng màn theo ảnh chụp. Tên token cũ giữ lại (ánh xạ sang màu phẳng) để không phải sửa mọi màn; id / selector / bố cục không đổi;
   không đụng model.
+- 2026-11-02: **UI v4.1 "nổi khối"** (chủ dự án xem UI v4 rồi nói *"vẫn 3d đẹp đẹp nhưng ko bị AI á"*): phẳng hoàn toàn mất cảm giác game.
+  Thêm độ khối theo lối game mobile hoạt hình — thân khối dải sáng→tối **trong cùng một sắc**, mặt bóng nửa trên của nút, mép sáng trong,
+  gờ tối dưới, chữ tiêu đề đắp nổi — nhưng giữ nguyên ranh giới đã chốt: không vàng kim / ánh kim, không quầng sáng nhoè, không kính mờ,
+  không chữ in hoa giãn. Làm bằng token (`--g-*`, `--gloss`, `--hl`, `--hl2`, `--extrude`) thay vì sửa từng màn.

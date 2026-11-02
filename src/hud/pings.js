@@ -16,13 +16,13 @@ const KEYS = { z: 'attack', x: 'gather', c: 'retreat', v: 'careful' };
 const SND = { attack: ['ui_lock', 1.2], gather: ['horn', 1.15], retreat: ['ui_back', 1], careful: ['ui_tick', 0.8] };
 const CSS = `
 #pingBtn{position:fixed;z-index:5;left:calc(max(8px,env(safe-area-inset-left)) + var(--mmw,140px) + 6px);top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) - 44px);
-  width:44px;height:44px;border-radius:50%;border:2px solid var(--c-yel);background:linear-gradient(#1a2640, #1a2640);display:grid;place-items:center;padding:0;touch-action:none}
+  width:44px;height:44px;border-radius:50%;border:2px solid var(--c-yel);background:var(--g-head);display:grid;place-items:center;padding:0;touch-action:none}
 #pingBtn svg{width:24px;height:24px} #pingBtn.on{box-shadow: 0 0 0 3px var(--c-yel);border-color:var(--c-yel)}
 #pingWheel{position:fixed;z-index:6;left:0;top:0;width:0;height:0;pointer-events:none}
 #pingWheel button{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--c);background:#11142aee;color:#fff;display:grid;place-items:center;padding:0;pointer-events:auto;touch-action:none}
 #pingWheel button.armed{background:var(--c);box-shadow: none} #pingWheel button svg{width:22px;height:22px}
 #pingWheel small{position:absolute;top:44px;left:50%;transform:translateX(-50%);font:700 10px 'Be Vietnam Pro',system-ui,sans-serif;white-space:nowrap;color:#eef1f8;text-shadow: 0 2px 0 rgba(15,23,41,.8)}
-#pingHint{position:fixed;z-index:6;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 48px));transform:translateX(-50%);font:700 13px 'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:#1a2640;border:3px solid #0f1729;border-radius:14px;box-shadow:0 3px 0 #0f1729;padding:4px 12px;pointer-events:none}
+#pingHint{position:fixed;z-index:6;left:50%;top:max(54px,calc(env(safe-area-inset-top) + 48px));transform:translateX(-50%);font:700 13px 'Be Vietnam Pro',system-ui,sans-serif;color:#fff;background:var(--g-head);border:3px solid #0f1729;border-radius:14px;box-shadow:0 3px 0 #0f1729;padding:4px 12px;pointer-events:none}
 #pingFeed{position:fixed;z-index:4;left:calc(max(8px,env(safe-area-inset-left)));top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 80px);width:min(300px,38vw);pointer-events:none;display:flex;flex-direction:column;gap:3px}
 @media (min-height:560px){#pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 146px)}}
 body.shop-right #pingFeed{top:calc(max(8px,env(safe-area-inset-top)) + var(--mmh,140px) + 8px)}
