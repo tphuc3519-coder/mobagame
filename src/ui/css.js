@@ -136,6 +136,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 .ui-panel header { flex: none; display: flex; align-items: center; gap: 12px; height: clamp(46px, 13vh, 56px); padding: 0 max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); background: var(--g-head); border-bottom: 3px solid var(--ink); box-shadow: var(--hl); }
 .ui-panel header h2 { margin: 0; font: 800 clamp(22px, 7vh, 30px)/1 var(--u-disp); letter-spacing: .01em; white-space: nowrap; }
 .ui-hr { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.ui-hr .md-online { height: clamp(32px, 9vh, 40px); padding: 0 16px; } /* Chọn chế độ → Chơi online */
 .ui-body { flex: 1; min-height: 0; overflow: auto; padding: 12px max(14px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); -webkit-overflow-scrolling: touch; }
 
 /* —— SẢNH CHÍNH —— */

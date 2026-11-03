@@ -658,7 +658,7 @@ Còn lại:
   Sẵn sàng, chủ phòng Bắt đầu (một mình = đấu máy). 1v1 hoặc 5v5 (mỗi người một đội, bot điền 8 chỗ).
 - **Trong trận:** máy chủ phát khung tick 15 gói/giây; máy khách chạy mô phỏng theo khung, lệnh của mình đi qua máy chủ; góc trên hiện ping (xanh /
   vàng / đỏ), "đang bắt kịp" khi chạy bù. Rớt mạng → tự nối lại, quá 6 giây máy tạm điều khiển; tải lại trang → Chọn chế độ → Chơi online → **Vào lại trận**.
-- **Sảnh:** thẻ **Chơi online** trong bảng Chọn chế độ (thêm nút kim cương ở sảnh thì đè lên thanh dưới ở máy 667–844 px); màn kết quả sau trận online ghi "chưa tính thưởng", Đấu lại → về màn Online.
+- **Sảnh:** nút **Chơi online** ở góc phải thanh tiêu đề bảng Chọn chế độ (thêm nút kim cương ở sảnh thì đè thanh dưới ở máy 667–844 px, thêm thẻ thứ 6 thì thẻ hẹp lại); màn kết quả sau trận online ghi "chưa tính thưởng", Đấu lại → về màn Online.
 - **Mô phỏng tất định giữa trình duyệt:** `src/core/dmath.js` thay `Math.sin/cos/atan2/acos/hypot` trong sim / ai / data (DECISIONS 2026-11-01).
 - **Kiểm thử:** `tools/t_online.mjs` (máy chủ thật tua ×8 + 2 máy khách Node: 1v1 2 400 tick có một máy rớt mạng rồi nối lại, 5v5 900 tick; mã băm hai
   máy trùng mọi mốc, máy chủ không báo lệch; máy thay người 1v1 / 5v5 tất định). Trình duyệt headless: 2 trang vào chung phòng qua giao diện, cùng

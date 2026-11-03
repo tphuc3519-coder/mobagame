@@ -15,12 +15,12 @@ const CSS = `
 #online::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,8,20,.55), rgba(6,8,20,.8)); pointer-events: none; }
 #online > * { position: relative; }
 #online .ol-head { display: flex; align-items: center; gap: 10px; }
-#online .ol-head h2 { margin: 0; font: italic 800 26px/1 var(--u-disp); letter-spacing: .04em; }
+#online .ol-head h2 { margin: 0; font: 800 26px/1 var(--u-disp); letter-spacing: .01em; }
 #online .ol-head .ol-st { margin-left: auto; font: 600 12px var(--u-body); color: var(--u-dim); display: flex; align-items: center; gap: 6px; }
 #online .ol-st i { width: 9px; height: 9px; border-radius: 50%; background: #777; box-shadow: 0 0 6px #0008; }
 #online .ol-st i.on { background: #6fe08a; box-shadow: 0 0 8px #6fe08a; }
-#online .ol-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
-#online .ol-box { padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; min-height: 0; overflow: auto; }
+#online .ol-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; }
+#online .ol-box { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
 #online .ol-box h4 { margin: 0; font: 700 13px/1 var(--u-disp); letter-spacing: .14em; text-transform: uppercase; color: var(--u-gc); }
 #online .ol-row { display: flex; gap: 8px; align-items: center; }
 #online input { flex: 1; min-width: 0; height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(232,184,90,.5); background: rgba(4,6,18,.75); color: #f3ead2; font: 600 14px var(--u-body); outline: none; }
@@ -32,13 +32,13 @@ const CSS = `
 #online .ol-heroes button.on { border-color: #ffd36a; box-shadow: 0 0 10px rgba(255,200,90,.7); }
 #online .ol-heroes button:disabled { opacity: .45; }
 #online .ol-name { font: 700 14px var(--u-body); color: #f3ead2; } #online .ol-name small { color: var(--u-dim); font-weight: 600; }
-#online .seg { display: inline-flex; border-radius: 18px; background: rgba(0,0,0,.45); padding: 3px; gap: 2px; flex-wrap: wrap; }
-#online .seg button { border: 0; background: none; padding: 6px 12px; border-radius: 15px; font: 700 13px var(--u-disp); letter-spacing: .05em; color: #cfd6ea; }
+#online .seg { display: inline-flex; border-radius: 18px; background: rgba(0,0,0,.45); padding: 3px; gap: 2px; flex-wrap: nowrap; }
+#online .seg button { border: 0; background: none; padding: 5px 10px; border-radius: 15px; font: 700 13px var(--u-disp); letter-spacing: .05em; color: #cfd6ea; }
 #online .seg button.on { background: linear-gradient(180deg, #ffe390, #e09a2c); color: #3b1a02; }
 #online .seg button:disabled { opacity: .5; }
 #online .ol-or { text-align: center; font: 600 12px var(--u-body); color: var(--u-dim); }
 #online .ol-code { display: flex; align-items: center; gap: 10px; }
-#online .ol-code b { font: italic 800 34px/1 var(--u-disp); letter-spacing: .2em; color: #ffe39a; text-shadow: 0 2px 0 #3a1a04, 0 0 14px rgba(255,180,70,.5); }
+#online .ol-code b { font: 800 30px/1 var(--u-disp); letter-spacing: .2em; color: #ffe39a; text-shadow: 0 2px 0 #3a1a04, 0 0 14px rgba(255,180,70,.5); }
 #online .ol-seats { display: flex; flex-direction: column; gap: 8px; }
 #online .ol-seat { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.35); }
 #online .ol-seat img.face { width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
@@ -47,7 +47,8 @@ const CSS = `
 #online .ol-seat em { font: 700 12px var(--u-disp); letter-spacing: .06em; font-style: normal; padding: 3px 8px; border-radius: 10px; background: rgba(255,255,255,.08); color: #cfd6ea; white-space: nowrap; }
 #online .ol-seat em.ok { background: rgba(80,200,120,.25); color: #9fe3a0; } #online .ol-seat em.host { background: rgba(255,200,90,.2); color: #ffd36a; }
 #online .ol-seat.empty { opacity: .75; } #online .ol-seat.empty .ph { width: 46px; height: 46px; border-radius: 6px; border: 1.5px dashed rgba(232,184,90,.5); }
-#online .ol-acts { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; } #online .ol-acts .btn-gold, #online .ol-acts .btn-blue { flex: 1; }
+#online .ol-acts { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; flex: none; } #online .ol-acts .btn-gold, #online .ol-acts .btn-blue, #online .ol-acts .btn-ghost { height: 40px; }
+#online .ol-seat img.face, #online .ol-seat.empty .ph { width: 40px !important; height: 40px !important; } #online .ol-acts .btn-gold, #online .ol-acts .btn-blue { flex: 1; }
 #online .ol-rejoin { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,190,80,.14); border: 1px solid rgba(255,200,90,.4); font: 600 13px var(--u-body); color: #f3ead2; }
 #online .ol-rejoin span { flex: 1; } #online .ol-rejoin .btn-gold { height: 36px; padding: 0 14px; }
 #online .ol-tip { font: 500 11.5px/1.45 var(--u-body); color: var(--u-dim); margin: 0; }
@@ -92,7 +93,8 @@ export function openOnline(nav) {
         <div class="ol-box fr">${inRoom ? `
           <h4>Phòng</h4>
           <div class="ol-code"><b>${room.code}</b><button type="button" class="btn-ghost" data-a="copy">Chép mã</button></div>
-          <div class="ol-row">${segHtml('mode', Object.entries(MODES_ONLINE).map(([k, m]) => [k, k === '1v1' ? '1v1' : '5v5']), room.mode, !host())}${segHtml('diff', Object.entries(DIFFICULTY).map(([k, d]) => [k, d.name]), room.difficulty, !host())}</div>
+          <div class="ol-row">${segHtml('mode', Object.entries(MODES_ONLINE).map(([k]) => [k, k]), room.mode, !host())}</div>
+          <div class="ol-row">${segHtml('diff', Object.entries(DIFFICULTY).map(([k, d]) => [k, d.name]), room.difficulty, !host())}</div>
           <p class="ol-tip">${MODES_ONLINE[room.mode].name}. Máy (bot) độ khó ${DIFFICULTY[room.difficulty].name} điền các chỗ trống.</p>
           <div class="ol-seats">${seatHtml(room.players[0])}${seatHtml(guest)}</div>
           <div class="ol-acts">${host()
