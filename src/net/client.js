@@ -3,7 +3,7 @@
 
 const KEY = 'la.server';
 /** Máy chủ mặc định khi mở game từ trang khác máy chủ (GitHub Pages…): điền sau khi đưa máy chủ lên mạng, vd. 'wss://moba.ten-mien.com/ws'. */
-export const DEFAULT_SERVER = '';
+export const DEFAULT_SERVER = 'wss://lantern-arena-online.onrender.com/ws'; // Render gói free, Singapore (render.yaml)
 /** Địa chỉ máy chủ mặc định. */
 export function serverUrl() {
   const q = new URLSearchParams(location.search).get('server');
