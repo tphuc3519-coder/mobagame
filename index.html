@@ -199,6 +199,7 @@
   .q > .ic { width: var(--qi); height: var(--qi); flex: none; border-radius: 10px; } /* ô mua nhanh co theo nút cửa hàng: hàng cửa hàng không cao hơn nút giỏ trên màn thấp */ .q.ready > .ic { border-color: var(--c-yel); box-shadow: 0 0 0 3px var(--c-yel); } .q:not(.ready) > .ic { filter: grayscale(0.6) brightness(0.75); }
   .q .qn { display: flex; flex-direction: column; min-width: 0; } .q .qn b { font: 800 14px var(--f-disp); color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .q .qn small { font: 600 12px 'Be Vietnam Pro', system-ui, sans-serif; color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q.pop { animation: qPop .32s cubic-bezier(.2,1.6,.4,1); } @keyframes qPop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: none; opacity: 1; } } /* mua nhanh: món vừa đủ vàng bật lên */
   .q .pr { position: absolute; left: 4px; bottom: 4px; width: var(--qi); text-align: center; font: 800 12px var(--f-disp); color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); }
   .shop header .inv { display: flex; align-items: center; gap: 8px; margin-left: 10px; } .shop header .inv small { color: #eef1f888; font-size: 11px; }
   .bar { display: grid; grid-template-columns: repeat(6, 38px); grid-auto-rows: 38px; gap: 4px; }

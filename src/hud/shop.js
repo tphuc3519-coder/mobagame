@@ -1,4 +1,5 @@
 // Cửa hàng trượt vào từ trái (hoặc phải) — 6 ô trang bị chỉ hiện trong bảng cửa hàng — + ô "Mua nhanh" dưới bản đồ nhỏ (05 §1, 07). Mua được mọi lúc, kể cả khi đang chờ hồi sinh.
+// Mua nhanh chỉ hiện món ĐỦ VÀNG mua ngay (như Liên Quân: đủ tiền thì món bật lên, chưa đủ thì không hiện gì); món mới hiện có hiệu ứng bật lên.
 import { ITEMS, SHOP_TABS, SELL_RATE, cleanBuild } from '../data/items.js';
 import { planBuy, quickBuys } from '../sim/inventory.js';
 import { itemIcon, coinIcon, statLines } from './icons.js';
@@ -79,11 +80,13 @@ export function createShop(root, { world, player }) {
   }
   bar.onclick = (e) => { const b = e.target.closest('.slot'); if (!b) return; const id = player.items[+b.dataset.s]; if (id) { sel = id; tab = ITEMS[id].tab; } setOpen(true); sig = ''; };
 
-  // Mua nhanh: món kế tiếp theo build gợi ý
-  const qb = $('qb');
+  // Mua nhanh: món kế tiếp theo build gợi ý — chỉ những món đủ vàng mua ngay
+  const qb = $('qb'), quick = () => quickBuys(player, 2).filter((q) => q.ok);
+  let shown = new Set();
   function renderQb() {
-    qb.innerHTML = quickBuys(player, 2).map((q, k) => { const it = ITEMS[q.goal], line = (it.note || statLines(it).join(', ')).replace(/^Duy nhất:\s*/, '').split(/[.;]/)[0]; // mua nhanh 2 món (07 §9): món thứ hai gọn hơn trên màn thấp
-      return `<button class="q ${k ? 'q2 ' : ''}${q.ok ? 'ready' : ''}" data-i="${q.id}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span><span class="qn"><b>${ITEMS[q.id].name}</b><small>${q.id !== q.goal ? '→ ' + it.name : line}</small></span></button>`; }).join('');
+    const list = quick(), was = shown; shown = new Set(list.map((q) => q.id));
+    qb.innerHTML = list.map((q, k) => { const it = ITEMS[q.goal], line = (it.note || statLines(it).join(', ')).replace(/^Duy nhất:\s*/, '').split(/[.;]/)[0]; // mua nhanh 2 món (07 §9): món thứ hai gọn hơn trên màn thấp
+      return `<button class="q ready ${k ? 'q2 ' : ''}${was.has(q.id) ? '' : 'pop'}" data-i="${q.id}">${itemIcon(q.id)}<span class="pr">${Math.ceil(q.cost)}</span><span class="qn"><b>${ITEMS[q.id].name}</b><small>${q.id !== q.goal ? '→ ' + it.name : line}</small></span></button>`; }).join('');
   }
   qb.onclick = (e) => { const b = e.target.closest('.q'); if (!b) return; cmd({ type: 'buy', item: b.dataset.i }); sig = ''; };
 
@@ -95,7 +98,7 @@ export function createShop(root, { world, player }) {
       const g = Math.floor(player.gold);
       // dựng lại DOM chỉ khi thứ nhìn thấy đổi (không phải mỗi lần vàng nhích), để chạm không bị mất giữa chừng
       const afford = (id) => { const p = planBuy(player, id); return p.ok && player.gold >= Math.ceil(p.cost) ? 1 : 0; };
-      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quickBuys(player, 2).map((q) => q.id + (q.ok ? 1 : 0)).join();
+      const bits = (open ? listFor().map(afford).join('') + (sel ? afford(sel) : '') : '') + quick().map((q) => q.id).join();
       const s = [player.items.join(), open, tab, sel, bits].join('|');
       if (g !== this.lastGold) { // vàng nhích vài lần mỗi giây: chỉ đổi chữ số (dựng lại cả hình giỏ SVG mỗi lần làm Safari tính lại bố cục)
         this.lastGold = g; const gp = $('goldPill'), sg = $('shopGold');
