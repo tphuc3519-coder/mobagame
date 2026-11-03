@@ -1049,3 +1049,6 @@
     trên mọi máy nên vẫn tất định); vào lại thì trả quyền. Mọi người cùng rớt: phòng giữ 60 giây rồi đóng. Chạy bù xa (> 3 giây): bỏ sự kiện hiệu
     ứng / tiếng của quá khứ, giữ sự kiện đổi trạng thái hình (chết, hồi sinh, trụ đổ…).
   - `setupTeams` nhận thêm `foePlayer` (người chơi thứ hai ở đội 1, không gắn bot); không truyền thì y như cũ (cùng số lần gọi RNG).
+- 2026-11-03: **Online bớt trễ:** gói khung 1 tick (30 gói/giây), hàng chờ ≤ 2 tick, dự đoán chuyển động tướng mình chỉ ở phần vẽ (`session.lead`:
+  lệch = quãng cần đã ra lệnh − quãng mô phỏng đã đi, trần 0,4 giây, tắt khi lướt / ra chiêu / trói / bị đẩy; vị trí, hướng, tốc độ tướng gán tạm
+  trong lúc vẽ rồi trả đúng giá trị — mã băm hai máy vẫn trùng). Trận online chờ đủ model tướng (≤ 40 giây) trước khi báo máy chủ đã tải.
