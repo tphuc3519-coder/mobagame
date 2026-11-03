@@ -23,14 +23,18 @@ export function normUrl(u) {
   return url.toString();
 }
 
+/** Gọi /health để đánh thức máy chủ đang ngủ (Render gói free ngủ sau 15 phút, thức dậy mất ~1 phút) — gọi sớm, lúc mở màn Chơi online. */
+export function wake(url) {
+  try { const u = new URL(url); u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:'; u.pathname = '/health'; fetch(u, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}); } catch (_) { /* địa chỉ sai: bỏ qua */ }
+}
 /** Mở kết nối. Trả về { send, on(type, fn) → gỡ, close, rtt, open } — Promise resolve khi kết nối xong, reject khi lỗi / quá 8 giây. */
-export function connect(url) {
+export function connect(url, ms = 8000) {
   return new Promise((resolve, reject) => {
     let ws; try { ws = new WebSocket(url); } catch (e) { reject(e); return; }
     const subs = new Map(), conn = { url, rtt: 0, open: false, onDrop: null };
     const fire = (t, m) => { for (const f of subs.get(t) || []) try { f(m); } catch (e) { console.error(e); } };
     let pingT = 0;
-    const timeout = setTimeout(() => { try { ws.close(); } catch (_) { /* */ } reject(new Error('Hết thời gian chờ máy chủ')); }, 8000);
+    const timeout = setTimeout(() => { try { ws.close(); } catch (_) { /* */ } reject(new Error('Hết thời gian chờ máy chủ')); }, ms);
     ws.onopen = () => {
       clearTimeout(timeout); conn.open = true;
       const ping = () => conn.send({ t: 'p', c: performance.now() }); ping(); pingT = setInterval(ping, 2000);
