@@ -5,6 +5,7 @@ import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { DUEL, ARENA } from '../data/maps.js';
 import { STARTER, starterFor } from '../data/items.js';
 import { DIFFICULTY, botSpellOf } from '../data/ai.js';
+import { SPELLS } from '../data/spells.js';
 import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
@@ -13,9 +14,17 @@ export const NET = {
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng
   loadTimeout: 45,  // giây chờ mọi máy tải xong trước khi trận tự bắt đầu
+  queueWait: 60,    // ghép trận: chờ người thật tối đa 60 giây (tính từ người vào hàng sớm nhất), quá thì máy điền chỗ trống
+  acceptSec: 12,    // "Đã tìm thấy trận": thời gian bấm Chấp nhận
+  pickSec: 30,      // chọn tướng
+  readySec: 3,      // cả phòng khoá xong → đếm ngược vào trận
 };
 
-export const MODES_ONLINE = { '1v1': { name: 'Đấu đơn 1v1', map: DUEL }, '5v5': { name: 'Đấu 5v5 (máy điền chỗ trống)', map: ARENA } };
+export const MODES_ONLINE = { '1v1': { name: 'Đấu đơn 1v1', map: DUEL }, '5v5': { name: 'Đấu 5v5', map: ARENA } };
+/** Hàng chờ ghép trận trực tuyến (Đấu thường / Đấu hạng / Đỉnh cao) — luôn 5v5, máy điền chỗ trống. Phòng tuỳ chỉnh (custom) không qua hàng chờ. */
+export const QUEUES = { normal: { mode: '5v5' }, ranked: { mode: '5v5' }, peak: { mode: '5v5' } };
+/** 5 vị trí 5v5 (như sim/lineup.js). */
+export const ROLES5 = ['temple', 'mid', 'river', 'jungle', 'support'];
 
 const CMD_TYPES = new Set(['move', 'attack', 'cast', 'spell', 'restore', 'buy', 'sell', 'useItem', 'recall', 'levelSkill', 'ping', 'targetBy', 'surrender']);
 /** Làm sạch dữ liệu trong lệnh: chỉ số hữu hạn, chuỗi ngắn, đối tượng / mảng nông. */
@@ -41,29 +50,36 @@ export const quantDir = (d) => ({ x: Math.round(d.x * 64) / 64, y: Math.round(d.
 
 /** Kiểm tra cấu hình trận do máy chủ dựng. */
 export function sanitizeHero(id) { return ALPHA.includes(id) ? id : ALPHA[0]; }
+/** Phép bổ trợ người chơi chọn (không hợp lệ → null: dùng phép mặc định). */
+export const sanitizeSpell = (id, mode) => (SPELLS[id] && !(mode !== '5v5' && SPELLS[id].disabledIn1v1) ? id : null);
 
 /**
  * Dựng trận online — máy chủ và mọi máy khách gọi y hệt nhau (cùng thứ tự spawn / lệnh tick 0 ⇒ cùng trận).
- * cfg: { mode: '1v1' | '5v5', seed, difficulty, players: [{ team, heroId, name, role? }] } (tối đa một người mỗi đội ở bản này).
- * Trả về { humans: [entity theo thứ tự players] }. Chỗ trống do máy (bot) điền.
+ * cfg: { mode: '1v1' | '5v5', seed, difficulty, bots (mặc định true: máy điền chỗ trống; false: chỉ người thật),
+ *        players: [{ team, heroId, name, role?, spellId?, lo?: { charm, emblem } }] } — 5v5 tối đa 5 người mỗi đội, 1v1 một người mỗi đội.
+ * Trả về { humans: [entity theo thứ tự players] }.
  */
 export function setupOnline(world, cfg) {
-  const diff = DIFFICULTY[cfg.difficulty] ? cfg.difficulty : 'normal';
-  const p0 = cfg.players.find((p) => p.team === 0), p1 = cfg.players.find((p) => p.team === 1);
-  const byTeam = [null, null];
+  const diff = DIFFICULTY[cfg.difficulty] ? cfg.difficulty : 'normal', bots = cfg.bots !== false;
+  let ents;
   if (cfg.mode === '5v5') {
-    const lu = setupTeams(world, { heroId: p0.heroId, playerRole: p0.role || undefined, difficulty: diff, foePlayer: p1 ? { heroId: p1.heroId, role: p1.role || undefined } : undefined });
-    byTeam[0] = lu.player; byTeam[1] = lu.player2 || null;
+    ents = setupTeams(world, { humans: cfg.players.map((p) => ({ team: p.team, heroId: p.heroId, role: p.role || undefined })), difficulty: diff, bots }).humans;
   } else {
-    byTeam[0] = world.spawnHero(p0.heroId, 0, { x: DUEL.spawn[0].x + 250, y: DUEL.road.y });
-    const foeId = p1 ? p1.heroId : ALPHA[(ALPHA.indexOf(p0.heroId) + 3) % ALPHA.length];
-    const foe = world.spawnHero(foeId, 1, { x: DUEL.spawn[1].x - 250, y: DUEL.road.y });
-    if (p1) byTeam[1] = foe;
-    else { world.setLoadout(foe, {}); for (const id of STARTER[HEROES[foeId].roles[0]] || []) world.command(foe.id, { type: 'buy', item: id }); world.addBot(foe, diff); }
+    const byTeam = [null, null], first = [cfg.players.find((p) => p.team === 0), cfg.players.find((p) => p.team === 1)];
+    for (const t of [0, 1]) {
+      const p = first[t], x = t ? DUEL.spawn[1].x - 250 : DUEL.spawn[0].x + 250;
+      if (p) { byTeam[t] = world.spawnHero(p.heroId, t, { x, y: DUEL.road.y }); continue; }
+      if (!bots) continue;
+      const other = first[1 - t], foeId = ALPHA[(ALPHA.indexOf(other ? other.heroId : ALPHA[0]) + 3) % ALPHA.length];
+      const foe = world.spawnHero(foeId, t, { x, y: DUEL.road.y });
+      world.setLoadout(foe, {}); for (const id of STARTER[HEROES[foeId].roles[0]] || []) world.command(foe.id, { type: 'buy', item: id }); world.addBot(foe, diff);
+    }
+    ents = cfg.players.map((p) => byTeam[p.team]);
   }
-  const humans = cfg.players.map((p) => {
-    const e = byTeam[p.team];
-    world.setLoadout(e, cfg.mode === '5v5' ? { spellId: botSpellOf(e.heroId, e.role) } : {}); // phép theo vị trí (rừng: Trừng Trị) / mặc định của tướng + phù hiệu theo vai
+  const humans = cfg.players.map((p, i) => {
+    const e = ents[i], sp = sanitizeSpell(p.spellId, cfg.mode);
+    // phép đã chọn ở màn chọn tướng; không có thì theo vị trí (rừng: Trừng Trị) / mặc định của tướng. Bảng bùa / phù hiệu: world.setLoadout tự làm sạch
+    world.setLoadout(e, { spellId: sp || (cfg.mode === '5v5' ? botSpellOf(e.heroId, e.role) : undefined), ...(p.lo && typeof p.lo === 'object' ? { charm: p.lo.charm, emblem: p.lo.emblem } : {}) });
     e.autoLevel = false; e.skillLevels = { s1: 0, s2: 0, s3: 0 }; e.skillPoints = e.level; // người chơi tự cộng điểm (như game.js)
     e.playerName = String(p.name || 'Người chơi').slice(0, 16); e.online = true;
     for (const id of starterFor(HEROES[e.heroId], e.role, e.spell?.id)) world.command(e.id, { type: 'buy', item: id });

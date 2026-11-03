@@ -136,7 +136,6 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 .ui-panel header { flex: none; display: flex; align-items: center; gap: 12px; height: clamp(46px, 13vh, 56px); padding: 0 max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); background: var(--g-head); border-bottom: 3px solid var(--ink); box-shadow: var(--hl); }
 .ui-panel header h2 { margin: 0; font: 800 clamp(22px, 7vh, 30px)/1 var(--u-disp); letter-spacing: .01em; white-space: nowrap; }
 .ui-hr { margin-left: auto; display: flex; gap: 10px; align-items: center; }
-.ui-hr .md-online { height: clamp(32px, 9vh, 40px); padding: 0 16px; } /* Chọn chế độ → Chơi online */
 .ui-body { flex: 1; min-height: 0; overflow: auto; padding: 12px max(14px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); -webkit-overflow-scrolling: touch; }
 
 /* —— SẢNH CHÍNH —— */
@@ -263,6 +262,9 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .frow button { flex: none; width: 32px; height: 32px; padding: 0; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); display: grid; place-items: center; background: var(--g-blu); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #room .frow button svg { width: 60%; height: 60%; } #room .frow button[disabled] { opacity: .35; }
 #room .rm-btns { flex: none; display: flex; gap: 6px; } #room .rm-btns button { flex: 1; height: 34px; padding: 0 8px; font-size: 14px; }
+#room .rm-btns button.wide { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#room .rm-sub .olc i { width: 8px; height: 8px; border-radius: 50%; background: #6fe08a; box-shadow: 0 0 8px #6fe08a; } #room .rm-sub .olc > b { color: #9fe3a0; }
+#room .seat.empty.on .box { border-style: solid; border-color: rgba(143,194,255,.5); } #room .seat.empty.on .plus { background: var(--g-blu); }
 #room .rm-go { flex: none; width: 100%; height: clamp(44px, 13vh, 54px); font-size: clamp(20px, 6.4vh, 26px); }
 #room .rm-bot { position: absolute; left: var(--l); bottom: var(--b); display: flex; gap: 8px; align-items: center; }
 #room .rm-bot .chatln { width: min(30vw, 270px); height: 30px; border-radius: 15px; }
