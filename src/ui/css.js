@@ -159,6 +159,9 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #home .hm-fr .dot { position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #3ddc6a; box-shadow: 0 0 0 2px var(--ink); }
 #home .hm-fr .more { padding: 0; border: 3px solid transparent; display: grid; place-items: center; background: linear-gradient(#253553, #253553) padding-box, var(--u-rim) border-box; }
 #home .hm-fr .more img.ui-ic { width: 88%; height: 88%; }
+/* nút Online (chơi với người thật — ui/online.js) dưới cột bạn bè: viên thuốc vàng, rộng hơn nút tròn */
+#home .hm-fr .ol { width: auto; height: clamp(30px, 9vh, 38px); border-radius: 19px; padding: 0 12px 0 4px; display: flex; align-items: center; gap: 4px; background: var(--gloss), var(--g-yel); color: var(--ink); font: 800 clamp(13px, 4vh, 16px)/1 var(--u-disp); white-space: nowrap; }
+#home .hm-fr .ol img.ui-ic { width: clamp(24px, 7.5vh, 30px); height: clamp(24px, 7.5vh, 30px); }
 #home .hm-top { position: absolute; top: var(--t); right: var(--r); display: flex; gap: 6px; align-items: center; }
 #home .hm-top .cur { margin-right: 4px; }
 #home .hm-side { position: absolute; right: var(--r); top: calc(var(--t) + clamp(42px, 12.5vh, 52px)); width: var(--side); display: flex; flex-direction: column; gap: clamp(7px, 2.2vh, 11px); }
