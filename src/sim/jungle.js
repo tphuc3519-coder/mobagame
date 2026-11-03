@@ -1,6 +1,7 @@
 // Quái rừng & mục tiêu lớn (đội trung lập = 2). Đứng yên ở trại; bị tướng đánh thì cả trại lao vào kẻ đánh,
 // đuổi tới khi kẻ đó ra khỏi vòng xích (LEASH quanh trại) hoặc chết → quay về, hồi máu nhanh. Chết → hồi sinh sau `respawn` giây.
 // Thưởng: vàng/KN cho người kết liễu, KN chia đồng đội gần; bùa cho người kết liễu hoặc cả đội (data/jungle.js).
+import { D } from '../core/dmath.js';
 import { MONSTERS, monsterScale, LEASH, RESET_HEAL } from '../data/jungle.js';
 import { T, dist, norm } from './util.js';
 import { TICK } from '../core/loop.js';
@@ -92,12 +93,12 @@ function think(world, m, def, camp) {
     }
   }
   const d = dist(t.pos, m.pos) - t.radius;
-  m.facing = Math.atan2(t.pos.y - m.pos.y, t.pos.x - m.pos.x);
+  m.facing = D.atan2(t.pos.y - m.pos.y, t.pos.x - m.pos.x);
   if (d <= m.stats.range) { m.speed = 0; if (world.tick >= m.attackReady) attack(world, m, t, def); }
   else if (m.stats.moveSpeed > 0 && !isRooted(m)) move(m, norm(t.pos.x - m.pos.x, t.pos.y - m.pos.y), m.stats.moveSpeed * TICK);
 }
 
-function move(m, dir, step) { m.pos.x += dir.x * step; m.pos.y += dir.y * step; m.facing = Math.atan2(dir.y, dir.x); m.speed = step / TICK; }
+function move(m, dir, step) { m.pos.x += dir.x * step; m.pos.y += dir.y * step; m.facing = D.atan2(dir.y, dir.x); m.speed = step / TICK; }
 
 function attack(world, m, t, def) {
   m.attackReady = world.tick + T(1 / m.stats.atkSpeed);

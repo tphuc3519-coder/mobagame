@@ -1,5 +1,6 @@
 // Hiệu ứng tức thời của kỹ năng (04 §3): đẩy lùi, hút về, giải khống chế, cắt chiêu đang gồng. Khác trạng thái (status.js) ở chỗ không
 // kéo dài — áp một lần lúc trúng. Đẩy / hút dùng forceMove (đơn vị bị dời thẳng, bị choáng suốt lúc bay nên mất lượt lướt / vung chiêu).
+import { D } from '../core/dmath.js';
 import { forceMove } from './movement.js';
 import { applyStatus, removeStatus, isCcImmune, CLEANSE_KINDS as CLEANSE } from './status.js';
 import { cancelRecall } from './economy.js';
@@ -21,7 +22,7 @@ export function applyInstant(world, t, eff, src, origin = null) {
   switch (eff.status) {
     case 'knockback': {
       if (t.boss) return;
-      let d = dirTo(o, t.pos); if (!d.x && !d.y) d = { x: Math.cos(src.facing), y: Math.sin(src.facing) };
+      let d = dirTo(o, t.pos); if (!d.x && !d.y) d = { x: D.cos(src.facing), y: D.sin(src.facing) };
       const k = 1 - (t.data?.passive?.params?.knockbackReduce || 0) - (t.knockbackResist || 0); // Giáp Sắt (Superman) giảm 40% lực đẩy
       const dist = (eff.dist || 150) * Math.max(0.1, k);
       const time = forceMove(world, t, { x: t.pos.x + d.x * dist, y: t.pos.y + d.y * dist }, eff.speed || 1600) || 0;
@@ -31,7 +32,7 @@ export function applyInstant(world, t, eff, src, origin = null) {
     }
     case 'pull': { // hút về tâm, tối đa eff.dist
       if (t.boss) return;
-      const d = dirTo(t.pos, o), gap = Math.hypot(o.x - t.pos.x, o.y - t.pos.y), mv = Math.max(0, Math.min(eff.dist || 200, gap - t.radius * 0.5));
+      const d = dirTo(t.pos, o), gap = D.hypot(o.x - t.pos.x, o.y - t.pos.y), mv = Math.max(0, Math.min(eff.dist || 200, gap - t.radius * 0.5));
       if (mv < 5) return;
       const time = forceMove(world, t, { x: t.pos.x + d.x * mv, y: t.pos.y + d.y * mv }, eff.speed || 1400) || 0;
       if (time > 0) applyStatus(world, t, { status: 'stun', id: 'pull_stun', duration: time }, src);

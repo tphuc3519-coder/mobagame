@@ -1,6 +1,7 @@
 // Bot né chiêu (06 §4.5): thấy đạn kỹ năng của tướng địch đang bay thẳng về phía mình, hoặc đứng trong vòng cảnh báo của chiêu giáng
 // xuống điểm (world.dangers — skills.js ghi lúc chiêu bắt đầu) thì bước ngang ra. Mỗi đạn / vòng chỉ xét một lần, né được theo tỉ lệ
 // `dodge` của độ khó (bot dễ hay đứng trúng). Trả hướng né (đơn vị) hoặc null. Chỉ đọc trạng thái trận, không đổi gì.
+import { D } from '../core/dmath.js';
 import { T } from '../sim/util.js';
 
 const seenOf = (bot) => { if (!bot.seen || bot.seen.size > 120) bot.seen = new Set(); return bot.seen; };
@@ -20,10 +21,10 @@ export function dodgeDir(bot) {
   }
   for (const z of world.dangers || []) {
     if (z.team === e.team || world.tick > z.until || seen.has(z.key)) continue;
-    const dx = e.pos.x - z.x, dy = e.pos.y - z.y, d = Math.hypot(dx, dy); if (d > z.r + e.radius) continue;
+    const dx = e.pos.x - z.x, dy = e.pos.y - z.y, d = D.hypot(dx, dy); if (d > z.r + e.radius) continue;
     seen.add(z.key);
     if (rng.next() >= diff.dodge) continue;
-    if (d < 1) { const a = rng.next() * Math.PI * 2; return { x: Math.cos(a), y: Math.sin(a) }; }
+    if (d < 1) { const a = rng.next() * Math.PI * 2; return { x: D.cos(a), y: D.sin(a) }; }
     return { x: dx / d, y: dy / d };
   }
   return null;

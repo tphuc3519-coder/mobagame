@@ -1,4 +1,5 @@
 // Vàng, kinh nghiệm, cấp, hồi sinh, về thành (03 §A10, §B4). Không dùng ngẫu nhiên hay giờ thật.
+import { D } from '../core/dmath.js';
 import { ECON, econOf } from '../data/economy.js';
 import { ITEMS } from '../data/items.js';
 import { computeBonus } from './inventory.js';
@@ -83,7 +84,7 @@ export function updateEconomy(world) {
     if (on) { e.gold += pg.perSec / 30; e.goldEarned += pg.perSec / 30; }
     if (!e.alive) continue;
     const r = e.recall; if (!r) continue;
-    const m = Math.hypot(e.moveDir.x, e.moveDir.y);
+    const m = D.hypot(e.moveDir.x, e.moveDir.y);
     if (e.lastDamagedTick >= r.start || m > 0.05 || e.attacking || isHardCC(e) || e.dash) { cancelRecall(world, e); continue; }
     if (world.tick >= r.until) {
       e.recall = null; e.pos.x = e.spawn.x; e.pos.y = e.spawn.y; e.prevPos.x = e.pos.x; e.prevPos.y = e.pos.y;

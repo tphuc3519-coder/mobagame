@@ -1,4 +1,4 @@
-// Các chế độ chơi + bảng "Chọn chế độ" (từ sảnh): Đấu thường 5v5, Đấu hạng, Đấu đơn 1v1, Luyện tập. Đối thủ và đồng đội đều là máy;
+// Các chế độ chơi + bảng "Chọn chế độ" (từ sảnh): Đấu thường 5v5, Đấu hạng, Đấu đơn 1v1, Luyện tập, Chơi online (người thật — ui/online.js). Đối thủ và đồng đội đều là máy;
 // độ khó máy: đấu thường = Thường, đấu hạng theo bậc hạng, đấu đơn / luyện tập tự chọn (lưu trong hồ sơ).
 import { DIFFICULTY } from '../data/ai.js';
 import { panel, rankBadge, toast } from './kit.js';
@@ -36,7 +36,9 @@ const CARDS = [
 /** Bảng chọn chế độ; chạm thẻ → phòng chờ (hoặc thẳng màn chọn tướng với Luyện tập). */
 export function openModes(nav) {
   const p = profile();
-  const pn = panel({ title: 'Chọn chế độ' });
+  // nút Chơi online (người thật qua máy chủ — ui/online.js, docs/ONLINE.md) ở góc phải thanh tiêu đề: thêm thẻ thứ 6 thì thẻ hẹp lại, chữ tràn ở máy 667 px
+  const pn = panel({ title: 'Chọn chế độ', right: '<button type="button" class="btn-gold md-online" data-online>Chơi online</button>' });
+  pn.el.querySelector('[data-online]').onclick = () => { pn.close(); nav.go('online'); };
   const render = () => {
     pn.body.innerHTML = `<div class="md-list">${CARDS.map((c) => {
       const r = rankNow(), lock = c.peak && !peakNow().open;

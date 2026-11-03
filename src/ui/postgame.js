@@ -149,7 +149,7 @@ export function openPostgame(o) {
     }
     const notes = (rw.notes || []).map((n) => `<span class="note">${n}</span>`).join('');
     const cg = rw.courage ? `<div class="cg">Điểm tích luỹ +${rw.courage.gain}<span class="pbar"><i style="width:${Math.round((rw.courage.now / COURAGE_MAX) * 100)}%"></i></span>${rw.courage.now}/${COURAGE_MAX}</div>` : '';
-    const reward = o.mode === 'training' ? '<span>Luyện tập: không tính thưởng</span>'
+    const reward = o.mode === 'training' ? '<span>Luyện tập: không tính thưởng</span>' : o.mode === 'online' ? '<span>Chơi online: bản thử, chưa tính thưởng</span>'
       : `<span>${icon('coin')}+${rw.gold || 0}</span><span>${icon('star')}+${rw.exp || 0} KN${rw.levelUp ? ` · <em class="up">Lên cấp ${rw.level}!</em>` : ''}</span>${rank}`;
     el.innerHTML = `${bg.replace('class="rays"', 'class="rays l"')}<div class="self"><div class="fig in"><img src="${fullSrc(me.heroId)}" alt="" draggable="false"></div><div class="st">
       <div class="score in"><b class="${win ? 'gt' : 'gs'}">${me.score.toFixed(1)}</b><span class="lbl">ĐIỂM ĐÁNH GIÁ${mvpChip(me)}<em>${win ? 'Chiến thắng' : 'Thất bại'} · ${o.modeName}</em></span></div>

@@ -89,6 +89,10 @@ Thêm từ GĐ3: `src/core/scope.js` (phạm vi dọn dẹp của trận — lis
 `/sw.js` + `/manifest.webmanifest` ở gốc; lúc deploy `node tools/mk_sw.mjs site <mã commit>` ghi mã bản vào `<meta name="la-build">` và
 danh sách tệp + băm vào `sw.js` (`.github/workflows/pages.yml`).
 
+Thêm 01/11 (chơi online — `docs/ONLINE.md`): `src/net/` (protocol / client / session — không import `three`, `render/`, `hud/`; `protocol.js` chạy được
+cả trong Node cho máy chủ), `server/` (máy chủ Node), `src/core/dmath.js` (lượng giác tất định: **mô phỏng dùng `D.sin / D.cos / D.atan2 / D.acos /
+D.hypot`, không dùng `Math.*` tương ứng** — `tools/t_online.mjs` kiểm).
+
 **Quy tắc tầng:** chỉ `render/` và `showcase/` được import `three`. `sim/` không import từ `render/`, `hud/`, `ui/`. Render chỉ đọc trạng thái. Điều này giữ khả năng chạy mô phỏng trên server Node.js về sau.
 
 ## 5. Entity

@@ -1,0 +1,19 @@
+# Máy chủ chơi online trên Render, gói miễn phí, vùng Singapore (docs/ONLINE.md). Render đọc tệp này khi tạo "Blueprint" từ repo.
+# Gói free: ngủ sau 15 phút không có ai (không có yêu cầu / tin WebSocket), lần đầu vào lại chờ ~1 phút; 750 giờ chạy / tháng.
+services:
+  - type: web
+    name: lantern-arena-online
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: node -v          # không có gói npm nào để cài
+    startCommand: node server/index.mjs
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: STATIC               # game nằm trên GitHub Pages, máy chủ chỉ lo /ws + /health
+        value: "0"
+      - key: ORIGINS              # chỉ nhận kết nối từ trang game (thêm địa chỉ khác, cách nhau dấu phẩy)
+        value: https://tphuc3519-coder.github.io

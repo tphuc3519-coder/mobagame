@@ -1032,3 +1032,20 @@
   Thêm độ khối theo lối game mobile hoạt hình — thân khối dải sáng→tối **trong cùng một sắc**, mặt bóng nửa trên của nút, mép sáng trong,
   gờ tối dưới, chữ tiêu đề đắp nổi — nhưng giữ nguyên ranh giới đã chốt: không vàng kim / ánh kim, không quầng sáng nhoè, không kính mờ,
   không chữ in hoa giãn. Làm bằng token (`--g-*`, `--gloss`, `--hl`, `--hl2`, `--extrude`) thay vì sửa từng màn.
+- 2026-11-01: **Chơi online bản thử — lockstep có máy chủ làm nhịp, không phải snapshot** (khác ý ban đầu ở 10_LO_TRINH "Sau 1.0" mục 1). Máy chủ
+  Node (`server/`, không gói npm: WebSocket tự viết) giữ đồng hồ 30 tick/giây, gom lệnh người chơi theo tick, phát 15 gói/giây (2 tick/gói); mọi máy và
+  chính máy chủ chạy cùng `src/sim/` với cùng seed + lệnh ⇒ cùng trận. Lý do: phần vẽ / HUD / hiệu ứng đọc gần như toàn bộ `world` + sự kiện, gửi
+  snapshot đầy đủ phải tuần tự hoá cả đạn, vùng, trạng thái, hook… (nặng, dễ sót); lệnh thì nhẹ (vài byte/giây) và giữ nguyên phần vẽ. Đánh đổi:
+  trễ thao tác ≈ ping + ~70 ms (chưa dự đoán chuyển động), máy khách biết cả trạng thái trong sương mù. Chi tiết: `docs/ONLINE.md`.
+  - **Lượng giác tất định:** `Math.sin / cos / atan2 / acos / hypot` không được chuẩn JS quy định tới bit (V8 và JavaScriptCore của iPhone có thể lệch
+    chữ số cuối → hai máy lệch dần). Mô phỏng (`src/sim`, `src/ai`, `src/data`) đổi sang `D.*` trong `src/core/dmath.js` (chỉ + − × ÷, `sqrt`, `round`
+    — IEEE quy định đúng tới bit); sai số so với `Math.*` < 1e-15. `tools/t_online.mjs` chặn `Math.sin(`… quay lại trong mô phỏng. Phần vẽ vẫn dùng `Math`.
+    Kết quả trận offline chỉ khác ở chữ số rất xa: mã băm `t_determinism` (6 chữ số thập phân, seed 1, 3 phút) trùng hệt bản `main`.
+  - Dò lệch: mỗi 2 giây máy khách gửi mã băm (vị trí, máu, năng lượng, vàng, KN, cấp, điểm / cấp kỹ năng, hồi chiêu, đồ — bit chính xác), máy chủ so
+    với mô phỏng của mình, lệch thì ghi nhật ký + báo máy khách. Mỗi máy giữ toàn bộ khung đã nhận (`session.history`) để dựng lại trận dò lỗi.
+  - Bản thử: phòng 2 người theo mã 4 ký tự, chủ phòng đội Xanh; 1v1 hoặc 5v5 (mỗi người một đội, 8 bot); chủ phòng bắt đầu một mình được (đấu máy).
+    Người chơi dùng phép mặc định (5v5: theo vị trí) + phù hiệu theo vai, chưa chọn bảng bùa; không tính thưởng / hạng.
+  - Rớt mạng: lệnh đứng yên ngay; quá 6 giây máy chủ chèn lệnh `{ type: 'bot', on }` (chỉ máy chủ tạo được) → máy tạm điều khiển tướng (áp ở đúng tick
+    trên mọi máy nên vẫn tất định); vào lại thì trả quyền. Mọi người cùng rớt: phòng giữ 60 giây rồi đóng. Chạy bù xa (> 3 giây): bỏ sự kiện hiệu
+    ứng / tiếng của quá khứ, giữ sự kiện đổi trạng thái hình (chết, hồi sinh, trụ đổ…).
+  - `setupTeams` nhận thêm `foePlayer` (người chơi thứ hai ở đội 1, không gắn bot); không truyền thì y như cũ (cùng số lần gọi RNG).

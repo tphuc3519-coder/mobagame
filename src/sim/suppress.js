@@ -4,6 +4,7 @@
 // đồ / Biến về thì thả xích (commands.js). Xích đứt khi: hết giờ (ok = true → hiệu ứng `atEnd` của chiêu), một trong hai chết, mục tiêu không
 // còn mang trạng thái, kéo giãn quá breakRange, hoặc người gây (đang niệm) bị khống chế cứng / câm lặng / khiêu khích / bị cắt chiêu.
 // Không gọi gì của module khác ở cấp module (chỉ đọc hằng số) — chuỗi import skills → suppress → effects → movement → skills vẫn an toàn.
+import { D } from '../core/dmath.js';
 import { T, dist } from './util.js';
 import { applyStatus, isSilenced, tauntSource } from './status.js';
 import { interrupt } from './effects.js';
@@ -24,7 +25,7 @@ export function startSuppress(world, src, t, o = {}) {
   if (link.channel) {
     src.channel = { link: link.id, start: link.start, until: link.until, target: t.id };
     src.dash = null; src.castUntil = link.until;
-    src.facing = src.castFacing = Math.atan2(t.pos.y - src.pos.y, t.pos.x - src.pos.x);
+    src.facing = src.castFacing = D.atan2(t.pos.y - src.pos.y, t.pos.x - src.pos.x);
   }
   (world.suppressions ||= []).push(link);
   world.emit('suppress', { id: src.id, target: t.id, dur: o.duration, slot: o.slot ?? null, item: !!o.item, via: o.via ?? null });

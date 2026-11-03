@@ -1,3 +1,4 @@
+import { D } from '../../core/dmath.js';
 import { hero } from './_make.js';
 // Bóng Sau Lưng: đánh từ sau lưng mục tiêu +30% sát thương; đứng yên 2s thì hồi 4% mana mỗi giây.
 const P = { backBonus: 0.3, idleMana: 0.04, idleAfter: 2 };
@@ -9,8 +10,8 @@ export default hero({
     hooks: {
       onDealDamage(ctx) { // ctx thường (damage.js): self, target, amount, opts
         const t = ctx.target, s = ctx.self; if (ctx.opts?.dot || t.structure) return;
-        const dx = s.pos.x - t.pos.x, dy = s.pos.y - t.pos.y, l = Math.hypot(dx, dy);
-        if (l > 1 && (dx * Math.cos(t.facing) + dy * Math.sin(t.facing)) / l < -0.35) ctx.amount *= 1 + P.backBonus;
+        const dx = s.pos.x - t.pos.x, dy = s.pos.y - t.pos.y, l = D.hypot(dx, dy);
+        if (l > 1 && (dx * D.cos(t.facing) + dy * D.sin(t.facing)) / l < -0.35) ctx.amount *= 1 + P.backBonus;
       },
       onTick(ctx) {
         const s = ctx.self, w = ctx.world;

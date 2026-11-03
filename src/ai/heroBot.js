@@ -1,4 +1,5 @@
 // Bot tướng 1v1 (06 §4.3, §5): LANE/PUSH, FIGHT/KITE, RETREAT, RECALL. Xuất Command như người chơi.
+import { D } from '../core/dmath.js';
 import { DIFFICULTY, BOT } from '../data/ai.js';
 import { mulberry32 } from '../core/rng.js';
 import { T, dist, norm } from '../sim/util.js';
@@ -28,7 +29,7 @@ function steer(bot, p) {
     const dx = p.x - e.pos.x, dy = p.y - e.pos.y, L2 = dx * dx + dy * dy || 1;
     const t = Math.max(0, Math.min(1, ((s.pos.x - e.pos.x) * dx + (s.pos.y - e.pos.y) * dy) / L2));
     const cx = e.pos.x + dx * t, cy = e.pos.y + dy * t, clear = s.radius * 0.8 + e.radius + 25;
-    if (t > 0 && t < 1 && Math.hypot(cx - s.pos.x, cy - s.pos.y) < clear && dist(p, s.pos) > clear) {
+    if (t > 0 && t < 1 && D.hypot(cx - s.pos.x, cy - s.pos.y) < clear && dist(p, s.pos) > clear) {
       const side = e.pos.y >= s.pos.y ? 1 : -1;
       return { x: s.pos.x, y: s.pos.y + side * (clear + 30) };
     }
@@ -36,7 +37,7 @@ function steer(bot, p) {
   return p;
 }
 const move = (bot, p0, tol = 30) => {
-  const { e } = bot, p = steer(bot, p0), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = Math.hypot(dx, dy);
+  const { e } = bot, p = steer(bot, p0), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = D.hypot(dx, dy);
   bot.world.command(e.id, { type: 'move', dir: l > tol ? { x: dx / l, y: dy / l } : { x: 0, y: 0 } });
   return l;
 };
@@ -141,7 +142,7 @@ export function updateBots(world) {
     if (world.tick < bot.next) continue;
     bot.next = world.tick + Math.max(3, T(bot.diff.react));
     const moved = dist(e.pos, bot.lastPos); bot.lastPos = { ...e.pos };
-    const wants = Math.hypot(e.moveDir.x, e.moveDir.y) > 0.1;
+    const wants = D.hypot(e.moveDir.x, e.moveDir.y) > 0.1;
     bot.stuck = e.alive && wants && moved < 2 && !e.recall ? bot.stuck + (bot.next - world.tick) : 0;
     think(bot);
   }

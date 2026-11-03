@@ -1,5 +1,6 @@
 // Hình học đường: đường là đường gấp khúc từ nhà chính Xanh tới nhà chính Đỏ (map.lanes[i].pts).
 // Dùng cho lính (đi theo đường) và bot (đứng đúng vị trí trên đường).
+import { D } from '../core/dmath.js';
 const cache = new Map();
 
 /** Đường đã định hướng cho `team` (Xanh đi xuôi, Đỏ đi ngược), kèm độ dài cộng dồn. */
@@ -7,7 +8,7 @@ export function lanePath(map, laneIdx, team) {
   const key = `${map.id}:${laneIdx}:${team}`;
   let p = cache.get(key); if (p) return p;
   const src = map.lanes[laneIdx].pts, pts = (team === 0 ? src : src.slice().reverse()).map(([x, y]) => ({ x, y }));
-  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + D.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
   p = { pts, cum, length: cum[cum.length - 1], width: map.lanes[laneIdx].width, id: map.lanes[laneIdx].id };
   cache.set(key, p);
   return p;
@@ -26,7 +27,7 @@ export function project(path, p) {
   let best = { s: 0, d: Infinity, x: path.pts[0].x, y: path.pts[0].y };
   for (let i = 1; i < path.pts.length; i++) {
     const a = path.pts[i - 1], b = path.pts[i], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1;
-    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2)), x = a.x + dx * t, y = a.y + dy * t, d = Math.hypot(p.x - x, p.y - y);
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2)), x = a.x + dx * t, y = a.y + dy * t, d = D.hypot(p.x - x, p.y - y);
     if (d < best.d) best = { s: path.cum[i - 1] + Math.sqrt(L2) * t, d, x, y };
   }
   return best;

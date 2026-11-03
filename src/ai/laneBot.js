@@ -2,6 +2,7 @@
 // xuất Command như người chơi. Vị trí tính theo quãng s dọc đường (lanes.js) nên dùng được cho đường cong; có tính số lượng đồng đội khi
 // giao tranh. Khi rảnh (LANE) thì theo lệnh của não đội (teamBrain.js: thủ trụ, mục tiêu lớn, dồn đường), không có lệnh thì làm việc của
 // vị trí: đi rừng dọn trại phía mình + gank, trợ thủ kèm xạ thủ; mọi bot né chiêu theo độ khó (dodge.js).
+import { D } from '../core/dmath.js';
 import { DIFFICULTY, BOT } from '../data/ai.js';
 import { mulberry32 } from '../core/rng.js';
 import { T, dist, norm } from '../sim/util.js';
@@ -36,7 +37,7 @@ function steer(bot, p) {
     const dx = p.x - e.pos.x, dy = p.y - e.pos.y, L2 = dx * dx + dy * dy || 1;
     const t = Math.max(0, Math.min(1, ((s.pos.x - e.pos.x) * dx + (s.pos.y - e.pos.y) * dy) / L2));
     const cx = e.pos.x + dx * t, cy = e.pos.y + dy * t, clear = s.radius * 0.8 + e.radius + 25;
-    if (t > 0 && t < 1 && Math.hypot(cx - s.pos.x, cy - s.pos.y) < clear && dist(p, s.pos) > clear) {
+    if (t > 0 && t < 1 && D.hypot(cx - s.pos.x, cy - s.pos.y) < clear && dist(p, s.pos) > clear) {
       const L = Math.sqrt(L2), nx = -dy / L, ny = dx / L, side = (s.pos.x - e.pos.x) * nx + (s.pos.y - e.pos.y) * ny > 0 ? -1 : 1;
       return { x: s.pos.x + nx * side * (clear + 30), y: s.pos.y + ny * side * (clear + 30) };
     }
@@ -59,7 +60,7 @@ const move = (bot, p0, tol = 30, plan = false) => {
     while (r.i < r.pts.length - 1 && dist(e.pos, r.pts[r.i]) < 90) r.i++;
     if (lineClear(nav, e.pos, p0)) bot.route = null; else { tgt = r.pts[r.i]; if (r.i < r.pts.length - 1) tol = Math.min(tol, 30); } // điểm trung gian: đi tới sát (khoảng dừng của đích cuối không áp cho điểm giữa đường)
   }
-  const p = steer(bot, tgt), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = Math.hypot(dx, dy);
+  const p = steer(bot, tgt), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = D.hypot(dx, dy);
   world.command(e.id, { type: 'move', dir: l > tol ? { x: dx / l, y: dy / l } : { x: 0, y: 0 } });
   return l;
 };
@@ -271,7 +272,7 @@ export function updateLaneBot(world, e) {
   const bot = e.bot;
   if (world.tick < bot.next) return;
   bot.next = world.tick + Math.max(3, T(bot.diff.react));
-  const moved = dist(e.pos, bot.lastPos), wants = Math.hypot(e.moveDir.x, e.moveDir.y) > 0.1; bot.lastPos = { ...e.pos }; // kẹt: muốn đi mà gần như đứng yên
+  const moved = dist(e.pos, bot.lastPos), wants = D.hypot(e.moveDir.x, e.moveDir.y) > 0.1; bot.lastPos = { ...e.pos }; // kẹt: muốn đi mà gần như đứng yên
   bot.stuck = e.alive && wants && moved < 3 && !e.recall && !e.dash ? bot.stuck + (bot.next - world.tick) : 0;
   think(bot);
 }

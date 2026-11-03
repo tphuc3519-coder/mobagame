@@ -1,5 +1,6 @@
 // Phép bổ trợ (05 §6). Dùng chung một kiểu Command với kỹ năng: { type:'spell', aim }. Cơ chế chọn theo `kind` của dữ liệu (không theo id);
 // phép `needTarget` không có mục tiêu thì báo 'noTarget' và không mất hồi chiêu.
+import { D } from '../core/dmath.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { T, dist, norm } from './util.js';
 import { applyStatus, removeStatus, isHardCC, cannotDash, CLEANSE_KINDS } from './status.js';
@@ -72,9 +73,9 @@ export function castSpell(world, e, aim) {
   switch (sp.kind) {
     case 'blink': {
       let d = aim && (aim.x || aim.y) ? norm(aim.x, aim.y) : null;
-      if (!d) { const m = Math.hypot(e.moveDir.x, e.moveDir.y); d = m > 0.1 ? norm(e.moveDir.x, e.moveDir.y) : { x: Math.cos(e.facing), y: Math.sin(e.facing) }; }
+      if (!d) { const m = D.hypot(e.moveDir.x, e.moveDir.y); d = m > 0.1 ? norm(e.moveDir.x, e.moveDir.y) : { x: D.cos(e.facing), y: D.sin(e.facing) }; }
       const from = { x: e.pos.x, y: e.pos.y }, to = blinkTarget(world, e, d, sp.range);
-      e.pos.x = to.x; e.pos.y = to.y; e.prevPos.x = to.x; e.prevPos.y = to.y; e.dash = null; e.facing = Math.atan2(d.y, d.x);
+      e.pos.x = to.x; e.pos.y = to.y; e.prevPos.x = to.x; e.prevPos.y = to.y; e.dash = null; e.facing = D.atan2(d.y, d.x);
       world.emit('blink', { id: e.id, from, to });
       break;
     }
