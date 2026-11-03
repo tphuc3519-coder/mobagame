@@ -9,7 +9,7 @@ import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
   version: 1,
-  pack: 2,          // số tick mỗi gói khung máy chủ gửi (30 tick/giây → 15 gói/giây)
+  pack: 1,          // số tick mỗi gói khung máy chủ gửi: 1 = gửi ngay mỗi tick (30 gói/giây, vài chục byte/gói) — bớt ~17 ms trễ so với gói 2 tick
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng
   loadTimeout: 45,  // giây chờ mọi máy tải xong trước khi trận tự bắt đầu

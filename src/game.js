@@ -24,7 +24,7 @@ import { createFog } from './render/fog.js';
 import { createOrbViews } from './render/orbs.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews, releaseSkeletons } from './render/unitView.js';
-import { loadHero } from './render/assets.js';
+import { loadHero, heroProgress } from './render/assets.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
@@ -248,6 +248,14 @@ const loopCfg = {
     world.update(loop.tick);
   },
   render(alpha, dtFrame, force) {
+    if (!online) return loopCfg.draw(alpha, dtFrame, force);
+    // online: vẽ tướng mình lệch lên trước theo dự đoán (net/session.js lead) — chỉ trong lúc vẽ, trả lại đúng giá trị mô phỏng ngay sau
+    const L = online.lead(world), p = player.pos, q = player.prevPos, keep = [p.x, p.y, q.x, q.y, player.facing, player.speed];
+    p.x += L.x; p.y += L.y; q.x += L.x; q.y += L.y;
+    if (L.dir) { player.facing = Math.atan2(L.dir.y, L.dir.x); player.speed = Math.max(player.speed, player.stats.moveSpeed); }
+    try { loopCfg.draw(alpha, dtFrame, force); } finally { [p.x, p.y, q.x, q.y, player.facing, player.speed] = keep; }
+  },
+  draw(alpha, dtFrame, force) {
     if (manual && !force) return;
     const now = performance.now();
     if (!force && now - lastDraw < minFrame) return;
@@ -296,7 +304,13 @@ async function warmUp() {
   try {
     const heroIds = world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId);
     views.update(world, 1, 0); // dựng view mọi đơn vị; chờ model tướng gắn vào (vào thẳng trận chưa qua màn tải) để dịch luôn vật liệu tướng
-    await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 6000); await tick(); await tick();
+    // online: chờ đủ model mọi tướng (máy chủ chờ mọi máy báo đã tải, tối đa 45 giây) — vào trận khi model chưa về thì tướng chỉ là hình nhân
+    // giữ chỗ / bóng đen tới khi tải xong (điện thoại mạng chậm, 5v5 = 10 model)
+    if (online) { const span = cover.querySelector('span'), each = () => heroIds.filter((id) => heroProgress(id) >= 1).length; const t = setInterval(() => { span.textContent = `Đang tải tướng ${each()}/${heroIds.length}…`; }, 250);
+      const kick = setInterval(() => heroIds.forEach((id) => { if (heroProgress(id) < 1) loadHero(id).catch(() => null); }), 3000); // tải hỏng: gọi lại
+      await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 40000); clearInterval(t); clearInterval(kick); span.textContent = 'Đang vào trận…'; }
+    else await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 6000);
+    await tick(); await tick();
     if (disposed) return;
     await within(preloadMonsters().catch(() => {}), 3000);
     await within(portraits.prime(heroIds), 6000); // chân dung bản đồ nhỏ / bảng tỉ số / thông báo

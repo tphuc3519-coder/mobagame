@@ -26,6 +26,14 @@ máy B ──lệnh──▶ │  máy chủ   │ ─────────�
   đạn, vùng, trạng thái, hồi chiêu…) — gửi lệnh nhẹ hơn hàng trăm lần (vài byte / giây khi không bấm gì) và giữ nguyên toàn bộ phần vẽ. Đổi lại:
   máy khách biết hết trạng thái trận (kể cả trong sương mù) — chấp nhận ở bản thử; xem "Việc tiếp theo".
 
+## Giảm cảm giác trễ (03/11)
+
+- Máy chủ gửi khung **mỗi tick** (30 gói/giây, trước 15 gói × 2 tick) và máy khách giữ hàng chờ ≤ 2 tick (mỗi tick tồn trong hàng là thêm 33 ms).
+- **Dự đoán chuyển động tướng mình** (chỉ phần vẽ, `session.lead`): kéo cần là tướng chạy + quay mặt ngay, vẽ lệch lên trước tối đa 0,4 giây
+  quãng đường; mô phỏng (và mọi máy khác) vẫn y nguyên. Đánh / chiêu vẫn chờ máy chủ (~ping + 40 ms).
+- Trận online chờ **đủ model 10 tướng** rồi mới báo máy chủ đã tải (tối đa 40 giây, màn che hiện "Đang tải tướng x/10") — trước đây vào trận khi
+  model chưa về (điện thoại mạng chậm) nên tướng hiện hình nhân giữ chỗ / bóng đen.
+
 ## Chạy thử trên máy mình / trong nhà (LAN)
 
 Cần Node 18 trở lên (không cài gói npm nào).
