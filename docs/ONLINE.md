@@ -49,6 +49,10 @@ sau), hoặc thêm `?server=…` vào đường dẫn.
 
 ## Đưa máy chủ lên mạng (chơi khác nhà)
 
+**Đang chạy:** `wss://lantern-arena-online.onrender.com/ws` (Render gói free, Singapore, tạo từ `render.yaml`; kiểm tra:
+https://lantern-arena-online.onrender.com/health). Đã đặt làm `DEFAULT_SERVER` — mở game trên GitHub Pages là kết nối thẳng. Máy chủ ngủ sau
+15 phút không ai vào: người đầu tiên bấm Tạo phòng / Vào phòng có thể phải chờ ~1 phút (báo "Hết thời gian chờ" thì bấm lại).
+
 Máy chủ chỉ cần thư mục `src/` + `server/`. Game vẫn để trên GitHub Pages; người chơi gõ địa chỉ `wss://…` vào ô Máy chủ (hoặc sửa
 `DEFAULT_SERVER` trong `src/net/client.js` để khỏi phải gõ). Biến môi trường: `PORT`, `STATIC=0` (không phục vụ file game), `ORIGINS=https://<tên>.github.io`
 (chỉ nhận kết nối từ trang game của mình).

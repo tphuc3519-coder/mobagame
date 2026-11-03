@@ -6,7 +6,7 @@ import { DIFFICULTY } from '../data/ai.js';
 import { ICON, face, toast } from './kit.js';
 import { profile } from './profile.js';
 import { stageOn } from './stage.js';
-import { connect, serverUrl, saveServerUrl, normUrl } from '../net/client.js';
+import { connect, serverUrl, saveServerUrl, normUrl, wake } from '../net/client.js';
 import { createSession } from '../net/session.js';
 import { MODES_ONLINE } from '../net/protocol.js';
 
@@ -60,7 +60,8 @@ export function openOnline(nav) {
   if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.append(st); cssDone = true; }
   stageOn(false);
   const p = profile();
-  let url = serverUrl(), conn = null, room = null, connecting = false, started = false;
+  let closed = false, url = serverUrl(), conn = null, room = null, connecting = false, started = false, waking = false;
+  wake(url); // máy chủ miễn phí đang ngủ thì bắt đầu thức dậy ngay khi mở màn
   let heroId = ALPHA.includes(p.lastHero) ? p.lastHero : ALPHA.includes(p.feature) ? p.feature : ALPHA[0];
   let mode = '1v1', diff = DIFFICULTY[p.diff] ? p.diff : 'normal', code = '';
   let saved = null; try { saved = JSON.parse(sessionStorage.getItem('la.online') || 'null'); } catch (_) { /* */ } // trận đang dở (tải lại trang giữa trận)
@@ -81,7 +82,7 @@ export function openOnline(nav) {
     const inRoom = !!room, me = inRoom ? room.players[room.you] : null, guest = room?.players[1];
     el.innerHTML = `
       <div class="ol-head"><button type="button" class="ui-back" data-a="back" aria-label="Quay lại">${ICON.back()}</button><h2 class="gt">Chơi online</h2>
-        <span class="ol-st"><i class="${conn?.open ? 'on' : ''}"></i>${conn?.open ? `Đã nối máy chủ${conn.rtt ? ` · ${Math.round(conn.rtt)} ms` : ''}` : connecting ? 'Đang kết nối…' : 'Chưa kết nối'}</span></div>
+        <span class="ol-st"><i class="${conn?.open ? 'on' : ''}"></i>${conn?.open ? `Đã nối máy chủ${conn.rtt ? ` · ${Math.round(conn.rtt)} ms` : ''}` : connecting ? (waking ? 'Đang đánh thức máy chủ (tối đa ~1 phút)…' : 'Đang kết nối…') : 'Chưa kết nối'}</span></div>
       <div class="ol-main">
         <div class="ol-box fr">
           <h4>Máy chủ</h4>
@@ -120,14 +121,23 @@ export function openOnline(nav) {
     const inp = $('#olUrl'); if (inp) { url = normUrl(inp.value); saveServerUrl(url); }
     connecting = true; render();
     try {
-      const c = await connect(url); conn = c;
+      // máy chủ ngủ: thử lại tới ~75 giây (lần đầu thường hỏng vài lần trong lúc máy chủ khởi động)
+      let c = null; const t0 = Date.now();
+      for (;;) {
+        try { c = await connect(url, 10000); break; } catch (e) {
+          if (Date.now() - t0 > 75000 || closed) throw e;
+          if (!waking) { waking = true; wake(url); render(); }
+          await new Promise((r) => setTimeout(r, 2500));
+        }
+      }
+      waking = false; conn = c;
       c.on('room', (m) => { room = m; render(); });
       c.on('err', (m) => toast(m.m));
       c.on('start', (m) => begin(c, m));
       c.onDrop = () => { if (started) return; conn = null; room = null; toast('Mất kết nối máy chủ'); render(); };
       return c;
     } catch (e) { toast(`${e.message} (${url})`, 3500); return null; }
-    finally { connecting = false; render(); }
+    finally { connecting = false; waking = false; render(); }
   }
   function begin(c, m) {
     if (started) return; started = true;
@@ -164,5 +174,5 @@ export function openOnline(nav) {
   };
   el.oninput = (e) => { if (e.target.id === 'olCode') { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); code = e.target.value; } };
   window.__online = { get room() { return room; }, get conn() { return conn; } }; // kiểm thử tự động
-  return () => { clearInterval(rttT); if (!started) conn?.close(); el.remove(); };
+  return () => { closed = true; clearInterval(rttT); if (!started) conn?.close(); el.remove(); };
 }
