@@ -25,7 +25,7 @@ import { createFog } from './render/fog.js';
 import { createOrbViews } from './render/orbs.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews, releaseSkeletons } from './render/unitView.js';
-import { loadHero, heroProgress } from './render/assets.js';
+import { loadHero, heroProgress, releaseHeroes } from './render/assets.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
@@ -305,6 +305,7 @@ async function warmUp() {
   const tick = () => new Promise((r) => setTimeout(r, 0)), within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
   try {
     const heroIds = world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId);
+    releaseHeroes(heroIds); // chỉ giữ model tướng trong trận (trận trực tuyến / vào thẳng không qua màn tải) — render/assets.js
     views.update(world, 1, 0); // dựng view mọi đơn vị; chờ model tướng gắn vào (vào thẳng trận chưa qua màn tải) để dịch luôn vật liệu tướng
     // online: chờ đủ model mọi tướng (máy chủ chờ mọi máy báo đã tải, tối đa 45 giây) — vào trận khi model chưa về thì tướng chỉ là hình nhân
     // giữ chỗ / bóng đen tới khi tải xong (điện thoại mạng chậm, 5v5 = 10 model)
@@ -337,7 +338,7 @@ async function warmUp() {
   cover.remove(); warmMs = Math.round(performance.now() - t0);
 }
 let warmMs = 0, disposed = false; const warmRoots = [];
-warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
+warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); opts.onStart?.(); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();

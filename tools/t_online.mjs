@@ -49,7 +49,7 @@ async function run(mode, heroes, ticks, dropAt, { queue = null, bots = true } = 
   let st;
   if (queue) {
     const t0 = Date.now(), matched = conns.map((c) => wait(c, 'match')), rmP = wait(A, 'room', (m) => m.state === 'accept');
-    conns.forEach((c, i) => c.send({ t: 'queue', q: queue, name: 'Người ' + i, pri: ['mid', 'mid', 'jungle'][i % 3], sec: 'support' }));
+    for (const [i, c] of conns.entries()) { const ack = wait(c, 'queue'); c.send({ t: 'queue', q: queue, name: 'Người ' + i, pri: ['mid', 'mid', 'jungle'][i % 3], sec: 'support' }); await ack; } // lần lượt: thứ tự vào hàng = thứ tự máy
     const ms = await Promise.all(matched);
     ok(ms.every((m) => m.code === ms[0].code && m.humans === heroes.length), `ghép ${heroes.length} người thật vào phòng ${ms[0].code} sau ${((Date.now() - t0) / 1000).toFixed(1)} giây (hết giờ chờ → máy điền chỗ)`);
     const rm = await rmP;

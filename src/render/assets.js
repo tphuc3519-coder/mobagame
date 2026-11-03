@@ -67,6 +67,7 @@ const artOf = (id) => {
 export function loadHero(id, { showcase = false } = {}) {
   const key = showcase ? id + ':showcase' : id;
   if (cache.has(key)) return cache.get(key);
+  if (keepSet && (showcase || !keepSet.has(id))) return showcase && keepSet.has(id) ? loadHero(id) : Promise.resolve(null); // đang trong trận: không nạp tướng ngoài trận (releaseHeroes)
   const p = (async () => {
     const art = await artOf(id);
     if (showcase && (!art.showcase || LITE)) return loadHero(id);
@@ -74,7 +75,12 @@ export function loadHero(id, { showcase = false } = {}) {
     for (let a = 0; ; a++) {
       try { return { art, gltf: await loadGLB(url), showcase }; } catch (e) { if (a >= 2) throw e; await wait(1200 * (a + 1)); }
     }
-  })().then((m) => { if (m) ready.set(key, m); else cache.delete(key); return m; }, (e) => {
+  })().then((m) => {
+    // nạp xong khi đã vào trận mà tướng không có trong trận (hoặc là bản trưng bày riêng): trả bộ nhớ ngay. Bản trưng bày dùng lại model trong
+    // trận (điện thoại / tướng không có bản riêng: m.showcase = false) của tướng trong trận thì để nguyên — đơn vị trong trận đang dùng nó
+    if (m && keepSet && (m.showcase || !keepSet.has(id))) { freeModel(m.gltf); cache.delete(key); return null; }
+    if (m) ready.set(key, m); else cache.delete(key); return m;
+  }, (e) => {
     cache.delete(key);
     console.warn('Không nạp được model', id, showcase ? '(bản trưng bày)' : '', e?.message);
     if (showcase) return loadHero(id);
@@ -84,6 +90,38 @@ export function loadHero(id, { showcase = false } = {}) {
   cache.set(key, p);
   return p;
 }
+
+/** Trả bộ nhớ CPU của một model đã nạp: ảnh đã giải mã (ImageBitmap.close — Safari không chờ GC mới trả) + hình khối. Chỉ gọi cho model không
+ *  còn đơn vị / sân khấu nào dùng (vật liệu để nguyên: render/dispose.js giữ một thế hệ cho chương trình shader). */
+function freeModel(gltf) {
+  const seen = new Set();
+  gltf?.scene?.traverse((o) => {
+    o.geometry?.dispose?.();
+    for (const mat of [].concat(o.material || [])) for (const v of Object.values(mat)) {
+      if (!v?.isTexture || seen.has(v)) continue; seen.add(v);
+      v.dispose(); if (typeof v.image?.close === 'function') v.image.close();
+    }
+  });
+}
+let keepSet = null, preGen = 0;
+/** Vào trận (màn tải / game.js): chỉ giữ model của các tướng trong trận — model tướng khác (nạp sẵn ở sảnh, trận trước, bản trưng bày) trả
+ *  bộ nhớ, việc nạp sẵn ở sảnh dừng lại. Điện thoại: 20 tướng nạp sẵn ≈ 70 MB ảnh + hình khối nằm thừa đúng lúc trận cần bộ nhớ nhất —
+ *  trình duyệt tắt tab ("văng") khi vào trận 5v5. Cần lại thì loadHero tải lại (tệp đã có trong bộ đệm trình duyệt / service worker).
+ *  keep = null: thôi giới hạn (rời trận về sảnh). */
+export function releaseHeroes(keep) {
+  preGen++;
+  keepSet = keep ? new Set(keep) : null;
+  if (!keepSet) return;
+  for (const [key, m] of [...ready]) {
+    const id = key.split(':')[0];
+    if (keepSet.has(id) && !m.showcase) continue;
+    ready.delete(key); cache.delete(key); freeModel(m.gltf);
+  }
+}
+/** Sảnh (máy tính / máy tính bảng): nạp dần model trong trận của các tướng để màn tải trận nhanh; vào trận (releaseHeroes) thì dừng. */
+export function preloadHeroes(ids) { const g = ++preGen; return ids.reduce((pr, id) => pr.then(() => (g === preGen && !keepSet ? loadHero(id) : null)), Promise.resolve()); }
+/** Số model đang giữ trong bộ nhớ (kiểm thử). */
+export const heroCacheSize = () => ready.size;
 
 /** Model đã nạp xong (không chờ); chưa xong thì undefined. */
 export const peekHero = (id, { showcase = false } = {}) => ready.get(showcase ? id + ':showcase' : id);

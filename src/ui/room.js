@@ -18,6 +18,7 @@ import { ROLE_INFO } from '../data/roles.js';
 import { DRAFT, DRAFT_NAME } from '../data/draft.js';
 import { sfx } from '../audio/audio.js';
 import { net, onNet, lobbyConn, netCancel, netLeave, send } from './netLobby.js';
+import { NET } from '../net/protocol.js';
 
 const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -114,12 +115,16 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   }
   const say = (cur, t) => { const s = cur.pill.querySelector('span'); if (s) s.textContent = t; };
   /** Không nối được máy chủ: ghép với máy (vài giây nữa "tìm thấy trận"). */
-  function toBots(cur, why) { if (mm !== cur) return; cur.online = false; cur.off?.(); cur.off = null; toast(why, 3000); say(cur, 'Đang tìm trận (máy)'); cur.wait = cur.sec + 1 + Math.floor(Math.random() * 3); }
+  function toBots(cur, why) {
+    if (mm !== cur || cur.found) return;
+    if (cur.online && net.conn?.open) send({ t: 'unqueue' }); // đang trong hàng chờ máy chủ: ra khỏi hàng (khỏi bị ghép sau lưng)
+    cur.online = false; cur.off?.(); cur.off = null; toast(why, 3000); say(cur, 'Đang tìm trận (máy)'); cur.wait = cur.sec + 1 + Math.floor(Math.random() * 3);
+  }
   async function searchOnline(cur) {
     cur.off = onNet((ev, m) => {
       if (mm !== cur) return;
       if (ev === 'wake') say(cur, 'Đang đánh thức máy chủ…');
-      else if (ev === 'queue') say(cur, m.n > 1 ? `Đang tìm người chơi · ${m.n} người` : 'Đang tìm người chơi');
+      else if (ev === 'queue') { cur.acked = true; say(cur, m.n > 1 ? `Đang tìm người chơi · ${m.n} người` : 'Đang tìm người chơi'); }
       else if (ev === 'match') foundOnline(cur, m);
       else if (ev === 'room' && foundEl && cur.found) foundRoom(cur, m);
       else if (ev === 'kicked') stopSearch();
@@ -129,6 +134,9 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     if (mm !== cur) return;
     say(cur, 'Đang tìm người chơi');
     send({ t: 'queue', q: mode, name: p.name, avatar: p.avatar, diff: modeDiff(mode), pri: p.rolePri, sec: p.roleSec });
+    // máy chủ bản cũ (chưa có hàng chờ) không trả lời: 6 giây chưa nhận 'queue' thì ghép máy; quá hạn chờ (60 giây + dư) chưa ghép được cũng ghép máy
+    later(6000, () => { if (mm === cur && cur.online && !cur.acked) toBots(cur, 'Máy chủ chưa hỗ trợ ghép trận — ghép với máy'); });
+    later((NET.queueWait + 20) * 1000, () => { if (mm === cur && cur.online) toBots(cur, 'Chưa ghép được trận — ghép với máy'); });
   }
   function stopSearch() {
     if (!mm) return;

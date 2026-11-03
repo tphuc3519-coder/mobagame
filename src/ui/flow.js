@@ -23,6 +23,8 @@ import { screenSound } from '../audio/uiSounds.js';
 import { END } from '../data/endgame.js';
 import { pwaLobby } from './pwa.js';
 import { net, netReset, clearSaved } from './netLobby.js';
+import { markMatch, matchStarted, clearMark } from './crashGuard.js';
+import { releaseHeroes } from '../render/assets.js';
 
 const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading, custom: openOnline, online: openOnline };
 const NEXT = 'la.next';
@@ -55,7 +57,7 @@ export const nav = {
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       skinTint: skinTint(p, P.heroId), // trang phục mùa (GĐ4b)
-      onGameOver: gameOver,
+      onGameOver: gameOver, onStart: matchStarted, // vào trận ổn 15 giây: xoá dấu "đang vào trận" (ui/crashGuard.js)
     });
   },
   /** Vào trận trực tuyến (máy chủ gửi cấu hình trận sau màn chọn tướng — ui/netLobby.js): session = net/session.js. */
@@ -65,7 +67,8 @@ export const nav = {
     const u = ui(); u.hidden = true; u.querySelectorAll(':scope > :not(#show)').forEach((x) => x.remove());
     const me = session.cfg.players[session.me];
     if (MODES[session.cfg.q]) S.mode = session.cfg.q;
-    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session) });
+    markMatch({ mode: session.cfg.q, online: true });
+    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted });
   },
 };
 
@@ -76,7 +79,7 @@ function onlineOver({ world, player, winner }, session) {
   const heroes = world.entities.filter((e) => e.kind === 'hero');
   const rows = scoreMatch(heroes, winner), names = {}, me = rows.find((r) => r.id === player.id);
   for (const h of heroes) names[h.id] = h.online ? h.playerName : `${HEROES[h.heroId].name} ${botLabel}`;
-  clearSaved();
+  clearSaved(); clearMark();
   let rewards = {}, got = [];
   if (ranked) {
     const towers = world.entities.filter((e) => e.kind === 'tower' && e.team !== player.team && !e.alive).length;
@@ -92,6 +95,7 @@ function onlineOver({ world, player, winner }, session) {
 }
 
 function gameOver({ world, player, winner }) {
+  clearMark();
   const heroes = world.entities.filter((e) => e.kind === 'hero');
   const rows = scoreMatch(heroes, winner), me = rows.find((r) => r.id === player.id);
   const towers = world.entities.filter((e) => e.kind === 'tower' && e.team !== player.team && !e.alive).length; // nhiệm vụ "Phá 3 trụ"
@@ -116,7 +120,8 @@ function leave(next) {
   if (++played >= END.reloadEvery) return hardLeave(next); // phòng rò bộ nhớ chưa biết: lâu lâu làm mới cả trang
   try {
     document.getElementById('pg')?.remove(); window.__post = null;
-    const m = match; match = null; m?.dispose?.(); netReset(); // trận online: phiên đã đóng kết nối
+    const m = match; match = null; m?.dispose?.(); netReset(); clearMark(); // trận online: phiên đã đóng kết nối
+    releaseHeroes(null); // về sảnh: hết giới hạn "chỉ model tướng trong trận" (render/assets.js)
     ensureStageDom();
     nav.go(next.to, { mode: next.mode || S.mode });
     window.__flow.backMs = Math.round(performance.now() - t0); // kiểm thử: thời gian từ bấm tới màn kế
