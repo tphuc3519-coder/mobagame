@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { lerp } from '../core/math.js';
+import { viewSign } from '../core/view.js';
 
-// Camera trận (02 §13.2): FOV 45°, nghiêng 55°, khoảng cách 2400 (gốc 2000/38°; các vòng thử 1300 và 1650 vẫn chật); ?camdist= để thử. Đội Đỏ xoay 180° ở Mốc sau.
+// Camera trận (02 §13.2): FOV 45°, nghiêng 55°, khoảng cách 2400 (gốc 2000/38°; các vòng thử 1300 và 1650 vẫn chật); ?camdist= để thử.
+// Đội Đỏ (trực tuyến): camera đứng phía bắc nhìn về nam — bản đồ xoay 180°, nhà mình ở bên trái / phía dưới (core/view.js).
 export const CAM_DISTANCE = 2400, CAM_NEAR = 2000, CAM_FOV = 45; // CAM_NEAR: Cài đặt → Góc camera Gần
 // Giật camera khi chiêu của người chơi tới tư thế chạm (kick): lò xo tắt dần — đỉnh KICK đơn vị thế giới × độ (chiêu 1, chiêu cuối 1,8),
 // tới đỉnh sau ~0,08 s, về chỗ sau ~0,35 s. Máy bật "giảm chuyển động" thì không giật.
@@ -34,7 +36,7 @@ export function createCamera({ distance = CAM_DISTANCE, pitchDeg = 55, fov = CAM
         sx += state.kx; sz += state.kz;
       }
       dist += (distTo - dist) * (state.init ? 1 - Math.exp(-6 * dt) : 1);
-      camera.position.set(target.x + sx, Math.sin(pitch) * dist, target.z + Math.cos(pitch) * dist + sz);
+      camera.position.set(target.x + sx, Math.sin(pitch) * dist, target.z + viewSign() * Math.cos(pitch) * dist + sz);
       camera.lookAt(target.x + sx, 0, target.z + sz);
     },
     /** Rung camera: biên độ (đơn vị thế giới), thời gian (giây). Lần rung mạnh hơn đè lần yếu. */

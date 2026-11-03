@@ -6,6 +6,7 @@
 // Đồ khoá mục tiêu (Xích Giữ): giữ nút thì hiện vòng tầm + dấu vàng ở tướng sẽ bị xích (mục tiêu đang khoá nếu hợp lệ, không thì gần nhất);
 // chạm là gửi kèm id mục tiêu đang khoá (lockId từ skillButtons.js), mô phỏng tự chọn lại nếu không còn hợp lệ.
 // Số giây hồi: số lẻ dưới 10s khi bật cdDecimal (như cũ), tắt thì làm tròn lên giây.
+import { flipDir } from '../core/view.js';
 import { spellTarget, smiteDamage } from '../sim/spells.js';
 import { SPELLS, RESTORE } from '../data/spells.js';
 import { ITEMS, ACTIVE_MAX } from '../data/items.js';
@@ -96,7 +97,7 @@ export function createSpellButtons(root, { world, player, indicators, lockId = (
       if (!press || e.pointerId !== press.id || aimOf(k) !== 'direction' || !player.alive) return;
       const dx = e.clientX - press.cx, dy = e.clientY - press.cy, l = Math.hypot(dx, dy);
       // kéo quá DRAG_MIN: ngắm — kể cả khi đã giữ lâu tới mức hiện mô tả (tắt mô tả, như nút kỹ năng): giữ hơi lâu rồi mới kéo vẫn dùng được
-      if (l > DRAG_MIN) { press.dir = { x: dx / l, y: dy / l }; press.f = Math.min(1, l / dragMax()); clearTimeout(press.timer); if (press.tip) { press.tip = false; hideTip(); } }
+      if (l > DRAG_MIN) { press.dir = flipDir({ x: dx / l, y: dy / l }); /* hướng bản đồ */ press.f = Math.min(1, l / dragMax()); clearTimeout(press.timer); if (press.tip) { press.tip = false; hideTip(); } }
       if (press.dir) { press.cancel = isCancel(press, e.clientX, e.clientY); aimUI({ aiming: true, cx: press.cx, cy: press.cy, dir: press.dir, f: press.f, cancel: press.cancel }, owner(k)); }
     });
     const end = (e, cancel) => {

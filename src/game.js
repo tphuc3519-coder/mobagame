@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { setView, viewSign } from './core/view.js';
 import { createLoop } from './core/loop.js';
 import { DUEL, ARENA } from './data/maps.js';
 import { setupTeams } from './sim/lineup.js';
@@ -98,6 +99,7 @@ if (online) { // trận online: mọi máy dựng y hệt nhau từ cấu hình 
   }
   if (opts.dummies || q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
+setView(!!online && player.team === 1, map); // đội Đỏ (trực tuyến): bản đồ xoay 180° — nhà mình bên trái / phía dưới như đội Xanh (core/view.js)
 // tên người chơi (sảnh đặt: mình + máy) — hiện trên đầu tướng, bảng tỉ số, màn kết quả
 if (!online && opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
 // phép + bảng bùa + phù hiệu đã chọn trước trận (ui/loadout.js); vào thẳng bằng ?hero= thì theo spellId/charmId (phù hiệu mặc định theo vai)
@@ -170,7 +172,7 @@ for (const b of panel.querySelectorAll('button')) b.addEventListener('pointerdow
 let endCam = null, blast = null;
 function beginEnd(ev) {
   if (endCam || OVERVIEW) return; const core = endTarget(world, ev.winner); if (!core) return;
-  endCam = createEndCam({ from: { x: cam.target.x, z: cam.target.z }, to: { x: core.pos.x, z: core.pos.y + END.liftZ }, panSec: END.panSec });
+  endCam = createEndCam({ from: { x: cam.target.x, z: cam.target.z }, to: { x: core.pos.x, z: core.pos.y + END.liftZ * viewSign() }, panSec: END.panSec });
   cam.setDistance(END.camDist); if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; if (core.alive) views.down(core.id); blast = core;
 }
 let ended = false;

@@ -4,6 +4,7 @@
 // Vẽ cần: hud.js (đế ở js.ox/oy khi đang chạm, ở rest() khi nghỉ).
 import { pref } from '../core/prefs.js';
 import { on } from '../core/scope.js';
+import { flipDir } from '../core/view.js';
 
 export function createInput(target, layout = null) {
   const DEAD = 0.1;
@@ -37,7 +38,7 @@ export function createInput(target, layout = null) {
   return {
     js, rest, layout,
     get R() { return J().R; },
-    /** Vector hướng đơn vị (hoặc 0), trục màn hình (y xuống = +). */
+    /** Vector hướng đơn vị (hoặc 0) theo trục bản đồ: trục màn hình (y xuống = +), đội Đỏ đảo lại (bản đồ xoay 180° — core/view.js). */
     dir() {
       let x = 0, y = 0;
       if (js.active) {
@@ -48,7 +49,7 @@ export function createInput(target, layout = null) {
       const kx = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
       const ky = (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - (keys.has('w') || keys.has('arrowup') ? 1 : 0);
       if (kx || ky) { const l = Math.hypot(kx, ky); x = kx / l; y = ky / l; }
-      return { x, y };
+      return flipDir({ x, y });
     },
   };
 }

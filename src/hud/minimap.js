@@ -5,6 +5,7 @@ import { canSee } from '../sim/vision.js';
 import { prefs } from '../core/prefs.js';
 import { on, track } from '../core/scope.js';
 import { DISP, font as cf } from '../ui/fonts.js';
+import { VIEW, viewX, viewY } from '../core/view.js';
 
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
@@ -17,7 +18,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 
   let W = 0, H = 0, dpr = 1, sx = 1, sy = 1, bg = null;
-  const wx = (x) => x * sx, wy = (y) => y * sy;
+  const wx = (x) => viewX(x) * sx, wy = (y) => viewY(y) * sy; // đội Đỏ: vẽ xoay 180° (nhà mình góc dưới trái — core/view.js)
   const col = (e) => (e.team === player.team ? TEAM[0] : TEAM[1]); // đồng đội xanh, địch đỏ (như Liên Quân)
 
   function paintBackground(c) {
@@ -28,7 +29,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     // sông
     c.save();
     if (map.river.diag) { c.strokeStyle = '#4fb4d8'; c.lineWidth = map.river.width * sx; c.lineCap = 'butt'; c.beginPath(); c.moveTo(-50, -50); c.lineTo(W + 50, H + 50); c.stroke(); }
-    else { c.fillStyle = '#4fb4d8'; c.fillRect(wx(map.river.x - map.river.width / 2), 0, map.river.width * sx, H); }
+    else { c.fillStyle = '#4fb4d8'; c.fillRect(Math.min(wx(map.river.x - map.river.width / 2), wx(map.river.x + map.river.width / 2)), 0, map.river.width * sx, H); }
     c.restore();
     // đường
     c.lineJoin = 'round'; c.lineCap = 'butt';
@@ -76,7 +77,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     draw() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.drawImage(bg, 0, 0, W, H);
-      if (fog) { const r = fog.mapRect; ctx.drawImage(fog.canvas, r.x, r.y, r.w, r.h, 0, 0, W, H); } // vùng chưa thấy tối đi
+      if (fog) { const r = fog.mapRect; if (VIEW.flip) { ctx.save(); ctx.translate(W, H); ctx.scale(-1, -1); } ctx.drawImage(fog.canvas, r.x, r.y, r.w, r.h, 0, 0, W, H); if (VIEW.flip) ctx.restore(); } // vùng chưa thấy tối đi
       const ents = world.entities.filter((e) => canSee(player.team, e)); // địch ngoài tầm nhìn không hiện
       // công trình: trụ (tháp nhọn) và nhà chính (pha lê), màu đội; bị phá thì xám
       for (const e of ents) {

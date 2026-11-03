@@ -6,6 +6,7 @@
 // kéo nút Đánh về phía một địch (vòng ngắm như kỹ năng) — thả ra thì đánh + khoá nó. Khoá / chạm chọn địch / dấu / luật chọn mục tiêu: atkTarget.js.
 // Chiêu khoá mục tiêu (aim 'target'): chạm nhanh gửi kèm id mục tiêu đang khoá; kéo thì dấu vàng xem trước tướng mô phỏng sẽ chọn (cùng hàm
 // pickSkillTarget) và gửi đúng id đó — mô phỏng dùng nếu còn hợp lệ, không thì tự chọn như thường.
+import { flipDir } from '../core/view.js';
 import { lv } from '../data/heroes/_levels.js';
 import { nearestEnemy } from '../sim/targeting.js';
 import { canLevelSkill } from '../sim/stats.js';
@@ -92,7 +93,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
     el.addEventListener('pointermove', (e) => {
       const a = actives.get(slot); if (!a || e.pointerId !== a.id || a.auto) return;
       const dx = e.clientX - a.cx, dy = e.clientY - a.cy, l = Math.hypot(dx, dy), sp = spec(slot);
-      if (l > DRAG_MIN && sp.aim !== 'none') { a.aiming = true; a.dir = { x: dx / l, y: dy / l }; a.f = Math.min(1, l / dragMax()); clearTimeout(a.timer); if (a.tip) { a.tip = false; hideTip(); } }
+      if (l > DRAG_MIN && sp.aim !== 'none') { a.aiming = true; a.dir = flipDir({ x: dx / l, y: dy / l }); /* kéo trên màn hình → hướng bản đồ */ a.f = Math.min(1, l / dragMax()); clearTimeout(a.timer); if (a.tip) { a.tip = false; hideTip(); } }
       a.cancel = a.aiming && isCancel(a, e.clientX, e.clientY);
       if (a.aiming && sp.aim === 'target') previewCand(a, sp);
       if (a.aiming) { shown = a; cancelEl.hidden = !a.cancel || pref('cancelBy') === 'distance'; aimUI(a); } // huỷ theo khoảng cách: chữ "Thả để huỷ" nằm trên vòng ngắm
@@ -150,7 +151,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
   btn('atk').addEventListener('pointermove', (e) => { // Đánh thường chính xác: kéo nút Đánh như nút kỹ năng
     const a = atkAim; if (!a || e.pointerId !== a.id || !pref('preciseAtk') || !player.alive) return;
     const dx = e.clientX - a.cx, dy = e.clientY - a.cy, l = Math.hypot(dx, dy);
-    if (l > DRAG_MIN) { a.aiming = true; a.dir = { x: dx / l, y: dy / l }; a.f = Math.min(1, l / dragMax()); }
+    if (l > DRAG_MIN) { a.aiming = true; a.dir = flipDir({ x: dx / l, y: dy / l }); a.f = Math.min(1, l / dragMax()); }
     if (a.aiming) { a.cancel = isCancel(a, e.clientX, e.clientY); aimUI(a, 'atk'); }
   });
   // atkMode: 'farm' hiện Ăn lính + Đẩy trụ; 'auto' / 'manual' ẩn (đang giữ nút vừa ẩn thì thả). skillNames: tên chiêu dưới nút.

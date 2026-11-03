@@ -3,13 +3,14 @@
 // một bộ phần tử DOM duy nhất. Theo Cài đặt → Điều khiển (core/prefs.js, đọc lúc dùng nên đổi giữa trận là áp dụng ngay):
 // aimSens = độ kéo hết tầm (vòng ngắm to/nhỏ theo), aimAt = tâm vòng ngắm ở giữa nút / chỗ ngón vừa chạm, cancelBy = huỷ bằng ô X / kéo ngón ra xa.
 import { pref } from '../core/prefs.js';
+import { flipDir } from '../core/view.js';
 
 export const DRAG_MIN = 15;
 /** Độ kéo hết tầm (px): độ nhạy 0 → 150, 0,5 → 110 (như cũ), 1 → 70. */
 export const dragMax = () => 150 - 80 * pref('aimSens');
 /** Tâm vòng ngắm của lượt chạm e trên nút có khung r: giữa nút (như cũ) hoặc chỗ ngón vừa chạm (aimAt = 'finger'). */
 export const aimOrigin = (e, r) => (pref('aimAt') === 'finger' ? { cx: e.clientX, cy: e.clientY } : { cx: r.left + r.width / 2, cy: r.top + r.height / 2 });
-/** Hướng của lần ngắm gần nhất (kỹ năng / Chớp Bước kéo rồi thả; trục màn hình = trục bản đồ) — Chớp Bước chạm nhanh khi flashDir = 'skill'. */
+/** Hướng của lần ngắm gần nhất (kỹ năng / Chớp Bước kéo rồi thả; trục bản đồ) — Chớp Bước chạm nhanh khi flashDir = 'skill'. */
 export const lastAim = { dir: null };
 
 let pad = null, xz = null, knob = null, lab = null, owner = null; // owner: nút đang vẽ vòng ngắm (nhiều ngón: nút khác thả ra không tắt nhầm)
@@ -33,7 +34,7 @@ export function inCancel(x, y) {
 /** Thả ngón ở (x, y) thì huỷ? Ô X (cancelBy = 'zone', như cũ) hoặc ngón xa tâm vòng ngắm a quá 1,6 × độ kéo hết tầm ('distance'). */
 export const isCancel = (a, x, y) => (pref('cancelBy') === 'distance' ? Math.hypot(x - a.cx, y - a.cy) > 1.6 * dragMax() : inCancel(x, y));
 
-/** Vẽ phiên ngắm a = { aiming, cx, cy, dir: {x, y}, f (0..1 độ kéo), cancel } của nút `who`, hoặc ẩn khi a = null (chỉ khi `who` đang vẽ). */
+/** Vẽ phiên ngắm a = { aiming, cx, cy, dir: {x, y} (trục bản đồ), f (0..1 độ kéo), cancel } của nút `who`, hoặc ẩn khi a = null (chỉ khi `who` đang vẽ). */
 export function aimUI(a, who = 'skill') {
   ensure();
   const on = !!a?.aiming;
@@ -44,7 +45,8 @@ export function aimUI(a, who = 'skill') {
   if (!on) return;
   const R = dragMax();
   pad.style.left = a.cx + 'px'; pad.style.top = a.cy + 'px'; pad.style.width = pad.style.height = R * 2 + 'px';
-  knob.style.transform = `translate(${a.dir.x * a.f * R}px, ${a.dir.y * a.f * R}px)`;
+  const sd = flipDir(a.dir); // dir theo trục bản đồ → núm theo trục màn hình
+  knob.style.transform = `translate(${sd.x * a.f * R}px, ${sd.y * a.f * R}px)`;
   xz.classList.toggle('hot', !!a.cancel); pad.classList.toggle('bad', !!a.cancel); lab.hidden = !(far && a.cancel);
 }
 /** Điểm đang ngắm (toạ độ thế giới) + tầm chiêu của nút `who` — chỉ nhận khi `who` đang vẽ vòng ngắm. */
