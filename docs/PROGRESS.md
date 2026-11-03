@@ -622,6 +622,37 @@ Còn lại:
   cú lướt Cast1 ~6 cm lúc bước); độ giãn lưới ≤ 10 tam giác > 2× mỗi clip ở bản trong trận.
 - **Ảnh:** thẻ / chân dung / ảnh toàn thân (`tools/uiart/render.cjs`), ảnh xem trước trong `docs/previews/`, `docs/TONG_HOP_TUONG.md` sinh lại.
 
+## 01/11 — UI v3: giao diện + font chuyên nghiệp hơn
+- Font Saira Condensed (tiêu đề / nút / số) + Be Vietnam Pro (chữ thường); `src/ui/fonts.js` là nguồn tên phông chung cho CSS và canvas;
+  gỡ Barlow Condensed. Tổng dung lượng phông mới 119 KB (9 tệp woff2).
+- Token màu mới, chữ đứng, nút / khung / tab / thẻ nhất quán; bảng Cài đặt, cửa hàng, bảng tỉ số, đồng hồ trận, nút chiêu, bản đồ nhỏ cùng hệ.
+- Soi tràn chữ tự động ở 667 / 844 / 1280 px trên mọi màn ngoài trận: sửa tiêu đề "CHIẾN THẮNG" mất dấu, tên dài bị cắt ở màn cấm chọn /
+  bảng tỉ số / bảng tổng kết, nút màn cấm chọn tràn ở máy 667 px.
+
+## 02/11 — UI v4: giao diện hoạt hình phẳng (bỏ chất "AI")
+- Chủ dự án chê UI v3 *"đậm AI quá"*; dựng 3 mẫu thử, chọn **C — hoạt hình phẳng**: màu phẳng, viền mực dày 3px, bóng cứng không nhoè,
+  bo góc 12–16px, chữ tròn đậm **Baloo 2** (tiêu đề / nút / số) + Be Vietnam Pro (chữ thường). Gỡ Saira Condensed.
+- Áp cho toàn bộ: sảnh, mọi bảng (Tướng, Túi đồ, Nhiệm vụ, Sự kiện, Hồ sơ, Bảng Bùa, Bạn bè, Thư, Lịch sử, Xếp hạng, Cửa hàng ngọc),
+  chọn chế độ, phòng chờ, hộp chọn vị trí, cấm chọn, đội hình, tải trận, màn nhận thưởng, tổng kết trận, bảng Cài đặt; trong trận:
+  nút chiêu / Đánh / Ăn lính / Đẩy trụ, cửa hàng, tỉ số, bảng tỉ số, bản đồ nhỏ, nút camera, gợi ý; chữ canvas: thông báo hạ gục, số sát
+  thương, vàng nhặt được, bảng bị hạ; màn tải đầu game.
+- Baloo 2 rộng hơn: soi tràn chữ tự động ở 667 / 844 / 1280 px — sửa nút Đấu hạng tràn ở 667 px, tên tướng một từ dài bị cắt ở ô cấm chọn,
+  nhãn hạng ở phòng chờ (giờ cắt bằng "…"), tab Trò chuyện xuống dòng; cả ba cỡ màn không còn chữ bị cắt / ra ngoài màn.
+- Kiểm thử trình duyệt bắt được một lỗi thật: cửa hàng đặt bên phải thì bảng tỉ số (thêm viền 3px) đè lên ô mua nhanh — bỏ đệm dọc cho
+  bằng chiều cao cũ.
+- **Kiểm thử:** node `tools/t_*.mjs` 40/40 đạt (gồm `t_premium` — 4 model cao cấp không đổi, `t_licenses` — giấy phép Baloo 2); `b_layout` 86,
+  `b_flow` 93, `b_match` 36, `b_perf` 16, `b_pwa` 11 đạt. Hai mục lệch, **bản `main` chạy cùng máy lệch y hệt**: `b_gd3` đấu lại về phòng chờ
+  (mới 3,7 / 3,4 s — `main` 3,3 / 3,8 s, mốc 3 s, CPU chậm 4×) và một cú bấm "Bắt đầu" / "Chấp nhận" ở phòng Đấu Đỉnh Cao trong `b_prog`
+  (đồng hồ giả + máy không GPU; thử 3 lượt mỗi bản: mới hỏng 1, `main` hỏng 1).
+
+## 02/11 — UI v4.1: nổi khối 3D, vẫn không "AI"
+- Chủ dự án muốn *"vẫn 3d đẹp đẹp nhưng ko bị AI"*: thêm độ khối lên UI v4 — nút kiểu kẹo (thân sáng trên tối dưới + mặt bóng nửa trên + gờ
+  tối dưới), thẻ / đầu bảng / dòng có mép sáng trong ở đỉnh, nền bảng phủ có quầng tối dần ra mép, chữ tiêu đề đắp nổi; HUD trong trận và
+  chữ canvas (thông báo hạ gục, bảng bị hạ, số sát thương, vàng nhặt) cùng hệ. Không đổi kích thước, id, selector; không đụng model.
+- **Kiểm thử:** node `tools/t_*.mjs` 40/40 đạt; `b_layout` 86, `b_flow` 92 đạt. `b_match` lệch 5 mục đo nhịp thời gian (vòng tín hiệu tự đóng
+  sau 4 s ở màn 1280, kéo K3 khoá mục tiêu ở màn 844) — **bản `main` (UI v4) chạy cùng lúc trên cùng máy lệch đúng 5 mục đó**, nên do máy thử
+  không GPU đang chậm, không do lớp khối (lớp này chỉ đổi màu nền / bóng, không đổi kích thước hay vùng chạm).
+
 ## 01/11 — Chơi online bản thử (lockstep, máy chủ Node)
 - **Máy chủ** `node server/index.mjs` (Node 18+, không cài gói): phục vụ luôn game + WebSocket `/ws` + `/health`. Phòng theo mã 4 ký tự, chọn tướng,
   Sẵn sàng, chủ phòng Bắt đầu (một mình = đấu máy). 1v1 hoặc 5v5 (mỗi người một đội, bot điền 8 chỗ).

@@ -1012,6 +1012,26 @@
     tích (~2 000 px/m trong trận, ~4 000 px/m bản sảnh), tóc ~750 / 1 500 px/m; thân ~450 / 930 px/m.
   - Ngân sách lưới trong trận tách riêng: thân 9 400, đầu 4 800 (giảm tóc trước khi khoá vùng mặt, rồi cả đầu với mặt được ưu tiên — mặt giữ ~2 100
     tam giác). Bản sảnh: thân 38 000, đầu 18 000, cũng nướng lại (giữ uv gốc thì tóc lốm đốm trắng — nền atlas đầu màu trắng — và mặt thô).
+- 2026-11-01: **Giao diện UI v3 + đổi font** (chủ dự án: *"thay đổi lại giao diện trong game và font chữ cho chuyên nghiệp hơn nữa, nâng cấp
+  toàn bộ giao diện từ trong ra ngoài"*). Font tiêu đề / nút / số: **Saira Condensed** (OFL, gói @fontsource 5.3.0, tự host) thay **Barlow
+  Condensed nghiêng** — so 7 ứng viên có dấu tiếng Việt trên nền game (Oswald, Saira Condensed, Barlow Semi Condensed, Chakra Petch, Exo 2,
+  Archivo), Saira Condensed đứng gọn kiểu esports, hẹp vừa nút nhỏ, dấu chồng rõ; giữ **Be Vietnam Pro** cho chữ thường (thiết kế riêng cho
+  tiếng Việt). Bỏ hẳn chữ nghiêng; dải vàng chỉ cho tiêu đề; viền thẻ trung tính, vàng chỉ cho mục đang chọn; hoa văn góc chỉ ở hộp thoại +
+  thẻ sự kiện; vệt sáng lướt chỉ ở nút vào trận; bảng Cài đặt bỏ tông tím lam riêng; HUD trong trận (nút chiêu có vòng kim loại, chiêu chưa
+  học vẫn thấy hình, bản đồ nhỏ, đồng hồ trận, cửa hàng, bảng tỉ số) và chữ vẽ trên canvas (tên, máu, sát thương, thông báo hạ gục) cùng hệ.
+  Không đổi bố cục, id hay selector (mọi kiểm thử trình duyệt giữ nguyên); không đụng model.
+- 2026-11-02: **UI v4 "hoạt hình phẳng"** thay UI v3 (chủ dự án: *"giao diện đậm AI quá, thay đổi font màu, font chữ, UI toàn bộ để ko bị
+  đậm AI nữa"*). Dựng 3 mẫu thử (A tối giản chuyên nghiệp, B giấy mực, C hoạt hình phẳng), chủ dự án chọn **C**. Lý do UI v3 trông "AI": dải
+  vàng kim + quầng sáng + kính mờ + chữ in hoa giãn chữ trên mọi khung — mẫu đặc trưng của giao diện sinh tự động. UI v4: màu phẳng, viền mực
+  dày 3px, bóng cứng không nhoè, bo góc 12–16px, chữ tròn đậm **Baloo 2** (OFL, gói @fontsource 5.3.0, tự host) cho tiêu đề / nút / số, giữ
+  **Be Vietnam Pro** cho chữ thường; mục đang chọn là vàng đặc chữ mực. Áp cho mọi màn ngoài trận, bảng Cài đặt, HUD trong trận và chữ vẽ
+  trên canvas. Chuyển phần lớn quy tắc bằng một lượt máy (bỏ nhoè / dải màu / in hoa, ánh xạ màu vàng kim sang vàng phẳng / mực) rồi chỉnh
+  tay từng màn theo ảnh chụp. Tên token cũ giữ lại (ánh xạ sang màu phẳng) để không phải sửa mọi màn; id / selector / bố cục không đổi;
+  không đụng model.
+- 2026-11-02: **UI v4.1 "nổi khối"** (chủ dự án xem UI v4 rồi nói *"vẫn 3d đẹp đẹp nhưng ko bị AI á"*): phẳng hoàn toàn mất cảm giác game.
+  Thêm độ khối theo lối game mobile hoạt hình — thân khối dải sáng→tối **trong cùng một sắc**, mặt bóng nửa trên của nút, mép sáng trong,
+  gờ tối dưới, chữ tiêu đề đắp nổi — nhưng giữ nguyên ranh giới đã chốt: không vàng kim / ánh kim, không quầng sáng nhoè, không kính mờ,
+  không chữ in hoa giãn. Làm bằng token (`--g-*`, `--gloss`, `--hl`, `--hl2`, `--extrude`) thay vì sửa từng màn.
 - 2026-11-01: **Chơi online bản thử — lockstep có máy chủ làm nhịp, không phải snapshot** (khác ý ban đầu ở 10_LO_TRINH "Sau 1.0" mục 1). Máy chủ
   Node (`server/`, không gói npm: WebSocket tự viết) giữ đồng hồ 30 tick/giây, gom lệnh người chơi theo tick, phát 15 gói/giây (2 tick/gói); mọi máy và
   chính máy chủ chạy cùng `src/sim/` với cùng seed + lệnh ⇒ cùng trận. Lý do: phần vẽ / HUD / hiệu ứng đọc gần như toàn bộ `world` + sự kiện, gửi

@@ -7,15 +7,15 @@ import { HQ, BOARD } from '../data/haoQuang.js';
 import { SUN, GALAXY } from '../data/ranks.js';
 import { seasonAt } from '../data/seasons.js';
 
-const STYLE = `.tb-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .tb-head b { font: 800 italic 24px/1 var(--u-disp); letter-spacing: .03em; color: var(--u-gc); } .tb-head small { color: #a8b4d8; font-size: 13px; }
-.tb-me { position: sticky; top: 0; z-index: 2; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border-radius: 6px; background: linear-gradient(90deg, #3a2870, #12143a); box-shadow: inset 0 0 0 1px rgba(184,138,255,.4), 0 6px 14px rgba(0,0,0,.55); } /* dính trên đầu khi cuộn: luôn thấy điểm + hạng của mình */
+const STYLE = `.tb-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 2px 10px; } .tb-head b { font: 800 24px/1 var(--u-disp);  color: var(--u-gc); } .tb-head small { color: #a8b4d8; font-size: 13px; }
+.tb-me { position: sticky; top: 0; z-index: 2; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border-radius: 6px; background: linear-gradient(#253553, #253553); box-shadow: inset 0 0 0 2px var(--ink), 0 4px 0 var(--ink); } /* dính trên đầu khi cuộn: luôn thấy điểm + hạng của mình */
 @media (max-height: 460px) { .tb-me { padding: 6px 10px; gap: 10px; } .tb-me b { font-size: 18px; } .tb-me .rkb { width: 40px !important; height: 40px !important; } }
-.tb-me > div { flex: 1; min-width: 180px; } .tb-me b { display: block; font: 800 italic 22px/1.1 var(--u-disp); letter-spacing: .03em; color: #fff0c8; } .tb-me small { display: block; font-size: 12.5px; color: #c8c4f0; }
+.tb-me > div { flex: 1; min-width: 180px; } .tb-me b { display: block; font: 800 22px/1.1 var(--u-disp);  color: #f4f6fb; } .tb-me small { display: block; font-size: 12.5px; color: #c8c4f0; }
 .tb-me .pbar { margin-top: 6px; height: 6px; } .tb-me .gal { color: #d8b8ff; font-weight: 700; }
 .tb-list .pn-row { padding: 5px 10px; margin-bottom: 5px; gap: 10px; } .tb-list .pn-row .face { width: 34px; height: 34px; } .tb-list .pn-row b { font-size: 14.5px; }
-.tb-list .no { flex: none; width: 34px; text-align: center; font: 800 italic 17px/1 var(--u-disp); color: #aeb8de; } .tb-list .g .no { color: #d8b8ff; }
-.tb-list .hq { flex: none; min-width: 58px; text-align: right; font: 700 16px/1 var(--u-disp); color: #ffe08a; }
-.tb-list .me { box-shadow: inset 0 0 0 2px var(--u-gold), 0 0 12px rgba(255,190,80,.45); } .tb-cut { margin: 10px 2px 6px; font-size: 12px; color: #a8b4d8; text-align: center; }`;
+.tb-list .no { flex: none; width: 34px; text-align: center; font: 800 17px/1 var(--u-disp); color: #aeb8de; } .tb-list .g .no { color: #d8b8ff; }
+.tb-list .hq { flex: none; min-width: 58px; text-align: right; font: 700 16px/1 var(--u-disp); color: var(--c-yel); }
+.tb-list .me { box-shadow: inset 0 0 0 2px var(--c-yel), 0 0 0 3px var(--c-yel); } .tb-cut { margin: 10px 2px 6px; font-size: 12px; color: #a8b4d8; text-align: center; }`;
 let styled = false;
 const SUN_R = { id: SUN.id, name: SUN.name }, GAL_R = { id: GALAXY.id, name: GALAXY.name };
 

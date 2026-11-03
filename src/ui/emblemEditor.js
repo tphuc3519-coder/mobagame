@@ -17,7 +17,7 @@ export function renderEmblemTab(host, st) {
       <div class="lo-keys">${KEYSTONE_LIST.map((key) => `<button type="button" class="lo-key ${key === em.key ? 'on' : ''}" data-k="${key}">${emblemArt(key)}<b>${KEYSTONES[key].name}</b><small>${KEYSTONES[key].short}</small></button>`).join('')}</div>
       <div class="lo-mins">${MINOR_ROWS.map((row, r) => `<div class="lo-mrow" data-row="${r}"><span class="lo-cl">${row.name}<small>nét phụ</small></span>
         ${MINOR_LIST_BY_ROW[r].map((id) => `<button type="button" class="lo-min ${em.minors[r] === id ? 'on' : ''}" data-r="${r}" data-m="${id}">${minorIcon(id)}<b>${MINORS[id].name}</b><small>${MINORS[id].desc}</small></button>`).join('')}</div>`).join('')}</div>
-      <div class="lo-eact"><button type="button" class="btn-ghost" data-a="emreset">Mặc định theo vai</button><p class="lo-edesc"><b style="color:#ffe08a">${k.name}:</b> ${k.desc}</p></div></div>`;
+      <div class="lo-eact"><button type="button" class="btn-ghost" data-a="emreset">Mặc định theo vai</button><p class="lo-edesc"><b style="color:var(--c-yel)">${k.name}:</b> ${k.desc}</p></div></div>`;
   };
   host.onclick = (ev) => {
     const t = ev.target, em = emblemFor(st.heroId);

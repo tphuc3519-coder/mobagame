@@ -12,8 +12,8 @@ function css() {
   const st = document.createElement('style');
   st.textContent = `.ui-dlg .sv { text-align: left; min-width: min(460px, 86vw); }
 .ui-dlg .sv textarea { -webkit-user-select: text; user-select: text; width: 100%; height: 96px; box-sizing: border-box; margin: 8px 0 2px; padding: 8px 10px; resize: none;
-  border-radius: 6px; border: 1px solid rgba(255,214,140,.5); background: rgba(4,6,20,.9); color: #cfe0ff; font: 500 11px/1.35 ui-monospace, Menlo, monospace; word-break: break-all; outline: none; }
-.ui-dlg .sv textarea:focus { box-shadow: 0 0 0 2px rgba(255,190,90,.35); }
+  border-radius: 6px; border: 1px solid rgba(255,210,63,0.5); background: rgba(4,6,20,.9); color: #cfe0ff; font: 500 11px/1.35 ui-monospace, Menlo, monospace; word-break: break-all; outline: none; }
+.ui-dlg .sv textarea:focus { box-shadow: 0 0 0 2px var(--c-yel); }
 .ui-dlg .sv small { color: #9fb0d8; } .ui-dlg .sv .err { color: #ff8a7a; font-weight: 700; min-height: 1.2em; margin: 4px 0 0; }
 .ui-dlg .sv dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 6px 0 4px; } .ui-dlg .sv dt { color: #9fb0d8; } .ui-dlg .sv dd { margin: 0; font-weight: 700; }`;
   document.head.append(st);

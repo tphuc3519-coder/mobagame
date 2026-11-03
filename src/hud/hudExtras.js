@@ -8,6 +8,7 @@ import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
 import { cardSrc } from '../ui/kit.js';
 import { on, currentScope } from '../core/scope.js';
+import { DISP, font as cf } from '../ui/fonts.js';
 
 const STYLE = `
 body.no-rec #qb { display: none !important; }
@@ -15,7 +16,7 @@ body.no-idesc .shop .note, body.no-idesc #qb .qn small { display: none !importan
 .ultsplash { position: fixed; left: 0; top: 40%; z-index: 4; height: 30%; aspect-ratio: 16 / 10; pointer-events: none; overflow: hidden; opacity: 0;
   -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent); mask-image: linear-gradient(90deg, #000 55%, transparent); }
 .ultsplash img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: saturate(1.15) contrast(1.05); }
-.ultsplash::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(255,214,120,0) 30%, rgba(255,236,190,.55) 45%, rgba(255,214,120,0) 60%); transform: translateX(-100%); }
+.ultsplash::after { display: none; }
 .ultsplash.on { animation: ultIn 1.5s ease-out forwards; } .ultsplash.on::after { animation: ultShine .7s .1s ease-out forwards; }
 @keyframes ultIn { 0% { opacity: 0; transform: translateX(-30%) skewX(-8deg); } 14% { opacity: 1; transform: translateX(0) skewX(-8deg); } 78% { opacity: 1; transform: translateX(3%) skewX(-8deg); } 100% { opacity: 0; transform: translateX(8%) skewX(-8deg); } }
 @keyframes ultShine { to { transform: translateX(100%); } }
@@ -63,12 +64,12 @@ export function createHudExtras({ portraits = null } = {}) {
     ctx.fillStyle = 'rgba(12,14,32,0.82)'; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = 'rgba(255,120,100,0.6)'; ctx.fillRect(x, y, 2, bh);
     let nx = x + 10;
     if (t.kind === 'hero' && portraits) { portraits.draw(ctx, t.heroId, t.data.name, x + 26, y + bh / 2, 17, foe, {}); nx = x + 50; }
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '700 12px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#ffd8d0';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = cf(700, 12); ctx.fillStyle = '#ffd8d0';
     ctx.fillText(t.kind === 'hero' ? (t.playerName || t.data.name) : t.data?.name || '', nx, y + 15);
     const hw = x + bw - 8 - nx, pct = Math.max(0, t.hp / t.stats.maxHp);
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(nx, y + 20, hw, 9); ctx.fillStyle = foe; ctx.fillRect(nx, y + 20, hw * pct, 9);
-    ctx.font = '700 8.5px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(`${Math.ceil(t.hp)} / ${Math.round(t.stats.maxHp)}`, nx + hw / 2, y + 28);
-    ctx.textAlign = 'left'; ctx.font = '600 10px "Be Vietnam Pro", system-ui, sans-serif'; ctx.fillStyle = '#c8cff5';
+    ctx.font = cf(700, 9.5); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(`${Math.ceil(t.hp)} / ${Math.round(t.stats.maxHp)}`, nx + hw / 2, y + 28);
+    ctx.textAlign = 'left'; ctx.font = cf(600, 11); ctx.fillStyle = '#c8cff5';
     ctx.fillText(`Công ${Math.round(t.stats.atk || 0)} · Giáp ${Math.round(t.stats.armor || 0)} · KP ${Math.round(t.stats.mr || 0)}`, nx, y + 43);
   }
 

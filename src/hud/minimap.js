@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { canSee } from '../sim/vision.js';
 import { prefs } from '../core/prefs.js';
 import { on, track } from '../core/scope.js';
+import { DISP, font as cf } from '../ui/fonts.js';
 
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
@@ -11,7 +12,7 @@ const TEAM = ['#38b8ff', '#ff4a3a'];
 export function createMinimap({ world, player, map, cam, fog = null, portraits = null, layout = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
-  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:2px solid #c9b47a;border-radius:6px;background:#0f1224;box-shadow:0 2px 12px #000a;touch-action:none';
+  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:3px solid #0f1729;border-radius:12px;background:#1a2640;box-shadow:0 3px 0 #0f1729;touch-action:none';
   document.body.appendChild(track(cv));
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 
@@ -94,8 +95,8 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = col; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.4;
         ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);
         ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
-        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = '800 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
-        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = '700 8px "Be Vietnam Pro", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
+        if (big) { ctx.fillStyle = '#1a1020'; ctx.font = cf(800, 9); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
+        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = cf(700, 9); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
       }
       // cục máu sau trụ ngoài của đội mình: chấm xanh lá (mờ khi đang chờ mọc lại)
       for (const o of world.orbs || []) { if (o.team !== player.team) continue; const up = world.tick >= o.readyAt; ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = '#5aff8a'; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(wx(o.x), wy(o.y), 3, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1; }

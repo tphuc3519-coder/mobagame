@@ -6,18 +6,19 @@
 import { HEROES } from '../data/heroes/index.js';
 import { play } from '../audio/audio.js';
 import { prefs } from '../core/prefs.js';
+import { DISP, BODY } from '../ui/fonts.js';
 
 export const MULTI = { 2: 'Double Kill', 3: 'Triple Kill', 4: 'Quadra Kill', 5: 'Penta Kill' };
 const STREAK = { 3: 'Liên tục hạ gục', 4: 'Hủy diệt', 5: 'Không thể cản phá', 6: 'Thần thánh' };
 export const streakName = (n) => (n >= 7 ? 'Truyền thuyết' : STREAK[n] || '');
-const BODY = '"Be Vietnam Pro", system-ui, sans-serif', DISP = '"Barlow Condensed", "Be Vietnam Pro", system-ui, sans-serif';
+const INK = '#0f1729', YEL = '#ffd23f'; // UI v4 hoạt hình phẳng
 const THEME = {
-  ally: { mid: 'rgba(14,36,78,0.9)', edge: 'rgba(30,80,150,0.55)', line: '#6fd0ff', glow: [90, 200, 255], ring: '#38b8ff' },
-  foe: { mid: 'rgba(78,14,20,0.9)', edge: 'rgba(150,34,30,0.55)', line: '#ff7a64', glow: [255, 100, 80], ring: '#ff4a3a' },
+  ally: { flat: '#2a4f86', mid: 'rgba(14,36,78,0.9)', edge: 'rgba(30,80,150,0.55)', line: '#6fd0ff', glow: [90, 200, 255], ring: '#38b8ff' },
+  foe: { flat: '#7a2a36', mid: 'rgba(78,14,20,0.9)', edge: 'rgba(150,34,30,0.55)', line: '#ff7a64', glow: [255, 100, 80], ring: '#ff4a3a' },
 };
 const now = () => performance.now() / 1000;
 const ease = (x) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
-try { document.fonts?.load(`italic 800 24px ${DISP}`); document.fonts?.load(`700 18px ${BODY}`); } catch (_) { /* không có DOM */ }
+try { document.fonts?.load(`800 24px ${DISP}`); document.fonts?.load(`700 18px ${DISP}`); } catch (_) { /* không có DOM */ }
 
 /** Tiêu đề của một sự kiện chết (tướng): { title, sub, tier } — tier ≥ 2: hạ liên tiếp (chữ lớn vàng), 1: đặc biệt, 0: thường. */
 export function titleOf(ev) {
@@ -73,7 +74,7 @@ export function createKillBanner(portraits) {
   }
   const face = (ctx, f, x, y, r, ring, me) => {
     if (f.heroId && portraits) portraits.draw(ctx, f.heroId, f.name, x, y, r, ring, { me });
-    else if (f.heroId) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#1a1d33'; ctx.fill(); ctx.lineWidth = r * 0.2; ctx.strokeStyle = ring; ctx.stroke(); ctx.fillStyle = '#f3e9d6'; ctx.font = `800 ${Math.round(r)}px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((f.name || '?')[0], x, y + 1); ctx.restore(); }
+    else if (f.heroId) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#1a1d33'; ctx.fill(); ctx.lineWidth = r * 0.2; ctx.strokeStyle = ring; ctx.stroke(); ctx.fillStyle = '#eef1f8'; ctx.font = `800 ${Math.round(r)}px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((f.name || '?')[0], x, y + 1); ctx.restore(); }
     else glyph(ctx, f.kind, x, y, r, ring);
   };
 
@@ -86,45 +87,29 @@ export function createKillBanner(portraits) {
     const out = Math.max(0, (t - (it.life - 0.32)) / 0.32), a = Math.min(1, ease((t - 0.06) / 0.2)) * (1 - out), open = 0.62 + 0.38 * ease((t - 0.05) / 0.25);
     const half = (bw / 2) * open, x0 = cx - half, x1 = cx + half, dy = -out * 10;
     ctx.save(); ctx.translate(0, dy);
-    // vệt sáng quét ngang + chớp dọc ở giữa (0 → 0,35 giây)
-    if (t < 0.4) {
-      const k = t / 0.4, len = bw * (0.15 + 1.05 * ease(t / 0.22)), al = Math.max(0, 1 - k) ** 1.3, [r, g, b] = big ? [255, 214, 120] : [255, 246, 200];
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      let gr = ctx.createLinearGradient(cx - len / 2, 0, cx + len / 2, 0); gr.addColorStop(0, `rgba(${r},${g},${b},0)`); gr.addColorStop(0.5, `rgba(${r},${g},${b},${0.95 * al})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
-      ctx.fillStyle = gr; ctx.fillRect(cx - len / 2, cy - 7 * (1 - k * 0.6), len, 14 * (1 - k * 0.6));
-      ctx.fillStyle = `rgba(255,255,255,${0.9 * al})`; ctx.fillRect(cx - len * 0.35, cy - 1, len * 0.7, 2);
-      const fl = ease(t / 0.12) * (1 - k); ctx.translate(cx, cy); ctx.scale(0.16, 1);
-      gr = ctx.createRadialGradient(0, 0, 0, 0, 0, 70); gr.addColorStop(0, `rgba(255,255,255,${0.95 * fl})`); gr.addColorStop(0.35, `rgba(${r},${g},${b},${0.6 * fl})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
-      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, 70, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    }
     if (a <= 0.01) { ctx.restore(); return; }
     ctx.globalAlpha = a;
-    // dải: giữa đậm, hai đầu nhạt dần; viền sáng mảnh trên / dưới
-    let gr = ctx.createLinearGradient(x0, 0, x1, 0);
-    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.09, th.edge); gr.addColorStop(0.3, th.mid); gr.addColorStop(0.7, th.mid); gr.addColorStop(0.91, th.edge); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gr; ctx.fillRect(x0, cy - bh / 2, x1 - x0, bh);
-    gr = ctx.createLinearGradient(x0, 0, x1, 0); const [lr, lg, lb] = th.glow;
-    gr.addColorStop(0, `rgba(${lr},${lg},${lb},0)`); gr.addColorStop(0.2, `rgba(${lr},${lg},${lb},0.9)`); gr.addColorStop(0.5, big ? 'rgba(255,224,140,1)' : `rgba(${lr},${lg},${lb},0.55)`); gr.addColorStop(0.8, `rgba(${lr},${lg},${lb},0.9)`); gr.addColorStop(1, `rgba(${lr},${lg},${lb},0)`);
-    ctx.fillStyle = gr; ctx.fillRect(x0, cy - bh / 2 - 1, x1 - x0, 1.6); ctx.fillRect(x0, cy + bh / 2 - 0.6, x1 - x0, 1.6);
+    // dải phẳng kiểu hoạt hình (UI v4): nền màu phe đặc, viền mực dày, bóng cứng dưới — không quầng sáng, không dải màu
+    const rr = bh / 2, pill = () => { ctx.beginPath(); ctx.moveTo(x0 + rr, cy - rr); ctx.lineTo(x1 - rr, cy - rr); ctx.arc(x1 - rr, cy, rr, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x0 + rr, cy + rr); ctx.arc(x0 + rr, cy, rr, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); };
+    ctx.fillStyle = INK; ctx.translate(0, 4); pill(); ctx.fill(); ctx.translate(0, -4);
+    ctx.fillStyle = th.flat; pill(); ctx.fill();
+    ctx.save(); pill(); ctx.clip(); ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.92); ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x0, cy + rr - 4, x1 - x0, 4); ctx.restore(); // khối: nửa trên sáng, gờ tối dưới
+    ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
     // tiêu đề
     const pop = big ? 1 + 0.5 * (1 - ease((t - 0.05) / 0.22)) : 1;
     ctx.save(); ctx.translate(cx, cy + 1); ctx.scale(pop, pop); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     if (big) {
-      ctx.font = `italic 800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
+      ctx.font = `800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
       const txt = it.title.toUpperCase();
-      ctx.lineWidth = 9; ctx.strokeStyle = 'rgba(255,170,40,0.28)'; ctx.strokeText(txt, 0, 0); // quầng sáng rẻ (shadowBlur chậm trên điện thoại)
-      ctx.lineWidth = 3.5; ctx.strokeStyle = '#3a1800'; ctx.strokeText(txt, 0, 0);
-      gr = ctx.createLinearGradient(0, -14, 0, 14); gr.addColorStop(0, '#fffbe0'); gr.addColorStop(0.45, '#ffd76a'); gr.addColorStop(1, '#e88a12'); ctx.fillStyle = gr; ctx.fillText(txt, 0, 0);
+      ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText(txt, 0, 3); ctx.strokeText(txt, 0, 0); ctx.fillStyle = YEL; ctx.fillText(txt, 0, 0); // chữ đắp nổi
     } else {
-      ctx.font = `700 ${it.title.length > 15 ? 16 : 18}px ${BODY}`;
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.strokeText(it.title, 0, 0);
-      gr = ctx.createLinearGradient(0, -10, 0, 10); gr.addColorStop(0, '#fff8e4'); gr.addColorStop(1, it.tier >= 1 ? '#ffd27a' : '#ecd29a'); ctx.fillStyle = gr; ctx.fillText(it.title, 0, 0);
+      ctx.font = `700 ${it.title.length > 15 ? 17 : 19}px ${DISP}`;
+      ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.strokeText(it.title, 0, 2.5); ctx.strokeText(it.title, 0, 0); ctx.fillStyle = it.tier >= 1 ? YEL : '#fff'; ctx.fillText(it.title, 0, 0);
     }
     ctx.restore();
     if (it.sub) { // dòng phụ dưới dải (chiến công đầu / chuỗi / chặn đứng kèm theo)
-      ctx.font = `700 11px ${BODY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      ctx.strokeText(it.sub, cx, cy + bh / 2 + 4); ctx.fillStyle = it.tier >= 1.5 || /Truyền thuyết/.test(it.sub) ? '#ffd86a' : '#f3e6c8'; ctx.fillText(it.sub, cx, cy + bh / 2 + 4);
+      ctx.font = `700 12px ${DISP}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 4; ctx.strokeStyle = INK;
+      ctx.strokeText(it.sub, cx, cy + bh / 2 + 6); ctx.fillStyle = it.tier >= 1.5 || /Truyền thuyết/.test(it.sub) ? YEL : '#fff'; ctx.fillText(it.sub, cx, cy + bh / 2 + 6);
     }
     // chân dung: người hạ (trái), bị hạ (phải); trượt từ giữa ra
     const sl = ease((t - 0.04) / 0.26), lx = cx - (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl), rx = cx + (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl);

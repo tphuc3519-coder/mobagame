@@ -25,8 +25,29 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 }
 ```
 
+**Bản đang chạy — UI v4 "hoạt hình phẳng" (2026-11-02, `src/ui/css.js` `:root`):** chủ dự án chê UI v3 *"đậm AI quá"* (dải vàng
+kim, quầng sáng, kính mờ, chữ in hoa giãn) và chọn mẫu C trong ba mẫu dựng thử. Quy tắc:
+- **Màu phẳng, không dải màu:** nền `--c-bg #253553` (có lưới chấm mờ ở bảng phủ), đầu bảng `--c-bg2 #1a2640`, thẻ `--c-card #33476e` /
+  `--c-card2 #2b3c5e`; nhấn `--c-yel #ffd23f`, `--c-blu #4aa8ff`, `--c-red #ff5a5f`, `--c-grn #5be06f`, `--c-pur #a678ff`; chữ trắng, phụ `#c6d3ee`.
+- **Viền mực dày 3px `--ink #0f1729` + bóng cứng không nhoè** (`0 4px 0 var(--ink)`), bo góc 12–16px. Nút nhấn là lún xuống (bóng 4px → 1px).
+- **Mục đang chọn:** vàng đặc chữ mực (tab, ô vị trí, ô bảng Cài đặt) hoặc vòng vàng 3px quanh thẻ (thẻ tướng, dòng "tôi").
+- **Không:** quầng sáng (`box-shadow` nhoè, `drop-shadow` nhoè, `text-shadow` nhoè), kính mờ (`backdrop-filter`), hoa văn góc, vệt sáng
+  lướt, chữ in hoa giãn chữ. Bóng chữ chỉ là bóng cứng `0 2px 0` để đọc được trên cảnh 3D.
+- **UI v4.1 "nổi khối" (cùng ngày, chủ dự án: *"vẫn 3d đẹp đẹp nhưng ko bị AI"*):** giữ viền mực + bóng cứng, thêm độ khối kiểu game
+  mobile — thân khối sáng trên tối dưới (`--g-yel / --g-blu / --g-red / --g-grn / --g-card / --g-card2 / --g-head / --g-tb / --g-tr`), nút
+  có mặt bóng nửa trên kiểu kẹo (`--gloss`) + mép sáng trong / gờ tối dưới (`--hl2`), thẻ có mép sáng trong ở đỉnh (`--hl`), chữ tiêu đề đắp
+  nổi 4 lớp bóng cứng (`--extrude`). Canvas cùng hệ: dải thông báo hạ gục và bảng bị hạ có nửa trên sáng + gờ tối, số sát thương / vàng nhặt
+  đắp nổi. Khác UI v3: dải màu chỉ trong một sắc (không ánh kim), không nhoè, không phát sáng.
+- Tên token cũ (`--u-gold`, `--u-rim`, `--u-surf`, `--u-gc`…) vẫn còn, ánh xạ sang màu phẳng — các màn cũ đọc chúng không phải sửa.
+- Cùng hệ cho bảng Cài đặt (`ui/settingsModal.js`), cửa hàng / bảng tỉ số / HUD trong trận (`index.html`), bản đồ nhỏ (`hud/minimap.js`) và
+  chữ vẽ trên canvas: thông báo hạ gục (`hud/killBanner.js` — dải viên thuốc màu phe, viền mực), số sát thương (màu đặc theo loại: vật lý
+  cam, phép tím, chuẩn trắng — viền mực), vàng nhặt được, bảng bị hạ.
+
 ### 1.2 Chữ
-- Font: **"Be Vietnam Pro"** (Google Fonts, giấy phép OFL) cho nội dung; **"Bai Jamjuree"** hoặc **"Chakra Petch"** (OFL) cho tiêu đề và số. Tải từ Google Fonts hoặc tự host trong `assets/fonts/` (ghi giấy phép).
+- Font (đang dùng, UI v4 — 2026-11-02): **"Baloo 2"** 600/700/800 (chữ tròn đậm kiểu hoạt hình, đủ dấu tiếng Việt) cho tiêu đề, nút, nhãn và **mọi con số** (đồng hồ, vàng, máu, sát thương, K/D/A); **"Be Vietnam Pro"** 500–800 cho câu chữ thường. Cả hai SIL OFL, tự host trong `assets/fonts/` (`OFL.txt`, `assets/LICENSES.md`). Một nguồn tên phông: `src/ui/fonts.js` (canvas dùng `font(w, px)`, CSS dùng `--u-disp` / `--u-body`, HUD dùng `--f-disp` / `--f-body`); `main.js` nạp trước khi vào sảnh để canvas không đệm chữ phông dự phòng.
+- **Chữ luôn đứng**, không nghiêng, không in hoa giãn. Tiêu đề lớn `.gt` (vàng) / `.gs` (trắng) là màu đặc có viền mực
+  (`-webkit-text-stroke` + `paint-order: stroke fill`) và bóng cứng; chữ to có dấu chồng (Ế, Ắ) vẫn chừa `padding-top` ~.3em.
+- Baloo 2 rộng hơn Saira Condensed: tên một từ dài ở ô hẹp (ô tướng màn cấm chọn) dùng 10,5px; nhãn hạng ở phòng chờ cắt bằng "…".
 - Cỡ tối thiểu trên điện thoại ngang: 12px; nút chính 22–26px đậm.
 
 ### 1.3 Thành phần dùng chung (`ui/components/`)
