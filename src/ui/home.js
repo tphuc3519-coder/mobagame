@@ -33,7 +33,8 @@ export function openHome(nav) {
       <button type="button" class="hm-me" data-a="profile"><span class="av"${p.frame && FRAMES[p.frame] ? ` style="box-shadow:0 0 0 3px ${FRAMES[p.frame].col},0 0 14px ${FRAMES[p.frame].col}"` : ''}>${face(p.avatar)}<i class="lvb"><b>${p.level}</b></i></span>
         <span class="who"><b>${p.name}</b><span class="rk">${rankBadge(r, 24)}${r.name}</span><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span></span></button>
       <div class="hm-fr">${friends.map((f) => `<button type="button" data-a="friends" aria-label="${f.name}">${face(f.avatar)}${f.status === 'online' ? '<i class="dot"></i>' : ''}</button>`).join('')}
-        <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button></div>
+        <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button>
+        <button type="button" class="ol" data-a="online" aria-label="Chơi online với người thật">${icon('swords')}<span>Online</span></button></div>
       <div class="hm-top"><span class="cur">${icon('coin')}<b>${fmt(p.gold)}</b><i class="add" data-a="event" role="button" aria-label="Nhận thêm vàng">+</i></span>
         <span class="cur gem">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add" data-a="gems" role="button" aria-label="Cửa hàng ngọc">+</i></span>
         <button type="button" class="icb" data-a="mail" aria-label="Thư">${icon('mail')}${mail ? `<i class="badge">${mail}</i>` : ''}</button>
@@ -84,7 +85,7 @@ export function openHome(nav) {
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard('season', render), history: () => openHistory(),
     bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
     // cửa hàng ngọc: đóng lại thì dựng lại tướng ở sảnh để phủ màu trang phục vừa mặc
-    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }),
+    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), online: () => nav.go('online'), // chơi với người thật (ui/online.js) ranked: () => nav.go('room', { mode: 'ranked' }),
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };
