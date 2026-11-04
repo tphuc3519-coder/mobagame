@@ -1,5 +1,6 @@
 // Màn đội hình (ảnh 4) — ngay sau khi cả đội khoá tướng: tướng của mình đứng lớn trên sân khấu (động tác chiến thắng), tên tướng bên
 // trái, hàng chân dung cả đội phía dưới (tên tướng + tên người chơi). Đấu đơn: mình VS đối thủ. ~3 giây hoặc chạm để qua màn tải trận.
+import { uiZoom } from './viewport.js';
 import { HEROES } from '../data/heroes/index.js';
 import { face } from './kit.js';
 import { profile } from './profile.js';
@@ -14,7 +15,7 @@ export function openLineup(nav) {
   const el = document.createElement('div'); el.id = 'lineup'; el.className = 'scr'; el.style.pointerEvents = 'auto'; // chạm đâu cũng qua màn
   document.getElementById('ui').append(el);
   const show = stage(); stageOn(true); show.autoSpin(false); show.aura(true, 0.8); show.frame({ zoom: 1.0, dy: -0.12, dx: 0.25 }); // tướng đứng cao lên, chừa hàng chân dung phía dưới
-  const place = () => { const off = Math.min(innerWidth * 0.1, 110); show.setOffset(off); backdrop('soft', { rays: true, cx: `calc(50% + ${off}px)`, cy: '40%' }); };
+  const place = () => { const off = Math.min(innerWidth * 0.1, 110 * uiZoom()); show.setOffset(off); backdrop('soft', { rays: true, cx: `calc(50% + ${off}px)`, cy: '40%' }); };
   place(); addEventListener('resize', place);
   show.show(P.heroId);
   const pose = setTimeout(() => show.play('Victory'), 450);

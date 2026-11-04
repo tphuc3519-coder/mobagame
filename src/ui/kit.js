@@ -74,12 +74,20 @@ export function rankBadge(rank, size = 44) {
 }
 export const stars = (rank) => (rank.max ? Array.from({ length: rank.max }, (_, i) => `<b class="${i < rank.star ? 'on' : ''}">✦</b>`).join('') : `<b class="on">✦</b><em>${rank.star}</em>`);
 
-/** Bật/tắt toàn màn hình (+ khoá ngang trên điện thoại); trình duyệt / khung nhúng không cho thì báo. */
+/** iPhone / iPad (Safari không cho trang web tự bật toàn màn hình trên iPhone). */
+export const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+/** Hướng dẫn chơi toàn màn hình (khi trình duyệt không cho tự bật — Safari iPhone). */
+export function fullscreenHelp() {
+  dialog({ title: 'Chơi toàn màn hình', html: isIos()
+    ? '<p><b>Nhanh:</b> bấm <b>aA</b> ở thanh địa chỉ → <b>Ẩn thanh công cụ</b>.</p><p><b>Như ứng dụng:</b> bấm <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>, rồi mở game từ biểu tượng ngoài màn hình chính.</p><p>Thanh tab nằm ngang chiếm chỗ: Cài đặt → Safari → tắt <b>Thanh tab ngang</b>.</p>'
+    : '<p>Mở menu trình duyệt → <b>Thêm vào màn hình chính</b> (hoặc <b>Cài đặt ứng dụng</b>), rồi mở game từ biểu tượng ngoài màn hình chính.</p>' });
+}
+/** Bật/tắt toàn màn hình (+ khoá ngang trên điện thoại); trình duyệt không cho (Safari iPhone, khung nhúng) thì hướng dẫn cách khác. */
 export async function fullscreen() {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape').catch(() => {}); }
-  } catch (_) { toast('Trình duyệt không cho phép toàn màn hình'); }
+  } catch (_) { fullscreenHelp(); }
 }
 
 // —— Thông báo nhanh ——

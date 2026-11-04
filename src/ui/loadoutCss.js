@@ -5,14 +5,14 @@ const CSS = `
 .lo-tabs { display: flex; gap: 0; border-radius: 18px; overflow: hidden; box-shadow: inset 0 0 0 2px var(--ink); }
 .lo-tabs button { height: 32px; padding: 0 14px; border: 0; background: rgba(8,12,34,.85); font: 700 13px var(--u-disp);  color: #c8d0ea;  }
 .lo-tabs button.on { background: var(--g-yel); color: var(--ink); }
-.lo-charm { display: grid; grid-template-columns: clamp(124px, 19vw, 190px) minmax(0, 1fr) clamp(170px, 27vw, 250px); gap: 10px; height: 100%; min-height: 0; }
+.lo-charm { display: grid; grid-template-columns: clamp(124px, calc(19 * var(--vw, 1vw)), 190px) minmax(0, 1fr) clamp(170px, calc(27 * var(--vw, 1vw)), 250px); gap: 10px; height: 100%; min-height: 0; }
 .lo-pages, .lo-chs { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
 .lo-pages { display: flex; flex-direction: column; gap: 5px; padding: 2px; }
 .lo-pg { flex: none; display: flex; flex-direction: column; justify-content: center; height: 40px; padding: 0 10px; border: 0; border-radius: 7px; text-align: left; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 2px var(--ink); color: #e8eeff; }
 .lo-pg b { font: 700 13px/1.1 var(--u-disp);  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .lo-pg small { font-size: 10.5px; color: #9aa6c8; }
 .lo-pg.on { background: var(--g-me); box-shadow: 0 0 0 3px var(--c-yel); }
 .lo-pg.add { align-items: center; color: var(--u-gc); font: 700 13px var(--u-disp); } .lo-pg.add:disabled { opacity: .4; }
-.lo-board { --sl: clamp(34px, 10.5vh, 48px); display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; overflow-y: auto; }
+.lo-board { --sl: clamp(34px, calc(10.5 * var(--vh, 1vh)), 48px); display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; overflow-y: auto; }
 .lo-bh { display: flex; align-items: center; gap: 8px; } .lo-bh .lo-name { font: 800 18px/1.1 var(--u-disp); color: var(--c-yel);  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lo-bh .icb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--c-yel); font-size: 14px; }
 .lo-bh .lo-lv { margin-left: auto; font: 700 12px var(--u-disp); color: #9ad0ff; white-space: nowrap; }
@@ -38,8 +38,8 @@ const CSS = `
 .lo-heroes button { flex: none; width: 44px; height: 44px; padding: 2px; border: 0; border-radius: 8px; background: rgba(255,255,255,.06); }
 .lo-heroes button.on { box-shadow: 0 0 0 2px var(--c-yel); } .lo-heroes .face, .lo-heroes .ini { width: 100%; height: 100%; border-radius: 6px; display: grid; place-items: center; font-style: normal; }
 .lo-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.lo-key { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: clamp(92px, 29vh, 128px); padding: 6px; border: 0; border-radius: 9px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 2px var(--ink); text-align: center; }
-.lo-key > svg, .lo-key > img { width: clamp(30px, 9vh, 42px); height: clamp(30px, 9vh, 42px); }
+.lo-key { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: clamp(92px, calc(29 * var(--vh, 1vh)), 128px); padding: 6px; border: 0; border-radius: 9px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 2px var(--ink); text-align: center; }
+.lo-key > svg, .lo-key > img { width: clamp(30px, calc(9 * var(--vh, 1vh)), 42px); height: clamp(30px, calc(9 * var(--vh, 1vh)), 42px); }
 .lo-key b { font: 700 13.5px/1.1 var(--u-disp); color: var(--c-yel); } .lo-key small { font-size: 10px; line-height: 1.25; color: #c8d0ea; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .lo-key.on { background: var(--g-me); box-shadow: 0 0 0 3px var(--c-yel); }
 .lo-mins { display: flex; flex-direction: column; gap: 6px; }
@@ -49,7 +49,7 @@ const CSS = `
 .lo-min.on { background: rgba(120,190,255,.18); box-shadow: inset 0 0 0 2px rgba(150,210,255,.85); }
 .lo-eact { display: flex; align-items: center; gap: 10px; } .lo-eact button { flex: none; height: 32px; padding: 0 12px; font-size: 13.5px; }
 .lo-edesc { margin: 0; font-size: 11.5px; line-height: 1.35; color: #dfe6ff; }
-.lo-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: 52vh; overflow: auto; min-width: min(560px, 84vw); text-align: left; padding: 2px; }
+.lo-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: calc(52 * var(--vh, 1vh)); overflow: auto; min-width: min(560px, calc(84 * var(--vw, 1vw))); text-align: left; padding: 2px; }
 .lo-pick button { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border: 0; border-radius: 8px; text-align: left; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 2px var(--ink); color: #e8eeff; }
 .lo-pick button.on { background: var(--g-yel); color: var(--ink); }
 .lo-pick b { font: 700 14px/1.1 var(--u-disp); color: var(--c-yel); } .lo-pick small { font-size: 10.5px; color: #9aa6c8; } .lo-pick em { font-style: normal; font-size: 10.5px; color: #a8d4ff; }

@@ -72,8 +72,20 @@ kim, quầng sáng, kính mờ, chữ in hoa giãn) và chọn mẫu C trong ba 
 - Mọi animation tôn trọng `prefers-reduced-motion`.
 
 ### 1.5 Bố cục an toàn
-- Tỉ lệ thiết kế chuẩn 19.5:9 (2340×1080) và co giãn theo chiều cao. Chừa `env(safe-area-inset-*)` cho tai thỏ.
-- Chiều cao tham chiếu: 1080; mọi kích thước UI tính bằng `vh`-based unit: `--u: calc(100vh / 1080)`.
+- Tỉ lệ thiết kế chuẩn 19.5:9 (2340×1080) và co giãn theo chiều cao. Chừa vùng an toàn cho tai thỏ / thanh vuốt.
+- **Co giãn theo cỡ màn (`ui/viewport.js`, 04/11):** giao diện ngoài trận (màn `.scr`, bảng `.ui-panel`, hộp thoại `.ui-dlg`, Nhận thưởng,
+  Cài đặt) thiết kế cho khung tối thiểu **640×360**. Màn thấp / hẹp hơn thì cả giao diện thu nhỏ đều (`zoom: var(--uiz)`, tỉ lệ
+  = min(cao/360, rộng/640) — iPhone trong Safari còn thanh địa chỉ + thanh tab ngang chỉ ~852×252 → 0,7; iPhone SE ~667×235 → 0,65); máy
+  tính bảng / máy tính phóng to 1,25 / 1,5. Lớp lồng trong lớp không co thêm.
+- **Không dùng đơn vị `vh` / `vw` trong CSS giao diện** — dùng `calc(N * var(--vh))` / `var(--vw)` (1% khung nhìn theo toạ độ đã co giãn,
+  JS tính từ `innerHeight`): Safari iPhone tính `100vh` theo chiều cao khi ĐÃ ẩn thanh địa chỉ (lớn hơn phần nhìn thấy → hộp thoại tràn khỏi
+  màn), và `zoom` của Chrome nhân cả `vh` còn Safari thì không. Phần không co giãn (HUD trong trận, màn khởi động, băng-rôn kết thúc trận,
+  thông báo nhanh) dùng `var(--rvh)` / `var(--rvw)` (1% phần nhìn thấy thật). Vùng an toàn trong phần co giãn: `var(--sl/--sr/--st/--sb)`.
+- JS đặt vị trí theo px giao diện (tướng 3D ở sảnh / chọn tướng / đội hình) nhân `uiZoom()`.
+- Kiểm thử: `tools/b_fit.cjs` (mọi màn + hộp thoại + bảng trên 9 cỡ màn, gồm 852×252 và 667×235: nút không bị cắt, nút chính không phải
+  cuộn mới thấy, không cuộn ngang), `tools/b_layout.cjs` (HUD trong trận, gồm 852×252 / 667×235).
+- Khung bị thanh trình duyệt che (Safari iPhone): Sảnh nhắc chơi toàn màn hình (`ui/fullHint.js` — Android bấm là bật; iPhone: hướng dẫn
+  Ẩn thanh công cụ / Thêm vào MH chính).
 
 ## 2. Bản đồ màn hình (router)
 

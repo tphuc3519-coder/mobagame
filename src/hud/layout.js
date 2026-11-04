@@ -15,6 +15,10 @@ const CAM = 50, HUDSET = 38, CLUSTER_MIN = 66;
 export const SELF_BAR = 25;
 /** Bán kính cần nhỏ nhất: kéo gần hay xa đều chạy cùng tốc độ (joystick.js) nên R chủ yếu là phần nhìn — màn rất thấp (667×320) cho co tới 48 thay vì đè thanh máu. */
 export const JOY_MIN = 48;
+/** Chiều cao dùng được dưới mức này (Safari iPhone còn thanh địa chỉ + thanh tab: ~230–250 px): "màn thấp" — cửa hàng lên hàng trên cùng (bên
+ *  phải bản đồ nhỏ + nút tín hiệu, ô mua nhanh chỉ hiện ảnh) thay vì nằm dưới bản đồ, chừa cột trái cho cần điều khiển; bản đồ nhỏ co theo
+ *  chiều cao (≤ 36%); bảng tỉ số gọn lại để nút camera ở góc cụm kỹ năng không chạm vào (index.html, lớp html.hud-short). */
+export const SHORT_H = 300;
 export const selfBarRect = (W, H, safeL = 0) => ({ l: 16 + safeL, t: H - SELF_BAR, r: 16 + safeL + Math.min(220, W * 0.24), b: H - 5 });
 const clamp = (lo, v, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(0, t, 1);
@@ -33,9 +37,10 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const sf = { t: safe.t || 0, r: safe.r || 0, b: safe.b || 0, l: safe.l || 0 };
   const top = Math.max(8, sf.t), right = Math.max(12, sf.r), bot = Math.max(10, sf.b);
   const hu = Math.max(200, H - sf.t - sf.b); // chiều cao dùng được
+  const short = hu < SHORT_H; // màn rất thấp: cửa hàng lên hàng trên cùng bên trái (kể cả khi chọn cửa hàng bên phải — góc phải không còn chỗ)
   const gp = Math.round(clamp(48, 0.15 * hu, 64)); // nút cửa hàng (giỏ + vàng)
   // khối góc phải trên: nút cài đặt / toàn màn hình; cửa hàng bên phải xếp ngay dưới (hàng ngang khi màn thấp, 2 dòng khi cao)
-  const topRight = top + (shopRight ? 50 + (H < 560 ? Math.max(gp, Math.min(60, gp + 4)) : 124) : HUDSET); // một ô mua nhanh (ảnh co theo nút giỏ, --qi) cao hơn nút giỏ 4 px; 124 = hai ô xếp dọc
+  const topRight = top + (shopRight && !short ? 50 + (H < 560 ? Math.max(gp, Math.min(60, gp + 4)) : 124) : HUDSET); // một ô mua nhanh (ảnh co theo nút giỏ, --qi) cao hơn nút giỏ 4 px; 124 = hai ô xếp dọc
   // nút Đánh: theo chiều cao (màn chạm to hơn — ngón cái; chuột nhỏ hơn — thấy được nhiều sân hơn), nhân cỡ người chơi chọn
   const k = HUD_SIZES[size] ?? 1;
   let d = clusterDims((touch ? clamp(84, 0.235 * hu, 118) : clamp(80, 0.15 * hu, 104)) * k, touch);
@@ -46,12 +51,13 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const camAbove = H - bot - d.skh - 16 - CAM >= topRight + 6;
   const camR = camAbove ? right + 6 : right + d.skw - CAM - 4, camB = camAbove ? bot + d.skh + 16 : bot + d.skh - CAM;
   const mini = clamp(touch ? 46 : 40, 0.58 * d.a, 66), item = mini * 1.1;
-  // bản đồ nhỏ: ~35% chiều cao trên điện thoại (chừa chỗ cửa hàng + cần điều khiển bên dưới), ~30% trên máy tính bảng / máy tính, tối đa 320
-  const mmBox = clamp(104, lerp(0.35, 0.3, (hu - 400) / 400) * hu * (MM_SIZES[mm] ?? 1), 320);
+  // bản đồ nhỏ: ~35% chiều cao trên điện thoại (chừa chỗ cửa hàng + cần điều khiển bên dưới), ~30% trên máy tính bảng / máy tính, tối đa 320;
+  // màn rất thấp: không ép tối thiểu 104 px (≤ 36% chiều cao, cộng viền vẫn < 40%) — 104 px trên màn 231 px đè chỗ cần điều khiển
+  const mmBox = clamp(Math.min(104, 0.36 * hu), lerp(0.35, 0.3, (hu - 400) / 400) * hu * (MM_SIZES[mm] ?? 1), 320);
   const R = clamp(JOY_MIN, 0.9 * d.a, 104); // bán kính cần mong muốn — joystick đo chỗ trống thật rồi mới chốt
   const r = (v) => Math.round(v * 10) / 10;
   return { touch, hu, safe: sf, top, right, bot, a: r(d.a), s: r(d.s), m: r(d.m), skw: r(d.skw), skh: r(d.skh), mini: r(mini), item: r(item), gp,
-    camAbove, camR: r(camR), camB: r(camB), mm: Math.round(mmBox), R: Math.round(R), topRight };
+    camAbove, camR: r(camR), camB: r(camB), mm: Math.round(mmBox), R: Math.round(R), topRight, short };
 }
 
 /**
@@ -80,13 +86,14 @@ export function createHudLayout() {
     const p = prefs();
     cur = computeHudLayout({ W: innerWidth, H: innerHeight, safe: safe(), touch: touch(), size: p.hudSize, mm: p.mmSize, shopRight: p.shop === 'right' });
     for (const k of ['a', 's', 'm', 'skw', 'skh', 'mini', 'item', 'gp', 'camR', 'camB']) root.setProperty('--' + k, cur[k] + 'px');
+    document.documentElement.classList.toggle('hud-short', cur.short); // màn thấp: cửa hàng lên hàng trên cùng (index.html)
     for (const fn of [...subs]) fn(cur);
     at = -1e9; // đo lại chỗ cần ở lần vẽ kế tiếp (khối đã đổi cỡ)
   }
   const box = (sel) => { const e = document.querySelector(sel); if (!e || e.hidden) return null; const r = e.getBoundingClientRect(); return r.width && r.height ? r : null; };
   function measure() {
     let above = 0, extrasLeft = Infinity;
-    for (const s of ['#minimap', '#pingBtn', 'body:not(.shop-right) .dock']) { const r = box(s); if (r && r.left < innerWidth * 0.5) above = Math.max(above, r.bottom); }
+    for (const s of ['#minimap', '#pingBtn', cur.short ? '.dock' : 'body:not(.shop-right) .dock']) { const r = box(s); if (r && r.left < innerWidth * 0.5) above = Math.max(above, r.bottom); }
     for (const e of document.querySelectorAll('#extras > .xb')) { if (e.hidden) continue; const r = e.getBoundingClientRect(); if (r.width) extrasLeft = Math.min(extrasLeft, r.left); }
     joy = joyRest({ H: innerHeight, safe: cur.safe, Rwant: cur.R, above, extrasLeft });
   }

@@ -15,17 +15,19 @@ const CSS = `
 #online::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,8,20,.55), rgba(6,8,20,.82)); pointer-events: none; }
 #online > * { position: relative; }
 #online .ol-head { display: flex; align-items: center; gap: 10px; min-height: 40px; }
-#online .ol-head h2 { margin: 0; font: 800 clamp(20px, 6.4vh, 26px)/1 var(--u-disp); letter-spacing: .01em; white-space: nowrap; }
+#online .ol-head h2 { margin: 0; font: 800 clamp(20px, calc(6.4 * var(--vh, 1vh)), 26px)/1 var(--u-disp); letter-spacing: .01em; white-space: nowrap; }
 #online .ol-st { margin-left: auto; font: 600 12px var(--u-body); color: var(--u-dim); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 #online .ol-st i { width: 9px; height: 9px; border-radius: 50%; background: #777; box-shadow: 0 0 6px #0008; flex: none; }
 #online .ol-st i.on { background: #6fe08a; box-shadow: 0 0 8px #6fe08a; }
 #online .ol-code { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 12px; border-radius: 22px; background: rgba(4,6,20,.82); box-shadow: inset 0 0 0 2px rgba(232,184,90,.55); }
 #online .ol-code small { font: 700 10.5px/1.1 var(--u-disp); letter-spacing: .12em; color: var(--u-dim); text-transform: uppercase; }
-#online .ol-code b { font: 800 clamp(22px, 7vh, 30px)/1 var(--u-disp); letter-spacing: .22em; color: #ffe39a; text-shadow: 0 2px 0 #3a1a04, 0 0 14px rgba(255,180,70,.5); }
+#online .ol-code b { font: 800 clamp(22px, calc(7 * var(--vh, 1vh)), 30px)/1 var(--u-disp); letter-spacing: .22em; color: #ffe39a; text-shadow: 0 2px 0 #3a1a04, 0 0 14px rgba(255,180,70,.5); }
 #online .ol-code button { height: 30px; padding: 0 10px; font-size: 12.5px; }
 #online .ol-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; }
-#online .ol-main.in { grid-template-columns: minmax(0, 1fr) clamp(190px, 27vw, 270px); }
+#online .ol-main.in { grid-template-columns: minmax(0, 1fr) clamp(190px, calc(27 * var(--vw, 1vw)), 270px); }
 #online .ol-box { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
+#online .ol-box.pin { overflow: hidden; } #online .ol-box.pin > .btn-gold { flex: none; } /* nút chính ghim đáy khung, phần trên tự cuộn khi thiếu chỗ */
+#online .ol-scroll { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: inherit; overscroll-behavior: contain; }
 #online .ol-box h4 { margin: 0; font: 700 12.5px/1 var(--u-disp); letter-spacing: .14em; text-transform: uppercase; color: var(--u-gc); }
 #online .ol-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } #online .ol-row > span { font: 600 12.5px var(--u-body); color: #cfd6ea; min-width: 74px; }
 #online input { flex: 1; min-width: 0; height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(232,184,90,.5); background: rgba(4,6,18,.75); color: #f3ead2; font: 600 14px var(--u-body); outline: none; }
@@ -47,10 +49,10 @@ const CSS = `
 #online .cr-team { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 #online .cr-team h4 { margin: 0 0 2px; font: 800 13px/1 var(--u-disp); letter-spacing: .12em; text-transform: uppercase; text-align: center; }
 #online .cr-team.b h4 { color: #8fc2ff; } #online .cr-team.r h4 { color: #ff9c8c; }
-#online .cr-vs { font: 900 clamp(22px, 7vh, 34px)/1 var(--u-disp); }
-#online .cr-slot { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 4px; height: clamp(38px, 10.6vh, 50px); border-radius: 8px; border: 0; text-align: left; color: inherit; background: rgba(8,12,30,.78); box-shadow: inset 0 0 0 2px rgba(120,150,220,.28); min-width: 0; }
+#online .cr-vs { font: 900 clamp(22px, calc(7 * var(--vh, 1vh)), 34px)/1 var(--u-disp); }
+#online .cr-slot { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 4px; height: clamp(38px, calc(10.6 * var(--vh, 1vh)), 50px); border-radius: 8px; border: 0; text-align: left; color: inherit; background: rgba(8,12,30,.78); box-shadow: inset 0 0 0 2px rgba(120,150,220,.28); min-width: 0; }
 #online .cr-team.r .cr-slot { box-shadow: inset 0 0 0 2px rgba(230,120,110,.3); }
-#online .cr-slot .face, #online .cr-slot .ph { width: clamp(30px, 8.6vh, 40px); height: clamp(30px, 8.6vh, 40px); border-radius: 6px; object-fit: cover; flex: none; }
+#online .cr-slot .face, #online .cr-slot .ph { width: clamp(30px, calc(8.6 * var(--vh, 1vh)), 40px); height: clamp(30px, calc(8.6 * var(--vh, 1vh)), 40px); border-radius: 6px; object-fit: cover; flex: none; }
 #online .cr-slot .ph { display: grid; place-items: center; background: rgba(255,255,255,.06); font: 800 15px var(--u-disp); color: rgba(220,228,250,.55); border: 1.5px dashed rgba(200,210,240,.35); box-sizing: border-box; }
 #online .cr-slot .t { flex: 1; min-width: 0; } #online .cr-slot .t b { display: block; font: 700 13.5px/1.15 var(--u-body); color: #f3ead2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #online .cr-slot .t small { display: block; font: 600 11px/1.2 var(--u-body); color: var(--u-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -63,7 +65,7 @@ const CSS = `
 #online .ol-acts .btn-ghost { flex: none; padding: 0 10px; font-size: 13px; }
 #online .ol-main.in .ol-box:last-child { gap: 6px; } #online .ol-main.in .ol-row > span { min-width: 0; width: 100%; font-size: 11.5px; margin-bottom: -4px; }
 #online .ol-main.in .seg button { padding: 4px 8px; font-size: 12px; }
-@media (max-width: 640px) { #online .ol-main, #online .ol-main.in { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; } }
+@media (max-width: 520px) { #online .ol-main, #online .ol-main.in { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; } }
 `;
 let cssDone = false;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -112,8 +114,8 @@ export function openOnline(nav) {
       const col = (t) => `<div class="cr-team ${t ? 'r' : 'b'}"><h4>${t ? 'Đội Đỏ' : 'Đội Xanh'}</h4>${Array.from({ length: r.size }, (_, s) => slotHtml(r, t, s)).join('')}</div>`;
       el.innerHTML = head + `<div class="ol-main in">
         <div class="ol-box fr"><div class="cr-teams">${col(0)}<b class="cr-vs gt">VS</b>${col(1)}</div></div>
-        <div class="ol-box fr"><h4>Tuỳ chọn phòng</h4>${optsHtml(r.mode, r.bots, r.difficulty, !host())}
-          <p class="ol-tip">${r.players.length}/${r.size * 2} người. ${r.bots ? 'Máy chơi các ô trống.' : 'Tắt máy: chỉ người trong phòng vào trận.'}${host() ? '' : ' Chỉ chủ phòng đổi tuỳ chọn.'}</p>
+        <div class="ol-box fr pin"><div class="ol-scroll"><h4>Tuỳ chọn phòng</h4>${optsHtml(r.mode, r.bots, r.difficulty, !host())}
+          <p class="ol-tip">${r.players.length}/${r.size * 2} người. ${r.bots ? 'Máy chơi các ô trống.' : 'Tắt máy: chỉ người trong phòng vào trận.'}${host() ? '' : ' Chỉ chủ phòng đổi tuỳ chọn.'}</p></div>
           <div class="ol-acts">${host()
             ? `<button type="button" class="btn-gold big" data-a="start" ${allReady && okTeams ? '' : 'disabled'}>${startTxt}</button>`
             : `<button type="button" class="${me.ready ? 'btn-blue' : 'btn-gold'} big" data-a="ready">${me.ready ? 'Huỷ sẵn sàng' : 'Sẵn sàng'}</button>`}
@@ -122,8 +124,8 @@ export function openOnline(nav) {
     }
     const saved = savedMatch(), busy = connecting();
     el.innerHTML = head + `<div class="ol-main">
-      <div class="ol-box fr"><h4>Tạo phòng</h4>${optsHtml(mode, bots, diff, false)}
-        <p class="ol-tip">Tạo xong gửi <b>mã phòng</b> cho bạn bè. Tối đa ${mode === '5v5' ? '10' : '2'} người, chọn tướng sau khi chủ phòng bấm Bắt đầu.</p>
+      <div class="ol-box fr pin"><div class="ol-scroll"><h4>Tạo phòng</h4>${optsHtml(mode, bots, diff, false)}
+        <p class="ol-tip">Tạo xong gửi <b>mã phòng</b> cho bạn bè. Tối đa ${mode === '5v5' ? '10' : '2'} người, chọn tướng sau khi chủ phòng bấm Bắt đầu.</p></div>
         <button type="button" class="btn-gold big" data-a="create" ${busy ? 'disabled' : ''}>Tạo phòng</button></div>
       <div class="ol-box fr">
         ${saved ? `<div class="ol-rejoin"><span>Trận đang dở · phòng <b>${esc(saved.code)}</b></span><button type="button" class="btn-gold" data-a="rejoin">Vào lại trận</button></div>` : ''}
@@ -174,7 +176,7 @@ export function openOnline(nav) {
     else if (a === 'copy') { const c = room()?.code; try { await navigator.clipboard.writeText(c); toast('Đã chép mã phòng'); } catch (_) { toast(`Mã phòng: ${c}`); } }
   };
   el.oninput = (e) => { if (e.target.id === 'olCode') { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); code = e.target.value; } };
-  window.__online = { get room() { return room(); }, get conn() { return net.conn; } }; // kiểm thử tự động
+  window.__online = { get room() { return room(); }, get conn() { return net.conn; }, render }; // kiểm thử tự động (b_fit: vẽ lại sau khi gán phòng giả)
   return () => {
     closed = true; clearInterval(rttT); off();
     const going = net.room && (net.room.state === 'pick' || net.room.state === 'ready'); // sang màn chọn tướng: giữ phòng

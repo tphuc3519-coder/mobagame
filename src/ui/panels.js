@@ -18,7 +18,7 @@ import { boardHtml } from './boardPanel.js';
 
 export const ROLE_VI = { fighter: 'Đấu sĩ', tank: 'Đỡ đòn', assassin: 'Sát thủ', mage: 'Pháp sư', marksman: 'Xạ thủ', support: 'Trợ thủ' };
 const STYLE = `
-.pn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(96px, 15vw, 128px), 1fr)); gap: 12px; padding: 4px; }
+.pn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(96px, calc(15 * var(--vw, 1vw)), 128px), 1fr)); gap: 12px; padding: 4px; }
 .pn-hero { position: relative; aspect-ratio: .72; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: var(--g-card2); box-shadow: var(--hl), 0 4px 0 var(--ink); }
 .pn-hero img.hcard, .pn-hero .face, .pn-hero .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 .pn-hero span { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 6px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 35%, rgba(4,5,16,0)); }
@@ -50,7 +50,7 @@ const STYLE = `
 .pn-avs button.on { box-shadow: 0 0 0 3px var(--c-yel); } .pn-avs .face, .pn-avs .ini { width: 100%; height: 100%; border-radius: 50%; }
 .pn-detail { display: grid; grid-template-columns: minmax(150px, 30%) 1fr; gap: 20px; align-items: start; }
 .pn-detail .pic { aspect-ratio: .72; } .pn-detail .pic img.hcard, .pn-detail .pic .face, .pn-detail .pic .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; border-radius: 11px; }
-.pn-detail h3 { margin: 0; font: 800 clamp(30px, 9vh, 42px)/1 var(--u-disp);   display: inline-block; padding-right: 6px; }
+.pn-detail h3 { margin: 0; font: 800 clamp(30px, calc(9 * var(--vh, 1vh)), 42px)/1 var(--u-disp);   display: inline-block; padding-right: 6px; }
 .pn-detail .rl { margin: 4px 0 10px; font: 700 14px var(--u-disp);   color: var(--u-gc); } .pn-detail .rl i { font: 500 13px var(--u-body); font-style: normal; letter-spacing: 0; text-transform: none; color: #d8def4; }
 .pn-detail .skd { display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: start; margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: #d8def4; }
 .pn-detail .skd > img, .pn-detail .skd > i { width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); }
