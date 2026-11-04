@@ -5,6 +5,7 @@
 // vị trí của mình lên đầu (nhãn "Đề cử"), máy chọn tướng hợp vị trí của nó; đối thủ chọn ẩn theo vị trí của họ.
 // Trực tuyến (trận ghép / phòng tuỳ chỉnh — ui/netLobby.js): cột đội là người thật cùng đội (máy chủ gửi tướng đã khoá) + ô "Máy" (tướng máy
 // chọn lúc vào trận), đồng hồ theo máy chủ, Khoá gửi tướng + phép + bảng bùa + phù hiệu lên máy chủ; cả phòng khoá xong máy chủ bắt đầu trận.
+import { uiZoom } from './viewport.js';
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { SPELLS } from '../data/spells.js';
 import { ROLE_INFO } from '../data/roles.js';
@@ -61,7 +62,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
   const el = document.createElement('div'); el.id = 'pick'; el.className = 'scr';
   document.getElementById('ui').append(el);
   const show = stage(); stageOn(true); backdrop('soft'); show.autoSpin(false); show.aura(true, 0.35); show.frame({ zoom: 1, dy: 0, dx: 0.25 });
-  const place = () => show.setOffset((Math.min(272, innerWidth * 0.32) - Math.min(238, innerWidth * 0.285)) / 2 - 20);
+  const place = () => { const z = uiZoom(); show.setOffset((Math.min(272 * z, innerWidth * 0.32) - Math.min(238 * z, innerWidth * 0.285)) / 2 - 20 * z); }; // --gridw / --teamw theo tỉ lệ giao diện
   place(); addEventListener('resize', place);
 
   el.innerHTML = `

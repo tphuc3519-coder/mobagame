@@ -13,13 +13,15 @@ const DEV = {
   pmax: { w: 932, h: 430, dpr: 3, touch: true, inset: { left: 59, right: 59, bottom: 21 } },  // iPhone Pro Max ngang
   and: { w: 800, h: 360, dpr: 3, touch: true },                                             // Android 20:9
   safari: { w: 667, h: 320, dpr: 2, touch: true },                                          // iPhone SE trong Safari còn thanh địa chỉ
+  tab15: { w: 852, h: 252, dpr: 3, touch: true, inset: { left: 59, right: 59, bottom: 21 } }, // iPhone 15 Pro ngang, Safari còn thanh địa chỉ + thanh tab
+  se_tab: { w: 667, h: 235, dpr: 2, touch: true },                                          // iPhone SE ngang, Safari còn thanh địa chỉ + thanh tab
   ipad: { w: 1024, h: 768, dpr: 2, touch: true, inset: { bottom: 20 } },                     // iPad 4:3
   ipadair: { w: 1180, h: 820, dpr: 2, touch: true, inset: { bottom: 20 } },
   lap: { w: 1366, h: 768, dpr: 1, touch: false },                                           // máy tính xách tay (chuột)
   fhd: { w: 1920, h: 1080, dpr: 1, touch: false },
 };
 // kiểu thử thêm trên vài máy: cửa hàng bên phải (chiếm góc phải trên), cỡ nút Lớn + bản đồ Lớn trên máy nhỏ nhất
-const RUNS = [...Object.keys(DEV).map((d) => [d, {}]), ['safari', { shop: 'right' }], ['ip14', { shop: 'right' }], ['ipad', { shop: 'right' }], ['se', { hudSize: 'lg', mmSize: 'lg' }], ['safari', { hudSize: 'lg' }]];
+const RUNS = [...Object.keys(DEV).map((d) => [d, {}]), ['safari', { shop: 'right' }], ['tab15', { shop: 'right' }], ['ip14', { shop: 'right' }], ['ipad', { shop: 'right' }], ['se', { hudSize: 'lg', mmSize: 'lg' }], ['safari', { hudSize: 'lg' }]];
 const only = (process.argv[3] || '').split(',').filter(Boolean);
 const T = (s) => s * 1000 * (+process.env.SLOW || 1);
 let fail = 0;

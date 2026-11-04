@@ -1060,3 +1060,7 @@
   (chỉ service worker lưu tệp); vào trận `releaseHeroes(tướng trong trận)` trả bộ nhớ model tướng khác (ImageBitmap.close + hình khối);
   màn tải giải mã tối đa 2 model một lúc trên điện thoại. Đo (Chromium giả lập điện thoại): RSS sảnh 385 → 248 MB, màn tải 461 → 320 MB,
   trong trận 691 → 625 MB. Dấu "đang vào trận" (`ui/crashGuard.js`): lần mở sau thấy dấu còn ⇒ tự hạ Đồ hoạ xuống Thấp + báo người chơi.
+- 2026-11-04: **Mọi cỡ màn cùng một bố cục** (`ui/viewport.js`): giao diện ngoài trận co giãn đều bằng `zoom: var(--uiz)` theo khung tối thiểu
+  640×360 (thấp hơn thì thu nhỏ, máy tính bảng / máy tính phóng to như cũ); bỏ `vh` / `vw` trong CSS giao diện (Safari iPhone: `100vh` lớn hơn
+  phần nhìn thấy khi còn thanh địa chỉ; Chrome nhân `vh` theo zoom, Safari không) → `var(--vh)` / `var(--vw)` do JS tính từ `innerHeight`.
+  HUD trong trận: màn thấp (< 300 px dùng được) đưa cửa hàng lên hàng trên cùng, bản đồ nhỏ ≤ 38% chiều cao.

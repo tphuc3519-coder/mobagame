@@ -1,5 +1,6 @@
 // Điểm vào: màn tải game (ảnh tranh mở màn + thanh tiến độ) → sảnh chính và các màn trước/sau trận (src/ui/flow.js).
 // ?hero=<id> vào thẳng trận 1v1/5v5 với bot (kiểm thử: ?enemy=, ?mode=5v5, ?diff=, ?nobot, ?dummies, ?debug…).
+import { initViewport } from './ui/viewport.js';
 import { ALPHA, HEROES } from './data/heroes/index.js';
 import { startMatch } from './game.js';
 import { loadHero, heroProgress } from './render/assets.js';
@@ -29,6 +30,7 @@ for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEve
 document.getElementById('fs').onclick = async () => {
   try { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape'); } catch (_) { /* tuỳ thiết bị */ }
 };
+initViewport(); // tỉ lệ giao diện theo cỡ màn (+ biến --vh / --vw đúng phần nhìn thấy) — trước khi dựng giao diện
 injectCss(); injectDraftCss();
 initPwa({ canPrompt: canPromptUpdate }); // cài như ứng dụng + chơi không mạng (src/ui/pwa.js, sw.js)
 loadAudio(); hookUiSounds(); // âm thanh: tải + giải mã song song với màn tải game (không chặn vào game); phát được sau lần chạm đầu

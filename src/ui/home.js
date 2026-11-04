@@ -3,6 +3,8 @@
 // kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Bảng Bùa / Túi đồ / Bạn bè, dưới phải hai nút pha lê
 // "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc (hai nút đấu là trực tuyến — ghép người thật). Nút "Tạo phòng" dưới
 // cột bạn bè: Phòng tuỳ chỉnh (mã phòng). Đấu máy: trong Chọn chế độ. Đổi tướng đứng ở sảnh: mục Tướng.
+import { uiZoom } from './viewport.js';
+import { maybeFullHint } from './fullHint.js';
 import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast, dialog } from './kit.js';
 import { profile, rankNow, expNeed, missionsReady, mailUnread, COURAGE_MAX, seasonCheck } from './profile.js';
 import { HQ } from '../data/haoQuang.js';
@@ -24,7 +26,7 @@ export function openHome(nav) {
   document.getElementById('ui').append(el);
   const show = stage(); stageOn(true); backdrop('home'); show.autoSpin(false); show.aura(true, 0.45); show.frame({ zoom: 0.98, dy: -0.03, dx: 0.25 });
   // tướng đứng giữa khoảng trống giữa cột bạn bè (trái) và cột sự kiện (phải)
-  const place = () => { const side = Math.min(300, Math.max(196, innerWidth * 0.29)); show.setOffset(-(side - 60) / 2 + 10); };
+  const place = () => { const z = uiZoom(), side = Math.min(300 * z, Math.max(196 * z, innerWidth * 0.29)); show.setOffset(-(side - 60 * z) / 2 + 10 * z); }; // cột phải (--side) theo tỉ lệ giao diện (ui/viewport.js)
   place(); addEventListener('resize', place);
   show.show(p.feature);
 
@@ -95,5 +97,6 @@ export function openHome(nav) {
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };
-  return () => { clearInterval(chatT); removeEventListener('resize', place); el.remove(); };
+  const hintOff = maybeFullHint(el); // thanh trình duyệt che bớt màn (Safari iPhone): nhắc chơi toàn màn hình
+  return () => { clearInterval(chatT); hintOff(); removeEventListener('resize', place); el.remove(); };
 }

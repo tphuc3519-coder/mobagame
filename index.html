@@ -73,7 +73,7 @@
   .aimpad i::before { width: 18px; height: 2px; } .aimpad i::after { width: 2px; height: 18px; }
   .aimpad.bad { border-color: #ff5a4acc; background: radial-gradient(circle, #ff5a4a10 55%, #ff5a4a38); box-shadow: none; } .aimpad.bad i { border-color: #ffc8c0; background: radial-gradient(circle at 40% 35%, #ffc8c0cc, #b0302aaa); }
   .aimpad b { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); padding: 5px 12px; border-radius: 6px; background: #ff5a4acc; color: #fff; font: 700 13px var(--f-disp); white-space: nowrap; } .aimpad b[hidden] { display: none; } /* huỷ theo khoảng cách (Cài đặt) */
-  .cancelZone { position: fixed; z-index: 5; right: calc(max(12px, env(safe-area-inset-right)) + 24px); top: max(64px, 15vh); width: clamp(76px, 20vh, 104px); height: clamp(76px, 20vh, 104px); border-radius: 50%; pointer-events: none; display: grid; place-items: center; background: var(--g-head); border: 4px solid var(--ink); box-shadow: var(--hl), 0 4px 0 var(--ink); transition: transform .12s, background .12s; }
+  .cancelZone { position: fixed; z-index: 5; right: calc(max(12px, env(safe-area-inset-right)) + 24px); top: max(64px, calc(15 * var(--rvh, 1vh))); width: clamp(76px, calc(20 * var(--rvh, 1vh)), 104px); height: clamp(76px, calc(20 * var(--rvh, 1vh)), 104px); border-radius: 50%; pointer-events: none; display: grid; place-items: center; background: var(--g-head); border: 4px solid var(--ink); box-shadow: var(--hl), 0 4px 0 var(--ink); transition: transform .12s, background .12s; }
   .cancelZone svg { width: 46%; height: 46%; } .cancelZone.hot { transform: scale(1.12); background: radial-gradient(circle, #a8242ae0 55%, #e0443ae0); border-color: #ffd0c8; }
   body.aiming #camBtn { visibility: hidden; } .cancelZone[hidden], .aimpad[hidden] { display: none; }
   .xb.notarget .sb.mini { filter: grayscale(0.7) brightness(0.7); } .xb.killable .sb.mini { animation: smiteRdy .7s ease-in-out infinite; } @keyframes smiteRdy { 50% { box-shadow: 0 0 0 3px var(--c-yel); transform: scale(1.08); } }
@@ -99,7 +99,7 @@
   #shopRoot > * { pointer-events: auto; }
   .cell .pr { position: absolute; right: 2px; bottom: 1px; font: 800 11px var(--f-disp); color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); }
   .slot { padding: 0; border: 0; background: none; border-radius: 9px; } .slot.blank { border: 2px dashed #eef1f833; background: #0a0d1c88; }
-  .shop { position: absolute; left: 0; top: 0; bottom: 0; width: min(700px, 88vw); transform: translateX(-104%); transition: transform 0.22s ease-out; background: #253553; border-right: 3px solid var(--ink); display: flex; flex-direction: column; padding-left: env(safe-area-inset-left); box-shadow: none; }
+  .shop { position: absolute; left: 0; top: 0; bottom: 0; width: min(700px, calc(88 * var(--rvw, 1vw))); transform: translateX(-104%); transition: transform 0.22s ease-out; background: #253553; border-right: 3px solid var(--ink); display: flex; flex-direction: column; padding-left: env(safe-area-inset-left); box-shadow: none; }
   .shop.on { transform: none; }
   .shop header { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border-bottom: 3px solid var(--ink); font: 800 18px/1 var(--f-disp); color: var(--c-yel); background: var(--g-head); }
   .shop header .sg { margin-left: auto; color: var(--c-yel); font: 700 15px var(--f-disp); } .shop .x { background: none; border: 0; color: #eef1f8; font-size: 26px; line-height: 1; padding: 0 6px; }
@@ -125,16 +125,16 @@
   #boot.done { opacity: 0; pointer-events: none; }
   #boot::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #05061af0 0, #05061a00 34%), linear-gradient(180deg, #05061ab0 0, #05061a00 26%), radial-gradient(120% 90% at 50% 40%, #05061a00 55%, #05061acc 100%); }
   #boot .bt-logo { position: absolute; left: 0; right: 0; top: max(10px, env(safe-area-inset-top)); text-align: center; }
-  #boot .bt-logo b { display: inline-block; padding: .16em .16em .04em; font: 800 clamp(34px, 12vh, 64px)/1 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif; color: var(--c-yel); -webkit-text-fill-color: var(--c-yel); -webkit-text-stroke: .09em var(--ink); paint-order: stroke fill; text-shadow: var(--extrude); }
-  #boot .bt-logo small { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 2px; font: 700 clamp(10px, 3vh, 14px) 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif;  color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); }
-  #boot .bt-logo small::before, #boot .bt-logo small::after { content: ''; width: clamp(40px, 12vw, 120px); height: 4px; border-radius: 2px; background: var(--g-yel); box-shadow: var(--hl), 0 2px 0 var(--ink); }
-  #boot .bt-bar { position: absolute; left: 10%; right: 10%; bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(40px, 10.5vh, 58px)); height: 14px; border-radius: 7px; background: var(--g-head); box-shadow: var(--hl), 0 3px 0 var(--ink); overflow: hidden; border: 3px solid var(--ink); box-sizing: border-box; }
+  #boot .bt-logo b { display: inline-block; padding: .16em .16em .04em; font: 800 clamp(34px, calc(12 * var(--rvh, 1vh)), 64px)/1 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif; color: var(--c-yel); -webkit-text-fill-color: var(--c-yel); -webkit-text-stroke: .09em var(--ink); paint-order: stroke fill; text-shadow: var(--extrude); }
+  #boot .bt-logo small { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 2px; font: 700 clamp(10px, calc(3 * var(--rvh, 1vh)), 14px) 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif;  color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); }
+  #boot .bt-logo small::before, #boot .bt-logo small::after { content: ''; width: clamp(40px, calc(12 * var(--rvw, 1vw)), 120px); height: 4px; border-radius: 2px; background: var(--g-yel); box-shadow: var(--hl), 0 2px 0 var(--ink); }
+  #boot .bt-bar { position: absolute; left: 10%; right: 10%; bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(40px, calc(10.5 * var(--rvh, 1vh)), 58px)); height: 14px; border-radius: 7px; background: var(--g-head); box-shadow: var(--hl), 0 3px 0 var(--ink); overflow: hidden; border: 3px solid var(--ink); box-sizing: border-box; }
   #boot .bt-bar i { position: relative; display: block; height: 100%; width: 0; border-radius: 4px; background: var(--g-yel); box-shadow: none; animation: btfake 9s cubic-bezier(.1,.6,.3,1) forwards; }
   #boot .bt-bar i::after { content: ''; position: absolute; right: 0; top: -3px; bottom: -3px; width: 18px; background: linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)); display: none; }
   #boot.js .bt-bar i { animation: none; transition: width .3s ease-out; }
   @keyframes btfake { to { width: 36%; } }
-  #boot .bt-txt { position: absolute; left: 10%; right: 10%; bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(12px, 3.4vh, 20px)); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font: 500 clamp(12px, 3.6vh, 15px) 'Be Vietnam Pro', system-ui, sans-serif; color: #e8ecff; text-shadow: 0 2px 0 rgba(15,23,41,.8); }
-  #boot .bt-txt b { font: 700 clamp(16px, 5vh, 22px) 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif;  color: var(--c-yel); }
+  #boot .bt-txt { position: absolute; left: 10%; right: 10%; bottom: calc(max(10px, env(safe-area-inset-bottom)) + clamp(12px, calc(3.4 * var(--rvh, 1vh)), 20px)); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font: 500 clamp(12px, calc(3.6 * var(--rvh, 1vh)), 15px) 'Be Vietnam Pro', system-ui, sans-serif; color: #e8ecff; text-shadow: 0 2px 0 rgba(15,23,41,.8); }
+  #boot .bt-txt b { font: 700 clamp(16px, calc(5 * var(--rvh, 1vh)), 22px) 'Baloo 2', 'Be Vietnam Pro', system-ui, sans-serif;  color: var(--c-yel); }
   #lab[hidden] { display: none; }
   #lab { position: fixed; left: 50%; transform: translateX(-50%); top: max(8px, env(safe-area-inset-top)); z-index: 5; display: flex; gap: 6px; }
   #lab select, #lab button { background: #171b33cc; color: #eef1f8; border: 1px solid #2a3050; border-radius: 6px; padding: 5px 9px; font: 12px var(--f-disp); }
@@ -148,8 +148,8 @@
   /* —— HUD kiểu Liên Quân: bản đồ nhỏ trái trên; cửa hàng dưới bản đồ nhỏ (hoặc bên phải, tuỳ cài đặt); cụm nút phụ ở đáy; kỹ năng phải dưới —— */
   #skills { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: var(--skw); height: var(--skh); z-index: 4; }
   /* số đo HUD: hud/layout.js tính theo khổ màn / vùng an toàn / màn chạm / Cài đặt cỡ nút rồi ghi đè trên :root; đây là giá trị lúc JS chưa chạy */
-  :root { --a: clamp(88px, 22vh, 124px); --s: calc(var(--a) * 0.68); --m: max(44px, calc(var(--s) * 0.66)); --skw: calc(var(--a) + var(--m) * 0.95 + var(--s) + 22px); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 26px);
-    --mini: clamp(50px, 13vh, 66px); --item: calc(var(--mini) * 1.1); --gp: 64px; --qi: min(52px, calc(var(--gp) - 4px)); }
+  :root { --a: clamp(88px, calc(22 * var(--rvh, 1vh)), 124px); --s: calc(var(--a) * 0.68); --m: max(44px, calc(var(--s) * 0.66)); --skw: calc(var(--a) + var(--m) * 0.95 + var(--s) + 22px); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 26px);
+    --mini: clamp(50px, calc(13 * var(--rvh, 1vh)), 66px); --item: calc(var(--mini) * 1.1); --gp: 64px; --qi: min(52px, calc(var(--gp) - 4px)); }
   .atk { right: 0; bottom: 0; width: var(--a); height: var(--a); background: var(--g-red); font-size: 17px; border: 3px solid var(--ink); box-shadow: var(--hl), 0 4px 0 var(--ink); }
   .atk .ic, .atk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk { width: var(--s); height: var(--s); padding: 0; border: 0; background: none; box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--ink); } /* vòng kim loại mảnh (viền .sb tắt ở nút chiêu để tranh tròn phủ kín) */
@@ -174,7 +174,7 @@
   .sk.nocond .art { filter: grayscale(0.85) brightness(0.6); } .sk.nocond { box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--ink); } /* chưa đủ điều kiện riêng của chiêu */
   .sk.recast { box-shadow: 0 0 0 3px var(--c-yel), 0 0 0 6px var(--ink); } .sk.recast .cd, .sk.recast .cdt { opacity: 0; } /* đang trong cửa sổ kích hoạt lại */
   .sk.locked .art { filter: grayscale(.7) brightness(.86); } .sk.locked { box-shadow: 0 0 0 4px var(--ink), 0 2px 0 var(--ink); } /* chưa học: nhạt màu nhưng vẫn thấy hình chiêu */ .sk.locked { opacity: 1; }
-  #extras { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + var(--skw) + 14px); z-index: 4; display: flex; gap: clamp(8px, 1.6vw, 18px); align-items: flex-end; pointer-events: none; }
+  #extras { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + var(--skw) + 14px); z-index: 4; display: flex; gap: clamp(8px, calc(1.6 * var(--rvw, 1vw)), 18px); align-items: flex-end; pointer-events: none; }
   .xb { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: auto; } .xb[hidden] { display: none; }
   .xb label { font: 700 12px var(--f-disp); color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; pointer-events: none; }
   .sb.mini { position: relative; width: var(--mini); height: var(--mini); padding: 0; border: 0; background: none; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 var(--ink); }
@@ -188,7 +188,13 @@
   .hudtip { position: fixed; z-index: 30; background: var(--g-head); border: 3px solid var(--ink); border-radius: 12px; padding: 9px 12px; color: #eef1f8; font: 13px var(--f-disp); box-shadow: var(--hl), 0 4px 0 var(--ink); pointer-events: none; }
   .hudtip[hidden] { display: none; } .hudtip b { display: block; font-size: 15px; color: var(--c-yel); } .hudtip small { display: block; color: #8fd8ff; margin-top: 2px; } .hudtip p { margin: 6px 0 0; line-height: 1.4; color: #eef1f8dd; }
   /* khối cửa hàng: nút giỏ + vàng, gợi ý mua nhanh (tên + công dụng), 6 ô đồ */
-  .dock { position: absolute; left: max(8px, env(safe-area-inset-left)); top: calc(max(8px, env(safe-area-inset-top)) + var(--mmh, 160px) + 8px); display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; max-width: min(300px, 40vw); }
+  .dock { position: absolute; left: max(8px, env(safe-area-inset-left)); top: calc(max(8px, env(safe-area-inset-top)) + var(--mmh, 160px) + 8px); display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; max-width: min(300px, calc(40 * var(--rvw, 1vw))); }
+  /* màn thấp (hud/layout.js SHORT_H, lớp html.hud-short): cửa hàng lên hàng trên cùng bên phải bản đồ nhỏ + nút tín hiệu (kể cả khi chọn cửa hàng
+     bên phải), ô mua nhanh chỉ hiện ảnh; cột trái dành cho cần điều khiển; bảng tỉ số gọn lại */
+  html.hud-short .dock, html.hud-short body.shop-right .dock { top: max(8px, env(safe-area-inset-top)); left: calc(max(8px, env(safe-area-inset-left)) + var(--mmw, 140px) + 6px + 44px + 8px); right: auto; grid-template-columns: auto 1fr; justify-items: start; max-width: min(300px, calc(34 * var(--rvw, 1vw))); }
+  html.hud-short body.shop-right .qb, html.hud-short body.shop-right .goldPill { order: 0; } html.hud-short .qb, html.hud-short body.shop-right .qb { flex-direction: row; }
+  html.hud-short .q { padding: 2px; background: none; } html.hud-short .q .qn { display: none; } html.hud-short body.shop-right .q { flex-direction: row; padding: 2px; background: none; } html.hud-short body.shop-right .q .pr { left: 4px; right: auto; }
+  html.hud-short #scoreTop { top: max(3px, env(safe-area-inset-top)); grid-template-rows: 16px 21px; } html.hud-short #scoreTop .sc b { font-size: 19px; } html.hud-short #scoreTop .clk { font-size: 12px; }
   body.shop-right .dock { left: auto; right: max(10px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + 50px); grid-template-columns: 1fr auto; justify-items: end; }
   body.shop-right .qb { order: 1; } body.shop-right .goldPill { order: 2; } body.shop-right .q { flex-direction: row-reverse; text-align: right; padding: 4px 4px 4px 8px; background: linear-gradient(270deg, #1a1f3aee, #1a1f3a00); } body.shop-right .q .pr { left: auto; right: 4px; }
   .goldPill { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: var(--gp); height: var(--gp); border-radius: 14px; background: var(--g-head); border: 3px solid var(--ink); box-shadow: var(--hl), 0 3px 0 var(--ink); color: var(--c-yel); font: 800 16px var(--f-disp); cursor: pointer; padding: 0; }
