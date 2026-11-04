@@ -10,6 +10,7 @@ import { collectGpu, freeGpu, holdMaterials, releaseHeld } from './render/dispos
 import { keptShapeMaterials } from './render/vfx/shapes.js';
 import { createScope, enterScope, on, track } from './core/scope.js';
 import { closeSettings } from './ui/settingsModal.js';
+import { openWorldCover } from './ui/matchLoading.js';
 import { hideTip } from './hud/tip.js';
 import { aimReset } from './hud/aimPad.js';
 import { createPost } from './render/post.js';
@@ -211,15 +212,12 @@ const makeAuto = () => {
 let auto = makeAuto();
 // FPS góc trên (Cài đặt → Hiện FPS): số khung/giây thực + bậc tự giảm đang dùng
 const fpsTag = document.createElement('div'); fpsTag.id = 'fpsTag'; fpsTag.hidden = !gfx.showFps; document.body.append(track(fpsTag));
-// online: độ trễ tới máy chủ (xanh < 80 ms, vàng < 160, đỏ hơn / mất kết nối) + màn chờ người chơi khác tải xong
-let netTag = null, waitTag = null;
+// online: độ trễ tới máy chủ (xanh < 80 ms, vàng < 160, đỏ hơn / mất kết nối)
+let netTag = null; // chờ người chơi khác tải xong: màn tải (cover) lo
 if (online) {
   netTag = document.createElement('div'); netTag.id = 'netTag';
   netTag.style.cssText = 'position:fixed;z-index:6;top:max(6px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:2px 9px;border-radius:9px;background:#0009;font:700 11px "Be Vietnam Pro",system-ui,sans-serif;pointer-events:none;color:#9fe3a0';
   document.body.append(track(netTag));
-  waitTag = document.createElement('div'); waitTag.id = 'netWait'; waitTag.textContent = 'Đang chờ người chơi khác vào trận…';
-  waitTag.style.cssText = 'position:fixed;z-index:55;left:50%;top:38%;transform:translate(-50%,-50%);padding:10px 18px;border-radius:12px;background:#0b0e1acc;color:#e8dcc0;font:700 15px "Be Vietnam Pro",system-ui,sans-serif;pointer-events:none';
-  document.body.append(track(waitTag));
 }
 function netStatus() {
   const st = online.stats(), ms = Math.round(st.rtt);
@@ -244,7 +242,7 @@ if (!post) document.body.classList.add('nopost'); // không hậu kỳ (?nobloom
 const loopRender = (...a) => loopCfg.render(...a);
 const loopCfg = {
   update() {
-    if (online) { online.input(input.dir()); if (online.step(world) && waitTag) { waitTag.remove(); waitTag = null; } return; } // online: chạy theo khung máy chủ (net/session.js)
+    if (online) { online.input(input.dir()); if (online.step(world) && cover) { cover.close(); cover = null; } return; } // online: chạy theo khung máy chủ (net/session.js)
     const d = input.dir();
     if (!player.bot) world.command(player.id, { type: 'move', dir: { x: d.x, y: d.y } }); // (kiểm thử: bot điều khiển thay người chơi)
     world.update(loop.tick);
@@ -296,12 +294,11 @@ const loop = createLoop(loopCfg);
 if (q.has('ff') && !online) loop.fastForward(Math.round(parseFloat(q.get('ff')) * 30));
 /** Dịch sẵn shader trước khi vào trận: trước đây khung đầu đứng hình, rồi lần đầu lính / quái / mỗi loại hiệu ứng chiêu / vùng bản đồ mới
  *  (ô cảnh ngoài màn hình) xuất hiện lại khựng — iPhone dịch mỗi shader 0,05–0,3 giây. Dựng tạm lính 4 loại × 2 đội, quái mọi loại, mỗi
- *  loại hình hiệu ứng một cái, compileAsync cả cảnh (gồm chỉ báo chiêu đang ẩn), vẽ thử một khung (bóng đổ, hậu kỳ) sau màn che
- *  "Đang vào trận…". Quá ~6 giây thì vào luôn. */
+ *  loại hình hiệu ứng một cái, compileAsync cả cảnh (gồm chỉ báo chiêu đang ẩn), vẽ thử một khung (bóng đổ, hậu kỳ) dưới màn che là
+ *  màn tải (opts.cover). Quá ~6 giây thì vào luôn. */
 async function warmUp() {
-  const cover = document.createElement('div'); cover.id = 'warm';
-  cover.style.cssText = 'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;gap:10px;background:#0b0e1a;color:#e8dcc0;font:700 15px "Be Vietnam Pro",system-ui,sans-serif;letter-spacing:.04em';
-  cover.innerHTML = '<span>Đang vào trận…</span>'; document.body.append(track(cover)); const t0 = performance.now();
+  // màn che lúc dựng trận = màn tải (ui/loading.js / ui/matchLoading.js — không còn màn đen "Đang vào trận…"); vào thẳng trận thì tự dựng
+  cover = cover || openWorldCover({ world, player }); const t0 = performance.now();
   const tick = () => new Promise((r) => setTimeout(r, 0)), within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
   try {
     const heroIds = world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId);
@@ -309,9 +306,9 @@ async function warmUp() {
     views.update(world, 1, 0); // dựng view mọi đơn vị; chờ model tướng gắn vào (vào thẳng trận chưa qua màn tải) để dịch luôn vật liệu tướng
     // online: chờ đủ model mọi tướng (máy chủ chờ mọi máy báo đã tải, tối đa 45 giây) — vào trận khi model chưa về thì tướng chỉ là hình nhân
     // giữ chỗ / bóng đen tới khi tải xong (điện thoại mạng chậm, 5v5 = 10 model)
-    if (online) { const span = cover.querySelector('span'), each = () => heroIds.filter((id) => heroProgress(id) >= 1).length; const t = setInterval(() => { span.textContent = `Đang tải tướng ${each()}/${heroIds.length}…`; }, 250);
+    if (online) { // màn tải (ui/matchLoading.js) vẽ thanh từng người
       const kick = setInterval(() => heroIds.forEach((id) => { if (heroProgress(id) < 1) loadHero(id).catch(() => null); }), 3000); // tải hỏng: gọi lại
-      await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 40000); clearInterval(t); clearInterval(kick); span.textContent = 'Đang vào trận…'; }
+      await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 40000); clearInterval(kick); }
     else await within(Promise.all(heroIds.map((id) => loadHero(id).catch(() => null))), 6000);
     await tick(); await tick();
     if (disposed) return;
@@ -335,10 +332,11 @@ async function warmUp() {
     releaseHeld(liveMaterials()); // vật liệu trận trước không còn dùng: giờ mới huỷ (chương trình dùng chung đã gắn vào vật liệu trận này)
     scene.remove(tmp); releaseSkeletons(tmp); undo?.(); warmRoots.push(tmp); // lính / quái mẫu đã tải lên GPU: dọn cùng trận
   } catch (e) { console.warn('Dịch sẵn shader lỗi', e); }
-  cover.remove(); warmMs = Math.round(performance.now() - t0);
+  warmMs = Math.round(performance.now() - t0);
 }
-let warmMs = 0, disposed = false; const warmRoots = [];
-warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); opts.onStart?.(); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
+let warmMs = 0, disposed = false, cover = opts.cover || null; const warmRoots = [];
+// máy này dựng xong: trận đấu máy bỏ màn tải ngay; trận trực tuyến báo máy chủ đã tải, màn tải giữ ("Chờ người chơi khác…") tới khung đầu tiên
+warmUp().then(() => { if (disposed) return; if (online) { cover?.ready?.(); online.loaded(); } else { cover?.close(); cover = null; } loop.start(); music('field'); sfx('match_start', { announce: true }); opts.onStart?.(); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();
@@ -350,7 +348,7 @@ const liveMaterials = () => { const c = collectGpu([scene, ...views.roots()]); f
  *  (render/dispose.js), cất renderer (render/renderer.js park). Gọi lại lần hai không làm gì. */
 function disposeMatch() {
   if (disposed) return; disposed = true;
-  loop.stop(); online?.dispose(); scope.dispose(); closeSettings(); hideTip(); aimReset(); sounds.dispose(); stopVoices(0.1); hud.dispose();
+  loop.stop(); online?.dispose(); cover?.close(); cover = null; scope.dispose(); closeSettings(); hideTip(); aimReset(); sounds.dispose(); stopVoices(0.1); hud.dispose();
   for (const id of ['skills', 'extras', 'shopRoot']) { const el = document.getElementById(id); if (el) el.textContent = ''; }
   panel.hidden = true; document.getElementById('lost')?.classList.remove('on'); document.getElementById('result')?.classList.remove('on');
   document.body.classList.remove('over', 'post', 'dead', 'nopost');

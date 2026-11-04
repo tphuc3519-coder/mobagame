@@ -166,10 +166,10 @@ export function openOnline(nav) {
     if (a === 'srv') { editSrv = true; render(); $('#olUrl')?.focus(); return; }
     if (a === 'srvok') { const v = $('#olUrl').value.trim(); netCancel(); net.conn?.close(); net.conn = null; net.room = null; setServer(v); wakeServer(); editSrv = false; render(); return; }
     if (a === 'rejoin') { await rejoinSaved(() => render()); return; }
-    if (a === 'create') { if (!(await ensureConn()) || closed) return; send({ t: 'create', mode, bots, difficulty: diff, name: p.name, avatar: p.avatar }); }
+    if (a === 'create') { if (!(await ensureConn()) || closed) return; send({ t: 'create', mode, bots, difficulty: diff, name: p.name, avatar: p.avatar, stars: p.stars }); }
     else if (a === 'join') {
       code = ($('#olCode')?.value || '').trim().toUpperCase(); if (code.length !== 4) { toast('Nhập mã phòng 4 ký tự'); return; }
-      if (!(await ensureConn()) || closed) return; send({ t: 'join', code, name: p.name, avatar: p.avatar });
+      if (!(await ensureConn()) || closed) return; send({ t: 'join', code, name: p.name, avatar: p.avatar, stars: p.stars });
     } else if (a === 'ready') send({ t: 'ready', on: !room().players[room().you].ready });
     else if (a === 'start') send({ t: 'start' });
     else if (a === 'leave') { netLeave(); render(); }

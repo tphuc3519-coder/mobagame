@@ -11,7 +11,12 @@ Nhiều người ở nhiều máy vào chung một trận thời gian thực. Ch
 | **Đấu máy** | Đấu máy 5v5, Đấu đơn 1v1, Luyện tập | Chọn chế độ → Đấu máy. Chơi một mình, không cần mạng, tự chọn độ khó. |
 
 Tin nhắn máy chủ mới: `queue` / `unqueue` (hàng chờ), `match` (đã ghép), `accept`, `hover` / `lock` (chọn tướng), `seat` / `opts` (phòng tuỳ chỉnh),
-`kicked` (bỏ lỡ chấp nhận). Kiểm thử rút ngắn thời gian bằng biến môi trường `QUEUE_WAIT`, `ACCEPT_SEC`, `PICK_SEC`, `READY_SEC` (giây).
+`kicked` (bỏ lỡ chấp nhận), `lp` (tiến độ tải trận: máy khách gửi `{ p: 0..100 }`, máy chủ phát `{ a: [%…] }` theo thứ tự `cfg.players`, ≤ 5 lần/giây).
+
+**Màn tải trận trực tuyến (04/11, `ui/matchLoading.js`):** máy chủ báo vào trận là hiện ngay màn tải giống trận đấu máy (thẻ hai đội — đội mình
+hàng trên, mình ở giữa —, tên, hạng, phép bổ trợ, thanh từng người). Thanh của mình = tải thật trên máy này; của người chơi khác = tiến độ máy họ
+báo lên máy chủ; của máy (bot) = model trên máy này. Máy này xong trước: "Chờ người chơi khác… 1/2". Màn tải giữ tới khi khung trận đầu tiên
+chạy — không còn màn đen "Đang vào trận…" (trận đấu máy cũng vậy: màn tải chuyển thẳng thành màn che lúc dựng trận). Kiểm thử rút ngắn thời gian bằng biến môi trường `QUEUE_WAIT`, `ACCEPT_SEC`, `PICK_SEC`, `READY_SEC` (giây).
 
 ## Cách hoạt động (lockstep, máy chủ làm nhạc trưởng)
 

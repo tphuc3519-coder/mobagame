@@ -16,6 +16,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
   const history = [0]; // mọi khung đã nhận (xem lại / dò lỗi lệch đồng bộ: dựng lại trận từ cfg + history)
   let lastRecv = 0, ran = 0, inSim = false, local = null, player = null, disposed = false, reconnecting = false, desync = false;
   let lastDir = { x: 0, y: 0 }, lastDirT = 0, started = false, drops = 0, leadT = 0, leadP = null;
+  let loads = [], lpSent = -1, lpAt = 0; // màn tải: tiến độ tải từng người chơi (máy chủ phát, theo thứ tự cfg.players) / lần báo gần nhất của máy này
   const lead = { x: 0, y: 0 };
   const offs = [];
   const bind = (c) => {
@@ -25,6 +26,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
       for (let i = 0; i < n; i++) { const k = m.k - n + 1 + i; if (k <= lastRecv) continue; queue.push([k, m.c[i] || null]); history[k] = m.c[i] || 0; lastRecv = k; }
     }));
     offs.push(c.on('go', () => { started = true; }));
+    offs.push(c.on('lp', (m) => { if (Array.isArray(m.a)) loads = m.a; }));
     offs.push(c.on('note', (m) => notify(m.m)));
     offs.push(c.on('desync', () => { if (!desync) { desync = true; notify('Lệch đồng bộ với máy chủ — trận có thể hiển thị sai (đã ghi lại để sửa)'); } }));
     c.onDrop = () => { if (!disposed) reconnect(); };
@@ -65,6 +67,14 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
     /** Rời tab / ẩn trang: thả cần (không để tướng chạy mãi về một hướng). */
     release() { if (lastDir.x || lastDir.y) { lastDir = { x: 0, y: 0 }; api.cmd({ type: 'move', dir: lastDir }); } },
     loaded() { conn.send({ t: 'loaded' }); },
+    /** Báo tiến độ tải trận của máy này (0..1) cho máy chủ — màn tải mọi máy vẽ thanh của mình theo số này (≤ 5 lần/giây, chỉ khi đổi). */
+    progress(f) {
+      const v = Math.max(0, Math.min(100, Math.round(f * 100))), now = performance.now();
+      if (v === lpSent || (now - lpAt < 200 && v < 100)) return;
+      lpSent = v; lpAt = now; conn.send({ t: 'lp', p: v });
+    },
+    /** Tiến độ tải (0..100) từng người chơi theo thứ tự cfg.players, máy chủ báo. */
+    get loads() { return loads; },
     /** Chạy các khung đã nhận. Bình thường 1 khung / tick; tụt ≥ 4 khung thì 2; tụt xa thì chạy bù tới ~24 ms mỗi lượt. Trả về số khung đã chạy. */
     step(world) {
       const behind = queue.length; if (!behind) return 0;

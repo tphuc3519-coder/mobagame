@@ -24,6 +24,7 @@ import { END } from '../data/endgame.js';
 import { pwaLobby } from './pwa.js';
 import { net, netReset, clearSaved } from './netLobby.js';
 import { markMatch, matchStarted, clearMark } from './crashGuard.js';
+import { openOnlineLoading } from './matchLoading.js';
 import { releaseHeroes } from '../render/assets.js';
 
 const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading, custom: openOnline, online: openOnline };
@@ -43,9 +44,11 @@ export const nav = {
   },
   get screen() { return cur?.name || null; },
   /** Vào trận theo S (sau màn tải). */
-  start() {
+  start({ cover = null } = {}) {
     try { cur?.close?.(); } catch (e) { console.warn(e); }
     cur = null; stageDispose();
+    // màn tải (ui/loading.js) làm màn che lúc dựng trận: đưa ra ngoài #ui (sắp ẩn) — giữ nguyên tới khi game.js dịch shader xong
+    if (cover) { cover.el.classList.add('cover', 'moved'); document.body.append(cover.el); }
     const u = ui(); u.hidden = true; u.querySelectorAll(':scope > :not(#show)').forEach((x) => x.remove());
     const p = profile(), M = MODES[S.mode], P = S.pick, A = S.match;
     const names = [{ [P.heroId]: p.name }, {}];
@@ -57,7 +60,7 @@ export const nav = {
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       skinTint: skinTint(p, P.heroId), // trang phục mùa (GĐ4b)
-      onGameOver: gameOver, onStart: matchStarted, // vào trận ổn 15 giây: xoá dấu "đang vào trận" (ui/crashGuard.js)
+      onGameOver: gameOver, onStart: matchStarted, cover, // vào trận ổn 15 giây: xoá dấu "đang vào trận" (ui/crashGuard.js)
     });
   },
   /** Vào trận trực tuyến (máy chủ gửi cấu hình trận sau màn chọn tướng — ui/netLobby.js): session = net/session.js. */
@@ -68,7 +71,14 @@ export const nav = {
     const me = session.cfg.players[session.me];
     if (MODES[session.cfg.q]) S.mode = session.cfg.q;
     markMatch({ mode: session.cfg.q, online: true });
-    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted });
+    // màn tải trực tuyến hiện ngay (thẻ hai đội, thanh từng máy — ui/matchLoading.js); dựng trận sau khi màn tải kịp vẽ một khung (dựng trận
+    // chạy liền một mạch ~1 giây — nếu không là màn đen) — setTimeout dự phòng khi trang không vẽ (chuyển tab)
+    const cover = openOnlineLoading(session);
+    let built = false;
+    const build = () => { if (built) return; built = true; clearTimeout(fb);
+      match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted, cover }); };
+    const fb = setTimeout(build, 300);
+    requestAnimationFrame(() => requestAnimationFrame(build));
   },
 };
 

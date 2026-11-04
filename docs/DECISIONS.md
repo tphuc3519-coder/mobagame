@@ -1064,3 +1064,7 @@
   640×360 (thấp hơn thì thu nhỏ, máy tính bảng / máy tính phóng to như cũ); bỏ `vh` / `vw` trong CSS giao diện (Safari iPhone: `100vh` lớn hơn
   phần nhìn thấy khi còn thanh địa chỉ; Chrome nhân `vh` theo zoom, Safari không) → `var(--vh)` / `var(--vw)` do JS tính từ `innerHeight`.
   HUD trong trận: màn thấp (< 300 px dùng được) đưa cửa hàng lên hàng trên cùng, bản đồ nhỏ ≤ 38% chiều cao.
+- 2026-11-04: **Màn tải tới tận lúc vào trận:** game.js nhận `opts.cover` (màn tải) thay màn đen "Đang vào trận…" / chữ "Đang chờ người chơi
+  khác". Trận đấu máy: màn tải (ui/loading.js) chuyển thành cover, đóng khi dịch shader xong. Trực tuyến: ui/matchLoading.js hiện ngay khi máy chủ
+  báo vào trận (dựng thử trận để biết tướng máy), tiến độ từng người qua tin `lp`, đóng khi khung đầu tiên chạy. Phần vẽ đơn vị nhận đúng
+  `player.team` (trước cố định 0 — người chơi đội Đỏ không thấy tướng mình).

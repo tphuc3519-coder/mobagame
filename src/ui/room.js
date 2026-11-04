@@ -133,7 +133,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     try { await lobbyConn({ maxMs: 60000 }); } catch (_) { toBots(cur, 'Không kết nối được máy chủ — ghép với máy'); return; }
     if (mm !== cur) return;
     say(cur, 'Đang tìm người chơi');
-    send({ t: 'queue', q: mode, name: p.name, avatar: p.avatar, diff: modeDiff(mode), pri: p.rolePri, sec: p.roleSec });
+    send({ t: 'queue', q: mode, name: p.name, avatar: p.avatar, stars: p.stars, diff: modeDiff(mode), pri: p.rolePri, sec: p.roleSec });
     // máy chủ bản cũ (chưa có hàng chờ) không trả lời: 6 giây chưa nhận 'queue' thì ghép máy; quá hạn chờ (60 giây + dư) chưa ghép được cũng ghép máy
     later(6000, () => { if (mm === cur && cur.online && !cur.acked) toBots(cur, 'Máy chủ chưa hỗ trợ ghép trận — ghép với máy'); });
     later((NET.queueWait + 20) * 1000, () => { if (mm === cur && cur.online) toBots(cur, 'Chưa ghép được trận — ghép với máy'); });

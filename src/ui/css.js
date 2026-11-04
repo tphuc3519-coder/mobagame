@@ -364,6 +364,10 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 
 /* —— TẢI TRẬN (VS) —— */
 #loadscr { background: #070a1e; overflow: hidden; }
+/* màn tải làm màn che lúc dựng trận (ui/loading.js asCover, ui/matchLoading.js): nằm trên trận, chặn chạm xuống trận, mờ dần khi trận chạy;
+   màn chuyển từ màn tải đấu máy sang (moved) không chạy lại hiệu ứng xuất hiện */
+#loadscr.cover { position: fixed; z-index: 60; pointer-events: auto; transition: opacity .3s; } #loadscr.cover.out { opacity: 0; }
+#loadscr.cover.moved, #loadscr.cover.moved * { animation: none !important; }
 #loadscr .bg { position: absolute; inset: -30px; background: #0a1438 center / cover; filter: blur(10px) brightness(.48) saturate(1.2); }
 #loadscr .bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,50,130,.5) 0, rgba(5,7,24,.55) 50%, rgba(120,20,30,.5) 100%); }
 #loadscr.solo .bg::after { background: linear-gradient(90deg, rgba(20,50,130,.5) 0, rgba(5,7,24,.55) 50%, rgba(120,20,30,.5) 100%); }
