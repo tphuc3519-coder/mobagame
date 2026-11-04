@@ -1052,3 +1052,11 @@
 - 2026-11-03: **Online bớt trễ:** gói khung 1 tick (30 gói/giây), hàng chờ ≤ 2 tick, dự đoán chuyển động tướng mình chỉ ở phần vẽ (`session.lead`:
   lệch = quãng cần đã ra lệnh − quãng mô phỏng đã đi, trần 0,4 giây, tắt khi lướt / ra chiêu / trói / bị đẩy; vị trí, hướng, tốc độ tướng gán tạm
   trong lúc vẽ rồi trả đúng giá trị — mã băm hai máy vẫn trùng). Trận online chờ đủ model tướng (≤ 40 giây) trước khi báo máy chủ đã tải.
+- 2026-11-03: **Chế độ chơi:** Đấu thường / Đấu hạng / Đỉnh cao trực tuyến mặc định (hàng chờ máy chủ, 60 giây thì máy điền chỗ; không nối được
+  máy chủ, hoặc máy chủ bản cũ không trả lời hàng chờ trong 6 giây, thì ghép máy như cũ). Phòng tuỳ chỉnh (mã phòng, bật / tắt máy) và Đấu máy
+  là hai chế độ riêng. `setupTeams` nhận `humans: [{ team, heroId, role }]` + `bots: false`; không truyền thì y như cũ (cùng số lần gọi RNG).
+- 2026-11-03: **Đội Đỏ nhìn bản đồ xoay 180°** (`core/view.js`) — chỉ phần vẽ / điều khiển, mô phỏng không đổi.
+- 2026-11-03: **Văng khi vào trận trên điện thoại** (thiếu bộ nhớ → trình duyệt tắt tab): điện thoại không giải mã sẵn model 20 tướng ở sảnh
+  (chỉ service worker lưu tệp); vào trận `releaseHeroes(tướng trong trận)` trả bộ nhớ model tướng khác (ImageBitmap.close + hình khối);
+  màn tải giải mã tối đa 2 model một lúc trên điện thoại. Đo (Chromium giả lập điện thoại): RSS sảnh 385 → 248 MB, màn tải 461 → 320 MB,
+  trong trận 691 → 625 MB. Dấu "đang vào trận" (`ui/crashGuard.js`): lần mở sau thấy dấu còn ⇒ tự hạ Đồ hoạ xuống Thấp + báo người chơi.

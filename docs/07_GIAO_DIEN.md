@@ -197,7 +197,7 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 └─────────────────────────────────────────────────────────────────────┘
 ```
 - **Minimap** trên trái 200×200 (5v5) / 260×110 (1v1). Chạm giữ + kéo = xem khu vực đó; thả = quay về. Chạm 2 lần = ping.
-- **Mua nhanh**: 1–2 ô cạnh minimap, sáng lên khi đủ tiền.
+- **Mua nhanh**: 1–2 ô cạnh minimap, **chỉ hiện khi đủ tiền** mua món kế tiếp trong lộ trình đồ (bật lên); chưa đủ tiền thì không hiện.
 - **Tỉ số**: hạ gục hai đội + đồng hồ ở trên giữa. Chạm mở **Bảng tỉ số** (10 tướng, cấp, K/D/A, đồ, vàng).
 - **Cửa hàng** (nút ≡): panel trượt từ phải, tab: Gợi ý / Tấn công / Phép / Phòng thủ / Giày / Rừng-Hỗ trợ. Chọn món → cây công thức → Mua.
 - **Joystick**: động, chạm bất kỳ ở 45% trái màn hình (trừ vùng nút). Bán kính theo thiết bị (`hud/layout.js`: ~0,9 × nút Đánh, 48–104 px, đặt vào khoảng trống góc trái dưới không đè nút / bản đồ nhỏ / thanh máu của mình), vùng chết 10%.

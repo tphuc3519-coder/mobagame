@@ -5,6 +5,7 @@
 // vòng loang trên bản đồ nhỏ, dòng chữ báo bên trái ("Kitewing: Tập hợp tại Hang Long Ngư").
 import * as THREE from 'three';
 import { project } from '../render/project.js';
+import { viewX, viewY } from '../core/view.js';
 import { floorAt } from '../render/env/floor.js';
 import { play } from '../audio/audio.js';
 import { canSee } from '../sim/vision.js';
@@ -58,7 +59,7 @@ export function createPingHud({ world, player, map, cam, minimap, hudCanvas }) {
   on(window, 'keydown', (e) => { if (e.repeat || e.target.closest?.('input,textarea')) return; const k = e.key.toLowerCase(); if (k === 'g') setOpen(!open); else if (open && KEYS[k]) arm(KEYS[k]); });
 
   // chạm bản đồ nhỏ / mặt đất: bắt ở pha capture trên window (trước camLook / joystick) và chỉ chặn khi thật sự dùng cú chạm
-  const mmPoint = (e) => { const r = minimap.canvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(map.w, (e.clientX - r.left) / r.width * map.w)), y: Math.max(0, Math.min(map.h, (e.clientY - r.top) / r.height * map.h)), r }; };
+  const mmPoint = (e) => { const r = minimap.canvas.getBoundingClientRect(); return { x: viewX(Math.max(0, Math.min(map.w, (e.clientX - r.left) / r.width * map.w))), y: viewY(Math.max(0, Math.min(map.h, (e.clientY - r.top) / r.height * map.h))), r }; }; // đội Đỏ: bản đồ nhỏ xoay 180°
   const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
   function groundAt(cx, cy) { ray.setFromCamera({ x: (cx / innerWidth) * 2 - 1, y: -(cy / innerHeight) * 2 + 1 }, cam.camera); return ray.ray.intersectPlane(plane, hit) ? { x: hit.x, y: hit.z } : null; }
   const enemyMarks = (u) => u.alive && !u.noTarget && u.team !== player.team && (u.kind === 'hero' || u.kind === 'tower' || u.kind === 'core' || u.kind === 'monster') && canSee(player.team, u);

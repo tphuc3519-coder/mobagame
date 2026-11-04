@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { viewSign } from '../../core/view.js';
 import { TILE } from './atlas.js';
 import { HERO_SCALE } from '../unitView.js';
 import { createExtraFx } from './extra.js';
@@ -86,7 +87,7 @@ export function createLibrary({ A, N, sh, views, shake, team, me = null }) {
   }
 
   /** Góc xoay ảnh hạt theo hướng bay trên mặt đất (dx, dz) — camera nhìn từ phía +z xuống: z tăng = xuống dưới màn hình. */
-  const screenRot = (dx, dz) => Math.atan2(dx, dz * 0.62);
+  const screenRot = (dx, dz) => Math.atan2(dx * viewSign(), dz * 0.62 * viewSign()); // đội Đỏ: camera phía bắc (core/view.js)
   /** Vết chém sắc (ảnh slash) xoay ngẫu nhiên quanh điểm trúng. */
   const slash = (x, y, z, color, size = 160, n = 1, life = 0.22, rot = null) => { for (let i = 0; i < n; i++) { const r = rot != null ? rot + i * 1.57 : R(0, TAU); N.spawn({ x, y, z, life, size: [size * 0.75, size * 1.1], color, alpha: [0.95, 0], tile: TILE.slash, rot: r, fadeIn: 0 }); A.spawn({ x, y, z, life: life * 0.8, size: [size * 0.6, size * 0.95], color: [0xffffff, color], alpha: [0.8, 0], tile: TILE.slash, rot: r, fadeIn: 0 }); } };
 

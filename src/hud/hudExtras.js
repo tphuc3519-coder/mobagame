@@ -3,6 +3,7 @@
 // - Thông số mục tiêu: khung cạnh bản đồ nhỏ — chân dung/tên, thanh máu số, công / giáp / kháng phép của mục tiêu đang đánh.
 // - Ảnh tướng tung chiêu cuối: thẻ tướng lướt vào từ trái khi mình tung chiêu cuối.
 // - Đồ đề cử cạnh nút cửa hàng, mô tả trang bị trong cửa hàng: ẩn bằng lớp trên body.
+import { viewSign } from '../core/view.js';
 import { prefs, onPref } from '../core/prefs.js';
 import { project } from '../render/project.js';
 import { canSee } from '../sim/vision.js';
@@ -39,13 +40,13 @@ export function createHudExtras({ portraits = null } = {}) {
 
   /** Mũi tên + chân dung ở mép màn hình cho địch đang thấy mà ngoài khung nhìn. */
   function edges(ctx, w, h, world, cam, player) {
-    const m = 30, cx = w / 2, cy = h / 2, tx = cam.position.x, tz = cam.position.z - Math.cos(55 * Math.PI / 180) * cam.position.y / Math.sin(55 * Math.PI / 180);
+    const sg = viewSign(), m = 30, cx = w / 2, cy = h / 2, tx = cam.position.x, tz = cam.position.z - sg * Math.cos(55 * Math.PI / 180) * cam.position.y / Math.sin(55 * Math.PI / 180); // đội Đỏ: camera phía bắc
     for (const e of world.entities) {
       if (e.kind !== 'hero' || !e.alive || e.team === player.team || !canSee(player.team, e) || e.statuses.some((s) => s.kind === 'stealth')) continue;
       const dx = e.pos.x - tx, dz = e.pos.y - tz; if (Math.hypot(dx, dz) > 6500) continue;
       const p = project(cam, e.pos.x, 150, e.pos.y, w, h);
       if (p.visible && p.x > 0 && p.x < w && p.y > 0 && p.y < h) continue;
-      const sx = dx, sy = dz * 0.8, k = Math.min((cx - m) / (Math.abs(sx) || 1e-6), (cy - m) / (Math.abs(sy) || 1e-6)), x = cx + sx * k, y = cy + sy * k, a = Math.atan2(sy, sx);
+      const sx = dx * sg, sy = dz * 0.8 * sg, k = Math.min((cx - m) / (Math.abs(sx) || 1e-6), (cy - m) / (Math.abs(sy) || 1e-6)), x = cx + sx * k, y = cy + sy * k, a = Math.atan2(sy, sx);
       ctx.save(); ctx.translate(x, y); ctx.rotate(a); // mũi tên chĩa ra ngoài
       ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(14, -8); ctx.lineTo(14, 8); ctx.closePath(); ctx.fillStyle = '#ff4a3a'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.stroke();
       ctx.restore();

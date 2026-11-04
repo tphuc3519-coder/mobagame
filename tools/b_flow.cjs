@@ -27,7 +27,8 @@ async function openPage(browser, vp, prof, query = '', notch = false) {
   if (notch) await (await ctx.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: NOTCH });
   page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
-  await page.goto(`${BASE}/${query}`, { waitUntil: 'domcontentloaded' });
+  // ?server=off: Đấu thường / Đấu hạng (trực tuyến) không có máy chủ → ghép máy ngay, luồng như đấu với máy
+  await page.goto(`${BASE}/${query}${query.includes('?') ? '&' : '?'}server=off`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__flow?.nav?.screen === 'home', null, { timeout: T(240) });
   return { ctx, page, errs };
 }

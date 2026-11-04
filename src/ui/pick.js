@@ -3,6 +3,8 @@
 // bùa, nút Khoá. Hết giờ tự khoá tướng đang xem. Cả đội khoá xong → đếm 3 giây → màn đội hình. Luyện tập: không giới hạn giờ,
 // chọn đối thủ (ngẫu nhiên / một tướng / hình nộm). 5v5 (đấu thường, chọn ẩn): mỗi dòng có vị trí đã chia lúc ghép trận, lưới xếp tướng hợp
 // vị trí của mình lên đầu (nhãn "Đề cử"), máy chọn tướng hợp vị trí của nó; đối thủ chọn ẩn theo vị trí của họ.
+// Trực tuyến (trận ghép / phòng tuỳ chỉnh — ui/netLobby.js): cột đội là người thật cùng đội (máy chủ gửi tướng đã khoá) + ô "Máy" (tướng máy
+// chọn lúc vào trận), đồng hồ theo máy chủ, Khoá gửi tướng + phép + bảng bùa + phù hiệu lên máy chủ; cả phòng khoá xong máy chủ bắt đầu trận.
 import { HEROES, ALPHA } from '../data/heroes/index.js';
 import { SPELLS } from '../data/spells.js';
 import { ROLE_INFO } from '../data/roles.js';
@@ -20,24 +22,39 @@ import { stage, stageOn, backdrop } from './stage.js';
 import { ROLE_VI } from './panels.js';
 import { skillDesc } from './skilltext.js';
 import { sfx } from '../audio/audio.js';
+import { net, onNet, send } from './netLobby.js';
 
 const PICK_SEC = 30, READY_SEC = 3;
 const ROLE_ICO = { fighter: '⚔', tank: '⛨', assassin: '✦', mage: '✺', marksman: '➶', support: '✚' };
 
 export function openPick(nav, { mode = S.mode } = {}) {
-  const p = profile(), M = MODES[mode] || MODES.normal, training = mode === 'training';
+  const p = profile(), training = mode === 'training';
+  const R0 = net.room, online = !!(R0 && (R0.state === 'pick' || R0.state === 'ready')); // phòng trực tuyến đang chọn tướng
+  const M = online ? { ...(MODES[mode] || MODES.custom), size: R0.size, map: R0.mode } : MODES[mode] || MODES.normal;
   S.mode = mode;
-  if (!S.match) S.match = { seed: (Math.random() * 1e9) | 0, allies: [], foes: [{ name: 'Máy', stars: p.stars }] };
+  if (!S.match || online) S.match = { seed: (Math.random() * 1e9) | 0, allies: [], foes: [{ name: 'Máy', stars: p.stars }], ...(online ? { role: R0.players[R0.you]?.role || null } : {}) };
   const spells = spellList(M.map), myRole = M.map === '5v5' ? (S.match.role || null) : null;
   const rng = mulberry32(((S.match.seed ^ DRAFT.seedSalt) + 1) >>> 0); // máy chọn: ngẫu nhiên theo seed trận
   const team = S.match.allies.map((a) => ({ ...a, hero: null, locked: false, at: 3 + Math.random() * (PICK_SEC - 12) }));
+  // trực tuyến: đồng đội lấy từ phòng máy chủ (người thật + ô máy), dựng lại mỗi lần phòng đổi
+  const syncTeam = () => {
+    const r = net.room; if (!r) return;
+    const mine = r.players[r.you], mates = r.players.filter((x, i) => i !== r.you && x.team === mine.team);
+    team.length = 0;
+    for (const x of mates) team.push({ name: x.name, hero: x.locked ? x.heroId : null, locked: x.locked, role: x.role, human: true, online: x.online });
+    const bots = r.bots ? r.size - 1 - mates.length : 0;
+    for (let i = 0; i < bots; i++) team.push({ name: 'Máy', hero: null, locked: false, role: null, bot: true });
+    st.left = Math.max(0, (r.left - (performance.now() - r.at)) / 1000);
+    if (r.state === 'ready' && st.ready < 0) st.ready = st.left;
+    if (mine.locked && !st.locked) { st.locked = true; st.sel = mine.heroId; show.show(st.sel); show.play('Victory'); sfx('ui_lock'); }
+  };
   let ids = Object.keys(HEROES).sort((a, b) => (ALPHA.includes(b) - ALPHA.includes(a)) || ALPHA.indexOf(a) - ALPHA.indexOf(b));
   if (myRole) ids = recommend(myRole, ids); // tướng hợp vị trí lên đầu
   const first = ALPHA.includes(p.lastHero) ? p.lastHero : p.feature;
   const st = { sel: myRole && fit(myRole, first) < 1 ? ids[0] : first, locked: false, spell: initialSpell(p, M.map, myRole),
     page: null, foe: null, left: training ? Infinity : PICK_SEC, ready: -1 };
   if (myRole && st.spell !== p.spell) toast(`${ROLE_INFO[myRole].name}: đã mang ${SPELLS[st.spell].name}`);
-  const taken = () => team.filter((t) => t.locked).map((t) => t.hero);
+  const taken = () => team.filter((t) => t.locked && t.hero).map((t) => t.hero);
   const pageOf = () => pageFor(st.page, st.sel); // trang chọn trong phiên → trang nhớ theo tướng → mẫu theo vai
   const bestFree = () => { const free = ALPHA.filter((h) => !taken().includes(h)); return (myRole ? recommend(myRole, free) : free)[0]; };
 
@@ -83,9 +100,13 @@ export function openPick(nav, { mode = S.mode } = {}) {
   }
   function renderTeam() {
     const meRow = `<div class="tm me ${st.locked ? '' : 'picking'}">${face(st.sel)}<div><b>${p.name}</b><small class="${st.locked ? 'ok' : ''}">${roleTag(myRole)}${st.locked ? 'Đã khoá · ' + HEROES[st.sel].name : 'Đang chọn…'}</small></div></div>`;
-    const rows = team.map((t) => `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="qm">?</i>'}<div><b>${t.name} ${botLabel}</b><small class="${t.locked ? 'ok' : ''}">${roleTag(t.role)}${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : 'Đang chọn…'}</small></div></div>`);
+    const rows = team.map((t) => t.bot ? `<div class="tm">${'<i class="qm">?</i>'}<div><b>${botLabel}</b><small>Máy chọn tướng khi vào trận</small></div></div>`
+      : `<div class="tm ${t.locked ? '' : 'picking'}">${t.hero ? face(t.hero) : '<i class="qm">?</i>'}<div><b>${t.name}${t.human ? '' : ' ' + botLabel}</b><small class="${t.locked ? 'ok' : ''}">${roleTag(t.role)}${t.locked ? 'Đã khoá · ' + HEROES[t.hero].name : t.human && !t.online ? 'Mất kết nối' : 'Đang chọn…'}</small></div></div>`);
     let foe = '';
-    if (M.size === 1) {
+    if (online && M.size === 1) {
+      const r = net.room, f = r?.players.find((x, i) => i !== r.you);
+      foe = `<h4 class="hd foe">Đối thủ</h4><div class="tm foe"><i class="qm">?</i><div><b>${f ? f.name : r?.bots ? 'Máy ' + botLabel : 'Không có'}</b><small>Ẩn tới lúc vào trận</small></div></div>`;
+    } else if (M.size === 1) {
       const f = training ? (st.foe === 'dummy' ? null : st.foe) : null;
       foe = `<h4 class="hd foe">Đối thủ</h4><div class="tm foe">${f ? face(f) : '<i class="qm">?</i>'}<div><b>${training && st.foe === 'dummy' ? 'Hình nộm' : S.match.foes[0].name + ' ' + botLabel}</b><small>${training ? (st.foe === 'dummy' ? '3 hình nộm đứng yên' : f ? HEROES[f].name : 'Ngẫu nhiên') : 'Ẩn tới lúc vào trận'}</small></div></div>`;
     }
@@ -96,8 +117,8 @@ export function openPick(nav, { mode = S.mode } = {}) {
     $('.pk-pill[data-a="charm"]').innerHTML = charmPill(pageOf());
     $('.pk-pill[data-a="emblem"]').innerHTML = emblemPill(st.sel);
     if (training) $('.pk-pill[data-a="foe"]').innerHTML = `<b>Đối thủ</b>${st.foe === 'dummy' ? 'Hình nộm' : st.foe ? HEROES[st.foe].name : 'Ngẫu nhiên'}`;
-    const go = $('.pk-go'); go.disabled = st.locked || taken().includes(st.sel);
-    go.textContent = training ? 'Bắt đầu' : st.locked ? 'Đã khoá' : 'Khoá tướng';
+    const go = $('.pk-go'); go.disabled = st.locked || st.sent || taken().includes(st.sel);
+    go.textContent = training ? 'Bắt đầu' : st.locked ? (online && st.ready < 0 ? 'Chờ mọi người…' : 'Đã khoá') : 'Khoá tướng';
   }
   function renderTimer() {
     if (training) return;
@@ -107,6 +128,20 @@ export function openPick(nav, { mode = S.mode } = {}) {
     t.classList.toggle('low', !ready && st.left <= 5); t.classList.toggle('ready', ready);
   }
   const refresh = () => { renderGrid(); renderInfo(); renderTeam(); renderBottom(); renderTimer(); };
+  let offNet = null;
+  if (online) {
+    syncTeam();
+    if (taken().includes(st.sel)) st.sel = bestFree();
+    send({ t: 'hover', heroId: st.sel });
+    offNet = onNet((ev, m) => {
+      if (ev === 'room') {
+        const had = st.sel; syncTeam();
+        if (!st.locked && taken().includes(st.sel)) { const alt = bestFree(); if (alt) { st.sel = alt; show.show(alt); send({ t: 'hover', heroId: alt }); toast(`${HEROES[had].name} đã được đồng đội chọn`); } }
+        refresh();
+      } else if (ev === 'err') { st.sent = false; renderBottom(); }
+      else if (ev === 'drop' || ev === 'kicked') { toast('Mất kết nối máy chủ'); nav.go('home'); }
+    });
+  }
   refresh(); show.show(st.sel);
 
   // —— máy chọn: đến giờ của mình thì chọn một tướng chưa ai trong đội khoá (tránh tướng người chơi đang xem nếu còn lựa chọn khác) ——
@@ -121,6 +156,12 @@ export function openPick(nav, { mode = S.mode } = {}) {
   }
   function lock() {
     if (st.locked || taken().includes(st.sel)) return;
+    if (online) { // máy chủ xác nhận (tướng chưa bị đồng đội khoá) rồi mới tính là đã khoá — xem syncTeam
+      if (st.sent) return; st.sent = true;
+      const lo = finishLoadout(st.sel, st.page);
+      send({ t: 'lock', heroId: st.sel, spellId: st.spell, lo: { charm: lo.charm, emblem: lo.emblem } });
+      p.lastHero = st.sel; saveSpell(p, myRole, st.spell); saveProfile(); renderBottom(); return;
+    }
     st.locked = true; show.play('Victory'); sfx('ui_lock');
     if (training) { finish(); return; }
     for (const t of team) if (!t.locked) t.at = Math.min(t.at, PICK_SEC - st.left + 0.6 + Math.random() * 2); // mình khoá rồi thì máy nhanh tay hơn
@@ -131,6 +172,11 @@ export function openPick(nav, { mode = S.mode } = {}) {
   const tick = setInterval(() => {
     const now = performance.now(), dt = (now - last) / 1000; last = now;
     if (training || done) return;
+    if (online) { // đồng hồ theo máy chủ; hết giờ chưa khoá thì khoá tướng đang xem (máy chủ cũng tự khoá giúp nếu không nhận được)
+      st.left = Math.max(0, st.left - dt); if (st.ready >= 0) st.ready = Math.max(0, st.ready - dt);
+      if (st.left <= 0 && !st.locked && !st.sent) { if (taken().includes(st.sel)) st.sel = bestFree(); lock(); }
+      renderTimer(); return;
+    }
     if (st.ready >= 0) { const r0 = Math.ceil(st.ready); st.ready -= dt; if (Math.ceil(st.ready) < r0 && st.ready > 0) sfx('ui_tick', { rate: 1.3 }); renderTimer(); if (st.ready <= 0) finish(); return; }
     const l0 = Math.ceil(st.left); st.left -= dt; const el2 = PICK_SEC - st.left;
     if (Math.ceil(st.left) < l0 && l0 <= 6 && st.left > 0 && !st.locked) sfx('ui_tick'); // 5 giây cuối chưa khoá: tích tắc
@@ -162,7 +208,7 @@ export function openPick(nav, { mode = S.mode } = {}) {
       if (!ALPHA.includes(id)) { toast('Tướng sắp ra mắt'); return; }
       if (st.locked) { toast('Bạn đã khoá tướng'); return; }
       if (taken().includes(id)) { toast('Đồng đội đã chọn tướng này'); return; }
-      if (id !== st.sel) { st.sel = id; refresh(); show.show(id); }
+      if (id !== st.sel) { st.sel = id; refresh(); show.show(id); if (online) send({ t: 'hover', heroId: id }); }
       return;
     }
     const a = e.target.closest('[data-a]')?.dataset.a;
@@ -172,6 +218,6 @@ export function openPick(nav, { mode = S.mode } = {}) {
     else if (a === 'foe') { const opts = [null, ...ALPHA, 'dummy']; st.foe = opts[(opts.indexOf(st.foe) + 1) % opts.length]; renderTeam(); renderBottom(); }
     else if (a === 'spell') openSpellPicker(spells, st.spell, (id) => { st.spell = id; renderBottom(); });
   };
-  window.__pick = { st, team, lock, finish };
-  return () => { clearInterval(tick); removeEventListener('resize', place); el.remove(); delete window.__pick; };
+  window.__pick = { st, team, lock, finish, online };
+  return () => { clearInterval(tick); offNet?.(); removeEventListener('resize', place); el.remove(); delete window.__pick; };
 }

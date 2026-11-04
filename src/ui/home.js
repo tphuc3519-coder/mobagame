@@ -1,7 +1,8 @@
 // Sảnh chính (ảnh 2): tướng 3D đứng trên bệ giữa quảng trường đêm (phông dựng sẵn), góc trái trên thẻ người chơi (ảnh đại diện viền vàng
 // + cấp + huy hiệu hạng + thanh kinh nghiệm), cột bạn bè trực tuyến, góc phải trên tiền tệ / thư / toàn màn / cài đặt, cột phải băng sự
 // kiện + 3 ô Sứ mệnh / Xếp hạng / Lịch sử, dưới trái kênh thế giới + thanh Tướng / Trang bị / Bảng Bùa / Túi đồ / Bạn bè, dưới phải hai nút pha lê
-// "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc. Đổi tướng đứng ở sảnh: mục Tướng.
+// "Chọn chế độ" / "Đấu thường" và nút vàng lớn ĐẤU HẠNG có huy hiệu bậc (hai nút đấu là trực tuyến — ghép người thật). Nút "Tạo phòng" dưới
+// cột bạn bè: Phòng tuỳ chỉnh (mã phòng). Đấu máy: trong Chọn chế độ. Đổi tướng đứng ở sảnh: mục Tướng.
 import { ICON, icon, face, fmt, rankBadge, stars, fullscreen, toast, dialog } from './kit.js';
 import { profile, rankNow, expNeed, missionsReady, mailUnread, COURAGE_MAX, seasonCheck } from './profile.js';
 import { HQ } from '../data/haoQuang.js';
@@ -15,6 +16,7 @@ import { ALPHA } from '../data/heroes/index.js';
 import { openProfile, openFriends, openMail, openMissions, openHeroes, openItems, openSettings, openEvent, openLeaderboard, openHistory } from './panels.js';
 import { openBag } from './bagPanel.js';
 import { openShop } from './shopPanel.js';
+import { savedMatch, clearSaved, rejoinSaved } from './netLobby.js';
 
 export function openHome(nav) {
   const p = profile();
@@ -34,7 +36,7 @@ export function openHome(nav) {
         <span class="who"><b>${p.name}</b><span class="rk">${rankBadge(r, 24)}${r.name}</span><span class="pbar blue"><i style="width:${Math.min(100, Math.round((p.exp / expNeed(p.level)) * 100))}%"></i></span></span></button>
       <div class="hm-fr">${friends.map((f) => `<button type="button" data-a="friends" aria-label="${f.name}">${face(f.avatar)}${f.status === 'online' ? '<i class="dot"></i>' : ''}</button>`).join('')}
         <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button>
-        <button type="button" class="ol" data-a="online" aria-label="Chơi online với người thật">${icon('swords')}<span>Online</span></button></div>
+        <button type="button" class="ol" data-a="custom" aria-label="Phòng tuỳ chỉnh: tạo phòng có mã, chơi cùng bạn bè">${icon('swords')}<span>Tạo phòng</span></button></div>
       <div class="hm-top"><span class="cur">${icon('coin')}<b>${fmt(p.gold)}</b><i class="add" data-a="event" role="button" aria-label="Nhận thêm vàng">+</i></span>
         <span class="cur gem">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add" data-a="gems" role="button" aria-label="Cửa hàng ngọc">+</i></span>
         <button type="button" class="icb" data-a="mail" aria-label="Thư">${icon('mail')}${mail ? `<i class="badge">${mail}</i>` : ''}</button>
@@ -74,6 +76,8 @@ export function openHome(nav) {
   const chatT = setInterval(() => { ci++; chat(); }, 4500);
   render();
   // hết mùa (đồng hồ thiết bị): thưởng theo bậc cao nhất + reset mềm (08 §4) — báo ngay khi về sảnh
+  // trận online đang dở (tải lại trang giữa trận): hỏi vào lại
+  if (savedMatch()) dialog({ title: 'Trận trực tuyến đang dở', html: '<p>Bạn vừa rời một trận trực tuyến chưa kết thúc.</p>', buttons: [{ text: 'Bỏ qua', on: () => clearSaved() }, { text: 'Vào lại', cls: 'gold', on: () => { rejoinSaved(); } }] });
   const end = seasonCheck();
   if (end) {
     render();
@@ -85,7 +89,9 @@ export function openHome(nav) {
     event: () => openEvent(render), missions: () => openMissions(render), leader: () => openLeaderboard('season', render), history: () => openHistory(),
     bag: () => openBag(render), loadout: () => openLoadout({ tab: 'charm', heroId: ALPHA.includes(p.lastHero) ? p.lastHero : p.feature }), heroes: () => openHeroes((id) => { show.show(id); render(); }), items: () => openItems(), full: () => fullscreen(),
     // cửa hàng ngọc: đóng lại thì dựng lại tướng ở sảnh để phủ màu trang phục vừa mặc
-    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), modes: () => openModes(nav), normal: () => nav.go('room', { mode: 'normal' }), online: () => nav.go('online'), // chơi với người thật (ui/online.js) ranked: () => nav.go('room', { mode: 'ranked' }),
+    chat: () => openFriends(), gems: () => openShop(() => { show.show(p.feature); render(); }), modes: () => openModes(nav),
+    normal: () => nav.go('room', { mode: 'normal' }), ranked: () => nav.go('room', { mode: 'ranked' }), // trực tuyến: ghép người thật (máy điền chỗ sau 60 giây)
+    custom: () => nav.go('custom'), // phòng tuỳ chỉnh có mã (ui/online.js)
   };
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };

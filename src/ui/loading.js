@@ -6,7 +6,8 @@ import { SPELLS } from '../data/spells.js';
 import { botSpellOf } from '../data/ai.js';
 import { assignSlots } from '../sim/lineup.js';
 import { spellArt } from '../hud/art.js';
-import { loadHero, heroProgress } from '../render/assets.js';
+import { loadHero, heroProgress, releaseHeroes, LITE } from '../render/assets.js';
+import { markMatch } from './crashGuard.js';
 import { preloadMonsters } from '../render/monsterModels.js';
 import { cardSrc, rankBadge } from './kit.js';
 import { profile, rankOf } from './profile.js';
@@ -45,10 +46,16 @@ export function openLoading(nav) {
   document.getElementById('ui').append(el);
   const bars = [...el.querySelectorAll('.pb i')], pct = el.querySelector('.ld-pct');
 
-  // việc tải thật: model trong trận của mọi tướng (trùng thì một lần) + quái rừng/lính
+  // việc tải thật: model trong trận của mọi tướng (trùng thì một lần) + quái rừng/lính. Trước đó trả bộ nhớ model tướng ngoài trận (nạp sẵn ở
+  // sảnh / trận trước — render/assets.js releaseHeroes) và ghi dấu "đang vào trận" (ui/crashGuard.js: điện thoại tắt tab giữa chừng thì lần
+  // mở sau tự hạ đồ hoạ)
   const heroes = [...new Set(all.map((c) => c.hero))];
-  heroes.forEach((id) => loadHero(id));
-  const kick = setInterval(() => heroes.forEach((id) => { if (heroProgress(id) < 1) loadHero(id); }), 2500); // tải lỗi giữa chừng: gọi lại (đang tải thì không tải trùng)
+  markMatch({ mode: S.mode }); releaseHeroes(heroes);
+  // điện thoại: giải mã tối đa 2 model một lúc (10 file giải mã cùng lúc = một đợt bộ nhớ tạm lớn đúng lúc nhạy cảm nhất); máy khác: tải song song
+  let queued = 0, poolDone = false;
+  const next = () => (queued < heroes.length ? loadHero(heroes[queued++]).catch(() => null).then(next) : null);
+  Promise.all(Array.from({ length: Math.min(LITE ? 2 : heroes.length, heroes.length) }, next)).then(() => { poolDone = true; });
+  const kick = setInterval(() => { if (poolDone) heroes.forEach((id) => { if (heroProgress(id) < 1) loadHero(id); }); }, 2500); // tải lỗi giữa chừng: gọi lại (đang tải thì không tải trùng)
   let mobs = 0; preloadMonsters().catch(() => {}).then(() => { mobs = 1; });
   const t0 = performance.now(); let last = t0, raf = 0, started = false;
   const step = (now) => {

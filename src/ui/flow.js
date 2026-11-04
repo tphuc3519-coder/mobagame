@@ -22,14 +22,17 @@ import { openOnline } from './online.js';
 import { screenSound } from '../audio/uiSounds.js';
 import { END } from '../data/endgame.js';
 import { pwaLobby } from './pwa.js';
+import { net, netReset, clearSaved } from './netLobby.js';
+import { markMatch, matchStarted, clearMark } from './crashGuard.js';
+import { releaseHeroes } from '../render/assets.js';
 
-const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading, online: openOnline };
+const SCREENS = { home: openHome, room: openRoom, pick: openPick, draft: openDraft, lineup: openLineup, loading: openLoading, custom: openOnline, online: openOnline };
 const NEXT = 'la.next';
 const ui = () => document.getElementById('ui');
 let cur = null, match = null, played = 0;
 
 export const nav = {
-  /** Mở màn `name` (home | room | pick | draft (cấm/chọn đấu hạng) | lineup | loading | online), đóng màn đang mở. */
+  /** Mở màn `name` (home | room | pick | draft (cấm/chọn đấu hạng) | lineup | loading | custom (phòng tuỳ chỉnh)), đóng màn đang mở. */
   go(name, args = {}) {
     const prev = cur; cur = null;
     try { prev?.close?.(); } catch (e) { console.warn(e); }
@@ -54,34 +57,45 @@ export const nav = {
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
       surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       skinTint: skinTint(p, P.heroId), // trang phục mùa (GĐ4b)
-      onGameOver: gameOver,
+      onGameOver: gameOver, onStart: matchStarted, // vào trận ổn 15 giây: xoá dấu "đang vào trận" (ui/crashGuard.js)
     });
   },
-  /** Vào trận online (màn Chơi online → máy chủ gửi cấu hình trận): session = net/session.js. */
+  /** Vào trận trực tuyến (máy chủ gửi cấu hình trận sau màn chọn tướng — ui/netLobby.js): session = net/session.js. */
   startOnline(session) {
     try { cur?.close?.(); } catch (e) { console.warn(e); }
     cur = null; stageDispose();
     const u = ui(); u.hidden = true; u.querySelectorAll(':scope > :not(#show)').forEach((x) => x.remove());
     const me = session.cfg.players[session.me];
-    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), onGameOver: onlineOver });
+    if (MODES[session.cfg.q]) S.mode = session.cfg.q;
+    markMatch({ mode: session.cfg.q, online: true });
+    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted });
   },
 };
 
-/** Hết trận online: màn kết quả (bản thử chưa tính thưởng), Đấu lại → về màn Chơi online. */
-function onlineOver({ world, player, winner }) {
+/** Hết trận trực tuyến. Trận ghép (Đấu thường / Đấu hạng / Đỉnh cao) tính thưởng + sao như đấu với máy; phòng tuỳ chỉnh không tính thưởng.
+ *  Đấu lại → về phòng chờ của chế độ đó (hoặc Phòng tuỳ chỉnh). */
+function onlineOver({ world, player, winner }, session) {
+  const q = session.cfg.q, M = MODES[q] || MODES.custom, ranked = !M.custom;
   const heroes = world.entities.filter((e) => e.kind === 'hero');
-  const rows = scoreMatch(heroes, winner), names = {};
+  const rows = scoreMatch(heroes, winner), names = {}, me = rows.find((r) => r.id === player.id);
   for (const h of heroes) names[h.id] = h.online ? h.playerName : `${HEROES[h.heroId].name} ${botLabel}`;
-  try { sessionStorage.removeItem('la.online'); } catch (_) { /* */ }
+  clearSaved(); clearMark();
+  let rewards = {}, got = [];
+  if (ranked) {
+    const towers = world.entities.filter((e) => e.kind === 'tower' && e.team !== player.team && !e.alive).length;
+    rewards = applyResult({ mode: q, win: winner === player.team, heroId: player.heroId, kills: me.k, deaths: me.d, assists: me.a, score: me.score, mvp: me.mvp, towers });
+    got = [{ k: 'gold', n: rewards.gold }, { k: 'exp', n: rewards.exp }, ...(rewards.chest ? [{ k: 'chest', n: 1 }] : []), ...(rewards.unlocks || []), ...(rewards.seasonEnd?.list || [])];
+  }
   openPostgame({
-    rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: 'online', modeName: `Online ${world.map.lanes.length > 1 ? '5v5' : '1v1'}`, rewards: {},
+    rows, myId: player.id, myTeam: player.team, winner, names, ticks: world.tick, mode: ranked ? q : 'online', modeName: ranked ? `${M.name} · trực tuyến` : `Phòng tuỳ chỉnh ${world.map.lanes.length > 1 ? '5v5' : '1v1'}`, rewards,
     surrender: world.over?.surrender === undefined ? null : world.over.surrender === player.team ? 'Đội ta đầu hàng' : 'Đối thủ đầu hàng',
-    onHome: () => leave({ to: 'home' }), onAgain: () => leave({ to: 'online' }),
+    onHome: () => leave({ to: 'home', rewards: got }), onAgain: () => leave(ranked ? { to: 'room', mode: q, rewards: got } : { to: 'custom', rewards: got }),
   });
-  window.__flow.result = { rows };
+  window.__flow.result = { rows, rewards };
 }
 
 function gameOver({ world, player, winner }) {
+  clearMark();
   const heroes = world.entities.filter((e) => e.kind === 'hero');
   const rows = scoreMatch(heroes, winner), me = rows.find((r) => r.id === player.id);
   const towers = world.entities.filter((e) => e.kind === 'tower' && e.team !== player.team && !e.alive).length; // nhiệm vụ "Phá 3 trụ"
@@ -106,7 +120,8 @@ function leave(next) {
   if (++played >= END.reloadEvery) return hardLeave(next); // phòng rò bộ nhớ chưa biết: lâu lâu làm mới cả trang
   try {
     document.getElementById('pg')?.remove(); window.__post = null;
-    const m = match; match = null; m?.dispose?.();
+    const m = match; match = null; m?.dispose?.(); netReset(); clearMark(); // trận online: phiên đã đóng kết nối
+    releaseHeroes(null); // về sảnh: hết giới hạn "chỉ model tướng trong trận" (render/assets.js)
     ensureStageDom();
     nav.go(next.to, { mode: next.mode || S.mode });
     window.__flow.backMs = Math.round(performance.now() - t0); // kiểm thử: thời gian từ bấm tới màn kế
@@ -122,7 +137,7 @@ function ensureStageDom() {
   if (!u.querySelector(':scope > #showload')) u.querySelector(':scope > #show').insertAdjacentHTML('afterend', '<div id="showload"><i></i><span>Đang tải tướng…</span></div>');
 }
 /** Chỉ hỏi cập nhật ở Sảnh / Phòng chờ (không bao giờ giữa chọn tướng / trận / kết quả). */
-export const canPromptUpdate = () => nav.screen === 'home' || nav.screen === 'room';
+export const canPromptUpdate = () => nav.screen === 'home' || nav.screen === 'room' || nav.screen === 'custom';
 /** Màn cần mở sau khi tải lại trang (Sảnh / Đấu lại từ màn kết quả), đọc một lần. */
 export function takeNext() {
   try { const v = JSON.parse(sessionStorage.getItem(NEXT) || 'null'); sessionStorage.removeItem(NEXT); return v && SCREENS[v.to] ? v : null; } catch (_) { return null; }
@@ -135,4 +150,5 @@ export function enter(next) {
   nav.go(next?.to || 'home', { mode: next?.mode || S.mode });
   if (next?.rewards) showRewards(next.rewards); // quà của trận vừa xong khi rời màn kết quả bằng tải lại trang
 }
-window.__flow = { nav, S, seen: [] };
+net.nav = nav;
+window.__flow = { nav, S, net, seen: [] };

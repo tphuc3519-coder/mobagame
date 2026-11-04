@@ -1,5 +1,5 @@
 // Kết nối tới máy chủ online (WebSocket, JSON). Tự đo độ trễ (ping) mỗi 2 giây; mất kết nối thì báo onDrop (phiên trong trận tự nối lại).
-// Địa chỉ máy chủ: ?server=… trên URL > địa chỉ đã lưu (ô nhập ở màn Chơi online) > chính trang đang mở nếu do server/index.mjs phục vụ.
+// Địa chỉ máy chủ: ?server=… trên URL > địa chỉ đã lưu (màn Phòng tuỳ chỉnh → Máy chủ: Đổi) > chính trang đang mở nếu do server/index.mjs phục vụ.
 
 const KEY = 'la.server';
 /** Máy chủ mặc định khi mở game từ trang khác máy chủ (GitHub Pages…): điền sau khi đưa máy chủ lên mạng, vd. 'wss://moba.ten-mien.com/ws'. */
@@ -7,6 +7,7 @@ export const DEFAULT_SERVER = 'wss://lantern-arena-online.onrender.com/ws'; // R
 /** Địa chỉ máy chủ mặc định. */
 export function serverUrl() {
   const q = new URLSearchParams(location.search).get('server');
+  if (q === 'off') return ''; // ?server=off: không dùng máy chủ — Đấu thường / Đấu hạng ghép máy ngay (kiểm thử luồng ngoài trận)
   if (q) return normUrl(q);
   try { const s = localStorage.getItem(KEY); if (s) return s; } catch (_) { /* chặn lưu trữ */ }
   return DEFAULT_SERVER && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname) ? DEFAULT_SERVER : sameOrigin();
@@ -23,7 +24,7 @@ export function normUrl(u) {
   return url.toString();
 }
 
-/** Gọi /health để đánh thức máy chủ đang ngủ (Render gói free ngủ sau 15 phút, thức dậy mất ~1 phút) — gọi sớm, lúc mở màn Chơi online. */
+/** Gọi /health để đánh thức máy chủ đang ngủ (Render gói free ngủ sau 15 phút, thức dậy mất ~1 phút) — gọi sớm, lúc mở Phòng tuỳ chỉnh. */
 export function wake(url) {
   try { const u = new URL(url); u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:'; u.pathname = '/health'; fetch(u, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}); } catch (_) { /* địa chỉ sai: bỏ qua */ }
 }

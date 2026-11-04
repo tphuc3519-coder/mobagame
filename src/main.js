@@ -9,9 +9,10 @@ import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
 import { faceSrc, cardSrc, ICONS, iconSrc, toast } from './ui/kit.js';
 import { profile, rankOf } from './ui/profile.js';
 import { FRIENDS } from './ui/people.js';
-import { enter, takeNext, canPromptUpdate } from './ui/flow.js';
+import { enter, takeNext, canPromptUpdate, nav } from './ui/flow.js';
+import { checkCrash } from './ui/crashGuard.js';
 import { initPwa, warmHeroes } from './ui/pwa.js';
-import { LITE } from './render/assets.js';
+import { LITE, preloadHeroes } from './render/assets.js';
 import { loadAudio } from './audio/audio.js';
 import { hookUiSounds } from './audio/uiSounds.js';
 import { prefs } from './core/prefs.js';
@@ -56,9 +57,12 @@ if (q.has('hero')) {
   ]);
   enter(next);
   bootDone();
+  checkCrash(nav); // lần trước trình duyệt tắt game giữa lúc vào trận (thiếu bộ nhớ): hạ đồ hoạ + báo (ui/crashGuard.js)
   // ảnh thẻ tướng (chọn tướng / màn tải / sau trận / chiêu cuối) + ảnh phòng chờ: Sảnh không dùng nên không bắt màn khởi động chờ — tải nền
   // sau khi vào Sảnh (Tiết kiệm dữ liệu: bỏ, tải khi màn cần)
   if (!prefs().saveData) setTimeout(() => { for (const src of [...ALPHA.map(cardSrc), './assets/ui/room.jpg']) loadImg(src).catch(() => {}); }, 800);
-  // model trong trận của các tướng: tải dần lúc người chơi còn ở sảnh để màn tải trận nhanh (Cài đặt → Dữ liệu → Tiết kiệm dữ liệu: bỏ)
-  if (!prefs().saveData) setTimeout(() => { ALPHA.reduce((pr, id) => pr.then(() => loadHero(id)), Promise.resolve()); warmHeroes(ALPHA, LITE); }, 2500); // + nhờ service worker lưu để chơi không mạng
+  // model trong trận của các tướng: service worker lưu sẵn tệp (chơi không mạng, màn tải trận khỏi tải qua mạng); máy tính / máy tính bảng
+  // giải mã luôn vào bộ nhớ để màn tải trận nhanh. Điện thoại (LITE) KHÔNG giải mã sẵn: 20 tướng ≈ 70 MB ảnh + hình khối nằm thừa trong
+  // bộ nhớ làm trình duyệt tắt tab lúc vào trận 5v5 — màn tải chỉ giải mã đúng 10 tướng của trận (Cài đặt → Dữ liệu → Tiết kiệm dữ liệu: bỏ cả hai)
+  if (!prefs().saveData) setTimeout(() => { if (!LITE) preloadHeroes(ALPHA); warmHeroes(ALPHA, LITE); }, 2500);
 }

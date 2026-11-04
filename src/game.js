@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { setView, viewSign } from './core/view.js';
 import { createLoop } from './core/loop.js';
 import { DUEL, ARENA } from './data/maps.js';
 import { setupTeams } from './sim/lineup.js';
@@ -24,7 +25,7 @@ import { createFog } from './render/fog.js';
 import { createOrbViews } from './render/orbs.js';
 import { buildMap, FOG_COLOR } from './render/mapBuilder.js';
 import { createUnitViews, releaseSkeletons } from './render/unitView.js';
-import { loadHero, heroProgress } from './render/assets.js';
+import { loadHero, heroProgress, releaseHeroes } from './render/assets.js';
 import { createFx } from './render/fx.js';
 import { createIndicators } from './render/indicators.js';
 import { floorAt } from './render/env/floor.js';
@@ -98,6 +99,7 @@ if (online) { // trận online: mọi máy dựng y hệt nhau từ cấu hình 
   }
   if (opts.dummies || q.has('dummies')) [[400, 0], [700, -150], [1000, 150]].forEach(([dx, dy]) => world.spawnDummy(1, { x: player.pos.x + dx + 400, y: DUEL.road.y + dy }));
 }
+setView(!!online && player.team === 1, map); // đội Đỏ (trực tuyến): bản đồ xoay 180° — nhà mình bên trái / phía dưới như đội Xanh (core/view.js)
 // tên người chơi (sảnh đặt: mình + máy) — hiện trên đầu tướng, bảng tỉ số, màn kết quả
 if (!online && opts.names) for (const e of world.entities) if (e.kind === 'hero' && opts.names[e.team]?.[e.heroId]) e.playerName = opts.names[e.team][e.heroId];
 // phép + bảng bùa + phù hiệu đã chọn trước trận (ui/loadout.js); vào thẳng bằng ?hero= thì theo spellId/charmId (phù hiệu mặc định theo vai)
@@ -170,7 +172,7 @@ for (const b of panel.querySelectorAll('button')) b.addEventListener('pointerdow
 let endCam = null, blast = null;
 function beginEnd(ev) {
   if (endCam || OVERVIEW) return; const core = endTarget(world, ev.winner); if (!core) return;
-  endCam = createEndCam({ from: { x: cam.target.x, z: cam.target.z }, to: { x: core.pos.x, z: core.pos.y + END.liftZ }, panSec: END.panSec });
+  endCam = createEndCam({ from: { x: cam.target.x, z: cam.target.z }, to: { x: core.pos.x, z: core.pos.y + END.liftZ * viewSign() }, panSec: END.panSec });
   cam.setDistance(END.camDist); if (fogOfWar?.mesh) fogOfWar.mesh.visible = false; if (core.alive) views.down(core.id); blast = core;
 }
 let ended = false;
@@ -303,6 +305,7 @@ async function warmUp() {
   const tick = () => new Promise((r) => setTimeout(r, 0)), within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
   try {
     const heroIds = world.entities.filter((e) => e.kind === 'hero').map((e) => e.heroId);
+    releaseHeroes(heroIds); // chỉ giữ model tướng trong trận (trận trực tuyến / vào thẳng không qua màn tải) — render/assets.js
     views.update(world, 1, 0); // dựng view mọi đơn vị; chờ model tướng gắn vào (vào thẳng trận chưa qua màn tải) để dịch luôn vật liệu tướng
     // online: chờ đủ model mọi tướng (máy chủ chờ mọi máy báo đã tải, tối đa 45 giây) — vào trận khi model chưa về thì tướng chỉ là hình nhân
     // giữ chỗ / bóng đen tới khi tải xong (điện thoại mạng chậm, 5v5 = 10 model)
@@ -335,7 +338,7 @@ async function warmUp() {
   cover.remove(); warmMs = Math.round(performance.now() - t0);
 }
 let warmMs = 0, disposed = false; const warmRoots = [];
-warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
+warmUp().then(() => { if (disposed) return; online?.loaded(); loop.start(); music('field'); sfx('match_start', { announce: true }); opts.onStart?.(); }); // âm nền trận (gió, lá, chim, suối) + tù và vào trận
 let acc = 0;
 const advance = (sec, fps = 30) => { // dừng vòng lặp thật, bước tay sec giây với fps khung/giây
   manual = true; loop.pause();
