@@ -36,8 +36,8 @@ const left = (exp) => { const ms = exp - Date.now(), h = Math.floor(ms / 3600000
 const CSS = `
 #rewardScr { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(4 * var(--vh, 1vh)); padding: max(14px, var(--st, env(safe-area-inset-top))) max(16px, var(--sr, env(safe-area-inset-right))) max(14px, var(--sb, env(safe-area-inset-bottom))) max(16px, var(--sl, env(safe-area-inset-left)));
   background: radial-gradient(60% 60% at 50% 45%, rgba(40,32,80,.93), rgba(3,4,14,.98));   animation: rwIn .25s ease-out; overflow: hidden; }
-#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
-  linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), linear-gradient(rgba(255,210,63,0.9), rgba(255,210,63,0.9)), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
+#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 12% 30%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
+  radial-gradient(2px 2px at 34% 72%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), radial-gradient(2.5px 2.5px at 88% 58%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
   animation: rwTw 3.2s ease-in-out infinite alternate; opacity: .8; }
 #rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 clamp(26px, calc(5.4 * var(--vh, 1vh)), 44px)/1 var(--u-disp);   }
 #rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, calc(16 * var(--vw, 1vw)), 200px); height: 4px; border-radius: 2px; background: var(--g-yel); box-shadow: var(--hl), 0 2px 0 var(--ink); }

@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createWorld } from '../src/sim/world.js';
-import { setupOnline, hashWorld, mapOf, applyFrame } from '../src/net/protocol.js';
+import { setupOnline, hashWorld, mapOf, applyFrame, NET } from '../src/net/protocol.js';
 import { connect } from '../src/net/client.js';
 import { createSession } from '../src/net/session.js';
 import { mulberry32 } from '../src/core/rng.js';
@@ -49,7 +49,9 @@ async function run(mode, heroes, ticks, dropAt, { queue = null, bots = true } = 
   let st;
   if (queue) {
     const t0 = Date.now(), matched = conns.map((c) => wait(c, 'match')), rmP = wait(A, 'room', (m) => m.state === 'accept');
-    for (const [i, c] of conns.entries()) { const ack = wait(c, 'queue'); c.send({ t: 'queue', q: queue, name: 'Người ' + i, pri: ['mid', 'mid', 'jungle'][i % 3], sec: 'support' }); await ack; } // lần lượt: thứ tự vào hàng = thứ tự máy
+    const acks = [];
+    for (const [i, c] of conns.entries()) { const ack = wait(c, 'queue'); c.send({ t: 'queue', v: NET.version, q: queue, name: 'Người ' + i, pri: ['mid', 'mid', 'jungle'][i % 3], sec: 'support' }); acks.push(await ack); } // lần lượt: thứ tự vào hàng = thứ tự máy
+    ok(acks.every((m) => Number.isFinite(m.left) && m.left >= 0 && m.left <= m.max), `hàng chờ báo số giây tới lúc máy điền chỗ (left ${acks.map((m) => m.left).join(', ')} / ${acks[0].max})`);
     const ms = await Promise.all(matched);
     ok(ms.every((m) => m.code === ms[0].code && m.humans === heroes.length), `ghép ${heroes.length} người thật vào phòng ${ms[0].code} sau ${((Date.now() - t0) / 1000).toFixed(1)} giây (hết giờ chờ → máy điền chỗ)`);
     const rm = await rmP;
@@ -58,9 +60,9 @@ async function run(mode, heroes, ticks, dropAt, { queue = null, bots = true } = 
     conns.forEach((c) => c.send({ t: 'accept' }));
     st = await pickAll(conns, heroes);
   } else {
-    A.send({ t: 'create', mode, bots, name: 'An' });
+    A.send({ t: 'create', v: NET.version, mode, bots, name: 'An' });
     const ra = await wait(A, 'room'); ok(/^[A-Z2-9]{4}$/.test(ra.code), `tạo phòng ${ra.code}`);
-    for (let i = 1; i < conns.length; i++) { conns[i].send({ t: 'join', code: ra.code.toLowerCase(), name: 'Bình' + i }); await wait(conns[i], 'room', (m) => m.players.length === i + 1); }
+    for (let i = 1; i < conns.length; i++) { conns[i].send({ t: 'join', v: NET.version, code: ra.code.toLowerCase(), name: 'Bình' + i }); await wait(conns[i], 'room', (m) => m.players.length === i + 1); }
     A.send({ t: 'start' }); await new Promise((r) => setTimeout(r, 100)); ok(errs.includes('Còn người chưa sẵn sàng'), 'chưa sẵn sàng thì không bắt đầu được');
     for (let i = 1; i < conns.length; i++) conns[i].send({ t: 'ready', on: true });
     await wait(A, 'room', (m) => m.players.slice(1).every((p) => p.ready));
@@ -114,9 +116,10 @@ try {
   await run('5v5', ['bong_tre', 'hoa_ren'], 600, 0, { bots: false });
   await run('5v5', ['hoa_ren', 'nguyet_ha', 'thach_quy'], 600, 0, { queue: 'normal' });
   // vào phòng sai mã / phòng đầy
-  const C = await connect(URL); C.send({ t: 'join', code: 'ZZZZ', heroId: 'hoa_ren' }); const e = await wait(C, 'err'); ok(/Không thấy phòng/.test(e.m), 'mã phòng sai bị từ chối');
+  const C = await connect(URL); C.send({ t: 'join', v: NET.version, code: 'ZZZZ', heroId: 'hoa_ren' }); const e = await wait(C, 'err'); ok(/Không thấy phòng/.test(e.m), 'mã phòng sai bị từ chối');
+  { const O = await connect(URL); O.send({ t: 'create', mode: '1v1', name: 'Cũ' }); const eo = await wait(O, 'err'); ok(/Bản game cũ/.test(eo.m), 'máy khách khác phiên bản bị từ chối (tránh lệch trận)'); O.close(); }
   // bỏ lỡ "Chấp nhận" → bị loại, người còn lại vẫn vào chọn tướng
-  const D2 = await connect(URL); C.send({ t: 'queue', q: 'ranked', name: 'C' }); D2.send({ t: 'queue', q: 'ranked', name: 'D' });
+  const D2 = await connect(URL); C.send({ t: 'queue', v: NET.version, q: 'ranked', name: 'C' }); D2.send({ t: 'queue', v: NET.version, q: 'ranked', name: 'D' });
   const kicked = wait(D2, 'kicked', () => true), picked = wait(C, 'room', (m) => m.state === 'pick');
   await wait(C, 'match'); C.send({ t: 'accept' });
   const [kk, pk] = await Promise.all([kicked.then(() => true, () => false), picked.then((m) => m, () => null)]);

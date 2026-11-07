@@ -157,7 +157,7 @@ export function enter(next) {
   ensureStageDom();
   if (next?.party) S.party = FRIENDS.filter((f) => next.party.includes(f.id));
   if (next?.mode && MODES[next.mode]) S.mode = next.mode;
-  nav.go(next?.to || 'home', { mode: next?.mode || S.mode });
+  nav.go(next?.to || 'home', { mode: next?.mode || S.mode, join: next?.join }); // join: mã phòng từ link mời (main.js)
   if (next?.rewards) showRewards(next.rewards); // quà của trận vừa xong khi rời màn kết quả bằng tải lại trang
 }
 net.nav = nav;

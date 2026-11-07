@@ -1068,3 +1068,16 @@
   khác". Trận đấu máy: màn tải (ui/loading.js) chuyển thành cover, đóng khi dịch shader xong. Trực tuyến: ui/matchLoading.js hiện ngay khi máy chủ
   báo vào trận (dựng thử trận để biết tướng máy), tiến độ từng người qua tin `lp`, đóng khi khung đầu tiên chạy. Phần vẽ đơn vị nhận đúng
   `player.team` (trước cố định 0 — người chơi đội Đỏ không thấy tướng mình).
+- 2026-11-07: **Rà soát lỗi + giao diện:** (1) mô phỏng: tướng đi thẳng vào trụ / nhà chính (khối tròn) thì trượt theo tiếp tuyến thay vì bị
+  đẩy ngược đứng yên (1v1: xuất phát sau nhà chính, bấm đi thẳng là kẹt) — `sim/movement.js`; đổi mô phỏng nên `NET.version` = 2 và máy chủ từ
+  chối máy khách khác phiên bản (create / join / queue / rejoin mang `v`). 8 trận toàn máy trước / sau: 8/8 kết thúc, 0 lần kẹt. (2) Màn Nhận
+  thưởng không còn phủ vàng kín (UI v4 lỡ thay lớp lấp lánh bằng một dải màu đặc). (3) Bàn phím ảo (Android thu khung nhìn) không làm cả giao
+  diện co lại khi đang gõ. (4) Chữ chìm: thẻ đang chọn nền vàng ở Phép bổ trợ / Chọn bảng bùa dùng chữ mực; ô "Trang phục mùa" chưa chọn tướng
+  hiện "?" (ngôi sao vàng trên nền vàng); `tools/b_fit.cjs` kiểm thêm tương phản chữ / nền (< 1,8 là lỗi). Tránh tên lớp CSS ngắn trùng lớp
+  toàn cục (`.cd` hồi chiêu, `.q` mua nhanh, `.cur` ô tiền ở index.html / css.js).
+- 2026-11-07: **Phòng tuỳ chỉnh v2:** thẻ bản đồ có sơ đồ (5v5 ba đường / 1v1 một đường), công tắc Máy điền chỗ trống, 4 ô mã kiểu OTP (một ô
+  nhập thật trong suốt phủ lên — bàn phím / dán / tự điền như thường; đủ 4 ký tự là vào luôn, mã sai thì rung), nút **Mời** chia sẻ link
+  `?room=MÃ` (navigator.share, không có thì chép) — mở link là vào thẳng phòng (main.js đọc rồi bỏ `?room` khỏi địa chỉ). Hàng chờ: máy chủ gửi
+  `left` (giây tới lúc máy điền chỗ), ô tìm trận ghi "Máy vào thay chỗ trống sau 0:42" và nằm chỗ dòng chat (trước che tên dưới ghế mình ở màn
+  thấp). Màn kết quả: danh hiệu thành huy hiệu có cúp (bỏ "<…>"), thẻ Giản lược / Chi tiết xuống thanh dưới để bảng thấy đủ 5 người không cần
+  cuộn ở màn 360 px. Cả ô tiền ở sảnh là nút (dấu + chỉ 18 px), nút quay lại / nút tròn có vùng chạm rộng hơn hình vẽ 7 px.

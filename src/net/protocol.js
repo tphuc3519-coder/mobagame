@@ -9,7 +9,7 @@ import { SPELLS } from '../data/spells.js';
 import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
-  version: 1,
+  version: 2,       // đổi khi mô phỏng đổi (2: tướng trượt quanh trụ / nhà chính) — máy chủ từ chối máy khách khác phiên bản (lệch trận)
   pack: 1,          // số tick mỗi gói khung máy chủ gửi: 1 = gửi ngay mỗi tick (30 gói/giây, vài chục byte/gói) — bớt ~17 ms trễ so với gói 2 tick
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng

@@ -32,7 +32,7 @@ async function openPage(browser, vp, seed = {}) {
   const page = await ctx.newPage(), errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/?server=off`, { waitUntil: 'domcontentloaded' }); // không máy chủ: chế độ trực tuyến ghép máy ngay (khỏi chờ 60 s)
   await home(page);
   return { ctx, page, errs };
 }
@@ -193,7 +193,7 @@ async function season(browser, vp) {
   // Hải Đăng II (sao 81), cao nhất mùa Sao Mai III (sao 101), đã chọn tướng nhận trang phục mùa, 2 vòng thành thạo
   const prof = { version: 2, name: 'Thử Mùa', gold: 100, stars: 81, best: 101, season: 1, seasonPeak: 101, seasonWins: 9, skinHero: 'kiem_thuy', mastery: { kiem_thuy: 5, trang_nhi: 5, ba_nam: 2 }, bag: {} };
   await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  await page.goto(`${BASE}/?server=off`, { waitUntil: 'domcontentloaded' }); await home(page); // không máy chủ: chế độ trực tuyến ghép máy ngay (khỏi chờ 60 s)
   ok(`${label}: giữa mùa — không có màn "Kết thúc mùa"`, !(await page.$('#rewardScr')));
   await page.click('#home [data-a="leader"]'); await page.waitForSelector('.ui-panel .ss-head', { timeout: T(10) }); await page.waitForTimeout(300);
   const txt = (await page.textContent('.ui-panel .ui-body')).replace(/\s+/g, ' ');
@@ -242,7 +242,7 @@ async function peak(browser, vp) {
   await page.clock.setFixedTime(new Date(2026, 10, 10, 10, 0)); // 10:00 — Đỉnh Cao chưa mở
   const prof = { version: 2, name: 'Thử Đỉnh', rolePri: 'mid', roleSec: 'jungle', stars: 149, best: 149, season: 1, seasonPeak: 149, hq, ranked: 40, rankedWins: 30, bag: {} }; // Thái Dương
   await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  await page.goto(`${BASE}/?server=off`, { waitUntil: 'domcontentloaded' }); await home(page); // không máy chủ: chế độ trực tuyến ghép máy ngay (khỏi chờ 60 s)
   const ht = (await page.textContent('#home')).replace(/\s+/g, ' ');
   ok(`${label}: sảnh — huy hiệu Thiên Hà + thanh Hào Quang ${hq}`, /ĐẤU HẠNG\s*Thiên Hà/.test(ht) && /Hào Quang\s*\d+/.test(ht) && (await page.getAttribute('#home .rank-go .rkb img', 'src')).includes('rank_thien_ha'), ht.match(/Hào Quang[^A-Z]{0,20}/)?.[0]);
   ok(`${label}: huy hiệu Thiên Hà tải được`, await page.evaluate(() => new Promise((res) => { const i = document.querySelector('#home .rank-go .rkb img'); if (i.complete) res(i.naturalWidth > 0); else { i.onload = () => res(true); i.onerror = () => res(false); } })));

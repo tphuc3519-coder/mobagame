@@ -3,6 +3,7 @@
 // dựng phiên trong trận (net/session.js) và vào trận (flow.startOnline). Màn nào cần nghe thì đăng ký onNet(fn(sự kiện, tin)).
 import { connect, serverUrl, saveServerUrl, normUrl, wake } from '../net/client.js';
 import { createSession } from '../net/session.js';
+import { NET } from '../net/protocol.js';
 import { toast } from './kit.js';
 
 const SAVE = 'la.online';
@@ -74,6 +75,6 @@ export async function rejoinSaved(onFail) {
   const s = savedMatch(); if (!s) return;
   if (s.url && s.url !== net.url) { netCancel(); net.conn?.close(); net.conn = null; net.url = s.url; }
   let c; try { c = await lobbyConn({ maxMs: 60000 }); } catch (e) { toast(`${e.message} (${net.url})`, 3500); return; }
-  const off = c.on('rejoinFail', () => { off(); clearSaved(); toast('Trận đã kết thúc hoặc phòng đã đóng'); onFail?.(); });
-  c.send({ t: 'rejoin', code: s.code, token: s.token, have: -1 });
+  const off = c.on('rejoinFail', (m) => { off(); clearSaved(); toast(m?.old ? 'Game vừa cập nhật — trận cũ không vào lại được' : 'Trận đã kết thúc hoặc phòng đã đóng', 3000); onFail?.(); });
+  c.send({ t: 'rejoin', v: NET.version, code: s.code, token: s.token, have: -1 });
 }

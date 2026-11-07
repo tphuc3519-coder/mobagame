@@ -39,7 +39,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
       try {
         const c = await connect(conn.url); if (disposed) { c.close(); break; }
         conn = c; bind(c); // nhận khung ngay từ gói đầu máy chủ gửi bù
-        const ok = await new Promise((r) => { const b = c.on('rejoinFail', () => { b(); r(false); }); c.send({ t: 'rejoin', code, token, have: lastRecv }); setTimeout(() => { b(); r(true); }, 2500); });
+        const ok = await new Promise((r) => { const b = c.on('rejoinFail', () => { b(); r(false); }); c.send({ t: 'rejoin', v: NET.version, code, token, have: lastRecv }); setTimeout(() => { b(); r(true); }, 2500); });
         if (!ok) { notify('Trận đã kết thúc hoặc phòng đã đóng'); c.onDrop = null; c.close(); break; }
         notify('Đã nối lại'); break;
       } catch (_) { await new Promise((r) => setTimeout(r, 1500)); }

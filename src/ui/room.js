@@ -104,27 +104,38 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     if (M.map === '5v5' && !p.rolePri) { openRoleDialog({ onDone: () => { render(); startSearch(); } }); return; } // chưa chọn vị trí: chọn trước
     const online = M.online && !!net.url;
     const pill = document.createElement('div'); pill.className = 'mm';
-    pill.innerHTML = `<i class="spin"></i><span>${online ? 'Đang kết nối máy chủ…' : 'Đang tìm trận'}</span><b>00:00</b><button type="button" class="btn-red">Huỷ</button>`;
+    pill.innerHTML = `<i class="spin"></i><span class="tx"><em>${online ? 'Đang kết nối máy chủ…' : 'Đang tìm trận'}</em><small></small></span><b>00:00</b><button type="button" class="btn-red">Huỷ</button>`;
     pill.querySelector('button').onclick = stopSearch;
-    el.append(pill);
+    el.append(pill); el.classList.add('mm-on');
     const cur = { pill, sec: 0, wait: online ? Infinity : 3 + Math.floor(Math.random() * 4), online, off: null };
-    cur.t = setInterval(() => { cur.sec++; pill.querySelector('b').textContent = fmtT(cur.sec); if (cur.sec >= cur.wait) found(); }, 1000);
+    cur.t = setInterval(() => { cur.sec++; pill.querySelector('b').textContent = fmtT(cur.sec); sub(cur); if (cur.sec >= cur.wait) found(); }, 1000);
     mm = cur;
     render();
     if (online) searchOnline(cur);
   }
-  const say = (cur, t) => { const s = cur.pill.querySelector('span'); if (s) s.textContent = t; };
+  const say = (cur, t) => { const s = cur.pill.querySelector('.tx em'); if (s) s.textContent = t; };
+  /** Dòng phụ của ô tìm trận: hàng chờ máy chủ — còn bao lâu máy vào thay chỗ trống (máy chủ gửi 'left' mỗi giây). */
+  const sub = (cur) => {
+    const s = cur.pill.querySelector('.tx small'); if (!s) return;
+    if (!cur.online || cur.found || cur.left == null) { s.textContent = ''; return; }
+    const left = Math.max(0, Math.ceil(cur.left - (performance.now() - cur.leftAt) / 1000));
+    s.textContent = left > 0 ? `Máy vào thay chỗ trống sau ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : 'Đang ghép trận với máy…';
+  };
   /** Không nối được máy chủ: ghép với máy (vài giây nữa "tìm thấy trận"). */
   function toBots(cur, why) {
     if (mm !== cur || cur.found) return;
     if (cur.online && net.conn?.open) send({ t: 'unqueue' }); // đang trong hàng chờ máy chủ: ra khỏi hàng (khỏi bị ghép sau lưng)
-    cur.online = false; cur.off?.(); cur.off = null; toast(why, 3000); say(cur, 'Đang tìm trận (máy)'); cur.wait = cur.sec + 1 + Math.floor(Math.random() * 3);
+    cur.online = false; cur.off?.(); cur.off = null; toast(why, 3000); say(cur, 'Đang tìm trận (máy)'); sub(cur); cur.wait = cur.sec + 1 + Math.floor(Math.random() * 3);
   }
   async function searchOnline(cur) {
     cur.off = onNet((ev, m) => {
       if (mm !== cur) return;
       if (ev === 'wake') say(cur, 'Đang đánh thức máy chủ…');
-      else if (ev === 'queue') { cur.acked = true; say(cur, m.n > 1 ? `Đang tìm người chơi · ${m.n} người` : 'Đang tìm người chơi'); }
+      else if (ev === 'queue') {
+        cur.acked = true; say(cur, m.n > 1 ? `Đang tìm người chơi · ${m.n}/${m.need || 10}` : 'Đang tìm người chơi');
+        const left = Number.isFinite(m.left) ? m.left : Number.isFinite(m.max) ? m.max - (m.waited || 0) : null; // máy chủ cũ chưa gửi 'left'
+        if (left != null) { cur.left = left; cur.leftAt = performance.now(); } sub(cur);
+      }
       else if (ev === 'match') foundOnline(cur, m);
       else if (ev === 'room' && foundEl && cur.found) foundRoom(cur, m);
       else if (ev === 'kicked') stopSearch();
@@ -133,7 +144,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     try { await lobbyConn({ maxMs: 60000 }); } catch (_) { toBots(cur, 'Không kết nối được máy chủ — ghép với máy'); return; }
     if (mm !== cur) return;
     say(cur, 'Đang tìm người chơi');
-    send({ t: 'queue', q: mode, name: p.name, avatar: p.avatar, stars: p.stars, diff: modeDiff(mode), pri: p.rolePri, sec: p.roleSec });
+    send({ t: 'queue', v: NET.version, q: mode, name: p.name, avatar: p.avatar, stars: p.stars, diff: modeDiff(mode), pri: p.rolePri, sec: p.roleSec });
     // máy chủ bản cũ (chưa có hàng chờ) không trả lời: 6 giây chưa nhận 'queue' thì ghép máy; quá hạn chờ (60 giây + dư) chưa ghép được cũng ghép máy
     later(6000, () => { if (mm === cur && cur.online && !cur.acked) toBots(cur, 'Máy chủ chưa hỗ trợ ghép trận — ghép với máy'); });
     later((NET.queueWait + 20) * 1000, () => { if (mm === cur && cur.online) toBots(cur, 'Chưa ghép được trận — ghép với máy'); });
@@ -142,11 +153,11 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     if (!mm) return;
     const cur = mm; clearInterval(cur.t); clearInterval(cur.tick); cur.off?.();
     if (cur.online) { netCancel(); netLeave(); }
-    cur.pill.remove(); mm = null; foundEl?.remove(); foundEl = null; render();
+    cur.pill.remove(); el.classList.remove('mm-on'); mm = null; foundEl?.remove(); foundEl = null; render();
   }
   /** Máy chủ đã ghép: hộp "Đã tìm thấy trận" — chấm sáng theo người thật đã chấp nhận (máy chấp nhận dần), hết 12 giây máy chủ loại người chưa bấm. */
   function foundOnline(cur, m) {
-    clearInterval(cur.t); cur.found = true; say(cur, 'Đã tìm thấy trận'); sfx('ui_found');
+    clearInterval(cur.t); cur.found = true; say(cur, 'Đã tìm thấy trận'); sub(cur); sfx('ui_found');
     foundEl = document.createElement('div'); foundEl.className = 'ui-dlg';
     foundEl.innerHTML = `<div class="box fr found"><h3><span class="gt">Đã tìm thấy trận</span></h3><div class="txt">${M.name} · ${M.mapName}<div class="rl-got">${m.humans > 1 ? `<b>${m.humans}</b> người thật` : 'Chưa có người chơi khác'} · <b>${10 - m.humans}</b> máy</div><div class="rl-got rr"></div></div><div class="dots">${'<i></i>'.repeat(10)}</div><div class="tm">12</div>
       <div class="btns"><button type="button" class="btn-gold" data-a="accept">Chấp nhận</button></div></div>`;
@@ -172,7 +183,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     if (me?.role && rr && !rr.textContent) rr.innerHTML = `Vị trí của bạn: ${roleIcon(me.role)}<b>${ROLE_INFO[me.role].name}</b>${me.role !== p.rolePri ? ' <small>(vị trí phụ)</small>' : ''}`;
   }
   function found() {
-    clearInterval(mm.t); mm.pill.querySelector('span').textContent = 'Đã tìm thấy trận'; sfx('ui_found');
+    clearInterval(mm.t); say(mm, 'Đã tìm thấy trận'); sfx('ui_found');
     const n = M.size * 2, acc = new Array(n).fill(false);
     const rr = M.map === '5v5' ? assignRoles({ pri: p.rolePri, sec: p.roleSec }, Math.random) : null; // vị trí trận này (giao diện: Math.random)
     foundEl = document.createElement('div'); foundEl.className = 'ui-dlg';

@@ -234,6 +234,7 @@ function form(q, entries) {
   r.assignRoles(); r.beginAccept();
   log(`ghép ${q}: phòng ${r.code} — ${entries.length} người thật, ${10 - entries.length} máy (chờ lâu nhất ${Math.round((Date.now() - entries[0].at) / 1000)} giây)`);
 }
+const queueLeft = (pool, now = Date.now()) => (pool.length ? Math.max(0, Math.ceil(SEC.queue - (now - pool[0].at) / 1000)) : SEC.queue);
 function matchmake() {
   const now = Date.now();
   for (const [q, pool] of Object.entries(pools)) {
@@ -241,7 +242,8 @@ function matchmake() {
     const need = QUEUES[q].mode === '5v5' ? 10 : 2;
     while (pool.length >= need) form(q, pool.splice(0, need));
     if (pool.length && now - pool[0].at >= SEC.queue * 1000) form(q, pool.splice(0, pool.length));
-    for (const en of pool) en.ws.send({ t: 'queue', q, n: pool.length, need, waited: Math.round((now - en.at) / 1000), max: SEC.queue });
+    const left = queueLeft(pool, now); // còn bao giây máy vào thay (tính theo người chờ lâu nhất — cả hàng ghép cùng lúc)
+    for (const en of pool) en.ws.send({ t: 'queue', q, n: pool.length, need, waited: Math.round((now - en.at) / 1000), max: SEC.queue, left });
   }
 }
 setInterval(matchmake, 1000).unref?.();
@@ -259,6 +261,11 @@ export function handle(ws) {
   ws.on('message', (m) => {
     if (!m || typeof m.t !== 'string') return;
     const { room, p } = sess;
+    // vào phòng / hàng chờ / vào lại: máy khách phải cùng phiên bản mô phỏng (bản cũ còn trong bộ nhớ đệm → hai máy chạy khác nhau, lệch trận)
+    if ((m.t === 'create' || m.t === 'join' || m.t === 'queue' || m.t === 'rejoin') && m.v !== NET.version) {
+      if (m.t === 'rejoin') return ws.send({ t: 'rejoinFail', old: true });
+      return err('Bản game cũ — tải lại trang (hoặc mở lại ứng dụng) để cập nhật rồi chơi tiếp');
+    }
     switch (m.t) {
       case 'p': ws.send({ t: 'P', c: m.c }); return; // đo độ trễ
       case 'c': room?.command(p, m.c); return;
@@ -287,7 +294,7 @@ export function handle(ws) {
         if (!QUEUES[m.q]) return err('Chế độ không hợp lệ');
         const info = { name: m.name, avatar: m.avatar, stars: m.stars, diff: cleanDiff(m.diff), pri: m.pri, sec: m.sec };
         sess.queued = m.q; pools[m.q].push({ ws, sess, info, at: Date.now() });
-        ws.send({ t: 'queue', q: m.q, n: pools[m.q].length, need: 10, waited: 0, max: SEC.queue }); return;
+        ws.send({ t: 'queue', q: m.q, n: pools[m.q].length, need: QUEUES[m.q].mode === '5v5' ? 10 : 2, waited: 0, max: SEC.queue, left: queueLeft(pools[m.q]) }); return;
       }
       case 'unqueue': unqueue(sess); return;
       case 'accept': room?.accept(p); return;

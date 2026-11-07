@@ -7,11 +7,17 @@ Nhiều người ở nhiều máy vào chung một trận thời gian thực. Ch
 | Nhóm | Chế độ | Cách vào trận |
 |---|---|---|
 | **Trực tuyến (mặc định)** | Đấu thường 5v5, Đấu hạng, Đấu Đỉnh Cao | Phòng chờ → Bắt đầu = vào **hàng chờ máy chủ**. Đủ 10 người thì ghép ngay; người vào hàng sớm nhất chờ **60 giây** thì ghép luôn những ai đang chờ, **máy điền chỗ trống**. Người thật chia xen kẽ hai đội, vị trí theo vị trí chính → phụ. Tìm thấy trận → Chấp nhận (12 giây, ai không bấm bị loại, máy thay) → chọn tướng trực tuyến (30 giây, không trùng tướng trong đội) → trận. Có tính thưởng / sao như trước. Không nối được máy chủ → ghép với máy (chạy offline như Đấu máy). Đấu hạng trực tuyến chưa có cấm tướng (chọn ẩn). |
-| **Phòng tuỳ chỉnh** | 1v1 / 5v5 | Sảnh → **Tạo phòng** (hoặc Chọn chế độ → Phòng tuỳ chỉnh). Tạo phòng có **mã 4 ký tự**, tối đa 2 × 5 người; chạm ô trống để đổi chỗ / đổi đội; chủ phòng chọn bản đồ, **Thêm máy bật / tắt**, độ khó máy. Mọi người Sẵn sàng → chủ phòng Bắt đầu → chọn tướng → trận. Tắt máy: chỉ người trong phòng vào trận (mỗi đội ≥ 1 người). Không tính thưởng. |
+| **Phòng tuỳ chỉnh** | 1v1 / 5v5 | Sảnh → **Tạo phòng** (hoặc Chọn chế độ → Phòng tuỳ chỉnh). Tạo phòng có **mã 4 ký tự**, tối đa 2 × 5 người; chạm ô trống để đổi chỗ / đổi đội; chủ phòng chọn bản đồ (thẻ có sơ đồ), **Máy điền chỗ trống** bật / tắt, độ khó máy. Mời bạn: nút **Mời** chia sẻ **link mời** (`?room=MÃ`, kèm `?server=` nếu dùng máy chủ khác mặc định) — bạn mở link là vào thẳng phòng; hoặc gõ mã vào 4 ô (đủ 4 ký tự là vào luôn, dán cả link cũng được). Mọi người Sẵn sàng → chủ phòng Bắt đầu → chọn tướng → trận. Tắt máy: chỉ người trong phòng vào trận (mỗi đội ≥ 1 người). Không tính thưởng. |
 | **Đấu máy** | Đấu máy 5v5, Đấu đơn 1v1, Luyện tập | Chọn chế độ → Đấu máy. Chơi một mình, không cần mạng, tự chọn độ khó. |
 
 Tin nhắn máy chủ mới: `queue` / `unqueue` (hàng chờ), `match` (đã ghép), `accept`, `hover` / `lock` (chọn tướng), `seat` / `opts` (phòng tuỳ chỉnh),
 `kicked` (bỏ lỡ chấp nhận), `lp` (tiến độ tải trận: máy khách gửi `{ p: 0..100 }`, máy chủ phát `{ a: [%…] }` theo thứ tự `cfg.players`, ≤ 5 lần/giây).
+Máy chủ gửi `queue` mỗi giây kèm `left` = số giây còn lại tới lúc máy điền chỗ (tính theo người chờ lâu nhất — cả hàng ghép cùng lúc); ô tìm
+trận hiện "Máy vào thay chỗ trống sau 0:42".
+
+**Phiên bản giao thức (07/11):** `create` / `join` / `queue` / `rejoin` mang `v: NET.version` (`src/net/protocol.js`). Máy chủ từ chối máy khách
+khác phiên bản ("Bản game cũ — tải lại trang…"; vào lại trận: `rejoinFail { old: true }`) — bản cũ còn trong bộ nhớ đệm mà vào chung trận với bản
+mới là hai máy chạy mô phỏng khác nhau (lệch trận). **Đổi luật mô phỏng thì tăng `NET.version`** (2: tướng trượt quanh trụ / nhà chính).
 
 **Màn tải trận trực tuyến (04/11, `ui/matchLoading.js`):** máy chủ báo vào trận là hiện ngay màn tải giống trận đấu máy (thẻ hai đội — đội mình
 hàng trên, mình ở giữa —, tên, hạng, phép bổ trợ, thanh từng người). Thanh của mình = tải thật trên máy này; của người chơi khác = tiến độ máy họ
@@ -108,15 +114,17 @@ Kiểm tra máy chủ sống: mở `https://<địa chỉ>/health` → `{"ok":tr
 | `src/net/protocol.js` | Dùng chung: dựng trận online (`setupOnline`), áp khung (`applyFrame`), làm sạch lệnh, mã băm trạng thái |
 | `src/net/client.js` | Kết nối WebSocket phía trình duyệt, đo ping, địa chỉ máy chủ |
 | `src/net/session.js` | Trong trận: bọc `world.command` (lệnh mình → máy chủ), chạy khung, chạy bù, tự nối lại |
-| `src/ui/online.js` | Phòng tuỳ chỉnh (tạo / vào bằng mã, hai đội, bật / tắt máy, vào lại trận) |
+| `src/ui/online.js` | Phòng tuỳ chỉnh (tạo / vào bằng mã hoặc link mời `?room=`, hai đội, bật / tắt máy, vào lại trận) |
 | `src/ui/netLobby.js` | Kết nối máy chủ dùng chung ngoài trận (hàng chờ, phòng, chọn tướng → vào trận) |
 | `src/core/dmath.js` | Lượng giác tất định cho mô phỏng |
 | `tools/t_online.mjs` | Kiểm thử không cần trình duyệt: máy chủ thật + 2 máy khách, rớt mạng / nối lại, máy thay người, so mã băm |
 
 ## Việc tiếp theo
 
-- Dự đoán chuyển động tướng mình (đi ngay khi kéo cần, máy chủ xác nhận sau) để bớt cảm giác trễ khi ping cao.
 - Chống gian lận sương mù: kiểu lockstep thì máy nào cũng có đủ trạng thái trận; muốn giấu phải chuyển sang máy chủ gửi trạng thái theo tầm nhìn
   từng đội (việc lớn — làm khi có xếp hạng thật).
-- Ghép trận tự động, 2–10 người thật mỗi trận (hiện 1 người mỗi đội), chọn phép / bảng bùa / phù hiệu trước trận (hiện dùng mặc định), tính
-  thưởng / hạng, chat nhanh.
+- Tài khoản + danh sách bạn bè thật (hiện bạn bè trong sảnh là máy; chơi cùng bạn thật: Phòng tuỳ chỉnh + link mời), mời bạn vào hàng chờ Đấu
+  thường / Đấu hạng theo nhóm.
+- Đấu hạng trực tuyến: thêm lượt cấm tướng (hiện chọn ẩn), chat nhanh trong trận.
+- Đã làm (để tham khảo): dự đoán chuyển động tướng mình (03/11), ghép trận tự động ưu tiên người thật (03/11), chọn phép / bảng bùa / phù hiệu
+  trước trận, tính thưởng / sao cho trận ghép, màn tải từng máy (04/11), link mời + chặn bản game cũ (07/11).

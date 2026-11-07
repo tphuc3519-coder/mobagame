@@ -176,9 +176,13 @@ async function pings(browser) {
     // máy không GPU: chụp ảnh / page.tap mất vài giây ⇒ vòng đã tự đóng sau 4 s không thao tác (hud/pings.js). Mở lại nếu cần, rồi chọn
     // Tập hợp và chạm bản đồ nhỏ liền tay (pointerdown thật vào nút + chạm toạ độ thật, không chờ "đứng yên")
     if (await page.evaluate(() => document.querySelector('#pingWheel').hidden)) { await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 }); }
-    await page.evaluate(() => document.querySelector('#pingWheel button[data-k="gather"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })));
-    const c = mm && { x: (mm.l + mm.r) / 2, y: (mm.t + mm.b) / 2 };
-    await page.touchscreen.tap(c.x, c.y);
+    // chọn Tập hợp rồi chạm giữa bản đồ nhỏ (toạ độ thật) trong cùng một nhịp: máy không GPU mỗi page.tap mất 3–10 s (1280×720 chỉ ~7 FPS)
+    // — quá 4 s không thao tác là vòng tự đóng, hết chế độ chọn chỗ (hud/pings.js) nên cú chạm thành chạm bản đồ thường
+    await page.evaluate(() => {
+      document.querySelector('#pingWheel button[data-k="gather"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' }));
+      const m = document.getElementById('minimap'), r = m.getBoundingClientRect();
+      m.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+    });
     const t = await waitFor(page, () => window.__game.world.pings.some((p) => p.kind === 'gather' && p.src === window.__game.player.id), 60);
     ok(`${tag}: Tập hợp + chạm bản đồ nhỏ → tín hiệu vào mô phỏng`, t >= 0, `${t} tick`);
     const feed = await page.evaluate(() => document.querySelector('#pingFeed')?.textContent || '');

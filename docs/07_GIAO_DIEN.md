@@ -83,7 +83,10 @@ kim, quầng sáng, kính mờ, chữ in hoa giãn) và chọn mẫu C trong ba 
   thông báo nhanh) dùng `var(--rvh)` / `var(--rvw)` (1% phần nhìn thấy thật). Vùng an toàn trong phần co giãn: `var(--sl/--sr/--st/--sb)`.
 - JS đặt vị trí theo px giao diện (tướng 3D ở sảnh / chọn tướng / đội hình) nhân `uiZoom()`.
 - Kiểm thử: `tools/b_fit.cjs` (mọi màn + hộp thoại + bảng trên 9 cỡ màn, gồm 852×252 và 667×235: nút không bị cắt, nút chính không phải
-  cuộn mới thấy, không cuộn ngang), `tools/b_layout.cjs` (HUD trong trận, gồm 852×252 / 667×235).
+  cuộn mới thấy, không cuộn ngang, không có chữ chìm — màu chữ sát màu nền, vd. chữ vàng trên thẻ nền vàng đang chọn), `tools/b_layout.cjs`
+  (HUD trong trận, gồm 852×252 / 667×235), `tools/b_invite.cjs` (Phòng tuỳ chỉnh: link mời, ô mã, hàng chờ đếm ngược — máy chủ thật).
+- Tên lớp CSS của một màn đặt tiền tố riêng (`ol-`, `cr-`, `ss-`…): lớp ngắn như `.cd` (hồi chiêu), `.q` (mua nhanh), `.cur` (ô tiền) là lớp
+  toàn cục ở index.html / css.js — trùng tên là phần tử bị ẩn / lệch (đã gặp 07/11).
 - Khung bị thanh trình duyệt che (Safari iPhone): Sảnh nhắc chơi toàn màn hình (`ui/fullHint.js` — Android bấm là bật; iPhone: hướng dẫn
   Ẩn thanh công cụ / Thêm vào MH chính).
 

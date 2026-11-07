@@ -39,8 +39,8 @@ export function openHome(nav) {
       <div class="hm-fr">${friends.map((f) => `<button type="button" data-a="friends" aria-label="${f.name}">${face(f.avatar)}${f.status === 'online' ? '<i class="dot"></i>' : ''}</button>`).join('')}
         <button type="button" class="more" data-a="friends" aria-label="Bạn bè">${icon('friends')}</button>
         <button type="button" class="ol" data-a="custom" aria-label="Phòng tuỳ chỉnh: tạo phòng có mã, chơi cùng bạn bè">${icon('swords')}<span>Tạo phòng</span></button></div>
-      <div class="hm-top"><span class="cur">${icon('coin')}<b>${fmt(p.gold)}</b><i class="add" data-a="event" role="button" aria-label="Nhận thêm vàng">+</i></span>
-        <span class="cur gem">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add" data-a="gems" role="button" aria-label="Cửa hàng ngọc">+</i></span>
+      <div class="hm-top"><span class="cur" data-a="event" role="button" aria-label="Nhận thêm vàng">${icon('coin')}<b>${fmt(p.gold)}</b><i class="add">+</i></span>
+        <span class="cur gem" data-a="gems" role="button" aria-label="Cửa hàng ngọc">${icon('gem')}<b>${fmt(p.gems)}</b><i class="add">+</i></span>
         <button type="button" class="icb" data-a="mail" aria-label="Thư">${icon('mail')}${mail ? `<i class="badge">${mail}</i>` : ''}</button>
         <button type="button" class="icb" data-a="full" aria-label="Toàn màn hình">${ICON.full()}</button>
         <button type="button" class="icb" data-a="settings" aria-label="Cài đặt">${icon('gear')}</button></div>

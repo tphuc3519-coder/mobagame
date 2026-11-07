@@ -17,6 +17,7 @@ const STYLE = `.ss-head { display: flex; align-items: baseline; gap: 12px; flex-
 .ss-rings i em { position: absolute; bottom: -1px; left: 0; right: 0; text-align: center; font-style: normal; font: 700 10px/1.2 var(--u-disp); color: #fff; background: rgba(0,0,0,.6); }
 .ss-sw { width: 44px; height: 44px; flex: none; border-radius: 10px; display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 2px var(--ink); }
 .ss-sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
+.ss-sw .ss-q { font: 800 26px/1 var(--u-disp); color: var(--ink); opacity: .75; } /* chưa chọn tướng: dấu hỏi (ngôi sao vàng trên nền vàng thì không thấy gì) */
 .ss-card .go { flex: none; min-width: 92px; height: 34px; padding: 0 12px; font-size: 15px; }
 .ss-frames { display: flex; flex-wrap: wrap; gap: 8px; } .ss-frames button { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 17px; border: 0; background: rgba(20,26,64,.9); color: #dfe6ff; font: 700 13px var(--u-body); box-shadow: inset 0 0 0 2px var(--fc); }
 .ss-frames button.on { background: var(--fc); color: #10121e; }
@@ -37,7 +38,7 @@ export function seasonHtml() {
     <div class="ss-grid">
       <div class="ss-card">${rankBadge(r, 56)}<div><b>${r.name}</b><small>Cao nhất mùa: ${peak.name} · thắng hạng ${p.seasonWins || 0} trận</small>
         <div class="ss-rings" title="Tướng thành thạo: ${MASTERY.heroes} tướng × ${MASTERY.wins} trận thắng hạng → ${FRAMES[MASTERY.frame].name}">${ringHtml}</div></div></div>
-      <div class="ss-card"><span class="ss-sw" style="background:${look.tint}">${sk.hero ? face(sk.hero) : icon('star')}</span><div><b>Trang phục mùa · ${look.name}</b>
+      <div class="ss-card"><span class="ss-sw" style="background:${look.tint}">${sk.hero ? face(sk.hero) : '<b class="ss-q">?</b>'}</span><div><b>Trang phục mùa · ${look.name}</b>
         <small>${sk.got ? `Đã nhận cho ${HEROES[sk.hero]?.name}` : sk.hero ? `${HEROES[sk.hero]?.name} · thắng ${sk.wins}/${sk.need} trận hạng` : `Chọn một tướng, thắng ${sk.need} trận hạng trong mùa để nhận`}</small>
         <span class="pbar"><i style="width:${(sk.wins / sk.need) * 100}%"></i></span></div>${skinBtn}</div>
     </div>

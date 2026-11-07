@@ -91,6 +91,9 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
   background: var(--g-head); box-shadow: var(--hl), 0 3px 0 var(--ink); }
 .ui-back { background: var(--gloss), var(--g-yel); box-shadow: var(--hl2), 0 3px 0 var(--ink); }
 .icb img.ui-ic { width: 86%; height: 86%; } .icb svg, .ui-back svg { width: 56%; height: 56%; }
+/* vùng chạm rộng hơn nút vẽ: điện thoại thu nhỏ cả giao diện (--uiz ~0,7 — nút 34 px vẽ ra chỉ ~24 px thật) — lớp trong suốt thò ra quanh nút */
+.icb::after, .ui-back::after { content: ''; position: absolute; inset: -7px; border-radius: 16px; }
+#home .hm-top .cur { cursor: pointer; } #home .hm-top .cur:active { transform: translateY(1px); } /* cả ô tiền là nút (dấu + chỉ 18 px) */
 .dia { position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(9px, calc(2.8 * var(--vh, 1vh)), 13px); padding: 0; border: 0; background: none; }
 .dia > i { position: relative; width: clamp(38px, calc(11.5 * var(--vh, 1vh)), 50px); height: clamp(38px, calc(11.5 * var(--vh, 1vh)), 50px); transform: rotate(45deg); border-radius: 12px; display: grid; place-items: center; transition: transform .08s;
   background: linear-gradient(135deg, #8dcbff, #4aa8ff 50%, #2c84de); box-shadow: inset 0 0 0 3px var(--ink), inset 7px 7px 0 rgba(255,255,255,.3), inset -8px -8px 0 rgba(0,0,0,.2), 0 4px 0 var(--ink); }
@@ -250,6 +253,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .seat .rk { margin-top: 3px; max-width: 118%; display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; overflow: hidden; } #room .seat .rk .rkb { width: 22px; height: 22px; flex: none; } #room .seat .rk em { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; } #room .seat .rk .rkb b { display: none; }
 #room .seat .host { position: absolute; z-index: 5; left: 50%; top: -14px; width: 26px; height: 26px; transform: translateX(-50%); filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); }
 #room .seat .kick { position: absolute; z-index: 5; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; border: 0; padding: 0; background: var(--g-red); color: #fff; font: 800 12px/22px var(--u-disp); box-shadow: 0 0 0 2px var(--ink), 0 2px 0 var(--ink); }
+#room .seat .kick::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; } /* nút ✕ 22 px: vùng chạm rộng hơn */
 #room .rm-side { position: absolute; right: 0; top: 0; bottom: 0; width: var(--side); padding: var(--t) var(--r) var(--b) 12px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; background: rgba(26,38,64,.96); }
 #room .rm-side::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
 #room .rm-tabs { display: flex; gap: 6px; flex: none; }
@@ -273,8 +277,11 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .rm-go { flex: none; width: 100%; height: clamp(44px, calc(13 * var(--vh, 1vh)), 54px); font-size: clamp(20px, calc(6.4 * var(--vh, 1vh)), 26px); }
 #room .rm-bot { position: absolute; left: var(--l); bottom: var(--b); display: flex; gap: 8px; align-items: center; }
 #room .rm-bot .chatln { width: min(calc(30 * var(--vw, 1vw)), 270px); height: 30px; border-radius: 15px; }
-#room .mm { position: absolute; left: calc((100% - var(--side)) / 2); bottom: calc(var(--b) + 54px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 6px 0 14px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 23px; background: var(--g-head); box-shadow: var(--hl), 0 4px 0 var(--ink); font: 700 16px/1 var(--u-disp); white-space: nowrap; }
-#room .mm b { font: 800 22px/1 var(--u-disp); color: var(--c-yel); min-width: 56px; }
+#room.mm-on .rm-bot { visibility: hidden; } /* đang tìm trận: ô tìm trận nằm chỗ dòng chat (không che tên / hạng dưới ghế của mình ở màn thấp) */
+#room .mm { position: absolute; left: calc((100% - var(--side)) / 2); bottom: var(--b); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 6px 0 14px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 23px; background: var(--g-head); box-shadow: var(--hl), 0 4px 0 var(--ink); font: 700 16px/1 var(--u-disp); white-space: nowrap; }
+#room .mm b { font: 800 22px/1 var(--u-disp); color: var(--c-yel); min-width: 56px; font-variant-numeric: tabular-nums; }
+#room .mm .tx { display: flex; flex-direction: column; justify-content: center; gap: 3px; } #room .mm .tx em { font-style: normal; }
+#room .mm .tx small { font: 600 11.5px/1 var(--u-body); color: var(--u-dim); } #room .mm .tx small:empty { display: none; }
 #room .mm button { height: 32px; padding: 0 14px; font-size: 15px; border-radius: 16px; }
 #room .mm .spin { width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%; border: 4px solid #33476e; border-top-color: var(--c-yel); animation: spin .8s linear infinite; }
 .found .dots { display: flex; gap: 9px; justify-content: center; margin: 16px 0 8px; } .found .dots i { width: 18px; height: 18px; transform: rotate(45deg); box-sizing: border-box; border-radius: 4px; background: var(--g-card); border: 3px solid var(--ink); transition: background .25s; }
@@ -341,6 +348,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 .pk-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; max-height: calc(58 * var(--vh, 1vh)); overflow: auto; text-align: left; padding: 2px; }
 .pk-spells button { display: grid; grid-template-columns: 42px 1fr; gap: 2px 8px; align-items: center; align-content: center; text-align: left; padding: 6px; border: 0; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); box-shadow: inset 0 0 0 2px var(--ink); }
 .pk-spells button.on { background: var(--g-yel); color: var(--ink); box-shadow: 0 0 0 3px var(--ink); }
+.pk-spells button.on b { color: var(--ink) !important; } .pk-spells button.on small { color: #3b4a68 !important; } /* thẻ đang chọn nền vàng: chữ mực (chữ vàng / trắng không đọc được) */
 .pk-spells button > :first-child { width: 42px; height: 42px; grid-row: span 2; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--ink); }
 .pk-spells button svg, .pk-spells button img { width: 42px; height: 42px; display: block; } .pk-spells b { font: 700 14px/1.1 var(--u-disp);  color: var(--c-yel); } .pk-spells small { font-size: 10px; color: #c8d0ea; line-height: 1.3; }
 

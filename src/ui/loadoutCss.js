@@ -51,7 +51,7 @@ const CSS = `
 .lo-edesc { margin: 0; font-size: 11.5px; line-height: 1.35; color: #dfe6ff; }
 .lo-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: calc(52 * var(--vh, 1vh)); overflow: auto; min-width: min(560px, calc(84 * var(--vw, 1vw))); text-align: left; padding: 2px; }
 .lo-pick button { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border: 0; border-radius: 8px; text-align: left; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 2px var(--ink); color: #e8eeff; }
-.lo-pick button.on { background: var(--g-yel); color: var(--ink); }
+.lo-pick button.on { background: var(--g-yel); color: var(--ink); } .lo-pick button.on b { color: var(--ink); } .lo-pick button.on small, .lo-pick button.on em { color: #3b4a68; } /* đang chọn: chữ mực trên nền vàng */
 .lo-pick b { font: 700 14px/1.1 var(--u-disp); color: var(--c-yel); } .lo-pick small { font-size: 10.5px; color: #9aa6c8; } .lo-pick em { font-style: normal; font-size: 10.5px; color: #a8d4ff; }
 #pick .pk-pill em.lv, #draft .dr-pill em.lv { font: 700 11px var(--u-disp); margin-left: 6px; color: #9ad0ff; font-style: normal; }
 @media (max-height: 420px) { .lo-sum { font-size: 10.5px; } .lo-key small { -webkit-line-clamp: 2; } .lo-board { gap: 4px; } .lo-key { min-height: 88px; } .lo-ch { min-height: 38px; padding: 2px 6px; } .lo-chs { gap: 3px; } .lo-ch .lo-gem { width: 28px; height: 28px; } }

@@ -24,7 +24,11 @@ export function zoomFor(W, H) {
 
 let started = false;
 function apply() {
-  const W = window.innerWidth, H = window.innerHeight, z = zoomFor(W, H);
+  const W = window.innerWidth, H = window.innerHeight;
+  // bàn phím ảo (Android thu khung nhìn khi gõ mã phòng / tên): giữ tỉ lệ cũ — không co cả giao diện giữa lúc đang gõ; đóng bàn phím (cao lại) thì tính lại
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
+  if (typing && VP.h && W === VP.w && H < VP.h) return;
+  const z = zoomFor(W, H);
   VP.z = z; VP.w = W; VP.h = H;
   const s = document.documentElement.style, px = (v) => `${Math.round(v * 1000) / 1000}px`;
   s.setProperty('--uiz', String(z));

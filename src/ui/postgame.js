@@ -52,8 +52,10 @@ const STYLE = `
 #pg .score .lbl { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font: 700 15px/1 var(--u-disp);  color: var(--u-gc); } #pg .score .lbl em { font: 600 12px var(--u-body); font-style: normal; letter-spacing: 0; color: #c8d0ea; } #pg .score .mvp { font-size: 16px; padding: 3px 12px; }
 #pg .kda { display: flex; gap: clamp(14px, calc(3 * var(--vw, 1vw)), 30px); } #pg .kda span { display: flex; flex-direction: column; align-items: center; font: 800 clamp(22px, calc(7 * var(--vh, 1vh)), 32px)/1 var(--u-disp); }
 #pg .kda small { margin-top: 3px; font: 700 11px/1 var(--u-disp);   color: #a8b4d8; } #pg .kda .k { color: #9fe8ff; } #pg .kda .d { color: #ff9a8a; } #pg .kda .a { color: #b8ffcc; }
-#pg .ttl { align-self: flex-start; display: flex; flex-direction: column; gap: 2px; padding: 5px 28px 5px 14px; background: var(--g-head); border: 3px solid var(--ink); border-radius: 12px; box-shadow: var(--hl), 0 3px 0 var(--ink); }
-#pg .ttl b { font: 800 clamp(17px, calc(5.4 * var(--vh, 1vh)), 24px)/1 var(--u-disp);  color: var(--c-yel); } #pg .ttl small { font-size: 11.5px; color: #eef1f8; }
+#pg .ttl { align-self: flex-start; display: flex; align-items: center; gap: 10px; padding: 4px 22px 4px 4px; background: var(--g-head); border: 3px solid var(--ink); border-radius: 14px; box-shadow: var(--hl), 0 3px 0 var(--ink); max-width: 100%; box-sizing: border-box; }
+#pg .ttl > i { flex: none; width: clamp(30px, calc(9.5 * var(--vh, 1vh)), 40px); height: clamp(30px, calc(9.5 * var(--vh, 1vh)), 40px); border-radius: 10px; display: grid; place-items: center; background: var(--gloss), var(--g-yel); border: 2px solid var(--ink); box-sizing: border-box; }
+#pg .ttl > i img.ui-ic { width: 86%; height: 86%; } #pg .ttl > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+#pg .ttl b { font: 800 clamp(17px, calc(5.4 * var(--vh, 1vh)), 24px)/1 var(--u-disp); color: var(--c-yel); -webkit-text-stroke: .07em var(--ink); paint-order: stroke fill; } #pg .ttl small { font-size: 11.5px; line-height: 1.2; color: #eef1f8; }
 #pg .meds { display: flex; gap: clamp(12px, calc(2.4 * var(--vw, 1vw)), 24px); }
 #pg .md { display: flex; flex-direction: column; align-items: center; gap: 3px; width: clamp(60px, calc(9 * var(--vw, 1vw)), 84px); }
 #pg .md i { position: relative; width: clamp(40px, calc(12 * var(--vh, 1vh)), 56px); height: clamp(40px, calc(12 * var(--vh, 1vh)), 56px); border-radius: 50%; display: grid; place-items: center; background: var(--g-card); box-shadow: var(--hl), 0 2px 0 var(--ink); }
@@ -90,21 +92,23 @@ const STYLE = `
 #pg .pr .kd { font: 700 15px/1 var(--u-disp);  text-align: center; white-space: nowrap; }
 #pg .pr .g { display: flex; align-items: center; justify-content: flex-end; gap: 1px; font: 700 14px/1 var(--u-disp); color: var(--c-yel); } #pg .pr .g img.ui-ic { width: 18px; height: 18px; }
 #pg .pr.det, #pg .dh { grid-template-columns: clamp(32px, calc(9.5 * var(--vh, 1vh)), 42px) repeat(3, minmax(0, 1fr)) 60px; gap: 6px; }
-#pg .dh { display: grid; align-items: end; padding: 0 8px 2px; font: 700 10.5px/1.1 var(--u-disp);   color: #a8b4d8; }
+#pg .dh { display: grid; align-items: end; padding: 0 8px 2px; font: 700 10.5px/1.1 var(--u-disp); color: #a8b4d8; } #pg .dh span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #pg .sh { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 5px; align-items: baseline; gap: 0 4px; min-width: 0; }
 #pg .sh b { font: 800 16px/1 var(--u-disp); } #pg .sh small { font-size: 10px; color: #a8b4d8; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #pg .sh .pbar { grid-column: 1 / -1; height: 5px; margin-top: 3px; } #pg .sh.top b { color: var(--u-gc); }
 #pg .pbar.red > i { background: var(--g-red); box-shadow: none; }
 #pg .pr.det .its { display: grid; grid-template-columns: repeat(3, 18px); gap: 2px; } #pg .pr.det .its .ic { width: 18px; height: 18px; }
 #pg .its { display: flex; gap: 2px; } #pg .its .ic { width: 20px; height: 20px; border-radius: 4px; border-width: 1px; overflow: hidden; display: block; background: rgba(0,0,0,.4); } #pg .its .ic img, #pg .its .ic svg { width: 100%; height: 100%; display: block; }
-#pg .bb { display: flex; justify-content: flex-end; gap: 10px; } #pg .bb button { height: 42px; min-width: 116px; font-size: 19px; } #pg .bb .btn-gold { min-width: 160px; }
+#pg .bb { display: flex; align-items: center; justify-content: flex-end; gap: 10px; } #pg .bb .tabs { margin-right: auto; flex: none; } #pg .bb > button { height: 42px; min-width: 116px; font-size: 19px; } #pg .bb > .btn-gold { min-width: 160px; }
 .pg-tab { width: 100%; border-collapse: collapse; font-size: 12px; } .pg-tab th, .pg-tab td { padding: 6px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.07); white-space: nowrap; }
 .pg-tab th { font: 700 12px/1.2 var(--u-disp);   color: var(--u-gc); background: rgba(4,6,20,.6); } .pg-tab th small { font-weight: 600; color: #a8b4d8; } .pg-tab td:first-child, .pg-tab th:first-child { text-align: left; }
 .pg-tab tr:nth-child(even) td { background: rgba(255,255,255,.025); } .pg-tab tr.me td { color: var(--c-yel); font-weight: 800; background: rgba(255,210,63,0.1); } .pg-tab tr.t1 td:first-child { color: #ff9a8a; } .pg-tab tr.t0 td:first-child { color: #9fd8ff; } .pg-tab .tot { font: 800 15px var(--u-disp); color: #fff; }
 .pg-how { margin-top: 10px; font-size: 12px; line-height: 1.6; color: #c8d0ea; } .pg-how b { color: var(--c-yel); }
 @media (max-height: 400px) { #pg .self .st { gap: 3px; } #pg .score > b { font-size: 44px; } #pg .ttl small { display: none; } #pg .md i { width: 36px; height: 36px; } #pg .md small { font-size: 10px; }
-  #pg .parts { gap: 1px 8px; } #pg .parts div { font-size: 10px; } #pg .rw > span { height: 26px; font-size: 13px; } #pg .tap { display: none; } }
-@media (max-width: 760px) { #pg .parts { display: none; } #pg .pr { grid-template-columns: 32px 46px minmax(0, 1fr) 54px 46px; } #pg .pr .hn { display: none; } #pg .pr.det, #pg .dh { grid-template-columns: 32px repeat(3, minmax(0, 1fr)); } #pg .pr.det .its, #pg .dh .di { display: none; } }
+  #pg .parts { gap: 1px 8px; } #pg .parts div { font-size: 10px; } #pg .rw > span { height: 26px; font-size: 13px; } #pg .tap { display: none; }
+  #pg .board { gap: 6px; } #pg .col { gap: 4px; } #pg .pr { padding-top: 1px; padding-bottom: 1px; } #pg .bh { padding-bottom: 2px; } #pg .bb > button { height: 38px; }
+  #pg .pr.det .its { grid-template-columns: repeat(3, 16px); } #pg .pr.det .its .ic { width: 16px; height: 16px; } }
+@media (max-width: 760px) { #pg .bb > button, #pg .bb > .btn-gold { min-width: 0; padding: 0 16px; } #pg .parts { display: none; } #pg .pr { grid-template-columns: 32px 46px minmax(0, 1fr) 54px 46px; } #pg .pr .hn { display: none; } #pg .pr.det, #pg .dh { grid-template-columns: 32px repeat(3, minmax(0, 1fr)); } #pg .pr.det .its, #pg .dh .di { display: none; } }
 `;
 let styled = false;
 const css = () => { if (styled) return; styled = true; const s = document.createElement('style'); s.textContent = STYLE; document.head.append(s); };
@@ -154,7 +158,7 @@ export function openPostgame(o) {
     el.innerHTML = `${bg.replace('class="rays"', 'class="rays l"')}<div class="self"><div class="fig in"><img src="${fullSrc(me.heroId)}" alt="" draggable="false"></div><div class="st">
       <div class="score in"><b class="${win ? 'gt' : 'gs'}">${me.score.toFixed(1)}</b><span class="lbl">ĐIỂM ĐÁNH GIÁ${mvpChip(me)}<em>${win ? 'Chiến thắng' : 'Thất bại'} · ${o.modeName}</em></span></div>
       <div class="kda in" style="animation-delay:.08s"><span class="k">${me.k}<small>Hạ</small></span><span class="d">${me.d}<small>Chết</small></span><span class="a">${me.a}<small>Hỗ trợ</small></span><span>${me.kda.toFixed(1)}<small>KDA</small></span></div>
-      <div class="ttl in" style="animation-delay:.16s"><b>&lt;${t.name}&gt;</b><small>${t.desc}</small></div>
+      <div class="ttl in" style="animation-delay:.16s"><i>${icon('trophy')}</i><div><b>${t.name}</b><small>${t.desc}</small></div></div>
       <div class="meds in" style="animation-delay:.24s">${med('gold', 'Vàng tổng', kfmt(me.gold))}${med('k', 'Hạ', me.k)}${med('taken', 'Chịu ST', kfmt(me.taken))}${med('dmg', 'Gây ST', kfmt(me.dmg))}</div>
       <div class="parts in" style="animation-delay:.3s">${parts}</div>
       <div class="rw in" style="animation-delay:.36s">${reward}${notes}</div>${cg}
@@ -176,9 +180,8 @@ export function openPostgame(o) {
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     el.innerHTML = `<div class="bg"></div><div class="board">
       <div class="bh"><span class="r ${win ? 'gt' : 'gs'}">${win ? 'CHIẾN THẮNG' : 'THẤT BẠI'}</span><span class="vs"><b class="b">${kills(mine)}</b><em>VS</em><b class="rd">${kills(theirs)}</b></span><span class="tm"><b>${fmtDur(o.ticks)}</b><small>${o.surrender ? o.surrender + ' · ' : ''}${o.modeName} · ${date}</small></span></div>
-      <nav class="tabs"><button type="button" data-t="sum" class="${tab === 'sum' ? 'on' : ''}">Giản lược</button><button type="button" data-t="det" class="${tab === 'det' ? 'on' : ''}">Chi tiết</button></nav>
       <div class="cols"><div class="col ally">${head()}${mine.map(row).join('')}</div><div class="col foe">${head()}${theirs.map(row).join('')}</div></div>
-      <div class="bb"><button type="button" class="btn-blue" data-a="stats">Số liệu</button><button type="button" class="btn-blue" data-a="home">Sảnh</button><button type="button" class="btn-gold" data-a="again">Đấu lại</button></div></div>`;
+      <div class="bb"><nav class="tabs"><button type="button" data-t="sum" class="${tab === 'sum' ? 'on' : ''}">Giản lược</button><button type="button" data-t="det" class="${tab === 'det' ? 'on' : ''}">Chi tiết</button></nav><button type="button" class="btn-blue" data-a="stats">Số liệu</button><button type="button" class="btn-blue" data-a="home">Sảnh</button><button type="button" class="btn-gold" data-a="again">Đấu lại</button></div></div>`;
   };
   const stats = () => {
     const { body } = panel({ title: 'Số liệu trận đấu' });
