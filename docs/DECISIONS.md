@@ -1078,6 +1078,6 @@
 - 2026-11-07: **Phòng tuỳ chỉnh v2:** thẻ bản đồ có sơ đồ (5v5 ba đường / 1v1 một đường), công tắc Máy điền chỗ trống, 4 ô mã kiểu OTP (một ô
   nhập thật trong suốt phủ lên — bàn phím / dán / tự điền như thường; đủ 4 ký tự là vào luôn, mã sai thì rung), nút **Mời** chia sẻ link
   `?room=MÃ` (navigator.share, không có thì chép) — mở link là vào thẳng phòng (main.js đọc rồi bỏ `?room` khỏi địa chỉ). Hàng chờ: máy chủ gửi
-  `left` (giây tới lúc máy điền chỗ), ô tìm trận ghi "Máy vào thay chỗ trống sau 0:42" và nằm chỗ dòng chat (trước che tên dưới ghế mình ở màn
-  thấp). Màn kết quả: danh hiệu thành huy hiệu có cúp (bỏ "<…>"), thẻ Giản lược / Chi tiết xuống thanh dưới để bảng thấy đủ 5 người không cần
+  `left` (giây tới lúc máy điền chỗ), ô tìm trận ghi "Máy vào thay chỗ trống sau 0:42" và thay dòng thông tin dưới tiêu đề (trước nằm giữa đáy màn,
+  che tên / vị trí dưới ghế mình ở màn thấp). Màn kết quả: danh hiệu thành huy hiệu có cúp (bỏ "<…>"), thẻ Giản lược / Chi tiết xuống thanh dưới để bảng thấy đủ 5 người không cần
   cuộn ở màn 360 px. Cả ô tiền ở sảnh là nút (dấu + chỉ 18 px), nút quay lại / nút tròn có vùng chạm rộng hơn hình vẽ 7 px.

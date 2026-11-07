@@ -277,11 +277,13 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .rm-go { flex: none; width: 100%; height: clamp(44px, calc(13 * var(--vh, 1vh)), 54px); font-size: clamp(20px, calc(6.4 * var(--vh, 1vh)), 26px); }
 #room .rm-bot { position: absolute; left: var(--l); bottom: var(--b); display: flex; gap: 8px; align-items: center; }
 #room .rm-bot .chatln { width: min(calc(30 * var(--vw, 1vw)), 270px); height: 30px; border-radius: 15px; }
-#room.mm-on .rm-bot { visibility: hidden; } /* đang tìm trận: ô tìm trận nằm chỗ dòng chat (không che tên / hạng dưới ghế của mình ở màn thấp) */
-#room .mm { position: absolute; left: calc((100% - var(--side)) / 2); bottom: var(--b); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 6px 0 14px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 23px; background: var(--g-head); box-shadow: var(--hl), 0 4px 0 var(--ink); font: 700 16px/1 var(--u-disp); white-space: nowrap; }
-#room .mm b { font: 800 22px/1 var(--u-disp); color: var(--c-yel); min-width: 56px; font-variant-numeric: tabular-nums; }
-#room .mm .tx { display: flex; flex-direction: column; justify-content: center; gap: 3px; } #room .mm .tx em { font-style: normal; }
-#room .mm .tx small { font: 600 11.5px/1 var(--u-body); color: var(--u-dim); } #room .mm .tx small:empty { display: none; }
+/* đang tìm trận: ô tìm trận thay dòng thông tin dưới tiêu đề (chế độ / bản đồ / máy) — không che ghế, tên, vị trí dưới ghế mình, dòng chat */
+#room.mm-on .rm-sub { visibility: hidden; }
+#room .mm { position: absolute; left: calc(var(--l) + 2px); top: calc(var(--t) + clamp(42px, calc(12 * var(--vh, 1vh)), 50px)); max-width: calc(100% - var(--side) - var(--l) - 16px); display: flex; align-items: center; gap: 10px; height: clamp(38px, calc(11.4 * var(--vh, 1vh)), 46px); padding: 0 5px 0 12px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 22px; background: var(--g-head); box-shadow: var(--hl), 0 3px 0 var(--ink); font: 700 15px/1 var(--u-disp); white-space: nowrap; animation: scrIn .2s; }
+#room .mm b { flex: none; font: 800 21px/1 var(--u-disp); color: var(--c-yel); min-width: 54px; font-variant-numeric: tabular-nums; }
+#room .mm .tx { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; } #room .mm .tx em { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+#room .mm .tx small { font: 600 11.5px/1 var(--u-body); color: var(--u-dim); overflow: hidden; text-overflow: ellipsis; } #room .mm .tx small:empty { display: none; }
+#room .mm .spin { flex: none; } #room .mm button { flex: none; }
 #room .mm button { height: 32px; padding: 0 14px; font-size: 15px; border-radius: 16px; }
 #room .mm .spin { width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%; border: 4px solid #33476e; border-top-color: var(--c-yel); animation: spin .8s linear infinite; }
 .found .dots { display: flex; gap: 9px; justify-content: center; margin: 16px 0 8px; } .found .dots i { width: 18px; height: 18px; transform: rotate(45deg); box-sizing: border-box; border-radius: 4px; background: var(--g-card); border: 3px solid var(--ink); transition: background .25s; }

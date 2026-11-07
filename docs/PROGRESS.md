@@ -671,7 +671,7 @@ Còn lại:
   kín, bàn phím ảo làm giao diện co lại, chữ chìm trên thẻ đang chọn (Phép bổ trợ / Chọn bảng bùa) và ô Trang phục mùa, số giờ hồi quái chồng nhau
   trên bản đồ nhỏ ở màn thấp, lớp CSS trùng tên lớp toàn cục (mã phòng bị ẩn, ô mã lệch).
 - **Giao diện:** Phòng tuỳ chỉnh v2 (thẻ bản đồ có sơ đồ, công tắc máy, 4 ô mã, nút Mời chia sẻ link `?room=MÃ` — mở là vào thẳng phòng), hàng chờ
-  đếm ngược tới lúc máy vào thay, màn kết quả thấy đủ 5 người không cần cuộn + danh hiệu thành huy hiệu, vùng chạm rộng hơn cho nút nhỏ.
+  đếm ngược tới lúc máy vào thay (ô tìm trận thay dòng thông tin dưới tiêu đề, không che ghế), màn kết quả thấy đủ 5 người không cần cuộn + danh hiệu thành huy hiệu, vùng chạm rộng hơn cho nút nhỏ.
 - **Kiểm thử:** node `t_*.mjs` 40/40 + `simtest` đạt; `b_prog` 151, `b_flow` 93, `b_layout` 104, `b_fit` 9 máy (thêm kiểm chữ chìm) đạt, `b_invite`
   (mới) đạt, `b_match` đạt (kịch bản Tập hợp sửa cho máy chạm chậm). 8 trận toàn máy: 8/8 kết thúc, 0 lần kẹt (như trước khi sửa). Còn lệch mốc đo
   thời gian trên máy thử không GPU — `b_gd3` đấu lại về phòng chờ (3,2–3,6 s), giữ shader; `b_pwa` mở lần hai (trung vị 3,1 s) — **bản trước khi sửa
