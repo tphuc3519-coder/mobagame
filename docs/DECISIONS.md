@@ -1081,3 +1081,13 @@
   `left` (giây tới lúc máy điền chỗ), ô tìm trận ghi "Máy vào thay chỗ trống sau 0:42" và thay dòng thông tin dưới tiêu đề (trước nằm giữa đáy màn,
   che tên / vị trí dưới ghế mình ở màn thấp). Màn kết quả: danh hiệu thành huy hiệu có cúp (bỏ "<…>"), thẻ Giản lược / Chi tiết xuống thanh dưới để bảng thấy đủ 5 người không cần
   cuộn ở màn 360 px. Cả ô tiền ở sảnh là nút (dấu + chỉ 18 px), nút quay lại / nút tròn có vùng chạm rộng hơn hình vẽ 7 px.
+- 2026-11-09: **UI v5 "Sơn mài đêm hội" thay UI v4.1** — chủ dự án: giao diện vẫn *"AI đặc trưng quá"*, muốn *"thiết kế nhìn con người mà
+  đẹp hơn"*. Soi lại thì cái "chất AI" không nằm ở một chi tiết mà ở sự đồng loạt: mọi khung / nút / nhãn cùng một công thức (viền mực 3px
+  + bóng cứng + mép sáng), tiêu đề vàng viền đen đắp nổi, nút bóng kiểu kẹo, biểu tượng 3D bóng loáng có dải kim loại, ảnh nền render rực,
+  thẻ nào cũng một đoạn mô tả. Chọn một hướng có chất liệu riêng thay vì chỉnh màu: tranh sơn mài (nền đen nâu, chỉ vàng mảnh, son đỏ, vàng
+  quỳ, ngọc) + đêm hội đèn lồng — đúng tên game và văn hoá Việt. Có thứ bậc: chỉ nút chính tô son, chọn = vàng quỳ, còn lại viền chỉ.
+  Tiêu đề Fraunces (có chân, ấm); nhãn / số / nút Be Vietnam Pro (bỏ Baloo 2 — cả chữ canvas trong trận). Biểu tượng vẽ lại bằng SVG nét
+  vàng (`tools/uiart/icons5.mjs`, bỏ 21 ảnh webp cũ). Ảnh render dịu màu ngả ấm bằng CSS (không đổi ảnh gốc). Nhãn kiểu con dấu son hơi
+  nghiêng, khung lớn có nẹp góc vàng + vân giấy dó (SVG, không ảnh). Làm bằng token + thành phần chung trong css.js và một lượt đổi tự động
+  các màu / viền / bóng cũ trong chuỗi CSS của mọi màn (không đổi kích thước, id, selector — bố cục và kiểm thử giữ nguyên); `b_fit` kiểm
+  chữ chìm bắt được các chỗ chữ sáng trên nền vàng. Màu đội Xanh / Đỏ trong trận, ảnh tướng, biểu tượng chiêu / đồ không đổi (nội dung game).

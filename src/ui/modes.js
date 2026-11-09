@@ -32,16 +32,16 @@ export function modeDiff(mode) {
 }
 
 const CARDS = [
-  { mode: 'normal', tag: 'TRỰC TUYẾN', pos: '48%', desc: () => 'Ghép với người chơi thật. Chờ quá 1 phút chưa đủ người thì máy vào thay chỗ trống.' },
-  { mode: 'ranked', tag: 'XẾP HẠNG', pos: '22%', hot: true, badge: true, desc: () => `Trực tuyến, leo hạng: thắng +1 sao, thua −1 sao. Hạng hiện tại: ${rankNow().name}.` },
-  { mode: 'peak', tag: 'ĐỈNH CAO', pos: '62%', badge: true, peak: true, desc: () => { const s = peakNow(); return s.open ? `Trực tuyến, máy ${DIFFICULTY.nightmare.name} điền chỗ, thắng ×1,5 Hào Quang. Mở tới 24:00.` : s.tierOk ? `${s.reason}. Thắng ×1,5 Hào Quang.` : `Từ Nguyệt Quang, mở ${PEAK.from}:00–24:00.`; } },
-  { mode: 'custom', tag: 'MÃ PHÒNG', pos: '50%', img: 'room.jpg', go: 'custom', desc: () => 'Tự tạo phòng, gửi mã cho bạn bè vào cùng. Chọn đội, bật / tắt máy.' },
-  { mode: 'ai', title: 'Đấu máy', tag: 'NGOẠI TUYẾN', pos: '78%', blue: true, sub: true, desc: () => 'Chơi một mình với máy, không cần mạng: 5v5, 1v1, Luyện tập.' },
+  { mode: 'normal', tag: 'TRỰC TUYẾN', pos: '48%', desc: () => 'Ghép người thật · thiếu người thì máy vào sau 1 phút' },
+  { mode: 'ranked', tag: 'XẾP HẠNG', pos: '22%', hot: true, badge: true, desc: () => 'Thắng +1 sao, thua −1 sao' },
+  { mode: 'peak', tag: 'ĐỈNH CAO', pos: '62%', badge: true, peak: true, desc: () => { const s = peakNow(); return s.open ? 'Thắng ×1,5 Hào Quang · mở tới 24:00' : s.tierOk ? s.reason : `Từ Nguyệt Quang · ${PEAK.from}:00–24:00`; } },
+  { mode: 'custom', tag: 'MÃ PHÒNG', pos: '50%', img: 'room.jpg', go: 'custom', desc: () => 'Tạo phòng, gửi link mời bạn bè' },
+  { mode: 'ai', title: 'Đấu máy', tag: 'NGOẠI TUYẾN', pos: '78%', blue: true, sub: true, desc: () => 'Một mình với máy · không cần mạng' },
 ];
 const AI_CARDS = [
-  { mode: 'ai', tag: '5V5', pos: '48%', diff: true, desc: () => 'Bản đồ ba đường, 10 tướng. Đồng đội và đối thủ là máy.' },
-  { mode: 'solo', tag: '1V1', pos: '78%', diff: true, desc: () => 'Một đường, đối đầu tay đôi với máy. Nhận 70% vàng.' },
-  { mode: 'training', tag: 'TẬP', pos: '50%', img: 'room.jpg', blue: true, diff: true, desc: () => 'Tự chọn đối thủ hoặc hình nộm, không tính thưởng.' },
+  { mode: 'ai', tag: '5V5', pos: '48%', diff: true, desc: () => 'Ba đường · 10 tướng' },
+  { mode: 'solo', tag: '1V1', pos: '78%', diff: true, desc: () => 'Một đường · tay đôi với máy' },
+  { mode: 'training', tag: 'TẬP', pos: '50%', img: 'room.jpg', blue: true, diff: true, desc: () => 'Hình nộm hoặc đối thủ tự chọn' },
 ];
 
 function cardsPanel(nav, { title, cards, onSub }) {

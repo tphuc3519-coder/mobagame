@@ -13,7 +13,7 @@ const TEAM = ['#38b8ff', '#ff4a3a'];
 export function createMinimap({ world, player, map, cam, fog = null, portraits = null, layout = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
-  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:3px solid #0f1729;border-radius:12px;background:#1a2640;box-shadow:0 3px 0 #0f1729;touch-action:none';
+  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:1px solid rgba(216,180,104,.4);border-radius:8px;background:#1a1310;box-shadow:0 4px 14px rgba(0,0,0,.4);touch-action:none';
   document.body.appendChild(track(cv));
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 

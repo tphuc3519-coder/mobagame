@@ -35,26 +35,26 @@ const left = (exp) => { const ms = exp - Date.now(), h = Math.floor(ms / 3600000
 
 const CSS = `
 #rewardScr { position: absolute; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(4 * var(--vh, 1vh)); padding: max(14px, var(--st, env(safe-area-inset-top))) max(16px, var(--sr, env(safe-area-inset-right))) max(14px, var(--sb, env(safe-area-inset-bottom))) max(16px, var(--sl, env(safe-area-inset-left)));
-  background: radial-gradient(60% 60% at 50% 45%, rgba(40,32,80,.93), rgba(3,4,14,.98));   animation: rwIn .25s ease-out; overflow: hidden; }
-#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 12% 30%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
-  radial-gradient(2px 2px at 34% 72%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 64% 80%, #bfe3ff, transparent), radial-gradient(2.5px 2.5px at 88% 58%, rgba(255,210,63,0.9), transparent), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
+  background: var(--grain), radial-gradient(60% 60% at 50% 45%, rgba(46,33,26,.95), rgba(10,7,6,.98));   animation: rwIn .25s ease-out; overflow: hidden; }
+#rewardScr .sp { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(2px 2px at 12% 30%, rgba(216,180,104,0.9), transparent), radial-gradient(1.5px 1.5px at 78% 22%, #fff, transparent),
+  radial-gradient(2px 2px at 34% 72%, rgba(216,180,104,0.9), transparent), radial-gradient(1.5px 1.5px at 64% 80%, #f2e7d0, transparent), radial-gradient(2.5px 2.5px at 88% 58%, rgba(216,180,104,0.9), transparent), radial-gradient(1.5px 1.5px at 22% 86%, #fff, transparent);
   animation: rwTw 3.2s ease-in-out infinite alternate; opacity: .8; }
 #rewardScr h2 { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; font: 800 clamp(26px, calc(5.4 * var(--vh, 1vh)), 44px)/1 var(--u-disp);   }
-#rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, calc(16 * var(--vw, 1vw)), 200px); height: 4px; border-radius: 2px; background: var(--g-yel); box-shadow: var(--hl), 0 2px 0 var(--ink); }
+#rewardScr h2::before, #rewardScr h2::after { content: ''; width: clamp(60px, calc(16 * var(--vw, 1vw)), 200px); height: 1px; border-radius: 1px; background: var(--g-yel); box-shadow: var(--hl), 0 2px 8px rgba(0,0,0,.28); }
 #rewardScr h2::after { transform: scaleX(-1); }
 #rewardScr h2 i { position: absolute; left: 50%; bottom: -14px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: var(--g-yel); box-shadow: none; }
 #rewardScr .rw { display: grid; grid-template-columns: repeat(var(--cols), clamp(78px, calc(15 * var(--vh, 1vh)), 112px)); gap: clamp(10px, calc(2.4 * var(--vh, 1vh)), 18px); justify-content: center; }
 #rewardScr .tl { position: relative; aspect-ratio: 1; display: grid; place-items: center; border-radius: 12px; cursor: pointer; padding: 0; border: 0;
-  background: radial-gradient(70% 70% at 50% 35%, rgba(255,210,63,0.22), rgba(20,26,64,.92)), #141a40; box-shadow: inset 0 0 0 2px var(--ink), 0 4px 0 var(--ink);
+  background: radial-gradient(70% 70% at 50% 35%, rgba(216,180,104,0.22), rgba(26,19,16,.94)), #1a1310; box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px rgba(0,0,0,.3);
   animation: rwPop .42s cubic-bezier(.2,.9,.3,1.35) both; animation-delay: calc(var(--i) * 120ms); }
-#rewardScr .tl img.ui-ic { width: 58%; height: 58%; filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); }
-#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 17px/1 var(--u-disp); color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); }
+#rewardScr .tl img.ui-ic { width: 58%; height: 58%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+#rewardScr .tl b { position: absolute; right: 7px; bottom: 5px; font: 800 17px/1 var(--u-disp); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 #rewardScr .tl em { position: absolute; left: 0; right: 0; top: -9px; margin: auto; width: max-content; padding: 1px 7px; border-radius: 8px; font: 700 10px/1.5 var(--u-body); font-style: normal; color: var(--ink); background: var(--g-yel); }
-#rewardScr .tl.on { box-shadow: inset 0 0 0 2px var(--c-yel), 0 0 0 3px var(--c-yel); }
-#rewardScr .tip { position: absolute; z-index: 2; width: min(260px, calc(70 * var(--vw, 1vw))); padding: 10px 12px; text-align: left; border-radius: 10px; background: rgba(8,10,30,.97); box-shadow: inset 0 0 0 2px var(--ink), 0 4px 0 var(--ink); font-size: 13px; color: #dfe6ff; line-height: 1.45; pointer-events: none; }
+#rewardScr .tl.on { box-shadow: inset 0 0 0 2px var(--c-yel), 0 0 0 2px var(--gold); }
+#rewardScr .tip { position: absolute; z-index: 2; width: min(260px, calc(70 * var(--vw, 1vw))); padding: 10px 12px; text-align: left; border-radius: 10px; background: rgba(20,14,12,.97); box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px rgba(0,0,0,.3); font-size: 13px; color: #e9dcc1; line-height: 1.45; pointer-events: none; }
 #rewardScr .tip h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 800 15px/1.2 var(--u-body); color: var(--c-yel); } #rewardScr .tip h4 img { width: 22px; height: 22px; }
-#rewardScr .tip small { display: block; color: #9fb0d8; } #rewardScr .tip .x { color: var(--c-yel); font-weight: 700; }
-#rewardScr .go { padding: 9px 26px; border-radius: 22px; font-size: 14px; color: #dfe6ff; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px var(--ink); animation: rwIn .4s ease-out both; animation-delay: calc(var(--n) * 120ms + 300ms); }
+#rewardScr .tip small { display: block; color: var(--ivory3); } #rewardScr .tip .x { color: var(--c-yel); font-weight: 700; }
+#rewardScr .go { padding: 9px 26px; border-radius: 22px; font-size: 14px; color: #e9dcc1; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px var(--line); animation: rwIn .4s ease-out both; animation-delay: calc(var(--n) * 120ms + 300ms); }
 @keyframes rwIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rwPop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes rwTw { from { opacity: .45; } to { opacity: .95; } }

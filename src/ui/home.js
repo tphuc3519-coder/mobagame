@@ -46,7 +46,7 @@ export function openHome(nav) {
         <button type="button" class="icb" data-a="settings" aria-label="Cài đặt">${icon('gear')}</button></div>
       <div class="hm-side">
         <button type="button" class="hm-ev fr" data-a="event"><i class="pic"></i><em class="tagr">Sự kiện</em>
-          <span class="tt"><b class="gt">LỄ HỘI ĐÈN LỒNG</b><small>Điểm danh 7 ngày nhận tới 2.200 vàng</small></span>
+          <span class="tt"><b class="gt">Lễ hội Đèn Lồng</b><small>Điểm danh 7 ngày nhận tới 2.200 vàng</small></span>
           <span class="evp"><span class="pbar"><i style="width:${Math.round((ev / 7) * 100)}%"></i></span><em>${ev}/7</em></span>${icon('chest', 'deco')}</button>
         <div class="hm-tiles">
           <button type="button" class="tile fr" data-a="missions">${icon('scroll')}<span>Sứ mệnh</span>${miss ? `<i class="badge">${miss}</i>` : ''}</button>

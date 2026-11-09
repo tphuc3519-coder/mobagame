@@ -4,13 +4,13 @@
 import { HEROES } from '../data/heroes/index.js';
 
 let gid = 0;
-const GOLD = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d6"/><stop offset=".55" stop-color="#f0c868"/><stop offset="1" stop-color="#b8862e"/></linearGradient>`;
+const GOLD = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efd9a0"/><stop offset="1" stop-color="#cfa95c"/></linearGradient>`; // UI v5: vàng quỳ gần phẳng (bỏ ánh kim)
 const svg = (body, vb = 24) => { const id = 'kg' + gid++; return `<svg viewBox="0 0 ${vb} ${vb}" aria-hidden="true"><defs>${GOLD(id)}</defs>${body.replaceAll('$G', `url(#${id})`)}</svg>`; };
 
-/** Biểu tượng vẽ sẵn (webp nền trong suốt 256²): coin, coins, gem, mail, gear, trophy, friends, chat, scroll, swords, helmet, items, bag,
- *  book, hourglass, chest, lantern, star, target, shop, bolt, rank_<bậc>. */
+/** Biểu tượng giao diện (UI v5: SVG nét vàng vẽ tay — tools/uiart/icons5.mjs): coin, coins, gem, mail, gear, trophy, friends, chat, scroll,
+ *  swords, helmet, items, bag, book, hourglass, chest, lantern, star, target, shop, bolt; huy hiệu hạng rank_<bậc> (webp vẽ sẵn). */
 export const ICONS = ['coin', 'coins', 'gem', 'mail', 'gear', 'trophy', 'friends', 'chat', 'scroll', 'swords', 'helmet', 'items', 'bag', 'book', 'hourglass', 'chest', 'lantern', 'star', 'target', 'shop', 'bolt'];
-export const iconSrc = (name) => `./assets/ui/icons/${name}.webp`;
+export const iconSrc = (name) => `./assets/ui/icons/${name}${name.startsWith('rank_') ? '.webp' : '.svg'}`; // UI v5: biểu tượng nét vẽ SVG (tools/uiart/icons5.mjs); huy hiệu hạng vẫn ảnh vẽ sẵn
 export const icon = (name, cls = '') => `<img class="ui-ic ${cls}" src="${iconSrc(name)}" alt="" draggable="false">`;
 
 export const ICON = {

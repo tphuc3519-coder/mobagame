@@ -28,7 +28,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
   S.mode = mode; S.match = null; S.pick = null;
   stageOn(false);
   const el = document.createElement('div'); el.id = 'room'; el.className = 'scr';
-  el.style.backgroundImage = 'url(./assets/ui/room.jpg)';
+  el.style.setProperty('--bg', 'url(./assets/ui/room.jpg)'); // css.js: phủ lớp ngả ấm (UI v5)
   document.getElementById('ui').append(el);
   const timers = new Set();
   const later = (ms, fn) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
