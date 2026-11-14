@@ -71,7 +71,7 @@ export function updateItems(world, e) {
  *  Hồi chiêu riêng từng món, không giảm bởi giảm hồi chiêu, chỉ tính khi kích hoạt thành công; bị khống chế cứng thì không dùng được (trừ
  *  món `inCC`); dùng được thì huỷ Biến về. (Áp chế / Sương Đông chặn ở commands.js.) */
 export function useItem(world, e, slot, aim = null) {
-  const id = e.items[slot], act = id && ITEMS[id].active;
+  const id = Number.isInteger(slot) ? e.items[slot] : null, act = id && ITEMS[id]?.active;
   if (!act) return { ok: false, reason: 'none' };
   e.itemCd ||= {};
   if (world.tick < (e.itemCd[id] || 0)) return { ok: false, reason: 'cooldown' };

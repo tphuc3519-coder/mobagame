@@ -10,37 +10,58 @@ const LEAD0 = { x: 0, y: 0, dir: null };
 const KEEP = new Set(['gameover', 'death', 'respawn', 'revive', 'structureDown', 'towerOff', 'orbUp', 'orbTaken', 'campSpawn', 'campCleared', 'monsterKill',
   'clones', 'cloneEnd', 'cloneSwap', 'tetherEnd', 'suppressEnd', 'levelup', 'buy', 'sell', 'itemUpgrade', 'recalled', 'recallCancel']);
 
-/** opts: { conn, cfg, me, code, token, notify(text) } */
-export function createSession({ conn, cfg, me, code, token, notify = () => {} }) {
+/** Im lặng quá ngần này mili giây (không khung, không tin đo độ trễ — máy chủ trả lời mỗi 2 giây) là kết nối đã chết mà trình duyệt chưa
+ *  báo (điện thoại đổi Wi-Fi ↔ 4G, mất sóng): chủ động nối lại thay vì đứng hình chờ trình duyệt báo đóng (có khi cả phút). */
+const STALL_MS = 6000;
+/** Nối lại không được trong ngần này mili giây thì thôi (máy chủ sập / phòng mất): báo và trả người chơi về sảnh. */
+const GIVE_UP_MS = 75000;
+
+/** opts: { conn, cfg, me, code, token, notify(text), onEnd(text) — trận không thể tiếp tục (máy chủ dừng phòng, phòng đã đóng, nối lại không được) } */
+export function createSession({ conn, cfg, me, code, token, notify = () => {}, onEnd = null }) {
   const queue = []; // [tick, lệnh | null] theo thứ tự
   const history = [0]; // mọi khung đã nhận (xem lại / dò lỗi lệch đồng bộ: dựng lại trận từ cfg + history)
   let lastRecv = 0, ran = 0, inSim = false, local = null, player = null, disposed = false, reconnecting = false, desync = false;
   let lastDir = { x: 0, y: 0 }, lastDirT = 0, started = false, drops = 0, leadT = 0, leadP = null;
+  let lastMsg = performance.now(), lastStep = 0, finished = false, ended = false, resyncAt = 0;
+  /** Trận không thể tiếp tục: báo một lần rồi để màn ngoài (ui/flow.js) dọn trận, về sảnh. Trận đã kết thúc bình thường thì bỏ qua. */
+  const end = (text) => { if (ended || disposed || finished) return; ended = true; notify(text); onEnd?.(text); };
   const lead = { x: 0, y: 0 };
   const offs = [];
   const bind = (c) => {
     offs.splice(0).forEach((f) => f());
     offs.push(c.on('f', (m) => {
+      lastMsg = performance.now();
+      if (!Array.isArray(m.c) || !Number.isInteger(m.k)) return;
       const n = m.c.length;
+      if (m.k - n + 1 > lastRecv + 1) { // thiếu khung ở giữa: chạy tiếp là lệch đồng bộ — bỏ gói này, xin máy chủ gửi lại từ khung đang có
+        const now = performance.now(); if (now - resyncAt > 1000) { resyncAt = now; c.send({ t: 'rejoin', code, token, have: lastRecv }); }
+        return;
+      }
       for (let i = 0; i < n; i++) { const k = m.k - n + 1 + i; if (k <= lastRecv) continue; queue.push([k, m.c[i] || null]); history[k] = m.c[i] || 0; lastRecv = k; }
     }));
+    offs.push(c.on('rtt', () => { lastMsg = performance.now(); }));
+    offs.push(c.on('abort', (m) => end(m?.m || 'Máy chủ đã dừng trận')));
     offs.push(c.on('go', () => { started = true; }));
     offs.push(c.on('note', (m) => notify(m.m)));
     offs.push(c.on('desync', () => { if (!desync) { desync = true; notify('Lệch đồng bộ với máy chủ — trận có thể hiển thị sai (đã ghi lại để sửa)'); } }));
-    c.onDrop = () => { if (!disposed) reconnect(); };
+    c.onDrop = () => { if (!disposed && !finished && !ended) reconnect(); };
   };
   bind(conn);
   async function reconnect() {
     if (reconnecting || disposed) return; reconnecting = true; drops++;
     notify('Mất kết nối — đang nối lại…');
-    while (!disposed) {
+    const t0 = performance.now();
+    while (!disposed && !ended) {
       try {
-        const c = await connect(conn.url); if (disposed) { c.close(); break; }
-        conn = c; bind(c); // nhận khung ngay từ gói đầu máy chủ gửi bù
+        const c = await connect(conn.url); if (disposed || ended) { c.close(); break; }
+        conn = c; bind(c); lastMsg = performance.now(); // nhận khung ngay từ gói đầu máy chủ gửi bù
         const ok = await new Promise((r) => { const b = c.on('rejoinFail', () => { b(); r(false); }); c.send({ t: 'rejoin', code, token, have: lastRecv }); setTimeout(() => { b(); r(true); }, 2500); });
-        if (!ok) { notify('Trận đã kết thúc hoặc phòng đã đóng'); c.onDrop = null; c.close(); break; }
+        if (!ok) { c.onDrop = null; c.close(); end('Trận đã kết thúc hoặc phòng đã đóng'); break; } // trước đây chỉ báo rồi để trận đứng hình mãi
         notify('Đã nối lại'); break;
-      } catch (_) { await new Promise((r) => setTimeout(r, 1500)); }
+      } catch (_) {
+        if (performance.now() - t0 > GIVE_UP_MS) { end('Không nối lại được máy chủ — trận đã dừng'); break; }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
     }
     reconnecting = false;
   }
@@ -67,6 +88,12 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
     loaded() { conn.send({ t: 'loaded' }); },
     /** Chạy các khung đã nhận. Bình thường 1 khung / tick; tụt ≥ 4 khung thì 2; tụt xa thì chạy bù tới ~24 ms mỗi lượt. Trả về số khung đã chạy. */
     step(world) {
+      const nowMs = performance.now();
+      if (nowMs - lastStep > 2000) lastMsg = nowMs; // vừa quay lại sau khi trang bị ẩn / treo: không tính khoảng đó là "im lặng"
+      lastStep = nowMs;
+      if (!finished && !reconnecting && nowMs - lastMsg > STALL_MS) { // kết nối chết mà chưa có báo đóng: bỏ nó, nối lại ngay
+        const old = conn; old.onDrop = null; try { old.close(); } catch (_) { /* */ } lastMsg = nowMs; reconnect();
+      }
       const behind = queue.length; if (!behind) return 0;
       // giữ hàng chờ ngắn (≤ 2 tick): mỗi tick tồn trong hàng = thêm 33 ms trễ
       const max = behind > 8 ? Infinity : behind > 2 ? 2 : 1, t0 = performance.now(), skim = behind > 90; let n = 0;
@@ -74,6 +101,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
       try {
         while (queue.length && n < max) {
           const [k, c] = queue.shift(); applyFrame(world, k, c, local); ran = k; n++;
+          if (world.over) finished = true; // trận đã xong: mất kết nối từ đây không cần nối lại / báo gì nữa
           if (skim) world.events = world.events.filter((ev) => KEEP.has(ev.type)); // bù xa (vào lại trận, chuyển tab lâu): bỏ hiệu ứng / tiếng của quá khứ
           if (k % NET.hashEvery === 0) conn.send({ t: 'h', k, h: hashWorld(world) });
           if (max === Infinity && performance.now() - t0 > 24) break;
@@ -102,7 +130,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {} })
       return { x: lead.x, y: lead.y, dir: L > 0.01 ? { x: lastDir.x / L, y: lastDir.y / L } : null };
     },
     get started() { return started || lastRecv > 0; },
-    stats() { return { rtt: conn.rtt, buffer: queue.length, tick: ran, online: conn.open, drops, desync }; },
+    stats() { return { rtt: conn.rtt, buffer: queue.length, tick: ran, online: conn.open && !reconnecting, drops, desync }; },
     dispose() { if (disposed) return; disposed = true; offs.forEach((f) => f()); try { conn.send({ t: 'leave' }); } catch (_) { /* */ } conn.close(); },
   };
   return api;

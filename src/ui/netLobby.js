@@ -55,7 +55,7 @@ function attach(c) {
 }
 function begin(c, m) {
   if (net.started) return; net.started = true;
-  const session = createSession({ conn: c, cfg: m.cfg, me: m.me, code: m.code, token: m.token, notify: (t) => toast(t, 2600) });
+  const session = createSession({ conn: c, cfg: m.cfg, me: m.me, code: m.code, token: m.token, notify: (t) => toast(t, 2600), onEnd: () => net.nav.abortOnline?.() }); // trận không tiếp tục được: dọn trận, về sảnh
   try { sessionStorage.setItem(SAVE, JSON.stringify({ url: c.url, code: m.code, token: m.token })); } catch (_) { /* */ }
   net.nav.startOnline(session);
 }

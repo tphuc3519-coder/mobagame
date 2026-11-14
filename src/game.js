@@ -10,6 +10,7 @@ import { collectGpu, freeGpu, holdMaterials, releaseHeld } from './render/dispos
 import { keptShapeMaterials } from './render/vfx/shapes.js';
 import { createScope, enterScope, on, track } from './core/scope.js';
 import { closeSettings } from './ui/settingsModal.js';
+import { toast } from './ui/kit.js';
 import { hideTip } from './hud/tip.js';
 import { aimReset } from './hud/aimPad.js';
 import { createPost } from './render/post.js';
@@ -193,6 +194,14 @@ function showResult(winner) {
   // màn kết quả mở: gỡ luôn listener / HUD của trận (cần điều khiển trên body giữ con trỏ chuột — để lại thì chuột không bấm được nút màn kết quả)
   scope.later(() => { loop.stop(); b.remove(); document.body.classList.add('post'); scope.dispose(); opts.onGameOver({ world, player, winner }); }, END.bannerSec * 1000); // dừng hẳn vòng vẽ: màn kết quả che kín cảnh 3D (trước vẫn vẽ ~60 khung/giây phía sau, tốn pin)
 }
+/** Biểu quyết đầu hàng của đội mình (trận trực tuyến — sim/match.js voteSurrender): báo ai vừa bỏ phiếu, còn thiếu mấy phiếu. */
+function surrenderNote(ev) {
+  if (ev.team !== player.team) return;
+  const mine = ev.id === player.id;
+  if (ev.fail) { if (mine) toast(ev.fail === 'early' ? `Chưa đầu hàng được — còn ${Math.floor(ev.wait / 60)}:${String(ev.wait % 60).padStart(2, '0')}` : `Đội vừa biểu quyết đầu hàng — thử lại sau ${ev.wait} giây`, 2600); return; }
+  if (ev.yes >= ev.need) return; // đủ phiếu: trận kết thúc ngay sau đó
+  toast(mine ? `Đã bỏ phiếu đầu hàng (${ev.yes}/${ev.need}) — chờ đồng đội` : `${world.byId(ev.id)?.playerName || 'Đồng đội'} muốn đầu hàng (${ev.yes}/${ev.need}) — Cài đặt → Đầu hàng để đồng ý`, 4200);
+}
 document.getElementById('again').onclick = () => location.reload();
 
 let minFrame = 1000 / gfx.fps - 2;
@@ -267,7 +276,7 @@ const loopCfg = {
     if (!force && lastDraw && auto) auto.frame(now - lastDraw);
     lastDraw = now;
     const events = world.drainEvents();
-    for (const ev of events) if (ev.type === 'gameover') { beginEnd(ev); showResult(ev.winner); }
+    for (const ev of events) { if (ev.type === 'gameover') { beginEnd(ev); showResult(ev.winner); } else if (ev.type === 'surrenderVote') surrenderNote(ev); }
     views.handle(events); fx.handle(events, world); hud.handle(events, world); sounds.handle(events, world); pingHud?.handle(events);
     views.update(world, alpha, dt, cam.camera); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
     buttons.update(); spells.update(); shop.update(); score.update();

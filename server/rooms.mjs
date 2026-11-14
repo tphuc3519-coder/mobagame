@@ -21,6 +21,11 @@ const rooms = new Map();
 const pools = Object.fromEntries(Object.keys(QUEUES).map((q) => [q, []])); // hàng chờ: [{ ws, sess, info, at }]
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const PRE = new Set(['lobby', 'accept', 'pick', 'ready']); // chưa vào trận: rời phòng = ra hẳn (máy thay chỗ)
+// Giới hạn chống quá tải / phá máy chủ (đổi bằng biến môi trường): số phòng cùng lúc, số tin một kết nối gửi mỗi giây (lệnh trận đã có giới
+// hạn riêng 60/giây), thời gian im lặng tối đa của một kết nối (máy khách tự gửi tin đo độ trễ mỗi 2 giây — im lâu hơn là kết nối chết mà
+// TCP chưa báo: điện thoại mất sóng, đổi mạng), hàng đợi gửi tối đa của một kết nối chậm, thời lượng tối đa của một trận.
+const LIMIT = { rooms: +process.env.MAX_ROOMS || 200, msgs: +process.env.MAX_MSGS || 240, idleMs: (+process.env.IDLE_SEC || 45) * 1000, buffered: 1 << 20, matchMs: (+process.env.MAX_MATCH_MIN || 90) * 60000 };
+const FULL = 'Máy chủ đang đầy — thử lại sau ít phút';
 
 const newCode = () => { for (;;) { let c = ''; for (let i = 0; i < 4; i++) c += CODE_CHARS[randomInt(CODE_CHARS.length)]; if (!rooms.has(c)) return c; } };
 const cleanName = (n) => String(n || 'Người chơi').slice(0, 16);
@@ -28,7 +33,10 @@ const cleanAvatar = (a) => (typeof a === 'string' && /^[a-z_]{1,24}$/.test(a) ? 
 const cleanDiff = (d) => (DIFFICULTY[d] ? d : 'normal');
 const cleanLo = (lo) => { try { return lo && typeof lo === 'object' && JSON.stringify(lo).length < 4000 ? JSON.parse(JSON.stringify({ charm: lo.charm, emblem: lo.emblem })) : null; } catch (_) { return null; } };
 
-export const stats = () => ({ rooms: rooms.size, playing: [...rooms.values()].filter((r) => r.state === 'playing').length, players: [...rooms.values()].reduce((s, r) => s + r.players.filter((p) => p.online).length, 0),
+const conns = new Set(); // mọi kết nối đang mở: { ws, sess } — quét kết nối chết (sweep)
+/** Chỉ dùng trong kiểm thử (tools/t_netsafe.mjs): bảng phòng đang mở. */
+export const _rooms = rooms;
+export const stats = () => ({ conns: conns.size, rooms: rooms.size, playing: [...rooms.values()].filter((r) => r.state === 'playing').length, players: [...rooms.values()].reduce((s, r) => s + r.players.filter((p) => p.online).length, 0),
   queue: Object.fromEntries(Object.entries(pools).map(([q, a]) => [q, a.length])) });
 
 class Room {
@@ -48,7 +56,7 @@ class Room {
       players: this.players.map((q, i) => ({ name: q.name, avatar: q.avatar, team: q.team, slot: q.slot, ready: q.ready, host: this.kind === 'custom' && i === 0, online: q.online,
         accepted: q.accepted, locked: q.locked, role: q.role, heroId: vis(q) ? q.heroId : null, spellId: vis(q) ? q.spellId : null })) };
   }
-  broadcast(msg) { const s = JSON.stringify(msg); for (const p of this.players) if (p.online) p.ws.send(s); }
+  broadcast(msg) { const s = JSON.stringify(msg); for (const p of this.players) if (p.online) { if (p.ws.buffered > LIMIT.buffered) p.ws.close(1013); else p.ws.send(s); } } // máy nhận không kịp (hàng đợi gửi > 1 MB): cắt, nó tự nối lại và xin bù khung
   sync() { for (const p of this.players) if (p.online) p.ws.send(this.view(p)); }
   freeSlot(team) { for (let s = 0; s < this.size; s++) if (!this.players.some((q) => q.team === team && q.slot === s)) return s; return -1; }
   count(team) { return this.players.filter((q) => q.team === team).length; }
@@ -73,7 +81,7 @@ class Room {
 
   // —— phòng tuỳ chỉnh ——
   seat(p, team, slot) {
-    if (this.state !== 'lobby' || (team !== 0 && team !== 1) || !(slot >= 0 && slot < this.size)) return;
+    if (this.state !== 'lobby' || (team !== 0 && team !== 1) || !Number.isInteger(slot) || slot < 0 || slot >= this.size) return;
     if (this.players.some((q) => q !== p && q.team === team && q.slot === slot)) return;
     p.team = team; p.slot = slot; p.ready = false; this.sync();
   }
@@ -163,8 +171,20 @@ class Room {
     this.timer = setInterval(() => this.step(), 5);
     log(`phòng ${this.code}: bắt đầu ${this.q} ${cfg.mode} seed ${cfg.seed} —`, cfg.players.map((p) => `${p.name}/${p.heroId}/đội ${p.team}`).join(', '));
   }
+  /** Một nhịp đồng hồ của phòng. Lỗi trong mô phỏng / gói tin của MỘT phòng không được làm sập cả máy chủ (mọi phòng khác đang chơi):
+   *  ghi nhật ký, báo người chơi, đóng riêng phòng này. */
   step() {
+    try { this.run(); } catch (e) { this.abort('Trận gặp lỗi ở máy chủ — đã dừng', e); }
+  }
+  abort(text, e = null) {
+    log(`phòng ${this.code}: DỪNG — ${text}${e ? ` (tick ${this.tick}): ${e.stack || e}` : ''}`);
+    try { this.broadcast({ t: 'abort', m: text }); } catch (_) { /* kết nối đã hỏng */ }
+    for (const p of this.players) if (p.sess) p.sess.room = p.sess.p = null;
+    this.state = 'over'; this.destroy();
+  }
+  run() {
     const now = Date.now();
+    if (this.t0 && now - this.t0 > LIMIT.matchMs) return this.abort('Trận quá dài — máy chủ đã đóng phòng');
     if (this.state === 'loading') {
       if (this.players.every((p) => p.loaded || !p.online) || now > this.loadUntil) { this.state = 'playing'; this.t0 = now; this.broadcast({ t: 'go' }); this.sync(); log(`phòng ${this.code}: vào trận`); }
       return;
@@ -209,14 +229,14 @@ class Room {
   }
   /** Vào lại trận: have = tick cuối máy khách đã nhận (-1: tải lại trang, cần cả cấu hình trận). */
   rejoin(p, ws, have) {
-    const old = p.ws; p.ws = ws; p.online = true; if (old !== ws) old.close?.();
+    const old = p.ws, back = old !== ws || !p.online; p.ws = ws; p.online = true; if (old !== ws) old.close?.(); // back = false: cùng kết nối xin gửi lại khung (thiếu khung giữa chừng), không phải vào lại
     if (have < 0) ws.send({ t: 'start', cfg: this.cfg, me: this.players.indexOf(p), token: p.token, code: this.code, resume: true });
     if (this.state === 'loading') return;
     if (have < 0) ws.send({ t: 'go' });
     const from = Math.max(1, have + 1);
     if (this.tick >= from) ws.send({ t: 'f', k: this.tick, c: this.frames.slice(from, this.tick + 1) });
     if (p.botOn) { p.botOn = false; this.pending.push([p.eid, { type: 'bot', on: false }]); }
-    if (this.state === 'playing') this.broadcast({ t: 'note', m: `${p.name} đã vào lại` });
+    if (this.state === 'playing' && back) this.broadcast({ t: 'note', m: `${p.name} đã vào lại` });
   }
 }
 
@@ -237,8 +257,9 @@ function matchmake() {
   for (const [q, pool] of Object.entries(pools)) {
     for (let i = pool.length - 1; i >= 0; i--) if (!pool[i].ws.open) { pool[i].sess.queued = null; pool.splice(i, 1); }
     const need = QUEUES[q].mode === '5v5' ? 10 : 2;
-    while (pool.length >= need) form(q, pool.splice(0, need));
-    if (pool.length && now - pool[0].at >= SEC.queue * 1000) form(q, pool.splice(0, pool.length));
+    const room = rooms.size < LIMIT.rooms; // đầy phòng: giữ mọi người trong hàng chờ tới khi có phòng trống
+    while (room && pool.length >= need && rooms.size < LIMIT.rooms) form(q, pool.splice(0, need));
+    if (room && pool.length && rooms.size < LIMIT.rooms && now - pool[0].at >= SEC.queue * 1000) form(q, pool.splice(0, pool.length));
     for (const en of pool) en.ws.send({ t: 'queue', q, n: pool.length, need, waited: Math.round((now - en.at) / 1000), max: SEC.queue });
   }
 }
@@ -246,7 +267,8 @@ setInterval(matchmake, 1000).unref?.();
 
 /** Gắn một kết nối WebSocket vào hệ thống phòng. */
 export function handle(ws) {
-  const sess = { room: null, p: null, queued: null };
+  const sess = { room: null, p: null, queued: null, last: Date.now(), rate: { t: 0, n: 0 } };
+  const conn = { ws, sess }; conns.add(conn);
   const err = (m) => { if (m) ws.send({ t: 'err', m }); };
   const leave = () => {
     unqueue(sess);
@@ -255,7 +277,10 @@ export function handle(ws) {
     if (p.ws === ws) room.drop(p);
   };
   ws.on('message', (m) => {
-    if (!m || typeof m.t !== 'string') return;
+    const now = Date.now(); sess.last = now;
+    if (now - sess.rate.t > 1000) { sess.rate.t = now; sess.rate.n = 0; }
+    if (++sess.rate.n > LIMIT.msgs) { if (sess.rate.n === LIMIT.msgs + 1) log(`kết nối ${ws.ip}: gửi quá ${LIMIT.msgs} tin/giây — cắt`); return ws.close(1008); } // gửi dồn (cố ý phá): cắt kết nối
+    if (!m || typeof m !== 'object' || typeof m.t !== 'string') return;
     const { room, p } = sess;
     switch (m.t) {
       case 'p': ws.send({ t: 'P', c: m.c }); return; // đo độ trễ
@@ -263,6 +288,7 @@ export function handle(ws) {
       case 'h': room?.hash(p, m.k | 0, String(m.h)); return;
       case 'create': {
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
+        if (rooms.size >= LIMIT.rooms) return err(FULL);
         const r = new Room({ kind: 'custom', mode: m.mode, difficulty: m.difficulty, bots: m.bots });
         sess.room = r; sess.p = r.add(ws, m, 0); sess.p.sess = sess; r.sync();
         log(`phòng ${r.code}: tạo (${r.mode}, máy ${r.bots ? 'bật' : 'tắt'}) bởi ${sess.p.name}`); return;
@@ -277,12 +303,16 @@ export function handle(ws) {
       }
       case 'rejoin': {
         const r = rooms.get(String(m.code || '').toUpperCase()), q = r?.players.find((x) => x.token === m.token);
-        if (!r || !q || PRE.has(r.state) || r.state === 'over') return ws.send({ t: 'rejoinFail' });
+        if (!r || !q || typeof m.token !== 'string' || PRE.has(r.state) || r.state === 'over') return ws.send({ t: 'rejoinFail' });
+        if (room && room !== r) leave(); // kết nối này đang ngồi phòng khác: rời hẳn phòng đó trước (trước đây để lại một "bóng ma" trong phòng cũ)
+        unqueue(sess);
+        if (q.sess && q.sess !== sess) q.sess.room = q.sess.p = null; // kết nối cũ của chính người này (tab khác / mạng vừa đổi) không còn giữ ghế
         sess.room = r; sess.p = q; q.sess = sess; r.rejoin(q, ws, Number.isInteger(m.have) ? m.have : -1); return;
       }
       case 'queue': {
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
-        if (!QUEUES[m.q]) return err('Chế độ không hợp lệ');
+        if (typeof m.q !== 'string' || !Object.hasOwn(QUEUES, m.q)) return err('Chế độ không hợp lệ');
+        if (rooms.size >= LIMIT.rooms) return err(FULL);
         const info = { name: m.name, avatar: m.avatar, diff: cleanDiff(m.diff), pri: m.pri, sec: m.sec };
         sess.queued = m.q; pools[m.q].push({ ws, sess, info, at: Date.now() });
         ws.send({ t: 'queue', q: m.q, n: pools[m.q].length, need: 10, waited: 0, max: SEC.queue }); return;
@@ -300,5 +330,13 @@ export function handle(ws) {
       default:
     }
   });
-  ws.on('close', leave);
+  ws.on('close', () => { conns.delete(conn); leave(); });
 }
+
+/** Quét kết nối chết: quá LIMIT.idleMs không nhận tin nào (máy khách vẫn gửi tin đo độ trễ mỗi 2 giây) → đóng. Trước đây điện thoại mất
+ *  sóng / đổi mạng mà TCP chưa báo thì máy chủ vẫn coi là "đang chơi": tướng đứng yên cả trận, máy không bao giờ vào thay. */
+function sweep() {
+  const now = Date.now();
+  for (const c of [...conns]) if (!c.ws.open) conns.delete(c); else if (now - c.sess.last > LIMIT.idleMs) { log(`kết nối ${c.ws.ip}: im lặng ${Math.round((now - c.sess.last) / 1000)} giây — đóng`); c.ws.close(1001); }
+}
+setInterval(sweep, 5000).unref?.();

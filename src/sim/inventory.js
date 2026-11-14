@@ -37,7 +37,7 @@ const usedSlots = (e) => e.items.filter(Boolean).length;
 
 /** Kế hoạch mua: dùng lại thành phần đang có (đệ quy), trả { cost, consume:[slot], ok, reason }. */
 export function planBuy(e, id) {
-  const it = ITEMS[id]; if (!it) return { ok: false, reason: 'unknown' };
+  const it = typeof id === 'string' && Object.hasOwn(ITEMS, id) ? ITEMS[id] : null; if (!it) return { ok: false, reason: 'unknown' }; // hasOwn: 'constructor' / '__proto__' không phải món đồ
   if (it.auto) return { ok: false, reason: 'auto' };
   if (it.teamOnly && !e.teamMode) return { ok: false, reason: 'mode' };
   if (it.needSpell && e.spell?.id !== it.needSpell) return { ok: false, reason: 'spell' };
@@ -71,7 +71,7 @@ export function buyItem(world, e, id) {
 }
 
 export function sellItem(world, e, slot) {
-  const id = e.items[slot]; if (!id) return { ok: false, reason: 'empty' };
+  const id = Number.isInteger(slot) ? e.items[slot] : null; if (!id || !ITEMS[id]) return { ok: false, reason: 'empty' }; // slot phải là chỉ số ô (không phải 'length'…)
   const g = Math.floor(ITEMS[id].cost * SELL_RATE);
   e.gold += g; e.items[slot] = null; e.bonus = computeBonus(e);
   world.emit('sell', { id: e.id, item: id, gold: g });
