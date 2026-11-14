@@ -46,7 +46,7 @@ export function openHome(nav) {
         <button type="button" class="icb" data-a="settings" aria-label="Cài đặt">${icon('gear')}</button></div>
       <div class="hm-side">
         <button type="button" class="hm-ev fr" data-a="event"><i class="pic"></i><em class="tagr">Sự kiện</em>
-          <span class="tt"><b class="gt">LỄ HỘI ĐÈN LỒNG</b><small>Điểm danh 7 ngày nhận tới 2.200 vàng</small></span>
+          <span class="tt"><b class="gt">LỄ HỘI ĐÈN LỒNG</b><small>Điểm danh nhận 2.200 vàng</small></span>
           <span class="evp"><span class="pbar"><i style="width:${Math.round((ev / 7) * 100)}%"></i></span><em>${ev}/7</em></span>${icon('chest', 'deco')}</button>
         <div class="hm-tiles">
           <button type="button" class="tile fr" data-a="missions">${icon('scroll')}<span>Sứ mệnh</span>${miss ? `<i class="badge">${miss}</i>` : ''}</button>
@@ -72,11 +72,20 @@ export function openHome(nav) {
         <button type="button" class="rank-go" data-a="ranked"><i class="f shine"></i>${rankBadge(r, 88)}<span class="tx"><b>ĐẤU HẠNG</b><small>${r.name}<i class="stars">${stars(r)}</i></small></span></button>
       </div>`;
     chat();
+    if (el.style.getPropertyValue('--playp')) fit(); // dựng lại (đổi hạng, số quà…): cụm nút vào trận có thể đổi bề rộng
   };
   let ci = Math.floor(Math.random() * 8);
   const chat = () => { const s = el.querySelector('.chatln span'); if (!s) return; const [n, t] = chatLine(ci); s.innerHTML = `<b>[Thế giới] ${n}:</b> ${t}`; };
   const chatT = setInterval(() => { ci++; chat(); }, 4500);
   render();
+  // Thanh dưới: 5 nút chia nhau đúng phần còn trống bên trái cụm nút vào trận (đo thật — không đoán theo cỡ màn). Trước đây nút có bề rộng
+  // cố định nên ở màn 16:9 / 18:9 / iPad (khung thiết kế rộng 640–780) nút "Bạn bè" nằm dưới "Chọn chế độ" tới 47 px, bấm không trúng.
+  const fit = () => {
+    const w = el.getBoundingClientRect(), pl = el.querySelector('.hm-play')?.getBoundingClientRect();
+    if (w.width > 0 && pl?.width > 0) el.style.setProperty('--playp', `${Math.min(80, Math.max(0, ((w.right - pl.left) / w.width) * 100 + 1)).toFixed(2)}%`); // tỉ lệ nên không phụ thuộc zoom giao diện
+  };
+  fit(); const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null; ro?.observe(el); // đổi cỡ màn / phông chữ tải xong: đo lại
+  document.fonts?.ready?.then(() => { if (el.isConnected) fit(); });
   // hết mùa (đồng hồ thiết bị): thưởng theo bậc cao nhất + reset mềm (08 §4) — báo ngay khi về sảnh
   // trận online đang dở (tải lại trang giữa trận): hỏi vào lại
   if (savedMatch()) dialog({ title: 'Trận trực tuyến đang dở', html: '<p>Bạn vừa rời một trận trực tuyến chưa kết thúc.</p>', buttons: [{ text: 'Bỏ qua', on: () => clearSaved() }, { text: 'Vào lại', cls: 'gold', on: () => { rejoinSaved(); } }] });
@@ -98,5 +107,5 @@ export function openHome(nav) {
   el.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) { e.stopPropagation(); A[b.dataset.a]?.(); } };
   window.__home = { render };
   const hintOff = maybeFullHint(el); // thanh trình duyệt che bớt màn (Safari iPhone): nhắc chơi toàn màn hình
-  return () => { clearInterval(chatT); hintOff(); removeEventListener('resize', place); el.remove(); };
+  return () => { clearInterval(chatT); hintOff(); ro?.disconnect(); removeEventListener('resize', place); el.remove(); };
 }

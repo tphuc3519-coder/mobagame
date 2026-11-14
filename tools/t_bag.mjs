@@ -78,17 +78,20 @@ for (let i = 0; i < 2000; i++) { const o = M.openChest(Math.random, NOW); draws+
 ok('2000 rương: tỉ lệ ra bùa quanh 15%', Math.abs(tally.item / draws - CHEST.itemOdds) < 0.03, (tally.item / draws * 100).toFixed(1) + '%');
 
 // —— 5. cửa hàng mảnh ——
+// LIVE: giờ thật của máy chạy kiểm thử — mục 6 mở lại hồ sơ, lúc đó profile.js bỏ vật phẩm hết hạn theo Date.now(); dùng mốc cố định NOW
+// (26/10/2026) thì từ 02/11/2026 Thẻ Nhân Đôi Sao (hạn 7 ngày) đã "hết hạn" và bài kiểm thử tự hỏng theo lịch.
+const LIVE = Date.now();
 M = await fresh({ bag: {}, manh: 30 }); p = M.profile();
 const x2 = SHARD_SHOP.find((s) => s.id === 'the_x2_sao');
-ok('đổi mảnh: trừ đúng giá, nhận vật phẩm', M.shardBuy('the_x2_sao', NOW) && p.manh === 30 - x2.cost && M.itemCount('the_x2_sao', NOW) === 1);
-ok('không đủ mảnh: từ chối', !M.shardBuy('the_x2_sao', NOW) && p.manh === 30 - x2.cost);
-ok('vật phẩm lạ: từ chối', !M.shardBuy('khong_co', NOW));
+ok('đổi mảnh: trừ đúng giá, nhận vật phẩm', M.shardBuy('the_x2_sao', LIVE) && p.manh === 30 - x2.cost && M.itemCount('the_x2_sao', LIVE) === 1);
+ok('không đủ mảnh: từ chối', !M.shardBuy('the_x2_sao', LIVE) && p.manh === 30 - x2.cost);
+ok('vật phẩm lạ: từ chối', !M.shardBuy('khong_co', LIVE));
 ok('mọi món trong cửa hàng mảnh đều có trong bảng vật phẩm', SHARD_SHOP.every((s) => BAG[s.id] && s.cost > 0));
 
 // —— 6. lưu / mở lại ——
 p.gold = 4242; M.saveProfile();
 const M2 = await import(`../src/ui/profile.js?b=${++v}`), p2 = M2.profile();
-ok('tắt / mở lại: tiền tệ, rương, vật phẩm có hạn còn nguyên', p2.gold === 4242 && p2.manh === p.manh && p2.chests === p.chests && M2.itemCount('the_x2_sao', NOW) === 1);
+ok('tắt / mở lại: tiền tệ, rương, vật phẩm có hạn còn nguyên', p2.gold === 4242 && p2.manh === p.manh && p2.chests === p.chests && M2.itemCount('the_x2_sao', LIVE) === 1);
 
 console.log(fail ? `LỖI: ${fail} mục` : 'Tất cả đạt');
 process.exit(fail ? 1 : 0);
