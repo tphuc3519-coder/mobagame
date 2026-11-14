@@ -7,6 +7,8 @@ import { spawnProjectile } from './projectiles.js';
 import { enemiesOf } from './targeting.js';
 import { canSee } from './vision.js';
 
+const PEERS = new WeakMap();
+
 export function spawnStructures(world) {
   const { map } = world;
   for (const s of structuresOf(map)) {
@@ -56,7 +58,8 @@ export function updateStructures(world) {
     }
     // luật bất tử: trụ trong chờ trụ ngoài vỡ, nhà chính chờ trụ trong vỡ
     if (s.invulnUntil) { // chuỗi: tới khi trụ đứng trước vỡ; mảng: tới khi MỘT trong các trụ vỡ (nhà chính 5v5)
-      const peers = world.entities.filter((p) => p.structure && p.team === s.team && [].concat(s.invulnUntil).includes(p.sid));
+      let peers = PEERS.get(s); // các trụ che chắn cho công trình này: tìm một lần (công trình không bị gỡ khỏi trận, chỉ đổi alive)
+      if (!peers) PEERS.set(s, (peers = world.entities.filter((p) => p.structure && p.team === s.team && [].concat(s.invulnUntil).includes(p.sid))));
       s.invulnerable = Array.isArray(s.invulnUntil) ? peers.length > 0 && peers.every((p) => p.alive) : peers.some((p) => p.alive);
     }
     // hồi máu khi lâu không bị đánh: nhà chính 20/giây, trụ nhà `homeRegen`/giây

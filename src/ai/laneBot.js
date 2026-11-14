@@ -49,16 +49,23 @@ function steer(bot, p) {
 const move = (bot, p0, tol = 30, plan = false) => {
   const { e, world } = bot, nav = world.nav;
   if (bot.route && (world.tick > bot.route.until || dist(bot.route.dest, p0) > 350)) bot.route = null;
+  let again = false; // vừa đi hết một đoạn đường dở dang (đích xa quá ngân sách tìm đường — pathfind.js): tìm tiếp ngay từ chỗ đang đứng
+  if (bot.route) {
+    const r = bot.route;
+    while (r.i < r.pts.length - 1 && dist(e.pos, r.pts[r.i]) < 90) r.i++;
+    if (r.partial && r.i === r.pts.length - 1 && dist(e.pos, r.pts[r.i]) < 130) { bot.route = null; again = true; }
+  }
   // plan: đích trong rừng / hang mục tiêu lớn (có vách bao) — tìm đường ngay khi đường thẳng bị chắn, không đợi kẹt (trượt dọc vách thì không bị coi là kẹt)
-  if (!bot.route && nav && (bot.stuck >= T(0.5) || (plan && dist(e.pos, p0) > 250)) && !lineClear(nav, e.pos, p0)) {
-    const pts = findPath(nav, e.pos, p0); bot.stuck = 0;
-    if (pts?.length) bot.route = { pts, i: 0, dest: { x: p0.x, y: p0.y }, until: world.tick + T(8) };
+  if (!bot.route && nav && (bot.stuck >= T(0.5) || again || (plan && dist(e.pos, p0) > 250)) && !lineClear(nav, e.pos, p0)) {
+    const pts = findPath(nav, e.pos, p0, e.radius); bot.stuck = 0;
+    if (pts?.length) bot.route = { pts, i: 0, dest: { x: p0.x, y: p0.y }, until: world.tick + T(8), partial: !!pts.partial };
   }
   let tgt = p0;
   if (bot.route) {
     const r = bot.route;
     while (r.i < r.pts.length - 1 && dist(e.pos, r.pts[r.i]) < 90) r.i++;
-    if (lineClear(nav, e.pos, p0)) bot.route = null; else { tgt = r.pts[r.i]; if (r.i < r.pts.length - 1) tol = Math.min(tol, 30); } // điểm trung gian: đi tới sát (khoảng dừng của đích cuối không áp cho điểm giữa đường)
+    // đang đứng trong ô lưới coi là tường (hốc vách) thì "thấy thẳng tới đích" không tin được: cứ ra tới điểm đầu của đường đã
+    if (!nav.isBlocked(e.pos.x, e.pos.y) && lineClear(nav, e.pos, p0)) bot.route = null; else { tgt = r.pts[r.i]; if (r.i < r.pts.length - 1 || r.partial) tol = Math.min(tol, 30); } // điểm trung gian: đi tới sát (khoảng dừng của đích cuối không áp cho điểm giữa đường)
   }
   const p = steer(bot, tgt), dx = p.x - e.pos.x, dy = p.y - e.pos.y, l = D.hypot(dx, dy);
   world.command(e.id, { type: 'move', dir: l > tol ? { x: dx / l, y: dy / l } : { x: 0, y: 0 } });

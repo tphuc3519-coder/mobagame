@@ -60,7 +60,7 @@ export function updateJungle(world) {
     }
     for (const m of members) think(world, m, MONSTERS[camp.type], camp);
   }
-  world.entities = world.entities.filter((e) => !(e.kind === 'monster' && !e.alive && world.tick - e.deadTick > 60));
+  if (world.entities.some((e) => e.kind === 'monster' && !e.alive && world.tick - e.deadTick > 60)) world.entities = world.entities.filter((e) => !(e.kind === 'monster' && !e.alive && world.tick - e.deadTick > 60));
 }
 
 /** Mục tiêu còn đuổi được: sống, trong vòng xích quanh trại (mục tiêu lớn đứng yên: còn trong tầm đánh + 250). */

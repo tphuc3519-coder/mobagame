@@ -32,7 +32,15 @@ const DUMMY = { id: 'dummy', dummy: true, name: 'Hình nộm', radius: 45, base:
 
 export function createWorld({ map, seed = 1, structures = true, waves = true }) {
   const world = { map, seed, tick: 0, rng: mulberry32(seed), teamStats: [{}, {}], entities: [], projectiles: [], zones: [], tethers: [], suppressions: [], pings: [], aceTick: [-1, -1], pending: [], events: [], nextId: 1, queue: new Map(), over: null, waves, nav: buildNavGrid(map) };
-  world.byId = (id) => world.entities.find((e) => e.id === id) || null;
+  // Tra đơn vị theo id: bảng tra dựng lại khi danh sách đơn vị đổi — thêm đơn vị thì mảng dài ra, gỡ đơn vị thì world.entities là mảng mới
+  // (LUẬT: chỉ thêm bằng spawnEntity, chỉ gỡ bằng cách gán mảng mới; không sửa phần tử tại chỗ). Trước đây mỗi lần tra duyệt cả danh
+  // sách (~120 đơn vị, hàng trăm lần tra mỗi tick: đạn, lính, trạng thái, bot).
+  let ixArr = null, ixLen = -1; const ix = new Map();
+  world.byId = (id) => {
+    const a = world.entities;
+    if (a !== ixArr || a.length !== ixLen) { ix.clear(); for (let i = 0; i < a.length; i++) ix.set(a[i].id, a[i]); ixArr = a; ixLen = a.length; }
+    return ix.get(id) || null;
+  };
   world.surrender = (team) => surrender(world, team);
   world.emit = (type, data) => world.events.push({ ...data, type, tick: world.tick }); // loại sự kiện không bị trường cùng tên trong data đè
   world.drainEvents = () => { const ev = world.events; world.events = []; return ev; };
@@ -95,7 +103,9 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     for (const e of world.entities) {
       if (!e.alive) { if (e.isHero && e.kind === 'hero' && world.tick >= e.respawnTick) { e.alive = true; e.pos.x = e.spawn.x; e.pos.y = e.spawn.y; e.prevPos.x = e.pos.x; e.prevPos.y = e.pos.y; refreshStats(world, e); e.hp = e.stats.maxHp; e.mana = e.stats.maxMana; world.emit('respawn', { id: e.id }); } continue; }
       updateStatuses(world, e, dealDamage, heal);
-      refreshStats(world, e);
+      // chỉ số: tướng / hình nộm tính lại mỗi tick (cấp, đồ, nhiệt…); lính, quái, công trình, phân thân chỉ đổi theo trạng thái đang mang —
+      // không mang gì (và tick trước cũng không) thì chỉ số y nguyên, khỏi tính lại + cấp phát ~100 đối tượng mỗi tick
+      if (e.isHero || e.statuses.length || e.statsStale) { refreshStats(world, e); e.statsStale = e.statuses.length > 0; }
       if (e.kind === 'dummy') { if (world.tick - e.lastDamagedTick > 150) e.hp = Math.min(e.stats.maxHp, e.hp + e.stats.maxHp / 30); continue; }
       if (e.kind !== 'hero') continue;
       e.hp = Math.min(e.stats.maxHp, e.hp + e.stats.regenHp / 150);
@@ -118,7 +128,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     updatePings(world);
     updateCombat(world);
     // dọn lính đã chết sau 1 giây (để hiệu ứng ngã kịp chạy)
-    world.entities = world.entities.filter((e) => !(e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30));
+    if (world.entities.some((e) => e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30)) world.entities = world.entities.filter((e) => !(e.kind === 'minion' && !e.alive && world.tick - e.deadTick > 30)); // có lính cần gỡ mới dựng mảng mới
     checkMatch(world);
     updateBots(world);
   };
