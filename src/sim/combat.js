@@ -9,6 +9,7 @@ import { spawnProjectile } from './projectiles.js';
 import { makeCtx } from './ctx.js';
 import { onBasicAttack, onBasicHit } from './items.js';
 import { applyInstant, INSTANT } from './effects.js';
+import { reachOf, startChase, chaseTarget, stopChase, steering } from './assist.js';
 
 function nextRange(e) { return e.statuses.find((s) => s.kind === 'nextRange')?.value || 0; }
 
@@ -100,10 +101,22 @@ export function updateCombat(world) {
     if (world.tick < e.attackReady || world.tick < (e.castUntil || 0)) continue; // đang ra chiêu: đòn đánh chờ chiêu phát ra xong (không giật mặt sang mục tiêu khác)
     const forced = tauntSource(e) != null ? world.byId(tauntSource(e)) : null;
     const range = e.stats.range + nextRange(e);
-    const target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : e.attackMode ? pickByMode(world, e, range, e.attackMode)
-      : e.targetBy ? pickByRule(world, e, range, e.targetBy, e.preferTarget, basicSkip) : nearestEnemy(world, e, range, e.preferTarget, basicSkip); // targetBy: chỉ tướng người chơi (Cài đặt)
+    // tướng người chơi (assist.js): ưu tiên mục tiêu khoá → mục tiêu đang đuổi → tướng vừa đánh (đang đánh tướng thì không nhảy sang tướng
+    // khác chỉ vì % máu hai bên vừa đổi thứ tự); bot: như cũ
+    const chased = e.assist ? chaseTarget(world, e) : null, last = e.assist && e.lastAtk != null ? world.byId(e.lastAtk) : null;
+    const prefer = e.assist ? e.preferTarget ?? chased?.id ?? (last?.isHero ? last.id : null) : e.preferTarget;
+    const pick = (r) => (e.attackMode ? pickByMode(world, e, r, e.attackMode)
+      : e.targetBy ? pickByRule(world, e, r, e.targetBy, prefer, basicSkip) : nearestEnemy(world, e, r, prefer, basicSkip)); // targetBy: chỉ tướng người chơi (Cài đặt)
+    let target = forced && forced.alive ? (dist(forced.pos, e.pos) - forced.radius <= range ? forced : null) : pick(range);
+    if (!forced && chased?.isHero && target && !target.isHero && e.chase.kind === 'atk') target = null; // đang đuổi tướng: không quay sang lính / trụ dọc đường
+    if (!target && !forced && e.assist) { // không có ai trong tầm: đang đuổi thì đi tiếp; có địch trong tầm + reach thì đi tới (kéo cần là thôi)
+      if (chased) continue; // (đang đi tới để tung chiêu khoá mục tiêu: cũng không đổi hướng)
+      const reach = reachOf(e), far = reach ? pick(range + reach) : null;
+      if (far && startChase(world, e, far, 'atk', range)) continue;
+    }
     if (!target) { // không có mục tiêu: tướng người chơi vẫn vung đòn vào khoảng không theo hướng đang nhìn (như Liên Quân)
       if (e.kind !== 'hero' || e.bot || forced || e.attackMode) continue; // nút ăn lính/đẩy trụ: không có mục tiêu đúng loại thì không vung
+      if (e.assist && steering(e)) continue; // đang kéo cần mà không có ai để đánh: cứ đi, không khựng lại vung vào khoảng không mỗi nhịp
       const iv = 1 / e.stats.atkSpeed, delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
       e.attackReady = world.tick + T(iv); e.atkIndex = (e.atkIndex || 0) + 1; e.swingUntil = world.tick + T(delay) + 1; e.swingTarget = null;
       world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay, whiff: true });
@@ -116,6 +129,7 @@ export function updateCombat(world) {
     e.facing = D.atan2(target.pos.y - e.pos.y, target.pos.x - e.pos.x);
     const delay = Math.min(e.data.basicAttack.delay ?? 0.25, iv * 0.8);
     if (e.kind === 'hero') { e.swingUntil = world.tick + T(delay) + 1; e.swingTarget = target.id; } // vung đòn: đứng lại, quay mặt về địch tới lúc đòn chạm
+    if (e.assist) { e.lastAtk = target.id; if (e.chase?.once) stopChase(e); else if (e.chase?.kind === 'atk' && e.chase.id !== target.id) { e.chase = null; e.steer = null; } } // chạm nhanh: đúng một đòn
     world.emit('attack', { id: e.id, n: e.atkIndex, interval: iv, delay }); // delay: thời điểm gây sát thương, để animation khớp cú chạm
     world.pending.push({ tick: world.tick + T(delay), run: () => fire(world, e, target, iv) });
   }

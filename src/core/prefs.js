@@ -13,6 +13,8 @@ export const PREF_DEFAULTS = Object.freeze({
   camSpeed: 0.5,       // Tốc độ camera khi kéo nhìn 0..1
   atkMode: 'farm',     // Chế độ công chỉ định: 'auto' một nút Đánh | 'farm' thêm nút Ăn lính + Đẩy trụ | 'manual' chạm vào địch để chọn mục tiêu
   targetBy: 'pct',     // Lựa chọn mục tiêu (ưu tiên tướng địch trong tầm): 'pct' % máu thấp nhất | 'hp' máu thấp nhất | 'near' gần nhất
+  atkReach: 'near',    // Tầm kích hoạt đánh thường: nút Đánh / chiêu khoá mục tiêu tự đi tới địch ngoài tầm — 'off' tại chỗ | 'near' | 'far' (sim/assist.js)
+  haptics: true,       // Rung khi thao tác: tung / huỷ chiêu, chiêu không dùng được (hud/haptics.js; chỉ máy có rung — Android)
   flashDir: 'move',    // Hướng tốc biến mặc định (chạm nhanh Chớp Bước): 'move' hướng chạy | 'skill' hướng chiêu vừa ngắm | 'enemy' về phía địch gần nhất
   targetMark: false,   // Hiển thị mục tiêu chỉ định: dấu trên mục tiêu đang đánh
   castMode: 'aim',     // Phương pháp tung chiêu: 'aim' hỗ trợ xoay chiêu (kéo để ngắm, chạm nhanh tự ngắm) | 'auto' tung chiêu tự nhắm (chạm là ra)
@@ -48,7 +50,7 @@ export const PREF_DEFAULTS = Object.freeze({
 });
 /** Các mục có danh sách lựa chọn cố định. */
 export const PREF_CHOICES = Object.freeze({
-  camMode: ['off', 'hold', 'slide'], atkMode: ['auto', 'farm', 'manual'], targetBy: ['pct', 'hp', 'near'], flashDir: ['move', 'skill', 'enemy'],
+  camMode: ['off', 'hold', 'slide'], atkMode: ['auto', 'farm', 'manual'], targetBy: ['pct', 'hp', 'near'], atkReach: ['off', 'near', 'far'], flashDir: ['move', 'skill', 'enemy'],
   castMode: ['aim', 'auto'], aimAt: ['button', 'finger'], cancelBy: ['zone', 'distance'], stick: ['follow', 'fixed'], shop: ['left', 'right'], hudSize: ['sm', 'md', 'lg'], mmSize: ['sm', 'md', 'lg'], camDist: ['near', 'far'],
 });
 /** Các mục số: [nhỏ nhất, lớn nhất, bước]. */

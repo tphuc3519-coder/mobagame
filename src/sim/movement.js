@@ -66,6 +66,7 @@ export function updateMovement(world) {
     if (e.dash) { updateDash(world, e); e.speed = 0; }
     else {
       let { x, y } = e.moveDir;
+      if (e.steer && !x && !y) ({ x, y } = e.steer); // cần không kéo: hướng đi tự động (đuổi đánh / đi tới tung chiêu — assist.js)
       if (world.tick < (e.castUntil || 0)) { // đang ra chiêu: đứng yên, mặt giữ hướng chiêu (skills.js) tới lúc chiêu phát ra
         e.facing = e.castFacing ?? e.facing; x = 0; y = 0;
       } else if (world.tick < (e.swingUntil || 0)) { // đang vung đòn đánh thường: đứng yên, mặt luôn hướng về mục tiêu cho chuẩn

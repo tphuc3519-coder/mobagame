@@ -44,6 +44,7 @@ function schema({ g, gfxSet, inMatch, onReset, onSave }) {
       { t: 'range', label: 'Tốc độ camera', lo: 'Thấp', hi: 'Cao', dis: () => prefs().camMode === 'off', ...P('camSpeed') },
       radio('atkMode', 'Chế độ công chỉ định', [['auto', 'Tự đánh', 'một nút Đánh'], ['farm', 'Ăn lính + Đẩy trụ', 'thêm 2 nút nhỏ'], ['manual', 'Tự chọn mục tiêu', 'chạm vào địch để khoá']]),
       radio('targetBy', 'Phương pháp lựa chọn mục tiêu', [['pct', '% máu thấp nhất'], ['hp', 'Máu thấp nhất'], ['near', 'Gần nhất']]),
+      radio('atkReach', 'Tầm kích hoạt đánh thường', [['off', 'Tại chỗ', 'không tự đi tới'], ['near', 'Gần', 'tự đi tới địch ngay ngoài tầm'], ['far', 'Xa']]),
       radio('flashDir', 'Hướng tốc biến mặc định', [['move', 'Bám theo hướng chạy'], ['skill', 'Bám theo hướng chiêu'], ['enemy', 'Tự động tìm địch']]),
       radio('targetMark', 'Hiển thị mục tiêu chỉ định', [[false, 'Ẩn biểu tượng chỉ định'], [true, 'Hiện biểu tượng chỉ định']]),
       radio('castMode', 'Phương pháp tung chiêu', [['aim', 'Hỗ trợ xoay chiêu'], ['auto', 'Tung chiêu tự nhắm', 'Tân thủ']]),
@@ -51,7 +52,9 @@ function schema({ g, gfxSet, inMatch, onReset, onSave }) {
       radio('cancelBy', 'Huỷ chiêu', [['zone', 'Chọn vùng', 'kéo vào ô X'], ['distance', 'Chọn cự ly', 'kéo ra xa']]),
       radio('camAim', 'Góc quay theo định vị', [[false, 'Không đi theo'], [true, 'Đi theo chỉ dẫn']]),
       radio('stick', 'Lệnh di chuyển', [['follow', 'Đi theo'], ['fixed', 'Không theo', 'cố định']]),
-      { t: 'button', label: 'Đưa điều khiển về mặc định', text: 'Khôi phục', act: () => onReset(['preciseAtk', 'aimSens', 'camMode', 'camSpeed', 'atkMode', 'targetBy', 'flashDir', 'targetMark', 'castMode', 'aimAt', 'cancelBy', 'camAim', 'stick']) },
+      tog('haptics', 'Rung khi thao tác', 'Rung nhẹ khi tung / huỷ chiêu (điện thoại Android)'),
+      { t: 'note', html: 'Tầm kích hoạt <b>Gần</b> / <b>Xa</b>: nút Đánh và chiêu khoá mục tiêu tự đi tới địch ngay ngoài tầm — kéo cần là thôi, không tự đi vào tầm trụ địch. Chạm nhanh chiêu: ưu tiên tướng địch theo cách chọn mục tiêu ở trên. Bấm chiêu sớm một nhịp (đang lướt, chiêu sắp hồi xong) chiêu vẫn ra.' },
+      { t: 'button', label: 'Đưa điều khiển về mặc định', text: 'Khôi phục', act: () => onReset(['preciseAtk', 'aimSens', 'camMode', 'camSpeed', 'atkMode', 'targetBy', 'atkReach', 'flashDir', 'targetMark', 'castMode', 'aimAt', 'cancelBy', 'camAim', 'stick', 'haptics']) },
     ],
     ui: [
       radio('shop', 'Vị trí cửa hàng', [['left', 'Trái', 'dưới bản đồ nhỏ'], ['right', 'Phải']]),

@@ -11,7 +11,7 @@ import { SPELLS } from '../data/spells.js';
 import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
-  version: 3,       // TĂNG mỗi khi đổi mô phỏng / khuôn tin: máy khách và máy chủ khác số thì từ chối nhau (lockstep — khác bản là lệch đồng bộ). 3: gộp online-che-do + đợt 14/11
+  version: 4,       // TĂNG mỗi khi đổi mô phỏng / khuôn tin: máy khách và máy chủ khác số thì từ chối nhau (lockstep — khác bản là lệch đồng bộ). 3: gộp online-che-do + đợt 14/11; 4: hỗ trợ thao tác (lệnh assist)
   pack: 1,          // số tick mỗi gói khung máy chủ gửi: 1 = gửi ngay mỗi tick (30 gói/giây, vài chục byte/gói) — bớt ~17 ms trễ so với gói 2 tick
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng
@@ -31,8 +31,8 @@ export const QUEUES = { normal: { mode: '5v5' }, ranked: { mode: '5v5', ranked: 
 /** 5 vị trí 5v5 (như sim/lineup.js). */
 export const ROLES5 = ['temple', 'mid', 'river', 'jungle', 'support'];
 
-const CMD_TYPES = new Set(['move', 'attack', 'cast', 'spell', 'restore', 'buy', 'sell', 'useItem', 'recall', 'levelSkill', 'ping', 'targetBy', 'surrender']);
-const SKILL_SLOTS = new Set(['s1', 's2', 's3']), ATK_MODES = new Set(['minion', 'tower']), TARGET_BY = new Set(['pct', 'hp', 'near']);
+const CMD_TYPES = new Set(['move', 'attack', 'cast', 'spell', 'restore', 'buy', 'sell', 'useItem', 'recall', 'levelSkill', 'ping', 'targetBy', 'assist', 'surrender']);
+const SKILL_SLOTS = new Set(['s1', 's2', 's3']), ATK_MODES = new Set(['minion', 'tower']), TARGET_BY = new Set(['pct', 'hp', 'near']), REACH = new Set(['off', 'near', 'far']);
 const COORD_MAX = 1e5; // toạ độ / hướng ngắm: bản đồ lớn nhất 6 400 — chặn số khổng lồ
 const fin = (v) => typeof v === 'number' && Number.isFinite(v);
 const coord = (v) => Math.max(-COORD_MAX, Math.min(COORD_MAX, v));
@@ -71,6 +71,7 @@ export function sanitizeCommand(cmd) {
     case 'levelSkill': return SKILL_SLOTS.has(cmd.slot) ? { type: 'levelSkill', slot: cmd.slot } : null;
     case 'ping': return typeof cmd.kind === 'string' && Object.hasOwn(PING_KINDS, cmd.kind) && fin(cmd.x) && fin(cmd.y) ? { type: 'ping', kind: cmd.kind, x: coord(cmd.x), y: coord(cmd.y), target: entId(cmd.target) } : null;
     case 'targetBy': return { type: 'targetBy', value: TARGET_BY.has(cmd.value) ? cmd.value : null };
+    case 'assist': return { type: 'assist', reach: REACH.has(cmd.reach) ? cmd.reach : 'off' };
     default: return null;
   }
 }

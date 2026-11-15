@@ -233,8 +233,8 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Đồ kích hoạt: tối đa 2 nút** (chỉ hiện khi có món), nút thứ hai xếp trên nút thứ nhất (hàng nút đáy không dài ra, không đè thanh máu);
   phím **E** = nút 1, **Q** = nút 2. Đồ có hướng (Lụa Gió) kéo để ngắm như Chớp Bước; đồ khoá mục tiêu (Xích Giữ) giữ nút thì hiện vòng tầm +
   dấu vàng ở tướng sẽ bị xích. Giữ yên ~0,35s xem mô tả. Bị khống chế / áp chế / đang niệm giữ xích: các nút xám lại.
-- **Chiêu khoá mục tiêu**: chạm nhanh dùng mục tiêu đang khoá (dấu đỏ); kéo thì dấu vàng xem trước đúng tướng sẽ bị chọn và thả ra gửi đúng
-  tướng đó.
+- **Chiêu khoá mục tiêu**: chạm nhanh dùng mục tiêu đang khoá (dấu đỏ), không khoá thì tướng địch theo *Phương pháp lựa chọn mục tiêu*; kéo
+  thì dấu vàng xem trước đúng tướng sẽ bị chọn và thả ra gửi đúng tướng đó. Địch ngoài tầm (trong tầm + `atkReach`): tướng tự đi tới rồi tung.
 - **Chữ trên đầu**: `ÁP CHẾ` (tím, ưu tiên nhất), `CHOÁNG` / `HẤT TUNG` / `TRÓI` / `KHIÊU KHÍCH` / `CÂM` (vàng), `KHÔNG THỂ CẢN` (vàng cam,
   khi không có khống chế). Đang niệm giữ xích: thanh tím rút dần dưới thanh mana. Bấm chiêu / đồ không được: chữ nổi lý do trên đầu mình
   (Không có mục tiêu · Đang bị áp chế · Đang giữ chiêu · Không thể lướt · Đang bị trói · Đang bị khống chế).
@@ -282,6 +282,20 @@ Mặc định giữ đúng cách chơi cũ, trừ chỗ ghi **mới**. Mỗi nú
   trụ / quái gần nhất). Mục tiêu khoá trong tầm luôn trước; nút Ăn lính / Đẩy trụ và khiêu khích không đổi. Gửi bằng lệnh
   `{ type: 'targetBy', value }` lúc vào trận và mỗi lần đổi (`sim/commands.js` → `e.targetBy` → `sim/targeting.js pickByRule`); bot không
   gửi nên trận toàn bot / băm tất định không đổi (`tools/t_target.mjs`). Mặc định `pct` = **mới**: trước đây không ưu tiên tướng.
+  Đang đánh một tướng thì giữ nó tới khi nó ra khỏi tầm (không nhảy sang tướng khác chỉ vì thứ tự % máu vừa đổi); chạm nhanh nút chiêu cũng
+  chọn theo luật này.
+- **Tầm kích hoạt đánh thường** `atkReach` (`sim/assist.js`, số ở `data/controls.js`): `off` Tại chỗ (như cũ — không có ai trong tầm thì vung
+  vào khoảng không) | `near` (mặc định, **mới**) +260 | `far` +520. Bấm / giữ Đánh khi không có ai trong tầm nhưng có địch trong tầm + chừng
+  đó: tướng tự đi tới rồi đánh (giữ thì bám theo khi nó chạy, tới khi ra quá tầm + reach + 220); **chạm nhanh** vẫn đi tới đánh đúng một đòn.
+  Kéo cần là thôi ngay; không tự đi vào tầm trụ địch khi đang đứng ngoài; vướng tường 0,6 s / quá 3 s thì thôi; đang đuổi tướng thì lính lọt
+  vào tầm không cướp mục tiêu. Mục tiêu đang đuổi có dấu như mục tiêu khoá. Cùng tầm này cho chiêu khoá mục tiêu ngoài tầm. Đang kéo cần mà
+  không có ai để đánh: không vung vào khoảng không (trước đây giữ Đánh + chạy là khựng lại mỗi nhịp đánh).
+- **Bộ đệm bấm chiêu** (luôn bật cho người chơi, `sim/assist.js`): chiêu bấm lúc đang lướt, đang bị khống chế hoặc còn hồi ≤ 0,3 s được giữ
+  0,3 s và tự tung ngay khi được — bấm sớm một nhịp không bị "nuốt"; hết 0,3 s vẫn không được mới báo lý do như cũ.
+- **Rung khi thao tác** `haptics` (`hud/haptics.js`): tung chiêu rung rất nhẹ, huỷ chiêu hai nhịp, chiêu không dùng được (có chữ báo) một
+  nhịp dài hơn. Chỉ máy có `navigator.vibrate` (Android); iPhone bỏ qua.
+- Lệnh `{ type: 'assist', reach }` gửi lúc vào trận và mỗi lần đổi `atkReach` (cùng chỗ với `targetBy`, `hud/atkTarget.js`); bot không gửi nên
+  hành vi bot / trận toàn bot không đổi (`tools/t_assist.mjs`).
 - **Đánh thường chính xác** `preciseAtk`: kéo nút Đánh → vòng ngắm như kỹ năng + vùng tầm đánh + 200 trên đất; địch gần hướng kéo nhất (lệch
   ≤ 60°, trong tầm + 200) có dấu vàng, đang giữ thì đánh luôn nó khi nó trong tầm. Thả: khoá nó (như `manual`), nó trong tầm thì còn đánh tới
   khi ra một đòn (tối đa một nhịp đánh); kéo về phía không có địch rồi thả = bỏ khoá; huỷ (ô X / kéo xa) như kỹ năng. Chạm / giữ không kéo như cũ.

@@ -706,3 +706,14 @@ Báo cáo đầy đủ + số đo: `docs/KIEM_TOAN.md` Phần V; quyết định
   `b_online` 6 — đạt hết; `b_gd3` 38 đạt + 2 mục ngưỡng thời gian lệch, bản gốc chạy cùng máy lệch y hệt (Phần V §5b).
 - **Chưa thử được ở đây:** điện thoại thật, Safari thật, máy chủ Render thật (chỉ máy chủ chạy tại chỗ), chơi online nhiều người thật.
 
+
+## 15/11 — Combat "ăn tay": đánh thường tự đi tới, chạm nhanh chiêu ưu tiên tướng, bộ đệm bấm chiêu
+Quyết định + lý do: `docs/DECISIONS.md` 2026-11-15 (Hỗ trợ thao tác combat); spec: 07 §9, 04 §2.
+- **Đánh thường:** địch ngay ngoài tầm (Cài đặt → *Tầm kích hoạt đánh thường*: Gần +260 mặc định / Xa +520 / Tại chỗ) thì tự đi tới rồi đánh;
+  chạm nhanh vẫn ra đúng một đòn; kéo cần là thôi; không tự đi vào tầm trụ địch; đang đánh tướng không nhảy mục tiêu, lính không cướp mục
+  tiêu khi đang đuổi tướng; giữ Đánh + chạy mà không có ai để đánh thì không khựng lại vung vào khoảng không. Mục tiêu đang đuổi có dấu đỏ.
+- **Chiêu:** chạm nhanh nhắm tướng địch theo *Phương pháp lựa chọn mục tiêu* (trước: địch gần nhất — hay bay vào lính), không có ai thì theo
+  hướng cần; chiêu bấm sớm một nhịp (đang lướt / bị khống chế / còn hồi ≤ 0,3 s) vẫn ra; chiêu khoá mục tiêu ngoài tầm thì đi tới rồi tung.
+- **Rung khi thao tác** (Android): tung / huỷ chiêu, chiêu không dùng được.
+- Bot không đổi (chỉ tướng người chơi gửi lệnh `assist`). `NET.version` 4.
+- **Kiểm thử mới:** `tools/t_assist.mjs` (20 mục), `t_target.mjs` thêm 5 mục `quickTarget`; `t_netsafe` lọc lệnh `assist`.

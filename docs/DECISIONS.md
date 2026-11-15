@@ -1139,3 +1139,18 @@
   (tướng trượt quanh trụ / nhà chính; đợt kiểm toán 14/11) ⇒ bản gộp là **3**. Giữ một cơ chế chặn khác bản là tin `hello` (14/11); bỏ kiểm `v` theo
   từng tin `create` / `join` / `queue` / `rejoin` của nhánh 07/11 (trùng việc, câu báo khác nhau). Vào lại trận khi khác bản vẫn nhận
   `rejoinFail { old: true }` để máy khách báo "Game vừa cập nhật".
+- 2026-11-15: **Hỗ trợ thao tác combat** (`sim/assist.js`, `data/controls.js`, lệnh `assist`; `NET.version` 3 → 4) — chủ dự án muốn trải
+  nghiệm từ đánh thường tới tung chiêu "tối ưu như các game MOBA". Đối chiếu cách các game MOBA trên điện thoại làm (nút Đánh tự tiến tới
+  địch ngay ngoài tầm với tầm kích hoạt chỉnh được; đang di chuyển thì không tự đuổi — các hướng dẫn đều khuyên tắt "đuổi khi đang chạy";
+  chạm nhanh chiêu ưu tiên tướng; luật chọn mục tiêu % máu / máu / gần nhất) với bản hiện tại, sửa đúng các chỗ hụt:
+  - **Đánh thường:** trước đây không có ai trong tầm là vung vào khoảng không dù địch đứng ngay ngoài tầm 1 bước; nay đi tới rồi đánh
+    (`atkReach` Gần +260 mặc định / Xa +520 / Tại chỗ = như cũ). Kéo cần là thôi; không tự đi vào tầm trụ địch khi đang đứng ngoài (lỗi
+    "lao vào trụ" là phàn nàn số một của kiểu tự đuổi); chạm nhanh = đúng một đòn; đang đánh tướng thì không nhảy sang tướng khác, đang đuổi
+    tướng thì lính không cướp mục tiêu. Giữ Đánh + kéo cần mà không có ai để đánh: không vung vào khoảng không (trước khựng lại mỗi nhịp).
+  - **Chiêu:** chạm nhanh trước đây nhắm địch gần nhất (đứng sát lính là chiêu bay vào lính) — trái với 04 §2 ("ưu tiên tướng"); nay
+    `quickTarget`: khoá → tướng theo luật → lính / quái, không nhắm trụ; không có ai thì theo hướng cần. Bộ đệm 0,3 s cho chiêu bấm lúc đang
+    lướt / bị khống chế / sắp hồi xong. Chiêu khoá mục tiêu ngoài tầm: đi tới rồi tung (cùng `atkReach`).
+  - **Giữ nguyên có chủ ý:** đòn đánh đứng lại tới lúc trúng (giữ cần + Đánh vẫn ra đòn — kiểu "di chuyển huỷ đòn" của game PC làm người
+    chơi điện thoại mất đòn khi vừa chạy vừa bấm); ô X / kéo xa để huỷ, độ nhạy xoay chiêu, đánh thường chính xác, nút Ăn lính / Đẩy trụ.
+  - Chỉ tướng người chơi (đã gửi `assist`) có các hỗ trợ này: bot không gửi ⇒ bot / trận toàn bot không đổi. Thêm `haptics` (rung khi tung /
+    huỷ chiêu, Android). **Chưa làm:** tự xếp vị trí / cỡ từng nút (bộ sửa bố cục HUD) — việc lớn, để đợt sau.

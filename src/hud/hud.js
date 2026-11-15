@@ -1,4 +1,5 @@
 import { project } from '../render/project.js';
+import { buzz } from './haptics.js';
 import { KEYSTONES } from '../data/emblems.js';
 import { canSee } from '../sim/vision.js';
 import { HERO_SCALE } from '../render/unitView.js';
@@ -161,7 +162,7 @@ export function createHud(canvas, input, portraits = null) {
         if (ev.type === 'ace') kills.ace(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
-        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
+        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); buzz('fail'); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
         if (ev.type === 'emblem' && ev.id === world.__localId && KEYSTONES[ev.key]) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: KEYSTONES[ev.key].name, color: '#ffd36a', size: 13, life: 1.0, drift: 0, tilt: 0 }); // phù hiệu kích hoạt
         if (ev.type === 'ccResist' && e.kind === 'hero' && (ev.id === world.__localId || e.team !== world.__localTeam)) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Kháng 50%', color: '#b8e0ff', size: 13, life: 1.0, drift: 0, tilt: 0 }); // chống khoá chết (04 §3): khống chế bị giảm
         if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });

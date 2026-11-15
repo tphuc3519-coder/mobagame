@@ -36,8 +36,8 @@ ok('đánh / tín hiệu / chọn mục tiêu: trường sai bị thay bằng gi
 // —— 2. lệnh rác qua bộ lọc → mô phỏng ——
 const rng = mulberry32(20261114).next, pick = (a) => a[Math.floor(rng() * a.length)];
 const JUNK = [undefined, null, NaN, Infinity, -1, 0, 1, 2.5, 6, 1e308, '', 'length', '__proto__', 'constructor', 'toString', 'hasOwnProperty', 's1', 's2', 's3', 'kiem_sat', 'attack', 'minion', {}, [], { x: 1, y: 2 }, { x: 'a', y: {} }, { id: 3 }, { id: 'x' }, true, false];
-const TYPES = ['move', 'attack', 'cast', 'spell', 'restore', 'buy', 'sell', 'useItem', 'recall', 'levelSkill', 'ping', 'targetBy'];
-const KEYS = ['dir', 'on', 'mode', 'preferTarget', 'slot', 'aim', 'item', 'kind', 'x', 'y', 'target', 'value'];
+const TYPES = ['move', 'attack', 'cast', 'spell', 'restore', 'buy', 'sell', 'useItem', 'recall', 'levelSkill', 'ping', 'targetBy', 'assist'];
+const KEYS = ['dir', 'on', 'mode', 'preferTarget', 'slot', 'aim', 'item', 'kind', 'x', 'y', 'target', 'value', 'reach'];
 const junkCmd = () => { const c = { type: pick(TYPES) }; for (const k of KEYS) if (rng() < 0.6) c[k] = rng() < 0.5 ? pick(JUNK) : pick([rng() * 6000, pick(Object.keys(ITEMS)), Math.floor(rng() * 8)]); return c; };
 const sane = (w) => w.entities.every((e) => Number.isFinite(e.pos.x) && Number.isFinite(e.pos.y) && Number.isFinite(e.hp) && (e.kind !== 'hero' || (Number.isFinite(e.gold) && Number.isFinite(e.mana) && e.items.length === 6 && e.items.every((i) => i === null || Object.hasOwn(ITEMS, i)))));
 for (const mode of ['1v1', '5v5']) {

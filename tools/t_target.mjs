@@ -4,7 +4,7 @@
 import { createWorld } from '../src/sim/world.js';
 import { DUEL } from '../src/data/maps.js';
 import { spawnMinion } from '../src/sim/minions.js';
-import { pickByRule, nearestEnemy } from '../src/sim/targeting.js';
+import { pickByRule, nearestEnemy, quickTarget } from '../src/sim/targeting.js';
 
 let fail = 0;
 const ok = (name, cond, extra = '') => { console.log((cond ? 'ĐẠT ' : 'LỖI ') + name + (extra ? '  ' + extra : '')); if (!cond) fail++; };
@@ -50,6 +50,17 @@ function setup() {
   ok('giá trị lạ: bỏ luật (như cũ)', s.p.targetBy === null);
   s.p.alive = false; s.w.command(s.p.id, { type: 'targetBy', value: 'near' }); s.w.update(++t);
   ok('đổi luật lúc đang chết vẫn nhận', s.p.targetBy === 'near');
+}
+{ // chạm nhanh nút chiêu (hud/skillButtons.js autoAim → quickTarget): tướng trước lính dù lính gần hơn; không nhắm trụ
+  const { w, p, m, a, b, c, range } = setup();
+  ok('chạm nhanh chiêu: tướng địch theo luật, không phải lính sát bên', quickTarget(w, p, range, 'pct') === a && quickTarget(w, p, range, 'near') === c && quickTarget(w, p, range, 'hp') === b);
+  ok('chạm nhanh chiêu: mục tiêu khoá trong tầm trước', quickTarget(w, p, range, 'pct', m.id) === m);
+  ok('chiêu chỉ nhắm tướng: không bao giờ chọn lính', quickTarget(w, p, range, 'pct', m.id, true) === a);
+  for (const h of [a, b, c]) h.alive = false;
+  ok('không tướng nào: lính gần nhất (dọn lính bằng chiêu)', quickTarget(w, p, range, 'pct') === m && quickTarget(w, p, range, 'pct', null, true) === null);
+  const w2 = createWorld({ map: DUEL, seed: 3 }), tw = w2.entities.find((e) => e.structure && e.team === 1 && e.kind === 'tower');
+  const q = w2.spawnHero('hoa_ren', 0, { x: tw.pos.x - 200, y: tw.pos.y });
+  ok('không nhắm trụ / nhà chính', quickTarget(w2, q, 600, 'pct') === null && nearestEnemy(w2, q, 600) === tw);
 }
 { // bot không bao giờ có luật: trận toàn bot giữ nguyên (t_determinism kiểm băm)
   const w = createWorld({ map: DUEL, seed: 5 });

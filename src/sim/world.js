@@ -3,6 +3,7 @@ import { HEROES } from '../data/heroes/index.js';
 import { mulberry32 } from '../core/rng.js';
 import { applyCommand } from './commands.js';
 import { updateMovement } from './movement.js';
+import { updateAssist } from './assist.js';
 import { updateCombat } from './combat.js';
 import { updateProjectiles, updateZones } from './projectiles.js';
 import { updateStatuses } from './status.js';
@@ -122,6 +123,7 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
     const due = world.pending.filter((p) => p.tick <= world.tick);
     if (due.length) { world.pending = world.pending.filter((p) => p.tick > world.tick); for (const p of due) p.run(); }
     updateProjectiles(world); updateZones(world);
+    updateAssist(world); // bộ đệm chiêu + hướng đuổi của tướng người chơi (trước khi di chuyển)
     updateMovement(world);
     updateSkillEntities(world); // dây trói, phân thân, lịch sử vị trí (tua ngược)
     updateOrbs(world);

@@ -6,7 +6,7 @@
 // Mục tiêu khoá đi kèm mọi lệnh đánh (preferTarget): mô phỏng ưu tiên nó khi còn trong tầm. Tự bỏ khoá khi nó chết / khuất / xa quá 1800,
 // hoặc khi đổi atkMode / tắt preciseAtk.
 // - targetBy (Lựa chọn mục tiêu): lệnh { type: 'targetBy' } lúc vào trận và mỗi lần đổi — mô phỏng chọn mục tiêu (sim/targeting.js pickByRule).
-// - Dấu mục tiêu (render/indicators.js mark): mục tiêu khoá luôn có vòng đỏ + mũi chữ V trên đầu (phản hồi của việc chọn), đang kéo nút Đánh
+// - Dấu mục tiêu (render/indicators.js mark): mục tiêu khoá / đang tự đi tới đánh luôn có vòng đỏ + mũi chữ V trên đầu, đang kéo nút Đánh
 //   thì cùng dấu màu vàng ở địch sẽ chọn; bật targetMark thì thêm vòng cam đứt nét dưới mục tiêu đang bị đánh thường (swingTarget).
 import { pref, onPref } from '../core/prefs.js';
 import { project } from '../render/project.js';
@@ -27,8 +27,9 @@ export function createAtkTarget({ world, player, camera = null, input = null, vi
   const where = (t) => { const v = views?.get(t.id); return { x: v ? v.root.position.x : t.pos.x, z: v ? v.root.position.z : t.pos.y, y: v?.gy || 0, r: t.radius * 1.6 + 70, h: (t.kind === 'hero' ? 250 * HERO_SCALE + 30 : t.kind === 'dummy' ? 230 : t.height || 200) + 190 }; };
 
   const sendRule = () => world.command(player.id, { type: 'targetBy', value: pref('targetBy') });
-  sendRule();
-  onPref((k, v) => { if (k === 'targetBy') sendRule(); else if (k === 'atkMode' || (k === 'preciseAtk' && !v)) setLock(null); });
+  const sendReach = () => world.command(player.id, { type: 'assist', reach: pref('atkReach') }); // hỗ trợ thao tác (sim/assist.js): bật lúc vào trận
+  sendRule(); sendReach();
+  onPref((k, v) => { if (k === 'targetBy') sendRule(); else if (k === 'atkReach') sendReach(); else if (k === 'atkMode' || (k === 'preciseAtk' && !v)) setLock(null); });
 
   /** Địch thấy được dưới điểm chạm (x, y) màn hình, hoặc null. */
   function pickAt(x, y) {
@@ -79,7 +80,7 @@ export function createAtkTarget({ world, player, camera = null, input = null, vi
     update() {
       if (lock != null) { const t = unit(lock); if (!valid(t) || Math.hypot(t.pos.x - player.pos.x, t.pos.y - player.pos.y) > KEEP) setLock(null); }
       if (!indicators?.mark) return;
-      const lt = unit(pick ?? lock);
+      const lt = unit(pick ?? lock ?? player.chase?.id); // đang tự đi tới đánh / tung chiêu (sim/assist.js): dấu như mục tiêu khoá — biết tướng đang nhắm ai
       indicators.mark(0, valid(lt) ? where(lt) : null, pick != null ? 'pick' : 'lock');
       let at = null; // đang đánh thường: vòng cam dưới mục tiêu của đòn (vừa vung hoặc đang giữ nút Đánh)
       if (pref('targetMark') && player.alive && (player.attacking || world.tick < (player.swingUntil || 0) + 6)) { const t = unit(player.swingTarget); if (valid(t) && t.id !== (pick ?? lock)) at = t; }

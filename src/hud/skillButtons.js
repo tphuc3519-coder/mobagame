@@ -8,7 +8,8 @@
 // pickSkillTarget) và gửi đúng id đó — mô phỏng dùng nếu còn hợp lệ, không thì tự chọn như thường.
 import { flipDir } from '../core/view.js';
 import { lv } from '../data/heroes/_levels.js';
-import { nearestEnemy } from '../sim/targeting.js';
+import { quickTarget } from '../sim/targeting.js';
+import { buzz } from './haptics.js';
 import { canLevelSkill } from '../sim/stats.js';
 import { T } from '../sim/util.js';
 import { heroSkillArt, fistArt } from './heroArt.js';
@@ -62,18 +63,20 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
   const rangeOf = (sp) => sp.range ?? sp.radius ?? 0;
   const tipInfo = (slot) => { const sk = spec(slot), level = player.skillLevels[slot]; return { title: sk.name, sub: `K${SLOTS.indexOf(slot) + 1} · ${level ? `cấp ${level}` : 'chưa học'}`, body: skillDesc(sk) }; };
 
-  /** Tự ngắm khi chạm nhanh: địch gần nhất trong tầm, không có thì hướng đang nhìn. */
+  /** Tự ngắm khi chạm nhanh (sim/targeting.js quickTarget): mục tiêu khoá → tướng địch trong tầm theo "Phương pháp lựa chọn mục tiêu" →
+   *  lính / quái gần nhất; không có ai thì theo hướng đang kéo cần (đang chạy về đâu thì chiêu ra hướng đó), không kéo thì hướng đang nhìn. */
   function autoAim(slot) {
     const sp = spec(slot), range = rangeOf(sp) + 100;
-    const t = nearestEnemy(world, player, range);
-    const d = t ? { x: t.pos.x - player.pos.x, y: t.pos.y - player.pos.y } : facingDir();
+    const t = quickTarget(world, player, range, pref('targetBy'), tgt.lockId(), !!sp.heroOnly);
+    const jd = input?.dir?.(), run = jd && (jd.x || jd.y) ? jd : null;
+    const d = t ? { x: t.pos.x - player.pos.x, y: t.pos.y - player.pos.y } : run || facingDir();
     const l = Math.hypot(d.x, d.y) || 1;
     if (sp.aim === 'point') { const f = t ? Math.min(l, sp.range) : sp.range * 0.7; return { x: player.pos.x + (d.x / l) * f, y: player.pos.y + (d.y / l) * f }; }
-    if (sp.aim === 'target') return { x: d.x / l, y: d.y / l, id: tgt.lockId() }; // khoá mục tiêu: mục tiêu đang khoá (nếu hợp lệ), không thì sim chọn tướng gần hướng nhất
+    if (sp.aim === 'target') return { x: d.x / l, y: d.y / l, id: t ? t.id : tgt.lockId() }; // khoá mục tiêu: đúng mục tiêu vừa chọn (sim kiểm lại; ngoài tầm thì tự đi tới — sim/assist.js)
     if (sp.aim === 'direction') return { x: d.x / l, y: d.y / l };
     return null;
   }
-  const cast = (slot, aim) => world.command(player.id, { type: 'cast', slot, aim });
+  const cast = (slot, aim) => { world.command(player.id, { type: 'cast', slot, aim }); buzz('cast'); };
   /** Kéo chiêu khoá mục tiêu: tướng mô phỏng sẽ chọn theo hướng kéo → dấu vàng (mark 0 'pick'). */
   function previewCand(a, sp) {
     const c = a.cancel || !player.alive ? null : pickSkillTarget(world, player, sp, a.dir), id = c ? c.id : null;
@@ -104,6 +107,7 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
       if (a.tip) hideTip();
       if (shown === a) hideAim();
       if (a.ownPreview) { a.ownPreview = false; tgt.preview(null); } // chỉ xoá dấu xem trước do chính lượt kéo này đặt
+      if (a.cancel) buzz('cancel');
       if (a.cancel || a.auto || a.tip) return; // huỷ / đã ra chiêu lúc chạm / chỉ xem mô tả
       let aim = null;
       if (!a.aiming) aim = autoAim(slot);

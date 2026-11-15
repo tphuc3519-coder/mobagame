@@ -34,6 +34,12 @@ export function pickByRule(world, e, range, rule, preferId = null, skip = null) 
   }
   return best || nearestEnemy(world, e, range, null, skip);
 }
+/** Mục tiêu tự ngắm khi người chơi chạm nhanh nút chiêu (hud/skillButtons.js): mục tiêu khoá còn trong tầm → tướng địch trong tầm theo luật
+ *  chọn mục tiêu của người chơi (rule như pickByRule) → địch khác gần nhất (lính / quái — dọn lính bằng chiêu); không nhắm trụ / nhà chính
+ *  (chiêu không phải để đẩy trụ). Trước đây chỉ lấy địch gần nhất: đứng sát lính là chiêu bay vào lính dù tướng địch đứng ngay cạnh. */
+export function quickTarget(world, e, range, rule = 'pct', lockId = null, heroOnly = false) {
+  return pickByRule(world, e, range, rule || 'pct', lockId, (t) => t.structure || (heroOnly && !t.isHero));
+}
 /** Địch gần nhất nằm trong nửa mặt phẳng hướng đã cho. */
 export function enemyAlongDir(world, e, dir, range) {
   let best = null, bd = Infinity;

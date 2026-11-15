@@ -34,7 +34,9 @@ Chiêu khoá mục tiêu (`targetedDash`, `targeted`): lệnh có thể mang `ai
 dùng nếu còn hợp lệ, không thì chọn như cũ.
 
 **Chế độ ngắm trên mobile:**
-- **Chạm nhanh** (không kéo quá 15px): tự nhắm, ưu tiên tướng địch gần nhất trong tầm, rồi lính gần nhất. `aoeSelf`/`selfBuff` dùng luôn.
+- **Chạm nhanh** (không kéo quá 15px): tự nhắm (`sim/targeting.js quickTarget`) — mục tiêu khoá trong tầm → tướng địch trong tầm theo Cài đặt
+  *Phương pháp lựa chọn mục tiêu* (% máu / máu / gần nhất) → lính / quái gần nhất (không nhắm trụ); không có ai thì theo hướng đang kéo cần,
+  không kéo thì hướng đang nhìn. `aoeSelf`/`selfBuff` dùng luôn. Chiêu khoá mục tiêu bấm khi địch ngoài tầm: tướng tự đi tới rồi tung (07 §9 `atkReach`).
 - **Kéo:** hiện chỉ báo theo hướng/điểm kéo. Thả để tung chiêu. Kéo vào vùng **Huỷ** để huỷ.
 - Kỹ năng `point` giới hạn điểm trong tầm; kéo ra ngoài vòng sẽ dính vào mép.
 
