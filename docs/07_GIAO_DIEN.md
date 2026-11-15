@@ -235,6 +235,11 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
   thông báo, dồn thì rút ngắn. Vàng nhận được hiện "+N" kèm đồng vàng trên đầu tướng mình.
 - **Thanh máu trên đầu**: tướng (máu có vạch mỗi 100 HP, khiên màu trắng, mana xanh dương mảnh, cấp trong ô tròn, tên người chơi); lính/quái (thanh nhỏ); công trình (thanh dày).
 - **Màu**: bản thân viền vàng; đồng minh xanh ngọc; địch đỏ.
+- **Máu thấp** (14/11, `hud/lowHp.js`): dưới 30% máu có viền đỏ mờ quanh màn hình — nằm giữa cảnh 3D và lớp HUD nên thanh máu / nút bấm không
+  bị nhuộm; dưới 15% đậm hơn + nhịp chậm 1,5 giây (không nhấp nháy). Có độ trễ 4% để máu dao động quanh mốc không làm viền chớp tắt. Tắt ở
+  Cài đặt → Thiết lập giao diện → Cảnh báo máu thấp; máy bật "giảm chuyển động" thì viền đứng yên.
+- **Chiêu hồi xong** (14/11): nút chiêu có một vòng sáng nở ra 0,5 giây (chiêu cuối: vòng vàng), không lặp.
+- **Đầu hàng trực tuyến** (14/11): đội từ 2 người thật phải biểu quyết — dòng báo "… muốn đầu hàng (1/2) — Cài đặt → Đầu hàng để đồng ý".
 - **Khi chết**: màn xám nhẹ, đồng hồ hồi sinh lớn ở giữa, vẫn mở được cửa hàng.
 - **Tạm dừng** (offline): nút ≡ → Tiếp tục / Cài đặt / Đầu hàng (5v5 sau 8:00) / Thoát.
 

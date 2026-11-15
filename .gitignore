@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
 *.log
+# thư mục dựng để đem lên mạng (node tools/build_site.mjs site <mã bản>)
+site/

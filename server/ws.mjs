@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto';
 
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-const MAX = 64 * 1024; // khung lớn nhất nhận từ máy khách
+const MAX = 16 * 1024; // khung lớn nhất nhận từ máy khách (tin lớn nhất là khoá tướng kèm bảng bùa + phù hiệu: < 5 KB)
 
 /** Nâng cấp yêu cầu HTTP lên WebSocket. Trả về đối tượng { send(obj), close(), on(name, fn), ip } hoặc null nếu yêu cầu sai. */
 export function accept(req, socket) {
@@ -26,13 +26,14 @@ export function accept(req, socket) {
     ip: req.headers['x-forwarded-for']?.split(',')[0].trim() || socket.remoteAddress,
     get open() { return !closed; },
     send(obj) { if (closed || socket.destroyed) return; socket.write(frame(1, Buffer.from(typeof obj === 'string' ? obj : JSON.stringify(obj)))); },
-    close(code = 1000) { if (closed) return; closed = true; try { const b = Buffer.alloc(2); b.writeUInt16BE(code); socket.end(frame(8, b)); } catch (_) { /* đã đóng */ } emit('close'); },
+    close(code = 1000) { if (closed) return; closed = true; try { const b = Buffer.alloc(2); b.writeUInt16BE(code); socket.end(frame(8, b)); } catch (_) { /* đã đóng */ } setTimeout(() => socket.destroy(), 3000).unref?.(); emit('close'); }, // bên kia không đóng nốt: tự huỷ sau 3 giây (không để socket treo)
     on(n, f) { handlers[n].push(f); },
     get buffered() { return socket.writableLength; },
   };
   socket.on('data', (chunk) => {
+    if (closed) return; // đã đóng (tin sai / quá giới hạn): bỏ mọi dữ liệu còn tới
     buf = buf.length ? Buffer.concat([buf, chunk]) : chunk;
-    while (buf.length >= 2) {
+    while (buf.length >= 2 && !closed) {
       const fin = buf[0] & 0x80, op = buf[0] & 0x0f, masked = buf[1] & 0x80; let len = buf[1] & 0x7f, off = 2;
       if (len === 126) { if (buf.length < 4) return; len = buf.readUInt16BE(2); off = 4; }
       else if (len === 127) { if (buf.length < 10) return; const big = buf.readBigUInt64BE(2); if (big > BigInt(MAX)) return ws.close(1009); len = Number(big); off = 10; }

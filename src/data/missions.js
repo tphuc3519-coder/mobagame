@@ -28,4 +28,4 @@ export const WEEKLY = [
 ];
 /** Rương tuần: nhận khi xong (đã nhận thưởng) cả 4 nhiệm vụ tuần. */
 export const WEEK_BONUS = { name: 'Rương tuần', gold: 300, gems: 20, item: 'bua_giu_sao', chest: 1 }; // gems: một nguồn ngọc đều đặn (GĐ5b)
-export const EVENT = { id: 'ev_join3', name: 'Tham gia sự kiện tích luỹ', goal: 3, gao: 8 };
+export const EVENT = { id: 'ev_join3', name: 'Tham gia sự kiện tích luỹ', short: 'Sự kiện tích luỹ', goal: 3, gao: 8 }; // short: nhãn ở ô hẹp (Phòng chờ)

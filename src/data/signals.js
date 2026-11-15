@@ -20,3 +20,7 @@ export const PING = {
   botGap: 25,                            // bot tự ra tín hiệu (khi não đội gọi đánh mục tiêu lớn / dồn đường) tối đa mỗi 25 giây mỗi đội
 };
 export const ACE = { minTeam: 2 };       // Quét Sạch: đội có ≥ 2 tướng, cùng lúc không còn ai sống
+/** Đầu hàng (07 §9). rankedFrom: giây trận từ đó đấu hạng / Đỉnh cao mới đầu hàng được. Trận trực tuyến đội có từ 2 người thật: phải biểu
+ *  quyết — quá nửa số người thật đang điều khiển tướng đồng ý trong voteSec giây (sim/match.js voteSurrender); biểu quyết không đủ phiếu thì
+ *  retrySec giây sau (tính từ lúc mở) đội đó mới mở lại được. Đấu với máy (một người): đầu hàng ngay như cũ. */
+export const SURRENDER = { rankedFrom: 480, voteSec: 30, retrySec: 60 };

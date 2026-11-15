@@ -79,7 +79,7 @@ em.rl { display: inline-flex; flex: none; align-items: center; gap: 3px; width: 
 #pick .tm small em.rl { margin-right: 4px; vertical-align: -2px; display: inline-flex; } #pick .tm.me em.rl { color: var(--c-yel); }
 #lineup .lu em.rl { margin-top: 3px; }
 /* —— phòng chờ: nút vị trí dưới ô của mình + hộp thoại chọn vị trí —— */
-#room .rl-chip { margin-top: 5px; display: inline-flex; align-items: center; gap: 4px; height: 24px; max-width: 128%; padding: 0 9px; box-sizing: border-box; border: 0; border-radius: 12px; overflow: hidden; background: rgba(4,6,20,.85); box-shadow: inset 0 0 0 2px var(--ink); font: 700 12px/1 var(--u-disp);  color: var(--u-gc); white-space: nowrap; }
+#room .rl-chip { margin-top: 5px; display: inline-flex; align-items: center; gap: 4px; height: 24px; max-width: 128%; padding: 0 clamp(6px, calc(1.1 * var(--vw, 1vw)), 9px); box-sizing: border-box; border: 0; border-radius: 12px; overflow: hidden; background: rgba(4,6,20,.85); box-shadow: inset 0 0 0 2px var(--ink); font: 700 clamp(10.5px, calc(1.75 * var(--vw, 1vw)), 12px)/1 var(--u-disp);  color: var(--u-gc); white-space: nowrap; } /* khung hẹp (640): nút nhỏ lại để không đè nhãn hai ô bên cạnh */
 #room .rl-chip .rl-ic { width: 14px; height: 14px; } #room .rl-chip small { font: 600 10px var(--u-body); color: var(--u-dim); overflow: hidden; text-overflow: ellipsis; }
 #room .rl-chip.need { animation: seatP 1.2s ease-in-out infinite; }
 .rl-dlg .rl-lab { text-align: left; margin: 2px 0 5px; font: 700 12px var(--u-disp);   color: var(--u-gc); } .rl-dlg .rl-lab small { font: 500 11px var(--u-body); letter-spacing: 0; text-transform: none; color: var(--u-dim); }

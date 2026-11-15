@@ -173,16 +173,25 @@ async function pings(browser) {
     const inView = btns.every((r) => r.l >= 0 && r.t >= 0 && r.r <= W && r.b <= H), clash = btns.filter((r) => hit(r, mm) || skills.some((k) => hit(r, k))).length;
     ok(`${tag}: vòng 4 tín hiệu nằm trong màn, không đè bản đồ nhỏ / nút kỹ năng`, btns.length === 4 && inView && !clash, `${btns.length} nút, đè ${clash}`);
     await shot(page, `pings_wheel_${tag}.png`);
-    // máy không GPU: chụp ảnh / page.tap mất vài giây ⇒ vòng đã tự đóng sau 4 s không thao tác (hud/pings.js). Mở lại nếu cần, rồi chọn
-    // Tập hợp và chạm bản đồ nhỏ liền tay (pointerdown thật vào nút + chạm toạ độ thật, không chờ "đứng yên")
-    if (await page.evaluate(() => document.querySelector('#pingWheel').hidden)) { await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 }); }
-    await page.evaluate(() => document.querySelector('#pingWheel button[data-k="gather"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch' })));
+    // Chọn Tập hợp rồi chạm giữa bản đồ nhỏ TRONG CÙNG MỘT NHỊP (như bước Rút lui bên dưới). Trước đây bước này dùng page.touchscreen.tap: máy
+    // không GPU mất hơn 4 giây cho một cú chạm — lâu hơn thời gian vòng tự đóng (hud/pings.js) — nên hỏng theo tốc độ máy (đo 14/11: bản main
+    // chưa sửa gì cũng hỏng 2/2 lượt). Cú chạm gửi vào đúng phần tử mà ngón tay thật ở toạ độ đó sẽ trúng (elementFromPoint), nên vẫn bắt
+    // được trường hợp có thứ gì che bản đồ nhỏ.
     const c = mm && { x: (mm.l + mm.r) / 2, y: (mm.t + mm.b) / 2 };
-    await page.touchscreen.tap(c.x, c.y);
+    const hitEl = await page.evaluate(({ x, y }) => {
+      const P = (el, type, extra = {}) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerType: 'touch', pointerId: 9, ...extra }));
+      const wheel = document.querySelector('#pingWheel');
+      if (wheel.hidden) P(document.querySelector('#pingBtn'), 'pointerdown'); // vòng đã tự đóng trong lúc chụp ảnh: mở lại
+      P(wheel.querySelector('button[data-k="gather"]'), 'pointerdown');
+      const el = document.elementFromPoint(x, y);
+      if (el) { P(el, 'pointerdown', { clientX: x, clientY: y }); P(el, 'pointerup', { clientX: x, clientY: y }); }
+      return el ? el.id || el.tagName : '';
+    }, c);
+    ok(`${tag}: giữa bản đồ nhỏ không bị gì che (ngón tay chạm trúng bản đồ nhỏ)`, hitEl === 'minimap', hitEl);
     const t = await waitFor(page, () => window.__game.world.pings.some((p) => p.kind === 'gather' && p.src === window.__game.player.id), 60);
     ok(`${tag}: Tập hợp + chạm bản đồ nhỏ → tín hiệu vào mô phỏng`, t >= 0, `${t} tick`);
-    const feed = await page.evaluate(() => document.querySelector('#pingFeed')?.textContent || '');
-    ok(`${tag}: dòng báo bên trái ghi Tập hợp`, /Tập hợp/.test(feed), feed.slice(0, 60));
+    const fed = await waitFor(page, () => /Tập hợp/.test(document.querySelector('#pingFeed')?.textContent || ''), 60); // dòng báo hiện ở khung vẽ kế, tự mờ sau 5 giây
+    ok(`${tag}: dòng báo bên trái ghi Tập hợp`, fed >= 0, await page.evaluate(() => (document.querySelector('#pingFeed')?.textContent || '').slice(0, 60)));
     const ack = await waitFor(page, () => [...(window.__game.world.brains?.[0]?.orders?.values() || [])].some((o) => o.kind === 'ping'), 90);
     ok(`${tag}: bot đồng đội nhận lệnh đi tới`, ack >= 0, `${ack} tick`);
     await sleep(700);

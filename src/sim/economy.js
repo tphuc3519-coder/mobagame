@@ -25,7 +25,9 @@ export function gainXp(world, e, amount) {
   e.xp += amount;
   while (e.level < ECON.maxLevel && e.xp >= ECON.xpNeed(e.level)) {
     e.xp -= ECON.xpNeed(e.level); e.level++; e.skillPoints++;
-    const before = e.stats.maxHp; refreshStats(world, e); e.hp += e.stats.maxHp - before; // lên cấp: máu tối đa tăng bao nhiêu thì hồi bấy nhiêu
+    // lên cấp: máu tối đa tăng bao nhiêu thì hồi đúng bấy nhiêu. refreshStats tự giữ TỈ LỆ máu khi máu tối đa đổi (đúng cho mua đồ), nên trước đây
+    // lên cấp được cộng hai lần — phần theo tỉ lệ + phần tăng — máu vượt cả máu tối đa (đo: mọi tướng, mỗi lần lên cấp lúc đầy máu).
+    const before = e.stats.maxHp, hp0 = e.hp; refreshStats(world, e); e.hp = Math.min(e.stats.maxHp, hp0 + (e.stats.maxHp - before));
     if (e.autoLevel) autoLevel(e);
     world.emit('levelup', { id: e.id, level: e.level });
   }

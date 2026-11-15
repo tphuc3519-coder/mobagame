@@ -21,6 +21,7 @@ import { openPostgame } from './postgame.js';
 import { openOnline } from './online.js';
 import { screenSound } from '../audio/uiSounds.js';
 import { END } from '../data/endgame.js';
+import { SURRENDER } from '../data/signals.js';
 import { pwaLobby } from './pwa.js';
 import { net, netReset, clearSaved } from './netLobby.js';
 import { markMatch, matchStarted, clearMark } from './crashGuard.js';
@@ -55,7 +56,7 @@ export const nav = {
       mode: M.map, heroId: P.heroId, enemyId: P.foeHeroes[0] || null, allies: M.map === '5v5' ? P.allyHeroes : undefined, foes: M.map === '5v5' ? P.foeHeroes : undefined,
       spellId: P.spellId, charmId: P.charmId, loadout: P.charm ? { spellId: P.spellId, charm: P.charm, emblem: P.emblem } : undefined, difficulty: modeDiff(S.mode), dummies: P.dummies, bot: !P.dummies, seed: A.seed, names,
       ...(M.map === '5v5' ? { playerRole: P.role || undefined, allyRoles: P.allyRoles, foeRoles: P.foeRoles } : {}), // vị trí chốt ở màn chọn
-      surrenderAfter: M.ranked ? 480 : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
+      surrenderAfter: M.ranked ? SURRENDER.rankedFrom : 0, // đấu hạng: đầu hàng từ phút 8 (07 §9)
       skinTint: skinTint(p, P.heroId), // trang phục mùa (GĐ4b)
       onGameOver: gameOver, onStart: matchStarted, // vào trận ổn 15 giây: xoá dấu "đang vào trận" (ui/crashGuard.js)
     });
@@ -68,7 +69,13 @@ export const nav = {
     const me = session.cfg.players[session.me];
     if (MODES[session.cfg.q]) S.mode = session.cfg.q;
     markMatch({ mode: session.cfg.q, online: true });
-    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? 480 : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted });
+    match = startMatch({ online: session, heroId: me.heroId, mode: session.cfg.mode, skinTint: skinTint(profile(), me.heroId), surrenderAfter: MODES[session.cfg.q]?.ranked ? SURRENDER.rankedFrom : 0, onGameOver: (r) => onlineOver(r, session), onStart: matchStarted });
+  },
+  /** Trận trực tuyến không thể tiếp tục (máy chủ dừng phòng / phòng đã đóng / nối lại không được — net/session.js onEnd): dọn trận rồi về
+   *  Sảnh. Trước đây trận đứng hình mãi, chỉ còn cách tải lại trang. Đã sang màn kết quả thì thôi (trận đã xong bình thường). */
+  abortOnline() {
+    if (!match || window.__post) return;
+    clearSaved(); setTimeout(() => { if (match && !window.__post) leave({ to: 'home' }); }, 0); // ra khỏi lượt gọi của phiên rồi mới dọn
   },
 };
 

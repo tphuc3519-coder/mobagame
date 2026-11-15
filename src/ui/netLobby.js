@@ -3,6 +3,7 @@
 // dựng phiên trong trận (net/session.js) và vào trận (flow.startOnline). Màn nào cần nghe thì đăng ký onNet(fn(sự kiện, tin)).
 import { connect, serverUrl, saveServerUrl, normUrl, wake } from '../net/client.js';
 import { createSession } from '../net/session.js';
+import { NET, VERSION_MSG } from '../net/protocol.js';
 import { toast } from './kit.js';
 
 const SAVE = 'la.online';
@@ -54,8 +55,11 @@ function attach(c) {
   c.onDrop = () => { if (net.started) return; net.conn = null; net.room = null; emit('drop'); };
 }
 function begin(c, m) {
-  if (net.started) return; net.started = true;
-  const session = createSession({ conn: c, cfg: m.cfg, me: m.me, code: m.code, token: m.token, notify: (t) => toast(t, 2600) });
+  if (net.started) return;
+  // máy chủ đang chạy bản khác (vừa deploy, chưa khởi động lại xong): vào trận là lệch đồng bộ — báo rồi rời phòng
+  if (m.cfg?.v !== NET.version) { toast(m.cfg?.v > NET.version ? VERSION_MSG : 'Máy chủ đang chạy bản cũ hơn (đang cập nhật) — thử lại sau ít phút', 4200); netLeave(); emit('err', { m: 'version' }); net.nav?.go('home'); return; }
+  net.started = true;
+  const session = createSession({ conn: c, cfg: m.cfg, me: m.me, code: m.code, token: m.token, notify: (t) => toast(t, 2600), onEnd: () => net.nav.abortOnline?.() }); // trận không tiếp tục được: dọn trận, về sảnh
   try { sessionStorage.setItem(SAVE, JSON.stringify({ url: c.url, code: m.code, token: m.token })); } catch (_) { /* */ }
   net.nav.startOnline(session);
 }

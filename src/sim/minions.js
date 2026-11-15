@@ -73,10 +73,14 @@ function pickTarget(world, e) {
   }
   let best = null, bs = Infinity;
   for (const t of world.entities) {
-    if (t.team === e.team || t.team === 2 || t.noTarget || !isTargetable(e, t) || !canSee(e.team, t)) continue;
-    const d = dist(t.pos, e.pos) - t.radius;
+    if (t.team === e.team || t.team === 2 || t.noTarget) continue;
     // lính ưu tiên lính địch, rồi công trình/tướng trong tầm đánh
     const lim = t.kind === 'minion' ? 450 : range + 40;
+    // loại nhanh theo từng trục (lệch một trục quá tầm + 1 thì chắc chắn ngoài tầm) trước các phép thử đắt hơn — kết quả y hệt
+    const far = lim + t.radius + 1, ax = t.pos.x - e.pos.x; if (ax > far || -ax > far) continue;
+    const ay = t.pos.y - e.pos.y; if (ay > far || -ay > far) continue;
+    if (!isTargetable(e, t) || !canSee(e.team, t)) continue;
+    const d = dist(t.pos, e.pos) - t.radius;
     if (d > lim) continue;
     const score = d + (t.kind === 'minion' ? 0 : 400);
     if (score < bs) { bs = score; best = t; }

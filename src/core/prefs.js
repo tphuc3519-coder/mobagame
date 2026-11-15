@@ -33,6 +33,7 @@ export const PREF_DEFAULTS = Object.freeze({
   edgeFoes: true,      // Vị trí tướng địch ở rìa màn hình
   skillTips: false,    // Miêu tả chiêu trong trận (giữ yên nút chiêu ≥ 0,35s để xem, thả ra không tung) — tắt như mặc định Liên Quân
   skillNames: false,   // Miêu tả nút chiêu (tên chiêu dưới nút)
+  lowHpFx: true,       // Cảnh báo máu thấp: viền đỏ mờ quanh màn hình khi máu dưới 30% (hud/lowHp.js)
   // —— Thiết lập ——
   camDist: 'far',      // Góc camera: 'near' gần | 'far' xa
   bright: 3,           // Độ sáng 1..5 (3 = đề cử)

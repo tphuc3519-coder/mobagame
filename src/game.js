@@ -10,6 +10,7 @@ import { collectGpu, freeGpu, holdMaterials, releaseHeld } from './render/dispos
 import { keptShapeMaterials } from './render/vfx/shapes.js';
 import { createScope, enterScope, on, track } from './core/scope.js';
 import { closeSettings } from './ui/settingsModal.js';
+import { toast } from './ui/kit.js';
 import { hideTip } from './hud/tip.js';
 import { aimReset } from './hud/aimPad.js';
 import { createPost } from './render/post.js';
@@ -45,6 +46,7 @@ import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
 import { createPingHud } from './hud/pings.js';
 import { createScoreboard } from './hud/scoreboard.js';
+import { createLowHp } from './hud/lowHp.js';
 import { STARTER, ITEMS, starterFor } from './data/items.js';
 import { createGameSounds } from './audio/gameSounds.js';
 import { sfx, music, stopVoices } from './audio/audio.js';
@@ -148,6 +150,7 @@ applyPrefs(); onPref((k) => { if (k === 'bright' || k === 'fogFx' || k === 'camD
 const camLook = createCamLook({ minimap, map });
 const pingHud = map.lanes.length > 1 ? createPingHud({ world, player, map, cam, minimap, hudCanvas: document.getElementById('hud') }) : null; // tín hiệu (chỉ 5v5)
 if (pingHud) minimap.setOverlay((c, wx, wy) => pingHud.minimap(c, wx, wy));
+const lowHp = createLowHp(); // viền đỏ mờ khi máu thấp (hud/lowHp.js)
 const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators, camera: cam.camera, input, views }); // camera/input/views: chạm chọn địch + dấu mục tiêu (Cài đặt điều khiển)
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators, lockId: buttons.lockId, preview: buttons.preview }); // đồ khoá mục tiêu: dùng chung mục tiêu khoá + dấu xem trước
@@ -192,6 +195,14 @@ function showResult(winner) {
   document.body.append(track(b)); document.body.classList.add('over');
   // màn kết quả mở: gỡ luôn listener / HUD của trận (cần điều khiển trên body giữ con trỏ chuột — để lại thì chuột không bấm được nút màn kết quả)
   scope.later(() => { loop.stop(); b.remove(); document.body.classList.add('post'); scope.dispose(); opts.onGameOver({ world, player, winner }); }, END.bannerSec * 1000); // dừng hẳn vòng vẽ: màn kết quả che kín cảnh 3D (trước vẫn vẽ ~60 khung/giây phía sau, tốn pin)
+}
+/** Biểu quyết đầu hàng của đội mình (trận trực tuyến — sim/match.js voteSurrender): báo ai vừa bỏ phiếu, còn thiếu mấy phiếu. */
+function surrenderNote(ev) {
+  if (ev.team !== player.team) return;
+  const mine = ev.id === player.id;
+  if (ev.fail) { if (mine) toast(ev.fail === 'early' ? `Chưa đầu hàng được — còn ${Math.floor(ev.wait / 60)}:${String(ev.wait % 60).padStart(2, '0')}` : `Đội vừa biểu quyết đầu hàng — thử lại sau ${ev.wait} giây`, 2600); return; }
+  if (ev.yes >= ev.need) return; // đủ phiếu: trận kết thúc ngay sau đó
+  toast(mine ? `Đã bỏ phiếu đầu hàng (${ev.yes}/${ev.need}) — chờ đồng đội` : `${world.byId(ev.id)?.playerName || 'Đồng đội'} muốn đầu hàng (${ev.yes}/${ev.need}) — Cài đặt → Đầu hàng để đồng ý`, 4200);
 }
 document.getElementById('again').onclick = () => location.reload();
 
@@ -267,7 +278,7 @@ const loopCfg = {
     if (!force && lastDraw && auto) auto.frame(now - lastDraw);
     lastDraw = now;
     const events = world.drainEvents();
-    for (const ev of events) if (ev.type === 'gameover') { beginEnd(ev); showResult(ev.winner); }
+    for (const ev of events) { if (ev.type === 'gameover') { beginEnd(ev); showResult(ev.winner); } else if (ev.type === 'surrenderVote') surrenderNote(ev); }
     views.handle(events); fx.handle(events, world); hud.handle(events, world); sounds.handle(events, world); pingHud?.handle(events);
     views.update(world, alpha, dt, cam.camera); fx.update(world, dt * fxSlow, player); towerRanges.update(world, player, dt);
     buttons.update(); spells.update(); shop.update(); score.update();
@@ -277,6 +288,7 @@ const loopCfg = {
     if (blast && endCam.t >= END.blastAt) { fx.coreBlast(blast.pos.x, blast.pos.y, blast.team === player.team); cam.shake(END.shake, END.shakeSec); sfx('tower_down', { vol: 1, announce: true }); blast = null; } sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn
     sounds.update(world, cam.target, cam.camera); // tâm nghe theo camera
     if (dead !== !player.alive) { dead = !player.alive; document.body.classList.toggle('dead', dead); } // chết: màn hình xám, nút cửa hàng nhấp nháy
+    lowHp.update(player, ended);
     if (post && gray !== (dead ? 1 : 0)) { gray = dead ? Math.min(1, gray + dt * 3) : Math.max(0, gray - dt * 4); post.set({ gray }); } // xám dần khi chết, hồi sinh thì màu về
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }

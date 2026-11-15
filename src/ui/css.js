@@ -157,7 +157,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #home .hm-me .rk { display: flex; align-items: center; gap: 4px; font: 700 13px/1 var(--u-disp);  color: var(--u-gc); text-shadow: 0 2px 0 rgba(15,23,41,.8); }
 #home .hm-me .rk .rkb { width: 24px; height: 24px; margin: -4px 0; } #home .hm-me .rk .rkb b { display: none; }
 #home .hm-me .pbar { width: clamp(90px, calc(15 * var(--vw, 1vw)), 130px); height: 4px; }
-#home .hm-fr { position: absolute; left: calc(var(--l) + 4px); top: calc(var(--t) + clamp(60px, calc(18 * var(--vh, 1vh)), 76px)); display: flex; flex-direction: column; gap: clamp(6px, calc(2 * var(--vh, 1vh)), 10px); }
+#home .hm-fr { position: absolute; left: calc(var(--l) + 4px); top: calc(var(--t) + clamp(60px, calc(18 * var(--vh, 1vh)), 76px)); display: flex; flex-direction: column; gap: clamp(4px, calc(1.6 * var(--vh, 1vh)), 10px); } /* khung 360 cao: nút Tạo phòng không chạm dòng trò chuyện */
 #home .hm-fr button { position: relative; width: clamp(34px, calc(10.5 * var(--vh, 1vh)), 42px); height: clamp(34px, calc(10.5 * var(--vh, 1vh)), 42px); padding: 2px; box-sizing: border-box; border: 0; border-radius: 50%; background: var(--g-blu); box-shadow: 0 0 0 2px var(--ink), 0 2px 0 var(--ink); }
 #home .hm-fr .face, #home .hm-fr .ini { width: 100%; height: 100%; border-radius: 50%; }
 #home .hm-fr .dot { position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #3ddc6a; box-shadow: 0 0 0 2px var(--ink); }
@@ -187,10 +187,10 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #home .tile .badge { top: -6px; right: -6px; }
 #home .hm-cg { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 10px; border-radius: 11px; background: rgba(4,6,20,.8); box-shadow: inset 0 0 0 2px var(--ink); font: 700 12px/1 var(--u-disp);   color: var(--c-yel); }
 #home .hm-cg .pbar { flex: 1; height: 5px; } #home .hm-cg .pbar > i { background: var(--g-yel); } #home .hm-cg small { font: 700 12px var(--u-disp); color: #fff; } #home .hm-cg.hq { margin-top: 6px; } #home .hm-cg.hq .pbar > i { background: linear-gradient(#a678ff, #a678ff); }
-#home .hm-nav { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--nav) + var(--sb, env(safe-area-inset-bottom))); padding: 0 0 var(--sb, env(safe-area-inset-bottom)) var(--l); box-sizing: border-box; display: flex; align-items: center; gap: 2px;
-  background: linear-gradient(0deg, rgba(3,5,18,.96) 0, rgba(3,5,18,.82) 55%, rgba(3,5,18,0) 100%); pointer-events: none; }
+#home .hm-nav { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--nav) + var(--sb, env(safe-area-inset-bottom))); padding: 0 var(--playp, 0%) var(--sb, env(safe-area-inset-bottom)) var(--l); box-sizing: border-box; display: flex; align-items: center; gap: 2px;
+  background: linear-gradient(0deg, rgba(3,5,18,.96) 0, rgba(3,5,18,.82) 55%, rgba(3,5,18,0) 100%); pointer-events: none; } /* --playp: phần cụm nút vào trận chiếm bên phải (home.js đo) — 5 nút chia nhau phần còn lại */
 
-#home .hm-nav button { pointer-events: auto; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: clamp(54px, calc(9 * var(--vw, 1vw)), 74px); height: 100%; padding: 0; border: 0; background: none; }
+#home .hm-nav button { pointer-events: auto; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1 1 0; min-width: 0; max-width: clamp(54px, calc(9 * var(--vw, 1vw)), 74px); height: 100%; padding: 0; border: 0; background: none; }
 
 #home .hm-nav img.ui-ic { width: clamp(28px, calc(8.6 * var(--vh, 1vh)), 38px); height: clamp(28px, calc(8.6 * var(--vh, 1vh)), 38px); filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); transition: transform .12s; }
 #home .hm-nav span { font: 700 clamp(11px, calc(3.4 * var(--vh, 1vh)), 13px)/1 var(--u-disp);   color: var(--c-yel); text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; }
@@ -208,7 +208,8 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #home .rank-go .tx small { display: flex; align-items: center; gap: 4px; font: 700 clamp(10.5px, calc(3.2 * var(--vh, 1vh)), 13px)/1 var(--u-disp);  color: var(--ink); white-space: nowrap; }
 #home .rank-go .stars b { color: rgba(15,23,41,0.4); font-size: 10px; } #home .rank-go .stars b.on { color: var(--ink); text-shadow:  none; } #home .rank-go .stars em { color: var(--ink); }
 #home .rank-go:active { transform: translateY(3px); box-shadow: inset 0 3px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.2), 0 2px 0 var(--ink); }
-@media (max-width: 700px) { #room .seat .rk { font-size: 9.5px; } #home .hm-ev .tt small { display: none; } #home .hm-nav span { font-size: 10.5px; } }
+@media (max-width: 700px) { #room .seat .rk { font-size: 9.5px; } #home .hm-nav span { font-size: 10.5px; } }
+@media (max-width: 760px) { #home .hm-ev .tt small { display: none; } } /* cột phải hẹp: dòng mô tả sự kiện không đủ chỗ (bị cắt "…") — ẩn, còn tiêu đề + tiến độ */
 
 /* —— CHỌN CHẾ ĐỘ —— */
 .md-list { display: flex; gap: clamp(12px, calc(2.2 * var(--vw, 1vw)), 20px); height: 100%; min-height: 220px; align-items: stretch; justify-content: center; padding: 8px 4px 4px; box-sizing: border-box; }
@@ -245,7 +246,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .seat.empty .box::after { display: none; }
 #room .seat .plus { width: 44%; aspect-ratio: 1; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; border: 3px solid var(--ink); background: var(--g-blu); font: 800 clamp(20px, calc(6 * var(--vh, 1vh)), 30px)/1 var(--u-disp); color: #fff; box-shadow: var(--hl), 0 3px 0 var(--ink); pointer-events: none; }
 #room .seat.wait .box { animation: seatP 1.2s ease-in-out infinite; } @keyframes seatP { 50% { box-shadow: 0 0 0 2px var(--ink); } }
-#room .seat .sn { margin-top: 10px; font: 700 clamp(13px, calc(4 * var(--vh, 1vh)), 16px)/1.1 var(--u-disp);  color: #f4f6fb; text-shadow: 0 2px 0 rgba(15,23,41,.8); max-width: 118%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#room .seat .sn { margin-top: 10px; font: 700 clamp(11.5px, min(calc(4 * var(--vh, 1vh)), calc(1.9 * var(--vw, 1vw))), 16px)/1.1 var(--u-disp);  color: #f4f6fb; text-shadow: 0 2px 0 rgba(15,23,41,.8); max-width: 118%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #room .seat.empty .sn { color: #9fb4e8; }
 #room .seat .rk { margin-top: 3px; max-width: 118%; display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; overflow: hidden; } #room .seat .rk .rkb { width: 22px; height: 22px; flex: none; } #room .seat .rk em { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; } #room .seat .rk .rkb b { display: none; }
 #room .seat .host { position: absolute; z-index: 5; left: 50%; top: -14px; width: 26px; height: 26px; transform: translateX(-50%); filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); }
@@ -256,7 +257,8 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .rm-tabs button { flex: 1; height: 34px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-card2); display: flex; align-items: center; justify-content: center; gap: 4px; font: 700 14px/1 var(--u-disp); color: #c6d3ee; box-shadow: var(--hl), 0 3px 0 var(--ink); }
 #room .rm-tabs button img.ui-ic { width: 22px; height: 22px; flex: none; } #room .rm-tabs button { white-space: nowrap; padding: 0 4px; } #room .rm-tabs button.on { background: var(--g-yel); color: var(--ink); }
 #room .rm-ev { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: #6a4fc7; box-shadow: var(--hl), 0 3px 0 var(--ink); font: 600 12px var(--u-body); color: #fff; }
-#room .rm-ev img.ui-ic { width: 28px; height: 28px; flex: none; } #room .rm-ev span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #room .rm-ev b { font: 700 13px var(--u-disp); color: var(--u-gc); white-space: nowrap; }
+#room .rm-ev img.ui-ic { width: 28px; height: 28px; flex: none; } #room .rm-ev span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; } #room .rm-ev b { font: 800 14px var(--u-disp); color: #fff; white-space: nowrap; }
+#room .rm-ev span i { font: 700 12.5px/1.15 var(--u-disp); font-style: normal; white-space: nowrap; } #room .rm-ev span small { font: 700 11px/1.15 var(--u-disp); color: var(--u-gc); white-space: nowrap; } /* hai dòng: tên sự kiện + phần thưởng; tiến độ n/3 bên phải — trước một dòng dài bị cắt "Tham gia s…" ở mọi cỡ màn */
 #room .rm-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 5px; }
 #room .frow { display: flex; align-items: center; gap: 8px; padding: 4px 6px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-card); }
 #room .frow .face, #room .frow .ini { width: clamp(34px, calc(10 * var(--vh, 1vh)), 42px); height: clamp(34px, calc(10 * var(--vh, 1vh)), 42px); border-radius: 50%; flex: none; box-sizing: border-box; border: 2px solid var(--ink); }
@@ -267,7 +269,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .frow button { flex: none; width: 32px; height: 32px; padding: 0; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); display: grid; place-items: center; background: var(--g-blu); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #room .frow button svg { width: 60%; height: 60%; } #room .frow button[disabled] { opacity: .35; }
 #room .rm-btns { flex: none; display: flex; gap: 6px; } #room .rm-btns button { flex: 1; height: 34px; padding: 0 8px; font-size: 14px; }
-#room .rm-btns button.wide { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#room .rm-btns button.wide { font-size: clamp(11px, calc(1.78 * var(--vw, 1vw)), 12.5px); padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* khung 640: chữ nhỏ lại một nấc thay vì bị cắt */
 #room .rm-sub .olc i { width: 8px; height: 8px; border-radius: 50%; background: #6fe08a; box-shadow: 0 0 8px #6fe08a; } #room .rm-sub .olc > b { color: #9fe3a0; }
 #room .seat.empty.on .box { border-style: solid; border-color: rgba(143,194,255,.5); } #room .seat.empty.on .plus { background: var(--g-blu); }
 #room .rm-go { flex: none; width: 100%; height: clamp(44px, calc(13 * var(--vh, 1vh)), 54px); font-size: clamp(20px, calc(6.4 * var(--vh, 1vh)), 26px); }
@@ -288,7 +290,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #pick .hc { position: relative; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--g-head); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #pick .hc img, #pick .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 #pick .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 6px 4px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
-#pick .hc b { display: block; font: 700 13.5px/1.05 var(--u-disp);   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #pick .hc small { font-size: 10px; color: #cdb8ff; }
+#pick .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 clamp(11px, calc(1.75 * var(--vw, 1vw)), 13.5px)/1.08 var(--u-disp); overflow: hidden; overflow-wrap: anywhere; } #pick .hc small { font-size: 10px; color: #cdb8ff; } /* tên tướng: chữ co theo bề ngang thẻ, tên hai từ xuống dòng — trước bị cắt "Lanternw…", "Haruno S…" ở khung 640 */
 #pick .hc.on { box-shadow: 0 0 0 3px var(--c-yel); }
 #pick .hc.on::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 3px var(--c-yel); pointer-events: none; }
 #pick .hc.lock { filter: grayscale(.9) brightness(.45); }

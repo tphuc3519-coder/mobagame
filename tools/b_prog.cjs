@@ -16,6 +16,9 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const fs = require('fs'), path = require('path');
 
 const port = +(process.argv[2] || 8099), BASE = `http://127.0.0.1:${port}`;
+// ?server=off (như b_flow.cjs): từ 03/11 Đấu thường / Đấu hạng / Đỉnh cao mặc định ghép trực tuyến — không có máy chủ thì thử nối 60 giây rồi mới
+// ghép máy, có máy chủ thì vào hàng chờ thật 60 giây; cả hai đều quá 20 giây kịch bản chờ hộp "Tìm thấy trận" (kịch bản peak hỏng từ đó).
+const HOME = `${BASE}/?server=off`;
 const ALL = ['save844', 'save1280', 'bag844', 'bag1280', 'miss844', 'miss1280', 'season844', 'season1280', 'skin', 'peak844', 'peak1280', 'shop844', 'shop1280'];
 const want = process.argv.slice(3).filter((a) => ALL.includes(a));
 const SHOTS = process.env.SHOTS || '';
@@ -32,7 +35,7 @@ async function openPage(browser, vp, seed = {}) {
   const page = await ctx.newPage(), errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   page.on('console', (m) => { if (m.type() === 'error') errs.push('console.error: ' + m.text().slice(0, 300)); });
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(HOME, { waitUntil: 'domcontentloaded' });
   await home(page);
   return { ctx, page, errs };
 }
@@ -177,7 +180,7 @@ async function missions(browser, vp) {
   await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
   await page.click('#home [data-a="normal"]'); await page.waitForFunction(() => window.__flow.nav.screen === 'room' && document.querySelector('#room .rm-ev'), null, { timeout: T(20) });
   const banner = await page.textContent('#room .rm-ev');
-  ok(`${label}: Phòng chờ hiện "Tham gia sự kiện tích luỹ 3/3 · Đã nhận"`, /sự kiện tích luỹ 3\/3/.test(banner) && /Đã nhận/.test(banner), banner);
+  ok(`${label}: Phòng chờ hiện "Sự kiện tích luỹ · Đã nhận · 3/3"`, /[Ss]ự kiện tích luỹ/.test(banner) && /3\/3/.test(banner) && /Đã nhận/.test(banner), banner);
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
   await ctx.close();
 }
@@ -193,7 +196,7 @@ async function season(browser, vp) {
   // Hải Đăng II (sao 81), cao nhất mùa Sao Mai III (sao 101), đã chọn tướng nhận trang phục mùa, 2 vòng thành thạo
   const prof = { version: 2, name: 'Thử Mùa', gold: 100, stars: 81, best: 101, season: 1, seasonPeak: 101, seasonWins: 9, skinHero: 'kiem_thuy', mastery: { kiem_thuy: 5, trang_nhi: 5, ba_nam: 2 }, bag: {} };
   await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  await page.goto(HOME, { waitUntil: 'domcontentloaded' }); await home(page);
   ok(`${label}: giữa mùa — không có màn "Kết thúc mùa"`, !(await page.$('#rewardScr')));
   await page.click('#home [data-a="leader"]'); await page.waitForSelector('.ui-panel .ss-head', { timeout: T(10) }); await page.waitForTimeout(300);
   const txt = (await page.textContent('.ui-panel .ui-body')).replace(/\s+/g, ' ');
@@ -242,7 +245,7 @@ async function peak(browser, vp) {
   await page.clock.setFixedTime(new Date(2026, 10, 10, 10, 0)); // 10:00 — Đỉnh Cao chưa mở
   const prof = { version: 2, name: 'Thử Đỉnh', rolePri: 'mid', roleSec: 'jungle', stars: 149, best: 149, season: 1, seasonPeak: 149, hq, ranked: 40, rankedWins: 30, bag: {} }; // Thái Dương
   await ctx.addInitScript((p) => { try { if (localStorage.getItem('la.profile') == null) localStorage.setItem('la.profile', JSON.stringify(p)); } catch (_) {} }, prof);
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await home(page);
+  await page.goto(HOME, { waitUntil: 'domcontentloaded' }); await home(page);
   const ht = (await page.textContent('#home')).replace(/\s+/g, ' ');
   ok(`${label}: sảnh — huy hiệu Thiên Hà + thanh Hào Quang ${hq}`, /ĐẤU HẠNG\s*Thiên Hà/.test(ht) && /Hào Quang\s*\d+/.test(ht) && (await page.getAttribute('#home .rank-go .rkb img', 'src')).includes('rank_thien_ha'), ht.match(/Hào Quang[^A-Z]{0,20}/)?.[0]);
   ok(`${label}: huy hiệu Thiên Hà tải được`, await page.evaluate(() => new Promise((res) => { const i = document.querySelector('#home .rank-go .rkb img'); if (i.complete) res(i.naturalWidth > 0); else { i.onload = () => res(true); i.onerror = () => res(false); } })));
@@ -364,8 +367,8 @@ async function skin(browser) {
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const t0 = Date.now();
-  try {
-    for (const k of want.length ? want : ALL) {
+  for (const k of want.length ? want : ALL) {
+    try { // từng kịch bản một: kịch bản hỏng giữa chừng không làm các kịch bản sau bị bỏ (trước: một lỗi là dừng cả bộ)
       if (k === 'save844') await save(browser, 844);
       else if (k === 'save1280') await save(browser, 1280);
       else if (k === 'bag844') await bag(browser, 844);
@@ -379,8 +382,8 @@ async function skin(browser) {
       else if (k === 'peak1280') await peak(browser, 1280);
       else if (k === 'shop844') await shop(browser, 844);
       else if (k === 'shop1280') await shop(browser, 1280);
-    }
-  } catch (e) { ok('chạy hết kịch bản', false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
+    } catch (e) { ok(`${k}: chạy hết kịch bản`, false, (e.stack || e.message).split('\n').slice(0, 2).join(' | ')); }
+  }
   await browser.close();
   console.log(`(${((Date.now() - t0) / 1000) | 0} s)`);
   console.log(fail ? `\n${fail} lỗi` : '\nTất cả đạt');

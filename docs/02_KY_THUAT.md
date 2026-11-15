@@ -157,6 +157,11 @@ Chỉ số: `maxHp, hpRegen (/5s), maxMana, manaRegen (/5s), atk, ap, armor, mr,
 - Tướng: A* khi có `moveTo`; joystick đi thẳng với trượt dọc tường (wall sliding).
 - Tính lại đường tối đa mỗi 0.5s mỗi entity; cache theo (ô đầu, ô cuối).
 - Va chạm entity: hình tròn, tách nhẹ (soft separation). Tướng không bị lính chặn cứng.
+- **Tướng máy tìm đường** (14/11, `sim/pathfind.js`, `ai/laneBot.js`): bot đi thẳng, kẹt 0,5 giây mà đường thẳng bị chắn thì tìm đường. Điểm đầu
+  nằm trong ô lưới coi là tường (bị ép vào hốc giữa hai vách) → xuất phát từ các ô đi được mà tướng đi thẳng tới được thật; hết ngân sách 1500
+  ô → trả đoạn đầu của đường (`partial`), đi hết thì tìm tiếp; đích trong tường → ô đi được sát đó. Kiểm thử: `tools/t_audit.mjs`.
+- **Tra đơn vị** `world.byId(id)`: bảng tra dựng lại khi danh sách đổi. Chỉ thêm đơn vị bằng `world.spawnEntity`, chỉ gỡ bằng cách gán mảng mới
+  cho `world.entities` (không sửa phần tử tại chỗ). Lính / quái / công trình chỉ tính lại chỉ số khi đang mang trạng thái.
 
 ## 9. Tầm nhìn
 - Lưới tầm nhìn ô 100 đơn vị, cập nhật mỗi 3 tick cho mỗi đội.
