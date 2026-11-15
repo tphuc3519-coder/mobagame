@@ -6,6 +6,7 @@ Hai phần:
 
 Code của Phần II đã gộp vào `main` qua PR #17 ngày 26/10/2026 và đang chạy trên GitHub Pages (workflow `pages.yml` tự deploy mỗi khi có commit lên `main`).
 Phần III là kế hoạch của giai đoạn tiếp theo (GĐ4).
+Phần V là đợt kiểm toán toàn repo ngày 14–15/11/2026 (an toàn online, lối chơi, bố cục màn hẹp, tốc độ mô phỏng).
 
 ---
 
@@ -405,3 +406,127 @@ Chi tiết từng đợt: `docs/PROGRESS.md`; quyết định thiết kế: `doc
 
 **Chưa làm, cần người / máy chủ:** model và bản đồ vẽ tay thật thay hàng sinh bằng code; bọc Capacitor ra APK (tuỳ chọn); phần "Sau 1.0"
 (PvP trực tuyến cần máy chủ Node chạy `src/sim/` + WebSocket; mắt (ward), chế độ / tướng mới mỗi mùa).
+
+---
+
+# Phần V — Kiểm toán toàn repo 14–15/11/2026
+
+Rà ở commit `6120d13` (sau khi có chơi online + UI v4.1). Mục tiêu của đợt này: tìm lỗi thật bằng cách **đo**, sửa, và để lại kiểm thử cho từng
+lỗi — không đổi lối chơi / hình ảnh đã chốt. Mọi thay đổi nằm trên nhánh `claude/zen-mayer-yu9tv3`.
+
+## 1. Cách làm
+
+- **Đọc mã:** toàn bộ `src/sim`, `src/net`, `server/`, `src/core`, `game.js`, `main.js`, `ai/heroBot.js`, `ai/laneBot.js`, phần điều khiển của
+  `src/hud`, `ui/flow.js`, `ui/netLobby.js`, `ui/home.js`, `ui/viewport.js`, `sw.js`, cấu hình deploy (Pages / Netlify / Vercel / Render / Docker).
+  Phần vẽ thủ tục (`render/env`, `hud/itemArt.js`, `hud/paint.js`…) chỉ soát qua số đo và kiểm thử trình duyệt, không đọc từng dòng.
+- **Đo thay vì đoán:** (a) bộ dò "bất biến" chạy mỗi tick trong 11 trận 5v5 toàn máy (máu vượt tối đa, số `NaN`, tướng muốn đi mà đứng yên,
+  khống chế không hết, áp chế mất xích, đạn sống quá 10 giây…); (b) hồ sơ CPU của mô phỏng; (c) quét tự động mọi màn ngoài trận ở 5 cỡ màn tìm
+  nút chồng nhau / tràn ra ngoài / chữ bị cắt; (d) bắn lệnh rác + tin WebSocket rác vào máy chủ thật.
+- **Tái hiện trên bản cũ trước khi sửa** (dựng lại commit `6120d13` ở thư mục riêng): ba lỗ hổng online và các lỗi bố cục đều tái hiện được.
+
+## 2. Kiến trúc (tóm tắt)
+
+```
+index.html ─ main.js ─┬─ ui/flow.js ── các màn ngoài trận (DOM + CSS, co giãn theo khung 640×360 — ui/viewport.js)
+                      │       └─ ui/netLobby.js ── net/client.js (WebSocket) ── server/ (Node thuần: index → ws → rooms)
+                      └─ game.js (một trận) ─┬─ sim/world.js  mô phỏng tất định 30 tick/giây ← lệnh (người chơi / bot / khung máy chủ)
+                                             ├─ ai/*          bot xuất lệnh như người chơi
+                                             ├─ net/session.js trận trực tuyến: lệnh mình → máy chủ → khung tick → applyFrame
+                                             ├─ render/*      Three.js chỉ ĐỌC trạng thái (cảnh, đơn vị, hiệu ứng, hậu kỳ)
+                                             └─ hud/*         canvas 2D + DOM (cần, nút chiêu, bản đồ nhỏ, cửa hàng, bảng tỉ số)
+```
+
+- Không build, không gói npm lúc chạy; Three.js r186 để sẵn trong `lib/`. Máy chủ online chạy chung `src/sim` + `src/net/protocol.js`.
+- Lưu dữ liệu: `localStorage` (hồ sơ có phiên bản + chuyển đổi + mã xuất / nhập) — **không có tài khoản, không có cơ sở dữ liệu**.
+- Phụ thuộc: chỉ Three.js 0.186 (vendored) lúc chạy; `tools/modelgen` (công cụ dev) dùng `three`, `jpeg-js`, `meshoptimizer`. Kiểm thử trình
+  duyệt dùng Playwright cài sẵn trên máy. Không có gói nào để "nâng cấp" hay lỗ hổng phụ thuộc lúc chạy.
+
+## 3. Phát hiện và xử lý
+
+Chú giải: 🔴 lỗi đã tái hiện · 🟡 yếu / thiếu · ✅ đã sửa + có kiểm thử · ⬜ chưa làm (lý do ở §6).
+
+### P0 — an toàn / độ bền của chơi online
+
+| | Phát hiện (bản `6120d13`) | Xử lý |
+|---|---|---|
+| 🔴✅ | **Một tin nhắn làm sập máy chủ.** `sanitizeCommand` chỉ cắt ngắn chuỗi / số; `{ type: 'sell', slot: 'length' }` → `ITEMS[6].cost` ném lỗi trong `setInterval` của phòng → Node thoát, **mọi phòng mất**. `useItem` cũng vậy. | Dựng lại lệnh theo khuôn từng loại; mô phỏng tự chống đỡ; `Room.step` có `try / catch` → chỉ đóng phòng lỗi. |
+| 🔴✅ | **Vàng vô hạn.** `{ type: 'buy', item: '__proto__' }` → giá `NaN` → `vàng -= NaN`; từ đó `vàng < giá` luôn sai ⇒ mua được mọi thứ (mọi máy cùng tính nên không bị báo lệch). | `Object.hasOwn(ITEMS, id)` ở khuôn lệnh và ở `planBuy`. |
+| 🔴✅ | **Một người đầu hàng thay cả đội, kể cả đấu hạng ở giây đầu.** Mốc phút 8 chỉ khoá nút ở máy khách. | Biểu quyết quá nửa số người thật (`voteSurrender`), mốc do mô phỏng giữ. |
+| 🔴✅ | **Yêu cầu HTTP sai dạng làm sập máy chủ** (`GET //[`, `GET /%zz`: `new URL` / `decodeURIComponent` ném lỗi trong hàm `async`). | `pathOf` bắt lỗi → 400; `clientError`; lưới `uncaughtException`. |
+| 🟡✅ | Không giới hạn số phòng / kết nối / tin; khung WebSocket tới 64 KB; kết nối đã đóng vẫn xử lý dữ liệu còn tới. | `MAX_ROOMS`, `MAX_CONNS`, `MAX_PER_IP`, `MAX_MSGS`, khung ≤ 16 KB, cắt kết nối nhận không kịp. |
+| 🟡✅ | **"Người chơi ma":** điện thoại mất sóng mà TCP chưa báo → máy chủ vẫn coi là đang chơi, tướng đứng yên cả trận, máy không vào thay. | Quét kết nối im lặng (`IDLE_SEC`), đóng → 6 giây sau máy vào thay như thiết kế. |
+| 🟡✅ | Máy khách: kết nối chết nhưng trình duyệt chưa báo thì đứng hình; phòng đã đóng thì chỉ hiện một dòng rồi **đứng hình mãi**. | Tự nối lại sau 6 giây im lặng; thiếu khung thì xin gửi lại; `abort` / phòng đóng / 75 giây không nối được → về Sảnh. |
+| 🟡✅ | Vào lại bằng một kết nối đang ngồi phòng khác để lại "bóng" ở phòng cũ; `seat` nhận số lẻ. | Rời phòng cũ trước; `Number.isInteger`. |
+| ⬜ | Thưởng / sao trận trực tuyến do máy khách tự ghi; một người mở nhiều kết nối vào hàng chờ; nhìn xuyên sương mù; lệch đồng bộ chỉ dò + báo. | Cần tài khoản + máy chủ giữ tiến trình / gửi trạng thái theo tầm nhìn — xem §6. |
+
+### P1 — lối chơi
+
+| | Phát hiện | Xử lý |
+|---|---|---|
+| 🔴✅ | **Tướng máy kẹt trong hốc tường 6–23 giây** (đo 4 lần / 4 trận 5v5, thường cuối trận khi quay về đường). Ô lưới chỗ đứng bị coi là tường ⇒ `findPath` trả `null` và nhớ luôn; đích xa > 1500 ô mở rộng cũng trả `null`. | `pathfind.js`: xuất phát từ ô đi được mà tướng tới được thật; trả đoạn đầu của đường khi hết ngân sách. Sau sửa: **0 lần / 11 trận**. |
+| 🔴✅ | **Lên cấp cộng máu hai lần** (giữ tỉ lệ + cộng phần tăng) ⇒ máu vượt máu tối đa ở mọi tướng mỗi lần lên cấp lúc đầy máu. | `gainXp` cộng đúng phần máu tối đa tăng, kẹp ở máu tối đa. |
+| 🟡 | Tướng đứng sâu trong vách 2–10 đơn vị ở góc lõm vài chục tick (đẩy khỏi tường 3 lượt chưa hội tụ). Chỉ là phần nhìn. | Không sửa (không ảnh hưởng lối chơi). |
+| 🟡 | Bước dài ≥ 20 đơn vị "lọt" qua một khe hẹp giữa hai vách gần (5 640, 4 490) và điểm đối xứng (đi bộ thường ≤ 17 đơn vị / tick không lọt; lướt chia bước 30). | Ghi nhận — cần chỉnh dữ liệu tường của bản đồ, để chủ dự án quyết. |
+| 🟡 | Bóng Tre (`bong_tre`): 11 trận dò, 4–9 mạng và 0–1 lần chết mỗi trận. | **Không đổi** (cân bằng là quyết định của chủ dự án) — nên đo riêng. |
+
+Không tìm thấy lỗi ở: tính sát thương / giáp / khiên / hút máu, hồi chiêu, chết – hồi sinh, mạng hạ – hỗ trợ, áp chế / dây trói, bùa rơi, điều kiện
+thắng — bộ dò bất biến sạch trong 11 trận và các bộ `t_combat`, `t_kills`, `t_suppress`, `t_ccchain`, `t_heroes`… vẫn đạt.
+
+### P1–P2 — giao diện
+
+| | Phát hiện | Xử lý |
+|---|---|---|
+| 🔴✅ | **Sảnh: nút Bạn bè nằm dưới nút Chọn chế độ** (đè 10–47 px) ở khung thiết kế 640–780 px: iPhone SE / 8 / 8 Plus, Android 16:9–18:9, iPad 1024×768. | 5 nút thanh dưới chia phần còn trống (đo thật cụm nút vào trận). 12 cỡ màn: không còn chồng. |
+| 🔴✅ | Sảnh: nút Tạo phòng chạm dòng trò chuyện (3 px) ở khung cao 360; dòng mô tả sự kiện bị cắt "…". | Giảm khoảng cách cột bạn bè; rút gọn câu, ẩn sớm hơn ở cột hẹp. |
+| 🔴✅ | **Phòng chờ: dòng sự kiện bị cắt "Tham gia s…" ở mọi cỡ màn**; khung 640: nhãn "Ngẫu nhiên" dính nhau, nút vị trí đè nhãn hai bên, nút "Chơi cùng bạn: Phòng tuỳ chỉnh" bị cắt. | Dòng sự kiện 2 dòng + tiến độ bên phải; chữ co theo bề ngang. |
+| 🔴✅ | Bảng Bùa: tên trang bị cắt "Sát thủ …" vì dòng gợi ý chiếm chỗ; chỉ số bùa bị cắt "+1,2% Tốc …". | Tên trang được ưu tiên; chỉ số xuống tối đa 2 dòng. |
+| 🟡✅ | Trong trận thiếu cảnh báo máu thấp và phản hồi "chiêu đã hồi". | `hud/lowHp.js` (tắt được), vòng sáng một lần ở nút chiêu. |
+
+Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguyên**: đợt này chỉ sửa chỗ hỏng đo được, không đổi phong cách, màu, phông.
+
+### P2 — hiệu năng, mã nguồn
+
+| | Phát hiện | Xử lý |
+|---|---|---|
+| 🟡✅ | Mô phỏng 5v5: `world.byId` duyệt cả danh sách mỗi lần tra; ~100 đơn vị không phải tướng tính lại chỉ số + cấp phát đối tượng mỗi tick; mảng đơn vị dựng lại 2 lần mỗi tick. | Bảng tra, tính lại khi cần, loại nhanh theo trục. **0,91 → 0,66 ms / tick (−27%)**, mã băm trạng thái trùng từng mốc. |
+| 🟡✅ | `tools/t_bag.mjs` tự hỏng từ 02/11/2026 (mốc thời gian cố định + vật phẩm hạn 7 ngày). | Mục mở lại hồ sơ dùng giờ thật. |
+| 🟡✅ | `src/core/events.js` không nơi nào dùng; `Dockerfile` chạy root; README gốc trống. | Gỡ / `USER node` / viết README. |
+
+## 4. Số đo trước → sau
+
+| | Trước | Sau |
+|---|---|---|
+| Tin `sell` sai kiểu gửi lên máy chủ | tiến trình Node thoát | bị lọc; máy chủ vẫn phát khung |
+| Vàng sau `buy '__proto__'` | `NaN` (mua tự do) | không đổi |
+| Đấu hạng 5v5, 3 người thật, 1 người gửi đầu hàng ở tick 1 | đội thua ngay | bị từ chối (chưa tới phút 8; sau đó cần 2 / 3 phiếu) |
+| Tướng máy đứng yên ≥ 6 giây vì kẹt tường | 4 lần / 4 trận | 0 lần / 11 trận |
+| Máu vượt máu tối đa sau lên cấp | mọi tướng, mỗi trận | không còn |
+| Mô phỏng 5v5 (12 phút, một tiến trình Node) | 0,912 / 0,812 ms / tick | 0,664 / 0,634 ms / tick |
+| Sảnh: cỡ màn có nút chồng nhau (12 cỡ thử) | 7 | 0 |
+| Chữ bị cắt ở Sảnh / Phòng chờ / Bảng Bùa (5 cỡ màn) | 8 chỗ | chỉ còn tên bạn bè quá dài (chủ ý) |
+
+## 5. Kiểm thử mới
+
+- `tools/t_netsafe.mjs` — 35 mục: khuôn lệnh; ~6 300 lệnh rác qua bộ lọc vào trận 1v1 / 5v5; lệnh xấu vào thẳng mô phỏng; biểu quyết đầu hàng
+  (đủ phiếu, hết giờ, chờ mở lại, người rớt mạng, đấu hạng trước / sau phút 8); máy chủ thật với yêu cầu HTTP sai dạng, tin rác, gửi dồn, quá
+  số kết nối, kết nối im lặng; lỗi mô phỏng của một phòng không ảnh hưởng phòng khác.
+- `tools/t_audit.mjs` — 20 mục: lên cấp; tìm đường từ 6 hốc tường (đi thật tới đích), đích xa, đích trong tường; ngưỡng + độ trễ cảnh báo máu
+  thấp; một trận 5v5 toàn máy 9 phút chạy kèm bộ dò bất biến mỗi tick.
+
+## 6. Còn lại
+
+**Chưa thử được trong môi trường này:** điện thoại thật và Safari thật (mọi kiểm thử trình duyệt chạy trên Chromium không GPU); máy chủ Render
+thật (chỉ máy chủ chạy tại chỗ — bản trên Render chỉ đổi khi nhánh này được gộp vào `main`); trận trực tuyến nhiều người thật; FPS trên máy
+tầm trung (chỉ đo được thời gian mô phỏng, không đo được khung hình có GPU).
+
+**Chưa làm — cần quyết định của chủ dự án hoặc hạ tầng mới:**
+1. **Tài khoản + tiến trình do máy chủ giữ.** Hiện sao / vàng / hạng nằm ở `localStorage`: sửa được bằng công cụ trình duyệt, và kết quả trận trực
+   tuyến do chính máy khách tự ghi. Muốn xếp hạng có ý nghĩa phải có đăng nhập + cơ sở dữ liệu + máy chủ ghi kết quả (máy chủ đã chạy mô phỏng nên
+   đã biết ai thắng).
+2. **Chống nhìn xuyên sương mù** khi chơi lockstep (máy nào cũng có đủ trạng thái trận) — phải chuyển sang máy chủ gửi trạng thái theo tầm nhìn.
+3. **Dựng lại trạng thái khi lệch đồng bộ** (hiện dò + báo "lệch").
+4. Khe hẹp giữa hai vách ở (5 640, 4 490) / điểm đối xứng: chỉnh dữ liệu tường.
+5. Cân bằng Bóng Tre (số liệu ở §3) — đo bằng `t_arena_batch` trước khi đổi.
+6. Tên 14 tướng đợt 2 theo nhân vật Multiverse Battler (chủ dự án chốt 27/10) có cả tên nhân vật của bên thứ ba — rủi ro bản quyền nếu phát
+   hành công khai; nêu lại để cân nhắc.
+
