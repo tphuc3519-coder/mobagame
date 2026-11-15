@@ -130,7 +130,8 @@ Kiểm tra máy chủ sống: mở `https://<địa chỉ>/health` → `{"ok":tr
 | `src/ui/netLobby.js` | Kết nối máy chủ dùng chung ngoài trận (hàng chờ, phòng, chọn tướng → vào trận) |
 | `src/core/dmath.js` | Lượng giác tất định cho mô phỏng |
 | `tools/t_online.mjs` | Kiểm thử không cần trình duyệt: máy chủ thật + 2 máy khách, rớt mạng / nối lại, máy thay người, so mã băm |
-| `tools/t_netsafe.mjs` | Kiểm thử an toàn: khuôn lệnh, lệnh rác, máy chủ không sập, giới hạn kết nối / tin, biểu quyết đầu hàng |
+| `tools/t_netsafe.mjs` | Kiểm thử an toàn: khuôn lệnh, lệnh rác, máy chủ không sập, giới hạn kết nối / tin, phiên bản, máy khách tự cứu, biểu quyết đầu hàng |
+| `tools/b_online.cjs` | Kiểm thử trình duyệt: trận trực tuyến chạy không lệch, máy chủ khởi động lại giữa trận → về Sảnh, đầu hàng → màn kết quả |
 
 ## Việc tiếp theo
 

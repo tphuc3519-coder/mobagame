@@ -493,6 +493,7 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
 | 🟡✅ | Mô phỏng 5v5: `world.byId` duyệt cả danh sách mỗi lần tra; ~100 đơn vị không phải tướng tính lại chỉ số + cấp phát đối tượng mỗi tick; mảng đơn vị dựng lại 2 lần mỗi tick. | Bảng tra, tính lại khi cần, loại nhanh theo trục. **0,91 → 0,66 ms / tick (−27%)**, mã băm trạng thái trùng từng mốc. |
 | 🟡✅ | `tools/t_bag.mjs` tự hỏng từ 02/11/2026 (mốc thời gian cố định + vật phẩm hạn 7 ngày). | Mục mở lại hồ sơ dùng giờ thật. |
 | 🟡✅ | `tools/b_match.cjs` (ping): bước "Tập hợp + chạm bản đồ nhỏ" hỏng theo tốc độ máy — một cú chạm của Playwright trên máy không GPU lâu hơn 4 giây vòng tín hiệu tự đóng (bản gốc chưa sửa gì hỏng 2 / 2 lượt hôm 15/11). | Chọn + chạm trong cùng một nhịp, gửi vào đúng phần tử ngón tay sẽ trúng; thêm mục "bản đồ nhỏ không bị che". 13 / 13. |
+| 🟡✅ | `tools/b_prog.cjs`: kịch bản Đấu Đỉnh Cao hỏng từ khi chế độ trực tuyến thành mặc định (03/11) — trang mở không kèm `?server=off` nên nút Bắt đầu thử nối máy chủ / vào hàng chờ thật 60 giây, quá 20 giây kịch bản chờ; và một kịch bản hỏng làm **3 kịch bản sau nó không chạy**. | Thêm `?server=off` như `b_flow`; mỗi kịch bản một `try / catch`. |
 | 🟡✅ | `src/core/events.js` không nơi nào dùng; `Dockerfile` chạy root; README gốc trống. | Gỡ / `USER node` / viết README. |
 
 ## 4. Số đo trước → sau
@@ -517,6 +518,8 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
   lỗi mô phỏng của một phòng không ảnh hưởng phòng khác.
 - `tools/t_audit.mjs` — 20 mục: lên cấp; tìm đường từ 6 hốc tường (đi thật tới đích), đích xa, đích trong tường; ngưỡng + độ trễ cảnh báo máu
   thấp; một trận 5v5 toàn máy 9 phút chạy kèm bộ dò bất biến mỗi tick.
+- `tools/b_online.cjs` — 6 mục, trình duyệt thật + máy chủ thật: trận trực tuyến nhận khung đúng phiên bản, không lệch; máy chủ khởi động lại giữa
+  trận → trang tự về Sảnh; vào trận mới, đầu hàng → màn kết quả; không lỗi trang.
 
 ## 6. Còn lại
 
