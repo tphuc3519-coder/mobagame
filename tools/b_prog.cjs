@@ -177,7 +177,7 @@ async function missions(browser, vp) {
   await page.click('.ui-panel .ui-back'); await page.waitForTimeout(300);
   await page.click('#home [data-a="normal"]'); await page.waitForFunction(() => window.__flow.nav.screen === 'room' && document.querySelector('#room .rm-ev'), null, { timeout: T(20) });
   const banner = await page.textContent('#room .rm-ev');
-  ok(`${label}: Phòng chờ hiện "Tham gia sự kiện tích luỹ 3/3 · Đã nhận"`, /sự kiện tích luỹ 3\/3/.test(banner) && /Đã nhận/.test(banner), banner);
+  ok(`${label}: Phòng chờ hiện "Sự kiện tích luỹ · Đã nhận · 3/3"`, /[Ss]ự kiện tích luỹ/.test(banner) && /3\/3/.test(banner) && /Đã nhận/.test(banner), banner);
   ok(`${label}: không lỗi trang / console`, !errs.length, errs.slice(0, 3).join(' || '));
   await ctx.close();
 }

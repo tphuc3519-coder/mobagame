@@ -665,3 +665,19 @@ Còn lại:
   di chuyển — mã băm hai trang trùng 43/43 mốc, máy chủ không báo lệch; tải lại trang giữa trận → Vào lại trận → bắt kịp, không lệch.
 - **Chưa có:** dự đoán chuyển động tướng mình, ghép trận tự động, nhiều người mỗi đội, chọn phép / bùa trước trận, thưởng / hạng, chống gian lận
   sương mù. Hướng dẫn chạy LAN + đưa máy chủ lên mạng (VPS Singapore / Render / Fly.io, cần wss): `docs/ONLINE.md`.
+
+## 14–15/11 — kiểm toán toàn repo: an toàn online, tướng máy kẹt tường, bố cục màn hẹp, tốc độ mô phỏng
+Báo cáo đầy đủ + số đo: `docs/KIEM_TOAN.md` Phần V; quyết định: `docs/DECISIONS.md` 2026-11-14.
+- **Online (P0):** lệnh máy khách dựng lại theo khuôn (trước: một tin `sell` / `buy` sai kiểu làm sập máy chủ hoặc cho vàng `NaN`); lỗi trong
+  một phòng chỉ đóng phòng đó; giới hạn phòng / kết nối / tin; đóng kết nối im lặng; đầu hàng phải biểu quyết, mốc phút 8 do mô phỏng giữ;
+  máy khách tự nối lại khi kết nối chết, về Sảnh khi phòng đã đóng.
+- **Lối chơi (P1):** tướng máy không còn kẹt trong hốc tường (4 lần / 4 trận → 0 / 11 trận); lên cấp không cộng máu hai lần.
+- **Giao diện (P1–P2):** Sảnh — nút Bạn bè không còn nằm dưới Chọn chế độ ở màn 16:9 / iPad; Phòng chờ — dòng sự kiện, nhãn ô trống, nút dài
+  không còn bị cắt / dính nhau ở khung 640; Bảng Bùa — tên trang + chỉ số bùa không bị cắt. Trong trận — cảnh báo máu thấp, vòng sáng khi
+  chiêu hồi xong.
+- **Hiệu năng (P2):** mô phỏng 5v5 nhanh hơn ~25% với kết quả y hệt từng bit (0,91 → 0,66 ms / tick).
+- **Kiểm thử mới:** `tools/t_netsafe.mjs` (35 mục), `tools/t_audit.mjs` (20 mục + trận 5v5 chạy kèm bộ dò bất biến). `t_bag.mjs` hết hỏng theo lịch.
+- **Kết quả chạy:** node `tools/t_*.mjs` + `simtest` đạt hết; trình duyệt `b_layout` 104, `b_flow` 93, `b_match` 36 mục đạt (xem Phần V §6 cho
+  các lượt chạy lại sau từng đợt sửa).
+- **Chưa thử được ở đây:** điện thoại thật, Safari thật, máy chủ Render thật (chỉ máy chủ chạy tại chỗ), chơi online nhiều người thật.
+

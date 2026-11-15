@@ -1064,3 +1064,42 @@
   640×360 (thấp hơn thì thu nhỏ, máy tính bảng / máy tính phóng to như cũ); bỏ `vh` / `vw` trong CSS giao diện (Safari iPhone: `100vh` lớn hơn
   phần nhìn thấy khi còn thanh địa chỉ; Chrome nhân `vh` theo zoom, Safari không) → `var(--vh)` / `var(--vw)` do JS tính từ `innerHeight`.
   HUD trong trận: màn thấp (< 300 px dùng được) đưa cửa hàng lên hàng trên cùng, bản đồ nhỏ ≤ 38% chiều cao.
+- 2026-11-14: **Kiểm toán toàn repo** (báo cáo: `docs/KIEM_TOAN.md` Phần V). Các quyết định kèm theo:
+  - **Máy khách là thứ không tin được.** `net/protocol.js sanitizeCommand` không còn "chép rồi cắt ngắn" mà dựng lại lệnh từ đầu theo khuôn
+    của từng loại (ô túi đồ là số nguyên 0–5, món đồ phải có thật — `Object.hasOwn`, chiêu chỉ `s1`–`s3`, ngắm chỉ nhận số hữu hạn + id nguyên
+    dương, toạ độ kẹp ±100 000). Lý do — đo được trên bản cũ: `{ type: 'sell', slot: 'length' }` làm mô phỏng ném lỗi trong `setInterval` của
+    máy chủ ⇒ sập cả tiến trình (mọi phòng); `{ type: 'buy', item: '__proto__' }` làm vàng thành `NaN` (so sánh `vàng < giá` luôn sai ⇒ mua gì
+    cũng được). Mô phỏng (`sim/inventory.js`, `sim/items.js`) tự chống đỡ thêm một lớp. Thêm lệnh mới ⇒ phải thêm khuôn ở `sanitizeCommand`.
+  - **Một phòng hỏng không kéo sập máy chủ:** `Room.step` bọc `try / catch` → `abort` (báo người chơi tin `abort`, đóng riêng phòng đó);
+    `server/index.mjs` bắt địa chỉ HTTP sai dạng (`//[`, `%zz` — trước là lỗi không ai bắt), có lưới `uncaughtException` / `unhandledRejection`.
+  - **Giới hạn máy chủ** (đổi bằng biến môi trường): `MAX_ROOMS` 200, `MAX_CONNS` 2000, `MAX_PER_IP` 24 kết nối / IP, `MAX_MSGS` 240 tin / giây /
+    kết nối (quá thì cắt), `IDLE_SEC` 45 giây im lặng thì đóng (máy khách vẫn gửi tin đo độ trễ mỗi 2 giây — điện thoại mất sóng mà TCP chưa
+    báo trước đây là "người chơi ma": tướng đứng yên cả trận, máy không vào thay), `MAX_MATCH_MIN` 90 phút, khung WebSocket ≤ 16 KB, hàng đợi
+    gửi > 1 MB thì cắt (máy đó tự nối lại, xin bù khung). Chưa có tài khoản nên chưa chống được một người mở nhiều kết nối vào hàng chờ.
+  - **Đầu hàng trực tuyến phải biểu quyết** (`sim/match.js voteSurrender`, số ở `data/signals.js SURRENDER`): cần quá nửa số người thật đang tự
+    điều khiển tướng của đội trong 30 giây; đội chỉ có một người thật thì đầu hàng ngay; biểu quyết hỏng thì 60 giây sau (từ lúc mở) mới mở
+    lại. Mốc phút 8 của đấu hạng / Đỉnh cao do mô phỏng giữ (`world.surrenderFrom`, đặt trong `setupOnline`) — trước chỉ khoá nút ở máy khách.
+    Lý do: bản cũ một người gửi `surrender` ở tick 1 là cả đội thua trận hạng. Đấu với máy: như cũ (đầu hàng ngay, mốc phút 8 ở nút).
+  - **Máy khách tự cứu:** 6 giây không nhận tin nào (kể cả tin trả lời đo độ trễ) ⇒ coi kết nối đã chết, tự nối lại không chờ trình duyệt báo
+    đóng; gói khung thiếu khung ở giữa ⇒ bỏ gói, xin máy chủ gửi lại từ khung đang có; phòng đã đóng / máy chủ báo `abort` / nối lại 75 giây
+    không được ⇒ `session.onEnd` → `flow.abortOnline` dọn trận, về Sảnh (trước: trận đứng hình mãi, phải tải lại trang).
+  - **Tìm đường của tướng máy** (`sim/pathfind.js`): lưới nới tường thêm ~1/3 ô nên tướng bị ép vào hốc giữa hai vách đứng ở chỗ lưới coi là
+    tường — bản cũ trả `null` rồi nhớ luôn ⇒ bot đâm thẳng vào tường 6–23 giây (đo 4 lần / 4 trận 5v5). Nay: xuất phát từ các ô đi được quanh
+    đó mà tướng đi thẳng tới được THẬT (`walkable` bước 10 đơn vị như lúc di chuyển — bước dài "lọt" qua khe hẹp giữa hai vách); hết ngân
+    sách 1500 ô thì trả đoạn đầu của đường (`partial`), `ai/laneBot.js` đi hết đoạn rồi tìm tiếp; đích trong tường thì tới ô sát đó.
+  - **Lên cấp hồi đúng phần máu tối đa tăng** (`sim/economy.js gainXp`): `refreshStats` giữ tỉ lệ máu khi máu tối đa đổi (đúng cho mua đồ) nên
+    trước đây lên cấp bị cộng hai lần, máu vượt cả máu tối đa. Ảnh hưởng cân bằng: mỗi lần lên cấp lúc đang mất máu hồi ít hơn trước tối đa
+    ~một nửa phần máu của một cấp (≈ 50–85 máu); lúc đầy máu không đổi.
+  - **Tốc độ mô phỏng, không đổi kết quả** (mã băm trạng thái trùng từng mốc ở 3 seed × 14 phút 5v5): `world.byId` tra bằng bảng (dựng lại khi
+    danh sách đơn vị đổi — LUẬT: chỉ thêm đơn vị bằng `spawnEntity`, chỉ gỡ bằng cách gán mảng mới cho `world.entities`, không sửa phần tử
+    tại chỗ); lính / quái / công trình / phân thân chỉ tính lại chỉ số khi đang mang trạng thái (hoặc vừa hết); lính chọn mục tiêu loại nhanh
+    theo từng trục; không dựng lại mảng đơn vị mỗi tick. Đo: 0,91 → 0,66 và 0,81 → 0,63 ms / tick.
+  - **Sảnh:** 5 nút thanh dưới chia nhau phần còn trống bên trái cụm nút vào trận — `home.js` đo cụm nút, đặt `--playp` (tính theo %, không
+    phụ thuộc zoom giao diện). Bố cục cũ dùng bề rộng cố định nên ở khung thiết kế 640–780 px nút Bạn bè nằm dưới Chọn chế độ.
+  - **Phản hồi trong trận** (07 §9): viền đỏ mờ khi máu dưới 30% (`hud/lowHp.js`, đậm + nhịp chậm dưới 15%, có độ trễ 4%, nằm giữa cảnh 3D và
+    lớp HUD, tắt được: `prefs.lowHpFx`); nút chiêu có một vòng sáng nở 0,5 giây lúc vừa hồi xong. Cả hai tôn trọng "giảm chuyển động" của máy.
+  - Gỡ `src/core/events.js` (không nơi nào import). `Dockerfile` chạy bằng người dùng `node` thay vì root. `.gitignore` thêm `site/`.
+  - **Không làm (cần chủ dự án quyết / cần hạ tầng):** tài khoản + lưu tiến trình trên máy chủ (thưởng / sao trận trực tuyến vẫn do máy khách
+    tự ghi vào `localStorage` — sửa được bằng công cụ trình duyệt); chống nhìn xuyên sương mù khi chơi lockstep; dựng lại trạng thái khi lệch
+    đồng bộ (hiện chỉ dò + báo). Cả ba là việc lớn về kiến trúc, không sửa "tại chỗ" được.
+

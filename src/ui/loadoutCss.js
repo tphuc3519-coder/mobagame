@@ -13,7 +13,8 @@ const CSS = `
 .lo-pg.on { background: var(--g-me); box-shadow: 0 0 0 3px var(--c-yel); }
 .lo-pg.add { align-items: center; color: var(--u-gc); font: 700 13px var(--u-disp); } .lo-pg.add:disabled { opacity: .4; }
 .lo-board { --sl: clamp(34px, calc(10.5 * var(--vh, 1vh)), 48px); display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; overflow-y: auto; }
-.lo-bh { display: flex; align-items: center; gap: 8px; } .lo-bh .lo-name { font: 800 18px/1.1 var(--u-disp); color: var(--c-yel);  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lo-bh { display: flex; align-items: center; gap: 8px; } .lo-bh .lo-name { flex: 0 1 auto; min-width: 0; max-width: 64%; font: 800 18px/1.1 var(--u-disp); color: var(--c-yel);  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lo-bh > small { flex: 1 1 0; min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2; overflow: hidden; } /* dòng gợi ý lấy phần còn lại (tối đa 2 dòng), tên trang được ưu tiên — trước tên trang bị cắt "Sát thủ …" */
 .lo-bh .icb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--c-yel); font-size: 14px; }
 .lo-bh .lo-lv { margin-left: auto; font: 700 12px var(--u-disp); color: #9ad0ff; white-space: nowrap; }
 .lo-row { display: flex; align-items: center; gap: 6px; }
@@ -30,7 +31,7 @@ const CSS = `
 .lo-ctabs button.on { background: rgba(255,255,255,.16); box-shadow: inset 0px -2px 0 var(--cc); }
 .lo-chs { display: flex; flex-direction: column; gap: 4px; padding: 1px; }
 .lo-ch { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 6px; min-height: 44px; padding: 3px 6px; border-radius: 7px; background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 2px var(--ink); cursor: pointer; }
-.lo-ch > span { min-width: 0; } .lo-ch .lo-gem { width: 32px; height: 32px; } .lo-ch b { display: block; font: 700 13px/1.1 var(--u-disp); color: #fff; } .lo-ch small { display: block; font-size: 10.5px; color: #a8d4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lo-ch > span { min-width: 0; } .lo-ch .lo-gem { width: 32px; height: 32px; } .lo-ch b { display: block; font: 700 13px/1.1 var(--u-disp); color: #fff; } .lo-ch small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 10.5px; line-height: 1.2; color: #a8d4ff; overflow: hidden; } /* chỉ số bùa: xuống tối đa 2 dòng thay vì cắt "+1,2% Tốc …" */
 .lo-ch:active { background: rgba(255,210,63,0.16); }
 .lo-x5 { width: 36px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: rgba(255,210,63,0.14); color: var(--c-yel); font: 700 12px var(--u-disp); }
 .lo-emb { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }

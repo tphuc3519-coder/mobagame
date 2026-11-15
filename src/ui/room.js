@@ -68,7 +68,7 @@ export function openRoom(nav, { mode = S.mode } = {}) {
     <div class="rm-slots"></div>
     <aside class="rm-side">
       <div class="rm-tabs"><button type="button" data-tab="fr" class="on">${icon('friends')}<span>Bạn bè</span></button><button type="button" data-tab="chat">${icon('chat')}<span>Trò chuyện</span></button></div>
-      <div class="rm-ev">${icon('target')}<span>${ev.name} ${ev.n}/${ev.goal}</span><b>${ev.done ? (ev.claimed ? 'Đã nhận ✓' : 'Nhận ở Nhiệm vụ') : `+${ev.gao} Gạo Hội`}</b></div>
+      <div class="rm-ev" title="${ev.name} ${ev.n}/${ev.goal}">${icon('target')}<span><i>${ev.short || ev.name}</i><small>${ev.done ? (ev.claimed ? 'Đã nhận ✓' : 'Nhận ở Nhiệm vụ') : `+${ev.gao} Gạo Hội`}</small></span><b>${ev.n}/${ev.goal}</b></div>
       <div class="rm-list"></div>
       <div class="rm-btns">${M.online ? '<button type="button" class="btn-ghost wide" data-a="custom">Chơi cùng bạn: Phòng tuỳ chỉnh</button>'
         : `<button type="button" class="btn-ghost" data-a="quick" ${M.size > 1 ? '' : 'disabled'}>Mời nhanh</button><button type="button" class="btn-ghost" data-a="clear" ${M.size > 1 ? '' : 'disabled'}>Giải tán</button>`}</div>

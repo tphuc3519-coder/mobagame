@@ -246,7 +246,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .seat.empty .box::after { display: none; }
 #room .seat .plus { width: 44%; aspect-ratio: 1; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; border: 3px solid var(--ink); background: var(--g-blu); font: 800 clamp(20px, calc(6 * var(--vh, 1vh)), 30px)/1 var(--u-disp); color: #fff; box-shadow: var(--hl), 0 3px 0 var(--ink); pointer-events: none; }
 #room .seat.wait .box { animation: seatP 1.2s ease-in-out infinite; } @keyframes seatP { 50% { box-shadow: 0 0 0 2px var(--ink); } }
-#room .seat .sn { margin-top: 10px; font: 700 clamp(13px, calc(4 * var(--vh, 1vh)), 16px)/1.1 var(--u-disp);  color: #f4f6fb; text-shadow: 0 2px 0 rgba(15,23,41,.8); max-width: 118%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#room .seat .sn { margin-top: 10px; font: 700 clamp(11.5px, min(calc(4 * var(--vh, 1vh)), calc(1.9 * var(--vw, 1vw))), 16px)/1.1 var(--u-disp);  color: #f4f6fb; text-shadow: 0 2px 0 rgba(15,23,41,.8); max-width: 118%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #room .seat.empty .sn { color: #9fb4e8; }
 #room .seat .rk { margin-top: 3px; max-width: 118%; display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; color: #fff; text-shadow: 0 2px 0 rgba(15,23,41,.8); white-space: nowrap; overflow: hidden; } #room .seat .rk .rkb { width: 22px; height: 22px; flex: none; } #room .seat .rk em { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; } #room .seat .rk .rkb b { display: none; }
 #room .seat .host { position: absolute; z-index: 5; left: 50%; top: -14px; width: 26px; height: 26px; transform: translateX(-50%); filter: drop-shadow(0 2px 0 rgba(15,23,41,.9)); }
@@ -257,7 +257,8 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .rm-tabs button { flex: 1; height: 34px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-card2); display: flex; align-items: center; justify-content: center; gap: 4px; font: 700 14px/1 var(--u-disp); color: #c6d3ee; box-shadow: var(--hl), 0 3px 0 var(--ink); }
 #room .rm-tabs button img.ui-ic { width: 22px; height: 22px; flex: none; } #room .rm-tabs button { white-space: nowrap; padding: 0 4px; } #room .rm-tabs button.on { background: var(--g-yel); color: var(--ink); }
 #room .rm-ev { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: #6a4fc7; box-shadow: var(--hl), 0 3px 0 var(--ink); font: 600 12px var(--u-body); color: #fff; }
-#room .rm-ev img.ui-ic { width: 28px; height: 28px; flex: none; } #room .rm-ev span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #room .rm-ev b { font: 700 13px var(--u-disp); color: var(--u-gc); white-space: nowrap; }
+#room .rm-ev img.ui-ic { width: 28px; height: 28px; flex: none; } #room .rm-ev span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; } #room .rm-ev b { font: 800 14px var(--u-disp); color: #fff; white-space: nowrap; }
+#room .rm-ev span i { font: 700 12.5px/1.15 var(--u-disp); font-style: normal; white-space: nowrap; } #room .rm-ev span small { font: 700 11px/1.15 var(--u-disp); color: var(--u-gc); white-space: nowrap; } /* hai dòng: tên sự kiện + phần thưởng; tiến độ n/3 bên phải — trước một dòng dài bị cắt "Tham gia s…" ở mọi cỡ màn */
 #room .rm-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 5px; }
 #room .frow { display: flex; align-items: center; gap: 8px; padding: 4px 6px; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 12px; background: var(--g-card); }
 #room .frow .face, #room .frow .ini { width: clamp(34px, calc(10 * var(--vh, 1vh)), 42px); height: clamp(34px, calc(10 * var(--vh, 1vh)), 42px); border-radius: 50%; flex: none; box-sizing: border-box; border: 2px solid var(--ink); }
@@ -268,7 +269,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #room .frow button { flex: none; width: 32px; height: 32px; padding: 0; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--ink); display: grid; place-items: center; background: var(--g-blu); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #room .frow button svg { width: 60%; height: 60%; } #room .frow button[disabled] { opacity: .35; }
 #room .rm-btns { flex: none; display: flex; gap: 6px; } #room .rm-btns button { flex: 1; height: 34px; padding: 0 8px; font-size: 14px; }
-#room .rm-btns button.wide { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#room .rm-btns button.wide { font-size: clamp(11px, calc(1.78 * var(--vw, 1vw)), 12.5px); padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* khung 640: chữ nhỏ lại một nấc thay vì bị cắt */
 #room .rm-sub .olc i { width: 8px; height: 8px; border-radius: 50%; background: #6fe08a; box-shadow: 0 0 8px #6fe08a; } #room .rm-sub .olc > b { color: #9fe3a0; }
 #room .seat.empty.on .box { border-style: solid; border-color: rgba(143,194,255,.5); } #room .seat.empty.on .plus { background: var(--g-blu); }
 #room .rm-go { flex: none; width: 100%; height: clamp(44px, calc(13 * var(--vh, 1vh)), 54px); font-size: clamp(20px, calc(6.4 * var(--vh, 1vh)), 26px); }

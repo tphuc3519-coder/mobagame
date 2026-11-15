@@ -11,7 +11,27 @@ Nhiều người ở nhiều máy vào chung một trận thời gian thực. Ch
 | **Đấu máy** | Đấu máy 5v5, Đấu đơn 1v1, Luyện tập | Chọn chế độ → Đấu máy. Chơi một mình, không cần mạng, tự chọn độ khó. |
 
 Tin nhắn máy chủ mới: `queue` / `unqueue` (hàng chờ), `match` (đã ghép), `accept`, `hover` / `lock` (chọn tướng), `seat` / `opts` (phòng tuỳ chỉnh),
-`kicked` (bỏ lỡ chấp nhận). Kiểm thử rút ngắn thời gian bằng biến môi trường `QUEUE_WAIT`, `ACCEPT_SEC`, `PICK_SEC`, `READY_SEC` (giây).
+`kicked` (bỏ lỡ chấp nhận), `abort` (máy chủ dừng phòng — 14/11). Kiểm thử rút ngắn thời gian bằng biến môi trường `QUEUE_WAIT`, `ACCEPT_SEC`, `PICK_SEC`, `READY_SEC` (giây).
+
+## An toàn + độ bền (14/11)
+
+- **Lệnh từ máy khách được dựng lại theo khuôn** (`sanitizeCommand`): sai kiểu, thừa trường, tên lạ (`__proto__`, `length`…) đều bị bỏ trước khi
+  vào mô phỏng. Thêm lệnh mới thì thêm khuôn ở đó.
+- **Đầu hàng:** đội có từ 2 người thật phải biểu quyết — quá nửa số người thật đang chơi đồng ý trong 30 giây (Cài đặt → Đầu hàng; đồng đội thấy
+  dòng báo "… muốn đầu hàng (1/2)"). Đội một người thật: đầu hàng ngay. Đấu hạng / Đỉnh cao: chỉ từ phút 8, do mô phỏng giữ.
+- **Máy chủ:** lỗi trong một phòng chỉ đóng phòng đó (người chơi nhận tin `abort` → về Sảnh); kết nối im lặng quá `IDLE_SEC` bị đóng (điện thoại
+  mất sóng: sau đó 6 giây máy vào điều khiển thay); gửi dồn quá `MAX_MSGS` tin / giây bị cắt.
+- **Máy khách:** 6 giây không nhận được gì thì tự nối lại; phòng đã đóng hoặc nối lại 75 giây không được thì báo và về Sảnh.
+
+| Biến môi trường | Mặc định | Ý nghĩa |
+|---|---|---|
+| `MAX_ROOMS` | 200 | số phòng cùng lúc (đầy: tạo phòng báo lỗi, hàng chờ giữ người tới khi có chỗ) |
+| `MAX_CONNS` / `MAX_PER_IP` | 2000 / 24 | số kết nối cả máy chủ / từ một địa chỉ IP |
+| `MAX_MSGS` | 240 | số tin một kết nối được gửi mỗi giây (lệnh trong trận còn giới hạn riêng 60 / giây) |
+| `IDLE_SEC` | 45 | giây im lặng trước khi đóng kết nối |
+| `MAX_MATCH_MIN` | 90 | phút tối đa của một trận |
+
+Kiểm thử: `node tools/t_netsafe.mjs` (lệnh rác, yêu cầu HTTP sai dạng, gửi dồn, kết nối im lặng, lỗi mô phỏng trong một phòng, biểu quyết đầu hàng).
 
 ## Cách hoạt động (lockstep, máy chủ làm nhạc trưởng)
 
@@ -107,10 +127,14 @@ Kiểm tra máy chủ sống: mở `https://<địa chỉ>/health` → `{"ok":tr
 | `src/ui/netLobby.js` | Kết nối máy chủ dùng chung ngoài trận (hàng chờ, phòng, chọn tướng → vào trận) |
 | `src/core/dmath.js` | Lượng giác tất định cho mô phỏng |
 | `tools/t_online.mjs` | Kiểm thử không cần trình duyệt: máy chủ thật + 2 máy khách, rớt mạng / nối lại, máy thay người, so mã băm |
+| `tools/t_netsafe.mjs` | Kiểm thử an toàn: khuôn lệnh, lệnh rác, máy chủ không sập, giới hạn kết nối / tin, biểu quyết đầu hàng |
 
 ## Việc tiếp theo
 
 - Dự đoán chuyển động tướng mình (đi ngay khi kéo cần, máy chủ xác nhận sau) để bớt cảm giác trễ khi ping cao.
+- **Tài khoản + tiến trình trên máy chủ:** hiện thưởng / sao của trận trực tuyến do máy khách tự ghi vào `localStorage` (sửa được), và một người có
+  thể mở nhiều kết nối vào hàng chờ. Cần đăng nhập + cơ sở dữ liệu — việc lớn, chưa làm.
+- Dựng lại trạng thái khi lệch đồng bộ (hiện chỉ dò + báo "lệch").
 - Chống gian lận sương mù: kiểu lockstep thì máy nào cũng có đủ trạng thái trận; muốn giấu phải chuyển sang máy chủ gửi trạng thái theo tầm nhìn
   từng đội (việc lớn — làm khi có xếp hạng thật).
 - Ghép trận tự động, 2–10 người thật mỗi trận (hiện 1 người mỗi đội), chọn phép / bảng bùa / phù hiệu trước trận (hiện dùng mặc định), tính
