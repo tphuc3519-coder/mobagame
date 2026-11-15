@@ -1,5 +1,7 @@
-// Kết nối tới máy chủ online (WebSocket, JSON). Tự đo độ trễ (ping) mỗi 2 giây; mất kết nối thì báo onDrop (phiên trong trận tự nối lại).
+// Kết nối tới máy chủ online (WebSocket, JSON). Mở xong gửi tin 'hello' kèm phiên bản giao thức; tự đo độ trễ (ping) mỗi 2 giây; mất kết nối thì báo onDrop (phiên trong trận tự nối lại).
 // Địa chỉ máy chủ: ?server=… trên URL > địa chỉ đã lưu (màn Phòng tuỳ chỉnh → Máy chủ: Đổi) > chính trang đang mở nếu do server/index.mjs phục vụ.
+
+import { NET } from './protocol.js';
 
 const KEY = 'la.server';
 /** Máy chủ mặc định khi mở game từ trang khác máy chủ (GitHub Pages…): điền sau khi đưa máy chủ lên mạng, vd. 'wss://moba.ten-mien.com/ws'. */
@@ -38,6 +40,7 @@ export function connect(url, ms = 8000) {
     const timeout = setTimeout(() => { try { ws.close(); } catch (_) { /* */ } reject(new Error('Hết thời gian chờ máy chủ')); }, ms);
     ws.onopen = () => {
       clearTimeout(timeout); conn.open = true;
+      conn.send({ t: 'hello', v: NET.version }); // bắt tay phiên bản: máy chủ khác bản sẽ từ chối tạo / vào phòng, hàng chờ, vào lại (lockstep: khác bản là lệch)
       const ping = () => conn.send({ t: 'p', c: performance.now() }); ping(); pingT = setInterval(ping, 2000);
       resolve(conn);
     };

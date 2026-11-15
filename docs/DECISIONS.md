@@ -1098,6 +1098,12 @@
     phụ thuộc zoom giao diện). Bố cục cũ dùng bề rộng cố định nên ở khung thiết kế 640–780 px nút Bạn bè nằm dưới Chọn chế độ.
   - **Phản hồi trong trận** (07 §9): viền đỏ mờ khi máu dưới 30% (`hud/lowHp.js`, đậm + nhịp chậm dưới 15%, có độ trễ 4%, nằm giữa cảnh 3D và
     lớp HUD, tắt được: `prefs.lowHpFx`); nút chiêu có một vòng sáng nở 0,5 giây lúc vừa hồi xong. Cả hai tôn trọng "giảm chuyển động" của máy.
+  - **Bắt tay phiên bản** (15/11): `NET.version` trước chỉ gửi kèm cấu hình trận, không bên nào kiểm. Lockstep thì máy khách bản cũ (PWA còn giữ
+    bản cũ) chạy chung trận với máy chủ / máy khách bản mới là lệch đồng bộ âm thầm. Nay máy khách mở kết nối là gửi `{ t: 'hello', v }`; máy chủ
+    từ chối tạo / vào phòng, hàng chờ, vào lại khi khác số (bản cũ không gửi `hello` cũng bị từ chối) kèm câu báo cập nhật — là tin `err` thường nên
+    bản cũ vẫn hiện được; máy khách gặp máy chủ khác số ở tin `start` thì báo và về Sảnh. **Tăng `NET.version` mỗi khi đổi mô phỏng hoặc khuôn
+    tin** (đợt này: 1 → 2). Hệ quả khi deploy: trang game (Pages) và máy chủ (Render) phải cùng số; trong vài phút lệch nhau người chơi thấy câu
+    báo thay vì vào trận lệch.
   - Gỡ `src/core/events.js` (không nơi nào import). `Dockerfile` chạy bằng người dùng `node` thay vì root. `.gitignore` thêm `site/`.
   - **Không làm (cần chủ dự án quyết / cần hạ tầng):** tài khoản + lưu tiến trình trên máy chủ (thưởng / sao trận trực tuyến vẫn do máy khách
     tự ghi vào `localStorage` — sửa được bằng công cụ trình duyệt); chống nhìn xuyên sương mù khi chơi lockstep; dựng lại trạng thái khi lệch

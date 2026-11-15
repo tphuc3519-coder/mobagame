@@ -9,7 +9,7 @@
 // đứng yên, sau NET.botAfter giây máy tạm điều khiển; vào lại (cùng mã + token) thì nhận tiếp các khung còn thiếu và lấy lại quyền điều khiển.
 import { randomBytes, randomInt } from 'node:crypto';
 import { createWorld } from '../src/sim/world.js';
-import { NET, MODES_ONLINE, QUEUES, ROLES5, sanitizeCommand, sanitizeHero, sanitizeSpell, setupOnline, applyFrame, hashWorld, mapOf } from '../src/net/protocol.js';
+import { NET, VERSION_MSG, MODES_ONLINE, QUEUES, ROLES5, sanitizeCommand, sanitizeHero, sanitizeSpell, setupOnline, applyFrame, hashWorld, mapOf } from '../src/net/protocol.js';
 import { DIFFICULTY } from '../src/data/ai.js';
 import { ALPHA } from '../src/data/heroes/index.js';
 
@@ -267,7 +267,9 @@ setInterval(matchmake, 1000).unref?.();
 
 /** Gắn một kết nối WebSocket vào hệ thống phòng. */
 export function handle(ws) {
-  const sess = { room: null, p: null, queued: null, last: Date.now(), rate: { t: 0, n: 0 } };
+  const sess = { room: null, p: null, queued: null, v: null, last: Date.now(), rate: { t: 0, n: 0 } }; // v: phiên bản giao thức máy khách báo (tin 'hello')
+  /** Máy khách khác bản (bản cũ không gửi 'hello'): không cho vào phòng / hàng chờ — chạy chung một trận là lệch đồng bộ. */
+  const stale = () => sess.v !== NET.version;
   const conn = { ws, sess }; conns.add(conn);
   const err = (m) => { if (m) ws.send({ t: 'err', m }); };
   const leave = () => {
@@ -284,9 +286,11 @@ export function handle(ws) {
     const { room, p } = sess;
     switch (m.t) {
       case 'p': ws.send({ t: 'P', c: m.c }); return; // đo độ trễ
+      case 'hello': sess.v = Number.isInteger(m.v) ? m.v : null; if (stale()) err(VERSION_MSG); return;
       case 'c': room?.command(p, m.c); return;
       case 'h': room?.hash(p, m.k | 0, String(m.h)); return;
       case 'create': {
+        if (stale()) return err(VERSION_MSG);
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
         if (rooms.size >= LIMIT.rooms) return err(FULL);
         const r = new Room({ kind: 'custom', mode: m.mode, difficulty: m.difficulty, bots: m.bots });
@@ -294,6 +298,7 @@ export function handle(ws) {
         log(`phòng ${r.code}: tạo (${r.mode}, máy ${r.bots ? 'bật' : 'tắt'}) bởi ${sess.p.name}`); return;
       }
       case 'join': {
+        if (stale()) return err(VERSION_MSG);
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
         const r = rooms.get(String(m.code || '').toUpperCase().trim());
         if (!r || r.kind !== 'custom') return err('Không thấy phòng này');
@@ -302,6 +307,7 @@ export function handle(ws) {
         q.sess = sess; sess.room = r; sess.p = q; r.sync(); return;
       }
       case 'rejoin': {
+        if (stale()) { err(VERSION_MSG); return ws.send({ t: 'rejoinFail' }); }
         const r = rooms.get(String(m.code || '').toUpperCase()), q = r?.players.find((x) => x.token === m.token);
         if (!r || !q || typeof m.token !== 'string' || PRE.has(r.state) || r.state === 'over') return ws.send({ t: 'rejoinFail' });
         if (room && room !== r) leave(); // kết nối này đang ngồi phòng khác: rời hẳn phòng đó trước (trước đây để lại một "bóng ma" trong phòng cũ)
@@ -310,6 +316,7 @@ export function handle(ws) {
         sess.room = r; sess.p = q; q.sess = sess; r.rejoin(q, ws, Number.isInteger(m.have) ? m.have : -1); return;
       }
       case 'queue': {
+        if (stale()) return err(VERSION_MSG);
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
         if (typeof m.q !== 'string' || !Object.hasOwn(QUEUES, m.q)) return err('Chế độ không hợp lệ');
         if (rooms.size >= LIMIT.rooms) return err(FULL);

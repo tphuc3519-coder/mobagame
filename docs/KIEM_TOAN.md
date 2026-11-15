@@ -457,6 +457,7 @@ Chú giải: 🔴 lỗi đã tái hiện · 🟡 yếu / thiếu · ✅ đã s�
 | 🟡✅ | **"Người chơi ma":** điện thoại mất sóng mà TCP chưa báo → máy chủ vẫn coi là đang chơi, tướng đứng yên cả trận, máy không vào thay. | Quét kết nối im lặng (`IDLE_SEC`), đóng → 6 giây sau máy vào thay như thiết kế. |
 | 🟡✅ | Máy khách: kết nối chết nhưng trình duyệt chưa báo thì đứng hình; phòng đã đóng thì chỉ hiện một dòng rồi **đứng hình mãi**. | Tự nối lại sau 6 giây im lặng; thiếu khung thì xin gửi lại; `abort` / phòng đóng / 75 giây không nối được → về Sảnh. |
 | 🟡✅ | Vào lại bằng một kết nối đang ngồi phòng khác để lại "bóng" ở phòng cũ; `seat` nhận số lẻ. | Rời phòng cũ trước; `Number.isInteger`. |
+| 🟡✅ | **Không kiểm phiên bản giữa máy khách và máy chủ** (`NET.version` chỉ gửi đi): máy khách bản cũ vào trận với bản mới là lệch đồng bộ âm thầm. | Bắt tay `hello` + từ chối khi khác số, câu báo cập nhật; tăng `NET.version` 1 → 2. |
 | ⬜ | Thưởng / sao trận trực tuyến do máy khách tự ghi; một người mở nhiều kết nối vào hàng chờ; nhìn xuyên sương mù; lệch đồng bộ chỉ dò + báo. | Cần tài khoản + máy chủ giữ tiến trình / gửi trạng thái theo tầm nhìn — xem §6. |
 
 ### P1 — lối chơi
@@ -480,6 +481,7 @@ thắng — bộ dò bất biến sạch trong 11 trận và các bộ `t_combat
 | 🔴✅ | Sảnh: nút Tạo phòng chạm dòng trò chuyện (3 px) ở khung cao 360; dòng mô tả sự kiện bị cắt "…". | Giảm khoảng cách cột bạn bè; rút gọn câu, ẩn sớm hơn ở cột hẹp. |
 | 🔴✅ | **Phòng chờ: dòng sự kiện bị cắt "Tham gia s…" ở mọi cỡ màn**; khung 640: nhãn "Ngẫu nhiên" dính nhau, nút vị trí đè nhãn hai bên, nút "Chơi cùng bạn: Phòng tuỳ chỉnh" bị cắt. | Dòng sự kiện 2 dòng + tiến độ bên phải; chữ co theo bề ngang. |
 | 🔴✅ | Bảng Bùa: tên trang bị cắt "Sát thủ …" vì dòng gợi ý chiếm chỗ; chỉ số bùa bị cắt "+1,2% Tốc …". | Tên trang được ưu tiên; chỉ số xuống tối đa 2 dòng. |
+| 🔴✅ | Chọn tướng (khung 640×360): tên tướng trên thẻ bị cắt "Lanternw…", "Haruno S…"; màn kết quả: tên người chơi bị cắt "Sao Băng […". | Chữ co theo bề ngang thẻ, tên hai từ xuống dòng; tên người chơi tối đa 2 dòng. |
 | 🟡✅ | Trong trận thiếu cảnh báo máu thấp và phản hồi "chiêu đã hồi". | `hud/lowHp.js` (tắt được), vòng sáng một lần ở nút chiêu. |
 
 Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguyên**: đợt này chỉ sửa chỗ hỏng đo được, không đổi phong cách, màu, phông.
@@ -490,6 +492,7 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
 |---|---|---|
 | 🟡✅ | Mô phỏng 5v5: `world.byId` duyệt cả danh sách mỗi lần tra; ~100 đơn vị không phải tướng tính lại chỉ số + cấp phát đối tượng mỗi tick; mảng đơn vị dựng lại 2 lần mỗi tick. | Bảng tra, tính lại khi cần, loại nhanh theo trục. **0,91 → 0,66 ms / tick (−27%)**, mã băm trạng thái trùng từng mốc. |
 | 🟡✅ | `tools/t_bag.mjs` tự hỏng từ 02/11/2026 (mốc thời gian cố định + vật phẩm hạn 7 ngày). | Mục mở lại hồ sơ dùng giờ thật. |
+| 🟡✅ | `tools/b_match.cjs` (ping): bước "Tập hợp + chạm bản đồ nhỏ" hỏng theo tốc độ máy — một cú chạm của Playwright trên máy không GPU lâu hơn 4 giây vòng tín hiệu tự đóng (bản gốc chưa sửa gì hỏng 2 / 2 lượt hôm 15/11). | Chọn + chạm trong cùng một nhịp, gửi vào đúng phần tử ngón tay sẽ trúng; thêm mục "bản đồ nhỏ không bị che". 13 / 13. |
 | 🟡✅ | `src/core/events.js` không nơi nào dùng; `Dockerfile` chạy root; README gốc trống. | Gỡ / `USER node` / viết README. |
 
 ## 4. Số đo trước → sau
@@ -504,10 +507,11 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
 | Mô phỏng 5v5 (12 phút, một tiến trình Node) | 0,912 / 0,812 ms / tick | 0,664 / 0,634 ms / tick |
 | Sảnh: cỡ màn có nút chồng nhau (12 cỡ thử) | 7 | 0 |
 | Chữ bị cắt ở Sảnh / Phòng chờ / Bảng Bùa (5 cỡ màn) | 8 chỗ | chỉ còn tên bạn bè quá dài (chủ ý) |
+| Chữ bị cắt ở luồng vào trận, khung 640×360 (chọn tướng, đội hình, tải, 3 màn kết quả) | tên tướng + tên người chơi | chỉ còn tên người chơi dài kèm "[Máy]" trong bảng (chủ ý) |
 
 ## 5. Kiểm thử mới
 
-- `tools/t_netsafe.mjs` — 37 mục: khuôn lệnh; ~6 300 lệnh rác qua bộ lọc vào trận 1v1 / 5v5; lệnh xấu vào thẳng mô phỏng; biểu quyết đầu hàng
+- `tools/t_netsafe.mjs` — 40 mục: khuôn lệnh; ~6 300 lệnh rác qua bộ lọc vào trận 1v1 / 5v5; lệnh xấu vào thẳng mô phỏng; biểu quyết đầu hàng
   (đủ phiếu, hết giờ, chờ mở lại, người rớt mạng, đấu hạng trước / sau phút 8); máy chủ thật với yêu cầu HTTP sai dạng, tin rác, gửi dồn, quá
   số kết nối, kết nối im lặng; máy khách tự cứu (máy chủ treo 7,5 giây → tự nối lại, bù khung, không lệch; máy chủ khởi động lại → `onEnd`);
   lỗi mô phỏng của một phòng không ảnh hưởng phòng khác.

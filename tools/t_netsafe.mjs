@@ -11,7 +11,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createWorld } from '../src/sim/world.js';
-import { sanitizeCommand, setupOnline, applyFrame, mapOf } from '../src/net/protocol.js';
+import { NET, VERSION_MSG, sanitizeCommand, setupOnline, applyFrame, mapOf } from '../src/net/protocol.js';
 import { ALPHA } from '../src/data/heroes/index.js';
 import { ITEMS } from '../src/data/items.js';
 import { SURRENDER } from '../src/data/signals.js';
@@ -137,6 +137,15 @@ try {
   const k0 = lastK; await sleep(700);
   ok('trong trận, tin WebSocket rác đủ kiểu: máy chủ vẫn phát khung, không sập', exited === null && lastK > k0 + 10 && (await health())?.playing === 1, `khung ${k0} → ${lastK}`);
 
+  // khác phiên bản: máy khách bản cũ (không gửi 'hello') và máy khách báo số khác đều không tạo phòng / vào hàng chờ / vào lại được
+  const raw2 = (msgs) => new Promise((r) => { const w = new WebSocket(URL), got = []; w.onmessage = (e) => got.push(JSON.parse(e.data)); w.onopen = () => { for (const m of msgs) w.send(JSON.stringify(m)); setTimeout(() => { w.close(); r(got); }, 500); }; w.onerror = () => r(got); });
+  const oldC = await raw2([{ t: 'create', mode: '1v1', name: 'Cũ' }, { t: 'queue', q: 'normal', name: 'Cũ' }, { t: 'rejoin', code: 'ABCD', token: 'x' }]);
+  ok("máy khách bản cũ (không gửi 'hello'): tạo phòng / hàng chờ / vào lại đều bị từ chối kèm câu báo cập nhật", oldC.filter((m) => m.t === 'err' && m.m === VERSION_MSG).length === 3 && !oldC.some((m) => m.t === 'room' || m.t === 'queue') && oldC.some((m) => m.t === 'rejoinFail'), J(oldC.map((m) => m.t)));
+  const badV = await raw2([{ t: 'hello', v: NET.version + 1 }, { t: 'create', mode: '1v1', name: 'Lạ' }]);
+  ok('máy khách báo phiên bản khác: bị từ chối', badV.filter((m) => m.t === 'err' && m.m === VERSION_MSG).length === 2 && !badV.some((m) => m.t === 'room'), J(badV.map((m) => m.t)));
+  const goodV = await raw2([{ t: 'hello', v: NET.version }, { t: 'create', mode: '1v1', name: 'Đúng' }]);
+  ok('máy khách đúng phiên bản: tạo phòng được', goodV.some((m) => m.t === 'room') && !goodV.some((m) => m.t === 'err'), J(goodV.map((m) => m.t)));
+
   // gửi dồn: bị cắt kết nối, máy chủ còn sống
   const F = await connect(URL); let closedF = false; F.onDrop = () => { closedF = true; };
   for (let i = 0; i < 1200; i++) F.send({ t: 'p', c: i });
@@ -193,7 +202,7 @@ srv.kill();
 // —— 6. lỗi mô phỏng của một phòng không kéo sập phòng khác (chạy rooms.mjs ngay trong tiến trình này, kết nối giả) ——
 process.env.READY_SEC = '0.05'; process.env.NET_SPEED = '4';
 const { handle, _rooms } = await import('../server/rooms.mjs');
-const fake = () => { const h = { message: [], close: [] }, out = []; const ws = { ip: 't', open: true, buffered: 0, out, send: (o) => out.push(typeof o === 'string' ? JSON.parse(o) : o), close() { if (!ws.open) return; ws.open = false; h.close.forEach((f) => f()); }, on: (n, f) => h[n].push(f), say: (m) => h.message.forEach((f) => f(m)) }; handle(ws); return ws; };
+const fake = () => { const h = { message: [], close: [] }, out = []; const ws = { ip: 't', open: true, buffered: 0, out, send: (o) => out.push(typeof o === 'string' ? JSON.parse(o) : o), close() { if (!ws.open) return; ws.open = false; h.close.forEach((f) => f()); }, on: (n, f) => h[n].push(f), say: (m) => h.message.forEach((f) => f(m)) }; handle(ws); ws.say({ t: 'hello', v: NET.version }); return ws; };
 const until = async (f, ms = 5000) => { for (let t = 0; t < ms && !f(); t += 20) await sleep(20); return !!f(); };
 const enter = async (ws, name) => { ws.say({ t: 'create', mode: '1v1', name }); ws.say({ t: 'start' }); ws.say({ t: 'lock', heroId: ALPHA[1] }); await until(() => ws.out.some((m) => m.t === 'start')); ws.say({ t: 'loaded' }); return until(() => ws.out.some((m) => m.t === 'f')); };
 const origLog = console.log; console.log = () => {}; // (nhật ký của máy chủ chạy trong tiến trình này)

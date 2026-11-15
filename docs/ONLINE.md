@@ -22,6 +22,9 @@ Tin nhắn máy chủ mới: `queue` / `unqueue` (hàng chờ), `match` (đã gh
 - **Máy chủ:** lỗi trong một phòng chỉ đóng phòng đó (người chơi nhận tin `abort` → về Sảnh); kết nối im lặng quá `IDLE_SEC` bị đóng (điện thoại
   mất sóng: sau đó 6 giây máy vào điều khiển thay); gửi dồn quá `MAX_MSGS` tin / giây bị cắt.
 - **Máy khách:** 6 giây không nhận được gì thì tự nối lại; phòng đã đóng hoặc nối lại 75 giây không được thì báo và về Sảnh.
+- **Phiên bản:** máy khách mở kết nối là gửi `hello` kèm `NET.version` (`src/net/protocol.js`); khác số với máy chủ thì không tạo / vào phòng, vào
+  hàng chờ hay vào lại được, và hiện câu báo "tải lại trang để cập nhật". **Đổi mô phỏng hoặc khuôn tin thì tăng `NET.version`**, rồi deploy cả
+  trang game lẫn máy chủ — hai bên lệch số chỉ trong lúc một bên chưa deploy xong.
 
 | Biến môi trường | Mặc định | Ý nghĩa |
 |---|---|---|

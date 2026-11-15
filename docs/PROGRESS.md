@@ -676,7 +676,7 @@ Báo cáo đầy đủ + số đo: `docs/KIEM_TOAN.md` Phần V; quyết định
   không còn bị cắt / dính nhau ở khung 640; Bảng Bùa — tên trang + chỉ số bùa không bị cắt. Trong trận — cảnh báo máu thấp, vòng sáng khi
   chiêu hồi xong.
 - **Hiệu năng (P2):** mô phỏng 5v5 nhanh hơn ~25% với kết quả y hệt từng bit (0,91 → 0,66 ms / tick).
-- **Kiểm thử mới:** `tools/t_netsafe.mjs` (37 mục), `tools/t_audit.mjs` (20 mục, gồm một trận 5v5 chạy kèm bộ dò bất biến). `t_bag.mjs` hết hỏng theo lịch.
+- **Kiểm thử mới:** `tools/t_netsafe.mjs` (40 mục), `tools/t_audit.mjs` (20 mục, gồm một trận 5v5 chạy kèm bộ dò bất biến). `t_bag.mjs` hết hỏng theo lịch.
 - **Kết quả chạy:** node `tools/t_*.mjs` + `simtest` đạt hết; trình duyệt `b_layout` 104, `b_flow` 93, `b_match` 36 mục đạt (xem Phần V §6 cho
   các lượt chạy lại sau từng đợt sửa).
 - **Chưa thử được ở đây:** điện thoại thật, Safari thật, máy chủ Render thật (chỉ máy chủ chạy tại chỗ), chơi online nhiều người thật.

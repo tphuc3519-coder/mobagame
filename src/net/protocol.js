@@ -11,7 +11,7 @@ import { SPELLS } from '../data/spells.js';
 import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
-  version: 1,
+  version: 2,       // TĂNG mỗi khi đổi mô phỏng / khuôn tin: máy khách và máy chủ khác số thì từ chối nhau (lockstep — khác bản là lệch đồng bộ). 2: đợt 14/11
   pack: 1,          // số tick mỗi gói khung máy chủ gửi: 1 = gửi ngay mỗi tick (30 gói/giây, vài chục byte/gói) — bớt ~17 ms trễ so với gói 2 tick
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng
@@ -21,6 +21,9 @@ export const NET = {
   pickSec: 30,      // chọn tướng
   readySec: 3,      // cả phòng khoá xong → đếm ngược vào trận
 };
+
+/** Câu báo khi bản game của máy khách khác bản của máy chủ (máy chủ gửi; máy khách bản cũ cũng hiện được vì là tin 'err' thường). */
+export const VERSION_MSG = 'Bản game của bạn khác bản của máy chủ — tải lại trang (hoặc đóng mở lại ứng dụng) để cập nhật';
 
 export const MODES_ONLINE = { '1v1': { name: 'Đấu đơn 1v1', map: DUEL }, '5v5': { name: 'Đấu 5v5', map: ARENA } };
 /** Hàng chờ ghép trận trực tuyến (Đấu thường / Đấu hạng / Đỉnh cao) — luôn 5v5, máy điền chỗ trống. Phòng tuỳ chỉnh (custom) không qua hàng chờ. */
