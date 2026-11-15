@@ -717,3 +717,5 @@ Quyết định + lý do: `docs/DECISIONS.md` 2026-11-15 (Hỗ trợ thao tác c
 - **Rung khi thao tác** (Android): tung / huỷ chiêu, chiêu không dùng được.
 - Bot không đổi (chỉ tướng người chơi gửi lệnh `assist`). `NET.version` 4.
 - **Kiểm thử mới:** `tools/t_assist.mjs` (20 mục), `t_target.mjs` thêm 5 mục `quickTarget`; `t_netsafe` lọc lệnh `assist`.
+- **Kết quả chạy:** Node 43 / 43 bộ đạt; trình duyệt `b_match` 38, `b_online` 6, `b_flow` 93 đạt (`loadout1280` hết giờ chờ một lần khi chạy song
+  song với `b_match` trên máy không GPU — chạy riêng đạt). Chưa thử trên điện thoại thật (rung, cảm giác đuổi đánh với ngón tay thật).
