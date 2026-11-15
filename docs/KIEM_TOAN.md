@@ -507,9 +507,10 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
 
 ## 5. Kiểm thử mới
 
-- `tools/t_netsafe.mjs` — 32 mục: khuôn lệnh; ~6 300 lệnh rác qua bộ lọc vào trận 1v1 / 5v5; lệnh xấu vào thẳng mô phỏng; biểu quyết đầu hàng
+- `tools/t_netsafe.mjs` — 37 mục: khuôn lệnh; ~6 300 lệnh rác qua bộ lọc vào trận 1v1 / 5v5; lệnh xấu vào thẳng mô phỏng; biểu quyết đầu hàng
   (đủ phiếu, hết giờ, chờ mở lại, người rớt mạng, đấu hạng trước / sau phút 8); máy chủ thật với yêu cầu HTTP sai dạng, tin rác, gửi dồn, quá
-  số kết nối, kết nối im lặng; lỗi mô phỏng của một phòng không ảnh hưởng phòng khác.
+  số kết nối, kết nối im lặng; máy khách tự cứu (máy chủ treo 7,5 giây → tự nối lại, bù khung, không lệch; máy chủ khởi động lại → `onEnd`);
+  lỗi mô phỏng của một phòng không ảnh hưởng phòng khác.
 - `tools/t_audit.mjs` — 20 mục: lên cấp; tìm đường từ 6 hốc tường (đi thật tới đích), đích xa, đích trong tường; ngưỡng + độ trễ cảnh báo máu
   thấp; một trận 5v5 toàn máy 9 phút chạy kèm bộ dò bất biến mỗi tick.
 

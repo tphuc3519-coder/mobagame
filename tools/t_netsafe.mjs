@@ -160,6 +160,36 @@ try {
 } catch (e) { ok('các bài thử máy chủ chạy hết', false, String(e.stack).split('\n').slice(0, 3).join(' | ') + ' || ' + srvLog.slice(-400)); }
 srv.kill();
 
+// —— 5b. máy khách tự cứu (net/session.js): máy chủ treo → tự nối lại; máy chủ khởi động lại (phòng mất) → báo onEnd thay vì đứng hình ——
+{
+  const { createSession } = await import('../src/net/session.js');
+  const P2 = PORT + 1, URL2 = `ws://127.0.0.1:${P2}/ws`;
+  const boot = async () => { const p = spawn(process.execPath, [path.join(ROOT, 'server/index.mjs')], { env: { ...process.env, PORT: String(P2), HOST: '127.0.0.1', STATIC: '0', NET_SPEED: '2', READY_SEC: '0.2' }, stdio: ['ignore', 'pipe', 'pipe'] }); let log = ''; p.stdout.on('data', (d) => { log += d; }); p.stderr.on('data', (d) => { log += d; }); for (let i = 0; i < 100 && !log.includes('Máy chủ online'); i++) await sleep(50); return p; };
+  let srv2 = await boot(), pump = 0;
+  try {
+    const conn = await connect(URL2); conn.send({ t: 'create', mode: '1v1', name: 'Cứu' });
+    await wait(conn, 'room'); const stP = wait(conn, 'start'); conn.send({ t: 'start' }); await wait(conn, 'room', (m) => m.state === 'pick'); conn.send({ t: 'lock', heroId: ALPHA[2] });
+    const st = await stP, world = createWorld({ map: mapOf(st.cfg.mode), seed: st.cfg.seed }), { humans } = setupOnline(world, st.cfg);
+    const notes = []; let ended = null;
+    const sess = createSession({ conn, cfg: st.cfg, me: st.me, code: st.code, token: st.token, notify: (t) => notes.push(t), onEnd: (t) => { ended = t; } });
+    sess.attach(world, humans[st.me]); sess.loaded();
+    pump = setInterval(() => { try { sess.step(world); world.events.length = 0; } catch (e) { notes.push('LỖI ' + e.message); } }, 10);
+    const till = async (f, ms) => { for (let t = 0; t < ms && !f(); t += 50) await sleep(50); return !!f(); };
+    ok('phiên trực tuyến chạy (nhận khung từ máy chủ)', await till(() => world.tick > 40, 8000), `tick ${world.tick}`);
+    // (a) máy chủ treo 7,5 giây: không khung, không tin trả lời đo độ trễ, kết nối KHÔNG đóng — như điện thoại mất sóng
+    srv2.kill('SIGSTOP'); const t1 = world.tick; await sleep(7500);
+    ok('im lặng quá 6 giây: máy khách tự coi kết nối đã chết và bắt đầu nối lại (không chờ trình duyệt báo đóng)', notes.some((n) => /đang nối lại/.test(n)) && !ended, notes.join(' | '));
+    srv2.kill('SIGCONT');
+    ok('máy chủ chạy lại: nối lại được, nhận bù khung, trận chạy tiếp', await till(() => world.tick > t1 + 90 && notes.some((n) => /Đã nối lại/.test(n)), 20000) && !ended && !world.over, `tick ${t1} → ${world.tick}; ${notes.join(' | ')}`);
+    ok('sau khi nối lại không báo lệch đồng bộ', !sess.stats().desync && !notes.some((n) => /Lệch|LỖI/.test(n)));
+    // (b) máy chủ khởi động lại: phòng không còn → phiên phải báo kết thúc (màn ngoài đưa người chơi về Sảnh)
+    srv2.kill('SIGKILL'); await sleep(300); srv2 = await boot();
+    ok('máy chủ khởi động lại (phòng mất): phiên báo onEnd thay vì đứng hình', await till(() => !!ended, 20000) && /đã đóng|kết thúc/.test(ended || ''), String(ended));
+    sess.dispose();
+  } catch (e) { ok('bài thử máy khách tự cứu chạy hết', false, String(e.stack).split('\n').slice(0, 3).join(' | ')); }
+  clearInterval(pump); srv2.kill('SIGKILL');
+}
+
 // —— 6. lỗi mô phỏng của một phòng không kéo sập phòng khác (chạy rooms.mjs ngay trong tiến trình này, kết nối giả) ——
 process.env.READY_SEC = '0.05'; process.env.NET_SPEED = '4';
 const { handle, _rooms } = await import('../server/rooms.mjs');
