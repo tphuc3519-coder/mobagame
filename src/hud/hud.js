@@ -83,7 +83,7 @@ export function createHud(canvas, input, portraits = null) {
     ctx.lineWidth = 3; ctx.strokeStyle = '#0f1729'; ctx.stroke();
     // vòng đếm ngược
     const rx = x + 62, ry = y + ph / 2, rr = 22;
-    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a2640'; ctx.fill();
+    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#1a1310'; ctx.fill();
     ctx.lineWidth = 5; ctx.strokeStyle = '#0f1729'; ctx.stroke();
     ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#ffd23f'; ctx.stroke();
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = `800 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);

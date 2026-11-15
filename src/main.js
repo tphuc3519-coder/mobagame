@@ -48,8 +48,11 @@ if (q.has('hero')) {
   const enemyId = ALPHA.includes(q.get('enemy')) ? q.get('enemy') : ALPHA[(ALPHA.indexOf(heroId) + 3) % ALPHA.length];
   startMatch({ heroId, enemyId, bot, dummies: q.has('dummies'), difficulty: q.get('diff') || 'normal', mode: q.get('mode') || '1v1', playerRole: q.get('role') || undefined }); // ?role=jungle: vị trí người chơi (5v5)
 } else {
-  const next = takeNext(), p = profile();
-  bootStart(next ? 'Đang trở về sảnh…' : undefined);
+  const back = takeNext(), p = profile();
+  // link mời Phòng tuỳ chỉnh (?room=MÃ — ui/online.js inviteUrl): mở thẳng Phòng tuỳ chỉnh và vào phòng; bỏ ?room khỏi địa chỉ (tải lại không vào lại)
+  const invite = (q.get('room') || '').toUpperCase(), next = back || (/^[A-Z0-9]{4}$/.test(invite) ? { to: 'custom', join: invite } : null);
+  if (q.has('room')) { try { const u = new URL(location.href); u.searchParams.delete('room'); history.replaceState(history.state, '', u); } catch (_) { /* */ } }
+  bootStart(back ? 'Đang trở về sảnh…' : undefined);
   await bootRun([
     { w: 1, run: () => Promise.all(FONT_PRELOAD.map((f) => document.fonts?.load?.(f, 'ĐẤU HẠNG 0123456789'))) }, // ui/fonts.js
     { w: 2, run: () => Promise.all([...new Set([...ALPHA, ...FRIENDS.map((f) => f.avatar)])].map((id) => loadImg(faceSrc(id)))) },

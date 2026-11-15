@@ -9,7 +9,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'ĐẠT ' : 'LỖI 
 const store = new Map();
 globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
 let v = 0; const fresh = async (prof) => { store.clear(); if (prof) store.set('la.profile', JSON.stringify(prof)); return import(`../src/ui/profile.js?b=${++v}`); };
-const H = 3600000, NOW = new Date(2026, 9, 26, 12).getTime();
+const H = 3600000, NOW = Math.floor(Date.now() / H) * H; // mốc theo giờ thật: mở lại hồ sơ, game tự bỏ vật phẩm hết hạn theo giờ thật (mốc cố định cũ 26/10 làm thẻ 7 ngày "hết hạn" từ 2/11)
 
 // —— 1. vật phẩm có hạn ——
 let M = await fresh(), p = M.profile();

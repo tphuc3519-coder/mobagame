@@ -14,13 +14,13 @@ import { panelCss } from './panels.js';
 const STYLE = `.sh-cur { display: flex; gap: 10px; } .sh-cur .cur { display: inline-flex; align-items: center; gap: 4px; font: 700 15px/1 var(--u-disp); color: var(--c-yel); } .sh-cur img.ui-ic { width: 22px; height: 22px; }
 .sh-heroes { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: thin; }
 .sh-heroes button { flex: none; width: 52px; height: 52px; padding: 2px; border: 0; border-radius: 50%; background: rgba(160,176,220,.25); position: relative; }
-.sh-heroes button .face { width: 100%; height: 100%; border-radius: 50%; } .sh-heroes button.on { background: var(--u-gold); box-shadow: 0 0 0 3px var(--c-yel); }
-.sh-heroes button i { position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px var(--ink); }
+.sh-heroes button .face { width: 100%; height: 100%; border-radius: 50%; } .sh-heroes button.on { background: var(--u-gold); box-shadow: 0 0 0 2px var(--gold); }
+.sh-heroes button i { position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px var(--line); }
 .sh-looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.sh-look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 8px; background: var(--u-surf); box-shadow: inset 0 0 0 2px var(--ink); }
-.sh-look.wear { box-shadow: inset 0 0 0 2px var(--ink); }
-.sh-look .sw { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; box-shadow: inset 0 0 0 2px var(--ink); } .sh-look .sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
-.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #f4f6fb; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
+.sh-look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 8px; background: var(--u-surf); box-shadow: inset 0 0 0 1px var(--line); }
+.sh-look.wear { box-shadow: inset 0 0 0 1px var(--line); }
+.sh-look .sw { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); } .sh-look .sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
+.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #f2e7d0; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
 .pn-row .go img.ui-ic { width: 20px; height: 20px; margin: 0 4px 0 0; vertical-align: -4px; filter: none; }`;
 let styled = false;
 const cur = (k, n) => `<span class="cur" title="${CURRENCY[k].name}">${icon(CURRENCY[k].icon)}<b>${fmt(n)}</b></span>`;

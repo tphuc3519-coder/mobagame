@@ -1,7 +1,8 @@
 // Rà bố cục mọi màn ngoài trận + hộp thoại + bảng trên nhiều cỡ màn (kể cả Safari iPhone còn thanh địa chỉ + thanh tab: 852×252,
 // iPhone SE 667×235): với từng màn, mọi nút / ô bấm phải nằm trọn trong màn hình (hoặc trong một vùng cuộn được mà bản thân vùng đó
 // nằm trong màn hình), không bị khung cha cắt mất; hộp thoại / bảng không cao quá màn; trang không có thanh cuộn ngang; không lỗi JS.
-// In cỡ nút nhỏ nhất mỗi màn (tham khảo: màn rất thấp thì cả giao diện thu nhỏ đều theo ui/viewport.js).
+// Chữ khó đọc (màu chữ sát màu nền, vd. chữ vàng trên thẻ nền vàng) cũng tính là lỗi. In cỡ nút nhỏ nhất mỗi màn (tham khảo: màn rất
+// thấp thì cả giao diện thu nhỏ đều theo ui/viewport.js).
 // Chạy: python3 -m http.server <cổng> --bind 127.0.0.1 ở gốc repo, rồi node tools/b_fit.cjs <cổng> [máy,máy…] [màn,màn…]
 //   máy: tab15 se_tab safari and360 ip14 pmax ipad lap fhd (mặc định: tất cả) · SHOTS=<thư mục> lưu ảnh từng màn.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
@@ -55,6 +56,29 @@ function audit() {
     if (r.left < clip.l - 2 || r.top < clip.t - 2 || r.right > clip.r + 2 || r.bottom > clip.b + 2) bad.push(`bị cắt: ${name(e)} [${r.left | 0},${r.top | 0}→${r.right | 0},${r.bottom | 0}]`);
   }
   for (const b of document.querySelectorAll('.ui-dlg .box, .lqs-wrap > *, #rewardScr .rw-box')) { if (!shown(b)) continue; const q = b.getBoundingClientRect(); if (q.top < -2 || q.bottom > H + 2 || q.left < -2 || q.right > W + 2) bad.push(`hộp ra ngoài màn: ${name(b)} [${q.left | 0},${q.top | 0}→${q.right | 0},${q.bottom | 0}]`); }
+  // chữ khó đọc: màu chữ sát màu nền (vd. chữ vàng / trắng trên thẻ nền vàng đang chọn). Bỏ qua chữ có viền / bóng (tiêu đề .gt) và chữ
+  // nằm trên ảnh (nền url(…) — không biết màu). Nền dải màu: lấy màu giữa của các điểm màu đặc (lớp bóng trắng mờ của nút bị bỏ).
+  const rgb = (s) => { const m = String(s).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+  const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+  const bgOf = (e) => {
+    for (let a = e; a && a !== document.documentElement; a = a.parentElement) {
+      const pb = getComputedStyle(a, '::before'); // lớp nền vẽ bằng ::before phủ kín (vd. huy hiệu cấp ở sảnh: viền mực + ruột vàng)
+      const cover = ['top', 'right', 'bottom', 'left'].every((k) => Math.abs(parseFloat(pb[k])) <= 3); // chỉ lớp phủ kín (inset ≈ 0)
+      if (pb.content !== 'none' && pb.position === 'absolute' && cover && a !== e) { const c = rgb((pb.backgroundImage.match(/rgba?\([^)]+\)/g) || []).filter((x) => rgb(x).a >= 0.6)[1] || pb.backgroundColor); if (c && c.a >= 0.6 && (pb.backgroundImage !== 'none' || rgb(pb.backgroundColor).a >= 0.6)) return c; }
+      const cs = getComputedStyle(a);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') { if (/url\(/.test(cs.backgroundImage)) return null; const cols = [...cs.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0])).filter((c) => c && c.a >= 0.6); if (cols.length) return cols[Math.floor(cols.length / 2)]; }
+      const c = rgb(cs.backgroundColor); if (c && c.a >= 0.6) return c;
+    }
+    return null;
+  };
+  for (const e of root.querySelectorAll('*')) {
+    if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || !shown(e)) continue;
+    const r = e.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || r.right < 0 || r.bottom < 0 || r.left > W || r.top > H) continue;
+    const cs = getComputedStyle(e); if (parseFloat(cs.webkitTextStrokeWidth) > 0 || (cs.textShadow && cs.textShadow !== 'none')) continue;
+    const fg = rgb(cs.webkitTextFillColor || cs.color), bg = bgOf(e); if (!fg || fg.a < 0.5 || !bg) continue;
+    const L1 = lum(fg), L2 = lum(bg), k = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    if (k < 1.8) bad.push(`chữ khó đọc (tương phản ${k.toFixed(2)}): ${name(e)}`);
+  }
   const sw = document.documentElement.scrollWidth, sh = document.documentElement.scrollHeight;
   if (sw > W + 1) bad.push(`trang cuộn ngang: ${sw} > ${W}`);
   if (sh > H + 1) bad.push(`trang cuộn dọc: ${sh} > ${H}`);

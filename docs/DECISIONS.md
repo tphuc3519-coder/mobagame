@@ -1064,6 +1064,33 @@
   640×360 (thấp hơn thì thu nhỏ, máy tính bảng / máy tính phóng to như cũ); bỏ `vh` / `vw` trong CSS giao diện (Safari iPhone: `100vh` lớn hơn
   phần nhìn thấy khi còn thanh địa chỉ; Chrome nhân `vh` theo zoom, Safari không) → `var(--vh)` / `var(--vw)` do JS tính từ `innerHeight`.
   HUD trong trận: màn thấp (< 300 px dùng được) đưa cửa hàng lên hàng trên cùng, bản đồ nhỏ ≤ 38% chiều cao.
+- 2026-11-04: **Màn tải tới tận lúc vào trận:** game.js nhận `opts.cover` (màn tải) thay màn đen "Đang vào trận…" / chữ "Đang chờ người chơi
+  khác". Trận đấu máy: màn tải (ui/loading.js) chuyển thành cover, đóng khi dịch shader xong. Trực tuyến: ui/matchLoading.js hiện ngay khi máy chủ
+  báo vào trận (dựng thử trận để biết tướng máy), tiến độ từng người qua tin `lp`, đóng khi khung đầu tiên chạy. Phần vẽ đơn vị nhận đúng
+  `player.team` (trước cố định 0 — người chơi đội Đỏ không thấy tướng mình).
+- 2026-11-07: **Rà soát lỗi + giao diện:** (1) mô phỏng: tướng đi thẳng vào trụ / nhà chính (khối tròn) thì trượt theo tiếp tuyến thay vì bị
+  đẩy ngược đứng yên (1v1: xuất phát sau nhà chính, bấm đi thẳng là kẹt) — `sim/movement.js`; đổi mô phỏng nên `NET.version` = 2 và máy chủ từ
+  chối máy khách khác phiên bản (create / join / queue / rejoin mang `v`). 8 trận toàn máy trước / sau: 8/8 kết thúc, 0 lần kẹt. (2) Màn Nhận
+  thưởng không còn phủ vàng kín (UI v4 lỡ thay lớp lấp lánh bằng một dải màu đặc). (3) Bàn phím ảo (Android thu khung nhìn) không làm cả giao
+  diện co lại khi đang gõ. (4) Chữ chìm: thẻ đang chọn nền vàng ở Phép bổ trợ / Chọn bảng bùa dùng chữ mực; ô "Trang phục mùa" chưa chọn tướng
+  hiện "?" (ngôi sao vàng trên nền vàng); `tools/b_fit.cjs` kiểm thêm tương phản chữ / nền (< 1,8 là lỗi). Tránh tên lớp CSS ngắn trùng lớp
+  toàn cục (`.cd` hồi chiêu, `.q` mua nhanh, `.cur` ô tiền ở index.html / css.js).
+- 2026-11-07: **Phòng tuỳ chỉnh v2:** thẻ bản đồ có sơ đồ (5v5 ba đường / 1v1 một đường), công tắc Máy điền chỗ trống, 4 ô mã kiểu OTP (một ô
+  nhập thật trong suốt phủ lên — bàn phím / dán / tự điền như thường; đủ 4 ký tự là vào luôn, mã sai thì rung), nút **Mời** chia sẻ link
+  `?room=MÃ` (navigator.share, không có thì chép) — mở link là vào thẳng phòng (main.js đọc rồi bỏ `?room` khỏi địa chỉ). Hàng chờ: máy chủ gửi
+  `left` (giây tới lúc máy điền chỗ), ô tìm trận ghi "Máy vào thay chỗ trống sau 0:42" và thay dòng thông tin dưới tiêu đề (trước nằm giữa đáy màn,
+  che tên / vị trí dưới ghế mình ở màn thấp). Màn kết quả: danh hiệu thành huy hiệu có cúp (bỏ "<…>"), thẻ Giản lược / Chi tiết xuống thanh dưới để bảng thấy đủ 5 người không cần
+  cuộn ở màn 360 px. Cả ô tiền ở sảnh là nút (dấu + chỉ 18 px), nút quay lại / nút tròn có vùng chạm rộng hơn hình vẽ 7 px.
+- 2026-11-09: **UI v5 "Sơn mài đêm hội" thay UI v4.1** — chủ dự án: giao diện vẫn *"AI đặc trưng quá"*, muốn *"thiết kế nhìn con người mà
+  đẹp hơn"*. Soi lại thì cái "chất AI" không nằm ở một chi tiết mà ở sự đồng loạt: mọi khung / nút / nhãn cùng một công thức (viền mực 3px
+  + bóng cứng + mép sáng), tiêu đề vàng viền đen đắp nổi, nút bóng kiểu kẹo, biểu tượng 3D bóng loáng có dải kim loại, ảnh nền render rực,
+  thẻ nào cũng một đoạn mô tả. Chọn một hướng có chất liệu riêng thay vì chỉnh màu: tranh sơn mài (nền đen nâu, chỉ vàng mảnh, son đỏ, vàng
+  quỳ, ngọc) + đêm hội đèn lồng — đúng tên game và văn hoá Việt. Có thứ bậc: chỉ nút chính tô son, chọn = vàng quỳ, còn lại viền chỉ.
+  Tiêu đề Fraunces (có chân, ấm); nhãn / số / nút Be Vietnam Pro (bỏ Baloo 2 — cả chữ canvas trong trận). Biểu tượng vẽ lại bằng SVG nét
+  vàng (`tools/uiart/icons5.mjs`, bỏ 21 ảnh webp cũ). Ảnh render dịu màu ngả ấm bằng CSS (không đổi ảnh gốc). Nhãn kiểu con dấu son hơi
+  nghiêng, khung lớn có nẹp góc vàng + vân giấy dó (SVG, không ảnh). Làm bằng token + thành phần chung trong css.js và một lượt đổi tự động
+  các màu / viền / bóng cũ trong chuỗi CSS của mọi màn (không đổi kích thước, id, selector — bố cục và kiểm thử giữ nguyên); `b_fit` kiểm
+  chữ chìm bắt được các chỗ chữ sáng trên nền vàng. Màu đội Xanh / Đỏ trong trận, ảnh tướng, biểu tượng chiêu / đồ không đổi (nội dung game).
 - 2026-11-14: **Kiểm toán toàn repo** (báo cáo: `docs/KIEM_TOAN.md` Phần V). Các quyết định kèm theo:
   - **Máy khách là thứ không tin được.** `net/protocol.js sanitizeCommand` không còn "chép rồi cắt ngắn" mà dựng lại lệnh từ đầu theo khuôn
     của từng loại (ô túi đồ là số nguyên 0–5, món đồ phải có thật — `Object.hasOwn`, chiêu chỉ `s1`–`s3`, ngắm chỉ nhận số hữu hạn + id nguyên
@@ -1108,4 +1135,7 @@
   - **Không làm (cần chủ dự án quyết / cần hạ tầng):** tài khoản + lưu tiến trình trên máy chủ (thưởng / sao trận trực tuyến vẫn do máy khách
     tự ghi vào `localStorage` — sửa được bằng công cụ trình duyệt); chống nhìn xuyên sương mù khi chơi lockstep; dựng lại trạng thái khi lệch
     đồng bộ (hiện chỉ dò + báo). Cả ba là việc lớn về kiến trúc, không sửa "tại chỗ" được.
-
+- 2026-11-15: **Gộp `online-che-do` (UI v5, 04–09/11) sau #31.** Hai nhánh cùng tăng `NET.version` 1 → 2 cho hai thay đổi mô phỏng khác nhau
+  (tướng trượt quanh trụ / nhà chính; đợt kiểm toán 14/11) ⇒ bản gộp là **3**. Giữ một cơ chế chặn khác bản là tin `hello` (14/11); bỏ kiểm `v` theo
+  từng tin `create` / `join` / `queue` / `rejoin` của nhánh 07/11 (trùng việc, câu báo khác nhau). Vào lại trận khi khác bản vẫn nhận
+  `rejoinFail { old: true }` để máy khách báo "Game vừa cập nhật".

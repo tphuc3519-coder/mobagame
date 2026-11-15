@@ -666,6 +666,28 @@ Còn lại:
 - **Chưa có:** dự đoán chuyển động tướng mình, ghép trận tự động, nhiều người mỗi đội, chọn phép / bùa trước trận, thưởng / hạng, chống gian lận
   sương mù. Hướng dẫn chạy LAN + đưa máy chủ lên mạng (VPS Singapore / Render / Fly.io, cần wss): `docs/ONLINE.md`.
 
+## 07/11 — Rà soát lỗi + Phòng tuỳ chỉnh có link mời
+- **Lỗi đã sửa:** kẹt sau nhà chính 1v1 (tướng trượt quanh trụ / nhà chính; `NET.version` 2 + máy chủ chặn bản game cũ), màn Nhận thưởng phủ vàng
+  kín, bàn phím ảo làm giao diện co lại, chữ chìm trên thẻ đang chọn (Phép bổ trợ / Chọn bảng bùa) và ô Trang phục mùa, số giờ hồi quái chồng nhau
+  trên bản đồ nhỏ ở màn thấp, lớp CSS trùng tên lớp toàn cục (mã phòng bị ẩn, ô mã lệch).
+- **Giao diện:** Phòng tuỳ chỉnh v2 (thẻ bản đồ có sơ đồ, công tắc máy, 4 ô mã, nút Mời chia sẻ link `?room=MÃ` — mở là vào thẳng phòng), hàng chờ
+  đếm ngược tới lúc máy vào thay (ô tìm trận thay dòng thông tin dưới tiêu đề, không che ghế), màn kết quả thấy đủ 5 người không cần cuộn + danh hiệu thành huy hiệu, vùng chạm rộng hơn cho nút nhỏ.
+- **Kiểm thử:** node `t_*.mjs` 40/40 + `simtest` đạt; `b_prog` 151, `b_flow` 93, `b_layout` 104, `b_fit` 9 máy (thêm kiểm chữ chìm) đạt, `b_invite`
+  (mới) đạt, `b_match` đạt (kịch bản Tập hợp sửa cho máy chạm chậm). 8 trận toàn máy: 8/8 kết thúc, 0 lần kẹt (như trước khi sửa). Còn lệch mốc đo
+  thời gian trên máy thử không GPU — `b_gd3` đấu lại về phòng chờ (3,2–3,6 s), giữ shader; `b_pwa` mở lần hai (trung vị 3,1 s) — **bản trước khi sửa
+  chạy cùng máy lệch y hệt** (3,8 s; 3,1 s), không do đợt này.
+
+## 09/11 — UI v5 "Sơn mài đêm hội" (bỏ chất "AI")
+- Chủ dự án thấy UI v4.1 vẫn "AI đặc trưng quá". Đổi cả hệ nhận diện: nền đen nâu sơn mài, viền chỉ vàng 1px (khung lớn viền chỉ đôi +
+  nẹp góc vàng, vân giấy dó), nút chính son đỏ, ô chọn vàng quỳ chữ mực, ngọc cho trạng thái tốt; tiêu đề Fraunces có chân, nhãn / số Be
+  Vietnam Pro (gỡ Baloo 2); nhãn góc thẻ kiểu con dấu son; bộ 21 biểu tượng SVG nét vàng vẽ mới (đồng tiền lỗ vuông, ngọc bích, đèn lồng…)
+  thay ảnh 3D bóng loáng; ảnh nền render dịu màu ngả ấm; mô tả thẻ chế độ rút còn một dòng.
+- Áp cho: sảnh, mọi bảng, chọn chế độ, phòng chờ, phòng tuỳ chỉnh, chọn tướng, cấm chọn, đội hình, tải trận, kết quả, nhận thưởng, Cài đặt,
+  màn khởi động, HUD trong trận (bảng tỉ số, cửa hàng, nút, bản đồ nhỏ, chữ canvas). Kích thước / bố cục giữ nguyên.
+- **Kiểm thử:** node `t_*.mjs` 40/40 + `simtest` đạt (gồm `t_licenses` — Fraunces + biểu tượng SVG có dòng giấy phép); `b_fit` 9 máy 369
+  (bố cục + chữ chìm), `b_layout` 104, `b_flow` 93, `b_match` 36, `b_prog` 151, `b_pwa` 11, `b_invite` 14 đạt. `b_gd3` lệch 3 mốc đo thời
+  gian (đấu lại về phòng chờ 3,9 s / mốc 3 s khi CPU chậm 4×, giữ shader) — bản trước khi đổi giao diện chạy cùng máy lệch đúng 3 mốc đó.
+
 ## 14–15/11 — kiểm toán toàn repo: an toàn online, tướng máy kẹt tường, bố cục màn hẹp, tốc độ mô phỏng
 Báo cáo đầy đủ + số đo: `docs/KIEM_TOAN.md` Phần V; quyết định: `docs/DECISIONS.md` 2026-11-14.
 - **Online (P0):** lệnh máy khách dựng lại theo khuôn (trước: một tin `sell` / `buy` sai kiểu làm sập máy chủ hoặc cho vàng `NaN`); lỗi trong

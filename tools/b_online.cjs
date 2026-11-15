@@ -30,7 +30,7 @@ const boot = async () => { const p = spawn(process.execPath, [path.join(ROOT, 's
     };
     await enter();
     let st = await page.evaluate(() => ({ ...window.__game.online.stats(), tick: window.__game.world.tick, v: window.__game.online.cfg.v, net: document.getElementById('netTag')?.textContent }));
-    ok('trận trực tuyến chạy trên trình duyệt (nhận khung, đúng phiên bản 2, không lệch)', st.online && !st.desync && st.tick > 45 && st.v === 2, JSON.stringify(st));
+    ok('trận trực tuyến chạy trên trình duyệt (nhận khung, đúng phiên bản 3, không lệch)', st.online && !st.desync && st.tick > 45 && st.v === 3, JSON.stringify(st));
     await page.waitForTimeout(2500);
     const st2 = await page.evaluate(() => ({ ...window.__game.online.stats(), tick: window.__game.world.tick, health: 0 }));
     ok('sau 2,5 giây: vẫn nhận khung, máy chủ không báo lệch (đã qua ít nhất một mốc so mã băm)', st2.tick > st.tick + 30 && !st2.desync && !/LỆCH/.test(srv.log), `tick ${st.tick} → ${st2.tick}`);

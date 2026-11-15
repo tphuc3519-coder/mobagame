@@ -78,6 +78,18 @@ export function updateMovement(world) {
       if (isRooted(e) || m < 0.001) { e.speed = 0; }
       else {
         const step = e.stats.moveSpeed * TICK;
+        // trượt quanh trụ / nhà chính (khối tròn): sắp chạm mà còn đẩy vào thì đi theo tiếp tuyến, đủ tốc độ — trước đây đi thẳng vào tâm (1v1:
+        // xuất phát sau nhà chính, giữ cần sang phải) bị đẩy ngược đúng bằng quãng vừa đi → đứng yên; đi hơi chéo thì chỉ bò rất chậm
+        for (const s of solids) {
+          const dx = e.pos.x - s.pos.x, dy = e.pos.y - s.pos.y, d = D.hypot(dx, dy), min = e.radius + s.radius * 0.8;
+          if (d < 0.01 || d > min + step) continue;
+          const nx = dx / d, ny = dy / d, into = -(x * nx + y * ny);
+          if (into <= 0) continue;
+          let tx = x + into * nx, ty = y + into * ny; const tl = D.hypot(tx, ty);
+          if (tl < 0.25) { const ax = -ny, ay = nx, sg = (tl > 1e-6 ? tx * ax + ty * ay : ax + ay) >= 0 ? 1 : -1; tx = ax * sg; ty = ay * sg; } // gần như thẳng vào tâm: vòng về một phía cố định
+          else { tx /= tl; ty /= tl; }
+          x = tx; y = ty; break;
+        }
         e.pos.x += x * step; e.pos.y += y * step;
         e.speed = e.stats.moveSpeed;
         e.facing = D.atan2(y, x);

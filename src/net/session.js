@@ -25,6 +25,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {}, o
   let lastMsg = performance.now(), lastStep = 0, finished = false, ended = false, resyncAt = 0;
   /** Trận không thể tiếp tục: báo một lần rồi để màn ngoài (ui/flow.js) dọn trận, về sảnh. Trận đã kết thúc bình thường thì bỏ qua. */
   const end = (text) => { if (ended || disposed || finished) return; ended = true; notify(text); onEnd?.(text); };
+  let loads = [], lpSent = -1, lpAt = 0; // màn tải: tiến độ tải từng người chơi (máy chủ phát, theo thứ tự cfg.players) / lần báo gần nhất của máy này
   const lead = { x: 0, y: 0 };
   const offs = [];
   const bind = (c) => {
@@ -42,6 +43,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {}, o
     offs.push(c.on('rtt', () => { lastMsg = performance.now(); }));
     offs.push(c.on('abort', (m) => end(m?.m || 'Máy chủ đã dừng trận')));
     offs.push(c.on('go', () => { started = true; }));
+    offs.push(c.on('lp', (m) => { if (Array.isArray(m.a)) loads = m.a; }));
     offs.push(c.on('note', (m) => notify(m.m)));
     offs.push(c.on('desync', () => { if (!desync) { desync = true; notify('Lệch đồng bộ với máy chủ — trận có thể hiển thị sai (đã ghi lại để sửa)'); } }));
     c.onDrop = () => { if (!disposed && !finished && !ended) reconnect(); };
@@ -55,7 +57,7 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {}, o
       try {
         const c = await connect(conn.url); if (disposed || ended) { c.close(); break; }
         conn = c; bind(c); lastMsg = performance.now(); // nhận khung ngay từ gói đầu máy chủ gửi bù
-        const ok = await new Promise((r) => { const b = c.on('rejoinFail', () => { b(); r(false); }); c.send({ t: 'rejoin', code, token, have: lastRecv }); setTimeout(() => { b(); r(true); }, 2500); });
+        const ok = await new Promise((r) => { const b = c.on('rejoinFail', () => { b(); r(false); }); c.send({ t: 'rejoin', v: NET.version, code, token, have: lastRecv }); setTimeout(() => { b(); r(true); }, 2500); });
         if (!ok) { c.onDrop = null; c.close(); end('Trận đã kết thúc hoặc phòng đã đóng'); break; } // trước đây chỉ báo rồi để trận đứng hình mãi
         notify('Đã nối lại'); break;
       } catch (_) {
@@ -86,6 +88,14 @@ export function createSession({ conn, cfg, me, code, token, notify = () => {}, o
     /** Rời tab / ẩn trang: thả cần (không để tướng chạy mãi về một hướng). */
     release() { if (lastDir.x || lastDir.y) { lastDir = { x: 0, y: 0 }; api.cmd({ type: 'move', dir: lastDir }); } },
     loaded() { conn.send({ t: 'loaded' }); },
+    /** Báo tiến độ tải trận của máy này (0..1) cho máy chủ — màn tải mọi máy vẽ thanh của mình theo số này (≤ 5 lần/giây, chỉ khi đổi). */
+    progress(f) {
+      const v = Math.max(0, Math.min(100, Math.round(f * 100))), now = performance.now();
+      if (v === lpSent || (now - lpAt < 200 && v < 100)) return;
+      lpSent = v; lpAt = now; conn.send({ t: 'lp', p: v });
+    },
+    /** Tiến độ tải (0..100) từng người chơi theo thứ tự cfg.players, máy chủ báo. */
+    get loads() { return loads; },
     /** Chạy các khung đã nhận. Bình thường 1 khung / tick; tụt ≥ 4 khung thì 2; tụt xa thì chạy bù tới ~24 ms mỗi lượt. Trả về số khung đã chạy. */
     step(world) {
       const nowMs = performance.now();

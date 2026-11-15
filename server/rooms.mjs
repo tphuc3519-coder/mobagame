@@ -65,7 +65,7 @@ class Room {
     if (team === null) team = this.count(1) < this.count(0) ? 1 : 0;
     if (this.freeSlot(team) < 0) team = 1 - team;
     const slot = this.freeSlot(team); if (slot < 0) return null;
-    const p = { ws, token: randomBytes(9).toString('base64url'), name: cleanName(info.name), avatar: cleanAvatar(info.avatar), team, slot, ready: false, online: true,
+    const p = { ws, token: randomBytes(9).toString('base64url'), name: cleanName(info.name), avatar: cleanAvatar(info.avatar), stars: Math.max(0, Math.min(999, info.stars | 0)), team, slot, ready: false, online: true, lp: 0,
       pri: ROLES5.includes(info.pri) ? info.pri : null, sec: ROLES5.includes(info.sec) ? info.sec : null, role: null,
       accepted: false, locked: false, heroId: null, hover: null, spellId: null, lo: null, eid: 0, botOn: false, offAt: 0, rate: { t: 0, n: 0 } };
     this.players.push(p); return p;
@@ -163,11 +163,11 @@ class Room {
   start() {
     this.state = 'loading'; this.deadline = 0;
     const cfg = { v: NET.version, q: this.q, mode: this.mode, difficulty: this.difficulty, bots: this.bots, seed: randomInt(1, 2 ** 31 - 1),
-      players: this.players.map((p) => ({ team: p.team, heroId: p.heroId, name: p.name, role: p.role, spellId: p.spellId, lo: p.lo })) };
+      players: this.players.map((p) => ({ team: p.team, heroId: p.heroId, name: p.name, stars: p.stars, role: p.role, spellId: p.spellId, lo: p.lo })) };
     this.cfg = cfg; this.world = createWorld({ map: mapOf(cfg.mode), seed: cfg.seed });
     const { humans } = setupOnline(this.world, cfg);
-    this.players.forEach((p, i) => { p.eid = humans[i].id; p.loaded = false; if (p.online) p.ws.send({ t: 'start', cfg, me: i, token: p.token, code: this.code }); });
-    this.loadUntil = Date.now() + NET.loadTimeout * 1000;
+    this.players.forEach((p, i) => { p.eid = humans[i].id; p.loaded = false; p.lp = 0; if (p.online) p.ws.send({ t: 'start', cfg, me: i, token: p.token, code: this.code }); });
+    this.loadUntil = Date.now() + NET.loadTimeout * 1000; this.lpAt = 0; this.lpDirty = true;
     this.timer = setInterval(() => this.step(), 5);
     log(`phòng ${this.code}: bắt đầu ${this.q} ${cfg.mode} seed ${cfg.seed} —`, cfg.players.map((p) => `${p.name}/${p.heroId}/đội ${p.team}`).join(', '));
   }
@@ -186,6 +186,8 @@ class Room {
     const now = Date.now();
     if (this.t0 && now - this.t0 > LIMIT.matchMs) return this.abort('Trận quá dài — máy chủ đã đóng phòng');
     if (this.state === 'loading') {
+      // màn tải trực tuyến: tiến độ từng máy (≤ 5 lần/giây, chỉ khi có thay đổi) — thanh của từng người trên màn tải mọi máy
+      if (this.lpDirty && now - this.lpAt > 200) { this.lpDirty = false; this.lpAt = now; this.broadcast({ t: 'lp', a: this.players.map((q) => (q.loaded ? 100 : q.lp | 0)) }); }
       if (this.players.every((p) => p.loaded || !p.online) || now > this.loadUntil) { this.state = 'playing'; this.t0 = now; this.broadcast({ t: 'go' }); this.sync(); log(`phòng ${this.code}: vào trận`); }
       return;
     }
@@ -252,6 +254,7 @@ function form(q, entries) {
   r.assignRoles(); r.beginAccept();
   log(`ghép ${q}: phòng ${r.code} — ${entries.length} người thật, ${10 - entries.length} máy (chờ lâu nhất ${Math.round((Date.now() - entries[0].at) / 1000)} giây)`);
 }
+const queueLeft = (pool, now = Date.now()) => (pool.length ? Math.max(0, Math.ceil(SEC.queue - (now - pool[0].at) / 1000)) : SEC.queue);
 function matchmake() {
   const now = Date.now();
   for (const [q, pool] of Object.entries(pools)) {
@@ -260,7 +263,8 @@ function matchmake() {
     const room = rooms.size < LIMIT.rooms; // đầy phòng: giữ mọi người trong hàng chờ tới khi có phòng trống
     while (room && pool.length >= need && rooms.size < LIMIT.rooms) form(q, pool.splice(0, need));
     if (room && pool.length && rooms.size < LIMIT.rooms && now - pool[0].at >= SEC.queue * 1000) form(q, pool.splice(0, pool.length));
-    for (const en of pool) en.ws.send({ t: 'queue', q, n: pool.length, need, waited: Math.round((now - en.at) / 1000), max: SEC.queue });
+    const left = queueLeft(pool, now); // còn bao giây máy vào thay (tính theo người chờ lâu nhất — cả hàng ghép cùng lúc)
+    for (const en of pool) en.ws.send({ t: 'queue', q, n: pool.length, need, waited: Math.round((now - en.at) / 1000), max: SEC.queue, left });
   }
 }
 setInterval(matchmake, 1000).unref?.();
@@ -307,7 +311,7 @@ export function handle(ws) {
         q.sess = sess; sess.room = r; sess.p = q; r.sync(); return;
       }
       case 'rejoin': {
-        if (stale()) { err(VERSION_MSG); return ws.send({ t: 'rejoinFail' }); }
+        if (stale()) { err(VERSION_MSG); return ws.send({ t: 'rejoinFail', old: true }); } // old: máy khách báo "Game vừa cập nhật"
         const r = rooms.get(String(m.code || '').toUpperCase()), q = r?.players.find((x) => x.token === m.token);
         if (!r || !q || typeof m.token !== 'string' || PRE.has(r.state) || r.state === 'over') return ws.send({ t: 'rejoinFail' });
         if (room && room !== r) leave(); // kết nối này đang ngồi phòng khác: rời hẳn phòng đó trước (trước đây để lại một "bóng ma" trong phòng cũ)
@@ -320,9 +324,9 @@ export function handle(ws) {
         if (room || sess.queued) return err('Bạn đang ở trong phòng / hàng chờ');
         if (typeof m.q !== 'string' || !Object.hasOwn(QUEUES, m.q)) return err('Chế độ không hợp lệ');
         if (rooms.size >= LIMIT.rooms) return err(FULL);
-        const info = { name: m.name, avatar: m.avatar, diff: cleanDiff(m.diff), pri: m.pri, sec: m.sec };
+        const info = { name: m.name, avatar: m.avatar, stars: m.stars, diff: cleanDiff(m.diff), pri: m.pri, sec: m.sec };
         sess.queued = m.q; pools[m.q].push({ ws, sess, info, at: Date.now() });
-        ws.send({ t: 'queue', q: m.q, n: pools[m.q].length, need: 10, waited: 0, max: SEC.queue }); return;
+        ws.send({ t: 'queue', q: m.q, n: pools[m.q].length, need: QUEUES[m.q].mode === '5v5' ? 10 : 2, waited: 0, max: SEC.queue, left: queueLeft(pools[m.q]) }); return;
       }
       case 'unqueue': unqueue(sess); return;
       case 'accept': room?.accept(p); return;
@@ -332,7 +336,8 @@ export function handle(ws) {
       case 'ready': if (room?.state === 'lobby') { p.ready = !!m.on; room.sync(); } return;
       case 'opts': if (room) err(room.opts(p, m)); return;
       case 'start': if (room) err(room.startCustom(p)); return;
-      case 'loaded': if (p) p.loaded = true; return;
+      case 'loaded': if (p) { p.loaded = true; p.lp = 100; if (room) room.lpDirty = true; } return;
+      case 'lp': if (p && room?.state === 'loading') { const v = Math.max(0, Math.min(100, m.p | 0)); if (v !== p.lp) { p.lp = v; room.lpDirty = true; } } return; // tiến độ tải của máy này (0..100)
       case 'leave': leave(); return;
       default:
     }

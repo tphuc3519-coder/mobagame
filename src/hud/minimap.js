@@ -13,7 +13,7 @@ const TEAM = ['#38b8ff', '#ff4a3a'];
 export function createMinimap({ world, player, map, cam, fog = null, portraits = null, layout = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
-  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:3px solid #0f1729;border-radius:12px;background:#1a2640;box-shadow:0 3px 0 #0f1729;touch-action:none';
+  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:1px solid rgba(216,180,104,.4);border-radius:8px;background:#1a1310;box-shadow:0 4px 14px rgba(0,0,0,.4);touch-action:none';
   document.body.appendChild(track(cv));
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 
@@ -97,7 +97,15 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
         ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);
         ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
         if (big) { ctx.fillStyle = '#1a1020'; ctx.font = cf(800, 9); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText({ long_ngu: 'L', ho_loi: 'H', than_dieu: 'Đ', ta_than: 'T' }[cp.type] || 'B', x, y + 0.5); }
-        if (!up && (big || buff)) { const s = Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30)); ctx.fillStyle = '#fff'; ctx.font = cf(700, 9); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s), x, y + R + 1); }
+        // đếm ngược mọc lại: chữ có viền tối (đọc được trên nền rừng), không thò ra ngoài khung; bản đồ nhỏ (màn thấp) chỉ ghi mục tiêu lớn sắp
+        // mọc (≤ 3 phút) — ghi cả bùa / mục tiêu cuối trận thì các số chồng lên nhau
+        const left = up ? 0 : Math.max(0, Math.ceil((cp.respawnAt - world.tick) / 30));
+        if (!up && (W >= 130 ? big || buff : big && left <= 180)) {
+          const s = left, t = s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s);
+          ctx.font = cf(700, W < 130 ? 8 : 9); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+          const tw = ctx.measureText(t).width, tx = Math.max(tw / 2 + 1, Math.min(W - tw / 2 - 1, x)), ty = Math.min(H - 10, y + R + 1);
+          ctx.lineJoin = 'round'; ctx.lineWidth = 2.6; ctx.strokeStyle = '#0b0d1a'; ctx.strokeText(t, tx, ty); ctx.fillStyle = '#fff'; ctx.fillText(t, tx, ty);
+        }
       }
       // cục máu sau trụ ngoài của đội mình: chấm xanh lá (mờ khi đang chờ mọc lại)
       for (const o of world.orbs || []) { if (o.team !== player.team) continue; const up = world.tick >= o.readyAt; ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = '#5aff8a'; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(wx(o.x), wy(o.y), 3, 0, 7); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1; }

@@ -4,13 +4,13 @@
 import { HEROES } from '../data/heroes/index.js';
 
 let gid = 0;
-const GOLD = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d6"/><stop offset=".55" stop-color="#f0c868"/><stop offset="1" stop-color="#b8862e"/></linearGradient>`;
+const GOLD = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efd9a0"/><stop offset="1" stop-color="#cfa95c"/></linearGradient>`; // UI v5: vàng quỳ gần phẳng (bỏ ánh kim)
 const svg = (body, vb = 24) => { const id = 'kg' + gid++; return `<svg viewBox="0 0 ${vb} ${vb}" aria-hidden="true"><defs>${GOLD(id)}</defs>${body.replaceAll('$G', `url(#${id})`)}</svg>`; };
 
-/** Biểu tượng vẽ sẵn (webp nền trong suốt 256²): coin, coins, gem, mail, gear, trophy, friends, chat, scroll, swords, helmet, items, bag,
- *  book, hourglass, chest, lantern, star, target, shop, bolt, rank_<bậc>. */
+/** Biểu tượng giao diện (UI v5: SVG nét vàng vẽ tay — tools/uiart/icons5.mjs): coin, coins, gem, mail, gear, trophy, friends, chat, scroll,
+ *  swords, helmet, items, bag, book, hourglass, chest, lantern, star, target, shop, bolt; huy hiệu hạng rank_<bậc> (webp vẽ sẵn). */
 export const ICONS = ['coin', 'coins', 'gem', 'mail', 'gear', 'trophy', 'friends', 'chat', 'scroll', 'swords', 'helmet', 'items', 'bag', 'book', 'hourglass', 'chest', 'lantern', 'star', 'target', 'shop', 'bolt'];
-export const iconSrc = (name) => `./assets/ui/icons/${name}.webp`;
+export const iconSrc = (name) => `./assets/ui/icons/${name}${name.startsWith('rank_') ? '.webp' : '.svg'}`; // UI v5: biểu tượng nét vẽ SVG (tools/uiart/icons5.mjs); huy hiệu hạng vẫn ảnh vẽ sẵn
 export const icon = (name, cls = '') => `<img class="ui-ic ${cls}" src="${iconSrc(name)}" alt="" draggable="false">`;
 
 export const ICON = {
@@ -44,6 +44,7 @@ export const ICON = {
   edit: () => svg('<path d="M4 20l1-4.4L15.6 5a2 2 0 012.8 0l.6.6a2 2 0 010 2.8L8.4 19z" fill="$G" stroke="#3a2608" stroke-width=".8"/><path d="M13.6 7l3.4 3.4" stroke="#3a2608" stroke-width="1"/>'),
   lantern: () => icon('lantern'), lanternSvg: () => svg('<path d="M12 2v2.5" stroke="$G" stroke-width="1.6"/><rect x="8.5" y="4" width="7" height="2" rx=".8" fill="$G"/><path d="M7 7.5c0-1 2.2-1.5 5-1.5s5 .5 5 1.5c1 2.2 1 6.8 0 9 0 1-2.2 1.5-5 1.5s-5-.5-5-1.5c-1-2.2-1-6.8 0-9z" fill="#ff7a3a" stroke="#ffd27a" stroke-width="1"/><path d="M9 9.5c.4 2 .4 4.5 0 6.5M15 9.5c-.4 2-.4 4.5 0 6.5M12 6v12" stroke="#ffd27a" stroke-width=".8" opacity=".8"/><path d="M12 18.5V22" stroke="#e8505a" stroke-width="1.6"/>'),
   full: () => svg('<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="$G" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'),
+  share: () => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14.5V3.8M7.6 8.2 12 3.8l4.4 4.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 10.5H7A1.8 1.8 0 005.2 12.3v6.4A1.8 1.8 0 007 20.5h10a1.8 1.8 0 001.8-1.8v-6.4a1.8 1.8 0 00-1.8-1.8h-1.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', // chia sẻ (màu chữ của nút)
   people: () => svg('<circle cx="12" cy="7" r="3.2" fill="$G"/><path d="M6 20c.4-4 2.8-6.4 6-6.4s5.6 2.4 6 6.4z" fill="$G"/><circle cx="4.8" cy="10" r="2.2" fill="$G" opacity=".7"/><circle cx="19.2" cy="10" r="2.2" fill="$G" opacity=".7"/>'),
 };
 
