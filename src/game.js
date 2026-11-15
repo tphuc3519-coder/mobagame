@@ -46,6 +46,7 @@ import { createSpellButtons } from './hud/spellButtons.js';
 import { createCamLook } from './hud/camLook.js';
 import { createPingHud } from './hud/pings.js';
 import { createScoreboard } from './hud/scoreboard.js';
+import { createLowHp } from './hud/lowHp.js';
 import { STARTER, ITEMS, starterFor } from './data/items.js';
 import { createGameSounds } from './audio/gameSounds.js';
 import { sfx, music, stopVoices } from './audio/audio.js';
@@ -149,6 +150,7 @@ applyPrefs(); onPref((k) => { if (k === 'bright' || k === 'fogFx' || k === 'camD
 const camLook = createCamLook({ minimap, map });
 const pingHud = map.lanes.length > 1 ? createPingHud({ world, player, map, cam, minimap, hudCanvas: document.getElementById('hud') }) : null; // tín hiệu (chỉ 5v5)
 if (pingHud) minimap.setOverlay((c, wx, wy) => pingHud.minimap(c, wx, wy));
+const lowHp = createLowHp(); // viền đỏ mờ khi máu thấp (hud/lowHp.js)
 const score = createScoreboard({ world, player, portraits }); // tỉ số + K/D/A góc phải, chạm mở bảng tỉ số // giữ bản đồ nhỏ / kéo camera bên phải để nhìn chỗ khác
 const buttons = createSkillButtons(document.getElementById('skills'), { world, player, indicators, camera: cam.camera, input, views }); // camera/input/views: chạm chọn địch + dấu mục tiêu (Cài đặt điều khiển)
 const spells = createSpellButtons(document.getElementById('extras'), { world, player, indicators, lockId: buttons.lockId, preview: buttons.preview }); // đồ khoá mục tiêu: dùng chung mục tiêu khoá + dấu xem trước
@@ -286,6 +288,7 @@ const loopCfg = {
     if (blast && endCam.t >= END.blastAt) { fx.coreBlast(blast.pos.x, blast.pos.y, blast.team === player.team); cam.shake(END.shake, END.shakeSec); sfx('tower_down', { vol: 1, announce: true }); blast = null; } sun.follow(cam.target.x, cam.target.z); PLAYER_POS.value.set(px, 0, py); // tán cây quanh tướng thưa đi; bóng đổ theo chỗ camera nhìn
     sounds.update(world, cam.target, cam.camera); // tâm nghe theo camera
     if (dead !== !player.alive) { dead = !player.alive; document.body.classList.toggle('dead', dead); } // chết: màn hình xám, nút cửa hàng nhấp nháy
+    lowHp.update(player, ended);
     if (post && gray !== (dead ? 1 : 0)) { gray = dead ? Math.min(1, gray + dt * 3) : Math.max(0, gray - dt * 4); post.set({ gray }); } // xám dần khi chết, hồi sinh thì màu về
     if (OVERVIEW) { const c = cam.camera, cx = map.w / 2, cz = map.h / 2, D = map.w * OVERVIEW, pit = 52 * Math.PI / 180; // ?overview=<hệ số khoảng cách>: nhìn toàn bản đồ (chụp so sánh)
       c.far = D * 3; c.updateProjectionMatrix(); c.position.set(cx, Math.sin(pit) * D, cz + Math.cos(pit) * D); c.lookAt(cx, 0, cz + map.h * 0.04); sun.follow(cx, cz); }

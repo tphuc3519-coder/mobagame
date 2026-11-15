@@ -185,6 +185,10 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         el.classList.toggle('nocond', level > 0 && !!sk.canCast && !sk.canCast(player, world)); // chưa đủ điều kiện riêng (Ấn, Tầm Nhìn, máu dưới 30%…)
         el.classList.toggle('recast', player.recast?.slot === slot); // đang trong cửa sổ kích hoạt lại (đổi chỗ phân thân)
         el.classList.toggle('locked', !level); el.classList.toggle('cooling', left > 0.05);
+        // vừa hồi xong (đang hồi → sẵn sàng, tướng còn sống): vòng sáng nở một lần cho biết chiêu dùng lại được mà không phải nhìn số
+        const cooling = left > 0.05;
+        if (el._cool && !cooling && level > 0 && player.alive) { el.classList.remove('rdy'); void el.offsetWidth; el.classList.add('rdy'); clearTimeout(el._rdyT); el._rdyT = setTimeout(() => el.classList.remove('rdy'), 520); }
+        el._cool = cooling;
         set(c.lvl.style, 'display', canLevelSkill(player, slot) ? 'grid' : 'none');
         const max = Array.isArray(sk.cooldown) ? sk.cooldown.length : 3;
         if (el._lv !== level) { const ring = el.querySelector('.lvring'); ring.innerHTML = levelRing(max, level, el._lv != null && level > el._lv); el._lv = level; }

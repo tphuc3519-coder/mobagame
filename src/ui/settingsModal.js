@@ -67,6 +67,7 @@ function schema({ g, gfxSet, inMatch, onReset, onSave }) {
       { t: 'toggle', label: 'FPS', desc: 'Số khung hình mỗi giây ở góc màn hình', get: () => !!g.showFps, set: (v) => gfxSet({ showFps: v }) },
       tog('skillTips', 'Miêu tả chiêu trong trận', 'Giữ yên nút chiêu để xem mô tả (thả ra không tung chiêu)'),
       tog('skillNames', 'Miêu tả nút chiêu', 'Tên chiêu dưới nút'),
+      tog('lowHpFx', 'Cảnh báo máu thấp', 'Viền đỏ mờ quanh màn hình khi máu dưới 30%'),
     ],
     gen: [
       { t: 'pill', label: 'Góc camera', opts: [['near', 'Gần'], ['far', 'Xa']], ...P('camDist') },

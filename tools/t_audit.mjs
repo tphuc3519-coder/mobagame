@@ -66,6 +66,16 @@ for (const [x, y, gx, gy] of [...NOTCH, ...NOTCH.map(([a, b, c, d]) => [ARENA.w 
   ok('đường thẳng thông thoáng: một điểm (không tìm kiếm)', lineClear(nav, { x: 9000, y: 9600 }, { x: 9600, y: 9600 }) && findPath(nav, { x: 9000, y: 9600 }, { x: 9600, y: 9600 }).length === 1);
 }
 
+// —— 2b. cảnh báo máu thấp (hud/lowHp.js — hàm thuần): ngưỡng + độ trễ, không chớp tắt quanh mốc ——
+{
+  const { lowHpLevel: L, LOW_HP: C } = await import('../src/hud/lowHp.js');
+  ok('máu ≥ 30%: tắt; dưới 30%: bật; dưới 15%: nguy kịch', L(0, 1) === 0 && L(0, C.low) === 0 && L(0, C.low - 0.01) === 1 && L(0, C.crit - 0.01) === 2 && L(1, C.crit - 0.01) === 2);
+  ok('độ trễ: đang bật thì lên quá 34% mới tắt, đang nguy kịch thì lên quá 19% mới về mức thường', L(1, C.low + 0.02) === 1 && L(1, C.low + C.hyst + 0.01) === 0 && L(0, C.low + 0.02) === 0 && L(2, C.crit + 0.02) === 2 && L(2, C.crit + C.hyst + 0.01) === 1);
+  ok('chết / số xấu: tắt', L(2, 0.05, false) === 0 && L(1, NaN) === 0 && L(1, 0) === 2);
+  let lv = 0, flips = 0; for (let i = 0; i < 200; i++) { const f = C.low + (i % 2 ? 0.01 : -0.01), n = L(lv, f); if (n !== lv) flips++; lv = n; } // máu dao động ±1% quanh mốc 30%
+  ok('máu dao động quanh mốc 30%: viền không chớp tắt (đổi mức đúng 1 lần)', flips === 1, `đổi ${flips} lần`);
+}
+
 // —— 3. trận 5v5 toàn máy + bộ dò bất biến mỗi tick ——
 {
   const w = createWorld({ map: ARENA, seed });
