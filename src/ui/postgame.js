@@ -35,7 +35,7 @@ const STYLE = `
 #pg .ban::after { content: ''; position: absolute; inset: 0; border-radius: 11px; background: linear-gradient(0deg, rgba(4,6,20,.96) 0, rgba(4,6,20,.5) 34%, rgba(4,6,20,0) 56%); }
 #pg .ban > div { position: relative; z-index: 2; padding: 6px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 #pg .ban b { font: 700 clamp(12px, calc(3.8 * var(--vh, 1vh)), 16px)/1 var(--u-disp);   color: #a8dcff; } #pg.lose .ban b { color: #c8d4f4; }
-#pg .ban small { font-size: clamp(9px, calc(2.8 * var(--vh, 1vh)), 11.5px); color: #fff; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#pg .ban small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: clamp(9px, calc(2.8 * var(--vh, 1vh)), 11.5px); line-height: 1.15; color: #fff; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; } /* tên người chơi: tối đa 2 dòng thay vì cắt "Sao Băng […" */
 #pg .ban .sc { display: flex; gap: 5px; align-items: center; font: 800 clamp(16px, calc(5 * var(--vh, 1vh)), 22px)/1 var(--u-disp); color: #fff; }
 #pg .hero { position: relative; height: 100%; width: clamp(160px, calc(27 * var(--vw, 1vw)), 310px); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
 #pg .hero::before { content: ''; position: absolute; left: 8%; right: 8%; bottom: clamp(18px, calc(6 * var(--vh, 1vh)), 34px); height: 30px; border-radius: 50%; background: rgba(15,23,41,.55); }

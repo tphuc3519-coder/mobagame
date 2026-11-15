@@ -290,7 +290,7 @@ img.ui-ic { display: block; object-fit: contain; pointer-events: none; }
 #pick .hc { position: relative; padding: 0; box-sizing: border-box; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--g-head); box-shadow: var(--hl), 0 2px 0 var(--ink); }
 #pick .hc img, #pick .hc .ini { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 #pick .hc span { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 6px 4px; text-align: left; background: linear-gradient(0deg, rgba(4,5,16,.96) 30%, rgba(4,5,16,0)); }
-#pick .hc b { display: block; font: 700 13.5px/1.05 var(--u-disp);   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #pick .hc small { font-size: 10px; color: #cdb8ff; }
+#pick .hc b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 700 clamp(11px, calc(1.75 * var(--vw, 1vw)), 13.5px)/1.08 var(--u-disp); overflow: hidden; overflow-wrap: anywhere; } #pick .hc small { font-size: 10px; color: #cdb8ff; } /* tên tướng: chữ co theo bề ngang thẻ, tên hai từ xuống dòng — trước bị cắt "Lanternw…", "Haruno S…" ở khung 640 */
 #pick .hc.on { box-shadow: 0 0 0 3px var(--c-yel); }
 #pick .hc.on::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 3px var(--c-yel); pointer-events: none; }
 #pick .hc.lock { filter: grayscale(.9) brightness(.45); }
