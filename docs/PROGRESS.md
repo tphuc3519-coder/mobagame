@@ -677,7 +677,10 @@ Báo cáo đầy đủ + số đo: `docs/KIEM_TOAN.md` Phần V; quyết định
   chiêu hồi xong.
 - **Hiệu năng (P2):** mô phỏng 5v5 nhanh hơn ~25% với kết quả y hệt từng bit (0,91 → 0,66 ms / tick).
 - **Kiểm thử mới:** `tools/t_netsafe.mjs` (40 mục), `tools/t_audit.mjs` (20 mục, gồm một trận 5v5 chạy kèm bộ dò bất biến). `t_bag.mjs` hết hỏng theo lịch.
-- **Kết quả chạy:** node `tools/t_*.mjs` + `simtest` đạt hết; trình duyệt `b_layout` 104, `b_flow` 93, `b_match` 36 mục đạt (xem Phần V §6 cho
-  các lượt chạy lại sau từng đợt sửa).
+- **Kiểm thử trình duyệt:** thêm `tools/b_online.cjs` (online trọn vòng); `b_match` (ping) hết phụ thuộc tốc độ máy; `b_prog` chạy được với chế độ
+  trực tuyến mặc định (`?server=off`) và không còn bỏ sót kịch bản khi một kịch bản hỏng.
+- **Online:** bắt tay phiên bản (`NET.version` 2) — máy khách / máy chủ khác bản từ chối nhau kèm câu báo cập nhật.
+- **Kết quả chạy cuối:** Node 42 / 42 bộ (965 mục); trình duyệt `b_layout` 104, `b_flow` 93, `b_match` 38, `b_prog` 151, `b_pwa` 11, `b_perf` 16,
+  `b_online` 6 — đạt hết; `b_gd3` 38 đạt + 2 mục ngưỡng thời gian lệch, bản gốc chạy cùng máy lệch y hệt (Phần V §5b).
 - **Chưa thử được ở đây:** điện thoại thật, Safari thật, máy chủ Render thật (chỉ máy chủ chạy tại chỗ), chơi online nhiều người thật.
 

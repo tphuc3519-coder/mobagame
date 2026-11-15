@@ -521,6 +521,23 @@ Giao diện tổng thể (UI v4.1 — chủ dự án chốt 02/11) **giữ nguy�
 - `tools/b_online.cjs` — 6 mục, trình duyệt thật + máy chủ thật: trận trực tuyến nhận khung đúng phiên bản, không lệch; máy chủ khởi động lại giữa
   trận → trang tự về Sảnh; vào trận mới, đầu hàng → màn kết quả; không lỗi trang.
 
+## 5b. Kết quả chạy cuối (15/11, commit cuối của nhánh)
+
+| Bộ | Kết quả | Ghi chú |
+|---|---|---|
+| Node: 41 bộ `tools/t_*.mjs` + `simtest.mjs` (trừ `t_arena_batch`, `t_ui_draft`) | **42 / 42 bộ đạt**, 965 mục | gồm `t_premium` (35 tệp của 4 model cao cấp nguyên vẹn), `t_determinism`, `t_online` |
+| `b_layout.cjs` (HUD 9 thiết bị + biến thể) | 104 / 104 | |
+| `b_flow.cjs` (7 kịch bản ngoài trận → trận → kết quả, có tai thỏ) | 93 / 93 | |
+| `b_match.cjs` (đồ kích hoạt, khoá mục tiêu, áp chế, tín hiệu) | 38 / 38 | sau khi làm kịch bản ping hết phụ thuộc tốc độ máy |
+| `b_prog.cjs` (13 kịch bản: lưu, túi đồ, nhiệm vụ, mùa giải, trang phục, Đỉnh Cao, cửa hàng) | 151 / 151 | trước khi sửa bộ kiểm thử: dừng ở 106, kịch bản Đỉnh Cao hỏng, 3 kịch bản không chạy |
+| `b_pwa.cjs` (cài như ứng dụng, chơi không mạng, cập nhật bản mới) | 11 / 11 | |
+| `b_perf.cjs` (ngân sách vẽ 02 §2) | 16 / 16 | |
+| `b_online.cjs` (mới) | 6 / 6 | |
+| `b_gd3.cjs` (đấu lại trong trang, dọn bộ nhớ GPU) | 38 đạt, **2 lệch ngưỡng thời gian** | "trận 2 dịch sẵn shader nhanh hơn hẳn": 3 127 → 2 381 ms và 3 419 → 3 425 ms. Bản gốc `6120d13` chạy cùng máy cũng 38 / 2 (4 629 → 7 043 ms; về phòng chờ 4 089 ms) ⇒ do máy thử không GPU, không do đợt này. Không nới ngưỡng. |
+
+Mọi kiểm thử trình duyệt chạy lần lượt trên Chromium phần mềm (không GPU). Chạy hai bộ cùng lúc thì trình duyệt tự tắt — lượt đo đầu tiên của
+đợt này dính đúng lỗi đó (4 kịch bản "Target closed"), chạy riêng thì đạt.
+
 ## 6. Còn lại
 
 **Chưa thử được trong môi trường này:** điện thoại thật và Safari thật (mọi kiểm thử trình duyệt chạy trên Chromium không GPU); máy chủ Render
