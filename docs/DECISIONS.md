@@ -1072,7 +1072,7 @@
     cũng được). Mô phỏng (`sim/inventory.js`, `sim/items.js`) tự chống đỡ thêm một lớp. Thêm lệnh mới ⇒ phải thêm khuôn ở `sanitizeCommand`.
   - **Một phòng hỏng không kéo sập máy chủ:** `Room.step` bọc `try / catch` → `abort` (báo người chơi tin `abort`, đóng riêng phòng đó);
     `server/index.mjs` bắt địa chỉ HTTP sai dạng (`//[`, `%zz` — trước là lỗi không ai bắt), có lưới `uncaughtException` / `unhandledRejection`.
-  - **Giới hạn máy chủ** (đổi bằng biến môi trường): `MAX_ROOMS` 200, `MAX_CONNS` 2000, `MAX_PER_IP` 24 kết nối / IP, `MAX_MSGS` 240 tin / giây /
+  - **Giới hạn máy chủ** (đổi bằng biến môi trường): `MAX_ROOMS` 200, `MAX_CONNS` 2000, `MAX_PER_IP` 64 kết nối / IP (rộng vì mạng di động / quán net dùng chung IP; 0 = tắt), `MAX_MSGS` 240 tin / giây /
     kết nối (quá thì cắt), `IDLE_SEC` 45 giây im lặng thì đóng (máy khách vẫn gửi tin đo độ trễ mỗi 2 giây — điện thoại mất sóng mà TCP chưa
     báo trước đây là "người chơi ma": tướng đứng yên cả trận, máy không vào thay), `MAX_MATCH_MIN` 90 phút, khung WebSocket ≤ 16 KB, hàng đợi
     gửi > 1 MB thì cắt (máy đó tự nối lại, xin bù khung). Chưa có tài khoản nên chưa chống được một người mở nhiều kết nối vào hàng chờ.

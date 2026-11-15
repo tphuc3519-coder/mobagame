@@ -26,7 +26,7 @@ Tin nhắn máy chủ mới: `queue` / `unqueue` (hàng chờ), `match` (đã gh
 | Biến môi trường | Mặc định | Ý nghĩa |
 |---|---|---|
 | `MAX_ROOMS` | 200 | số phòng cùng lúc (đầy: tạo phòng báo lỗi, hàng chờ giữ người tới khi có chỗ) |
-| `MAX_CONNS` / `MAX_PER_IP` | 2000 / 24 | số kết nối cả máy chủ / từ một địa chỉ IP |
+| `MAX_CONNS` / `MAX_PER_IP` | 2000 / 64 | số kết nối cả máy chủ / từ một địa chỉ IP (để rộng vì mạng di động dùng chung IP; `MAX_PER_IP=0` = không giới hạn) |
 | `MAX_MSGS` | 240 | số tin một kết nối được gửi mỗi giây (lệnh trong trận còn giới hạn riêng 60 / giây) |
 | `IDLE_SEC` | 45 | giây im lặng trước khi đóng kết nối |
 | `MAX_MATCH_MIN` | 90 | phút tối đa của một trận |

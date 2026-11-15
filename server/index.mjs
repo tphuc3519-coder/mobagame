@@ -42,15 +42,19 @@ const server = http.createServer(async (req, res) => {
   } catch (_) { res.writeHead(404); res.end('not found'); }
 });
 
-// Số kết nối trò chơi cùng lúc từ một địa chỉ IP (một nhà / quán dùng chung mạng vẫn đủ chỗ cho 2 đội) và trên cả máy chủ.
-const MAX_PER_IP = +process.env.MAX_PER_IP || 24, MAX_CONNS = +process.env.MAX_CONNS || 2000;
+// Số kết nối trò chơi cùng lúc trên cả máy chủ và từ một địa chỉ IP. Mức mỗi IP để rộng (64): nhà mạng di động cho rất nhiều thuê bao dùng
+// chung một IP công cộng (CGNAT), quán net cũng vậy — mục đích chỉ là chặn MỘT máy mở hàng nghìn kết nối. MAX_PER_IP=0: không giới hạn.
+// IP lấy như server/ws.mjs (cf-connecting-ip / phần tử đầu x-forwarded-for do proxy của nền tảng đặt, không có thì địa chỉ socket): kẻ
+// gửi thẳng không qua proxy giả được header này để né mức mỗi IP — khi đó vẫn còn mức tổng MAX_CONNS.
+const envNum = (k, d) => (process.env[k] !== undefined && process.env[k] !== '' && Number.isFinite(+process.env[k]) ? +process.env[k] : d);
+const MAX_PER_IP = envNum('MAX_PER_IP', 64), MAX_CONNS = envNum('MAX_CONNS', 2000);
 const perIp = new Map(); let total = 0;
 server.on('upgrade', (req, socket) => {
   socket.on('error', () => {}); // bên kia ngắt giữa lúc bắt tay: không để thành lỗi không ai bắt
   if (pathOf(req) !== '/ws') return socket.destroy();
   if (ORIGINS.length && !ORIGINS.includes(req.headers.origin)) { socket.end('HTTP/1.1 403 Forbidden\r\n\r\n'); return; }
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || socket.remoteAddress || '?', n = perIp.get(ip) || 0;
-  if (n >= MAX_PER_IP || total >= MAX_CONNS) { socket.end('HTTP/1.1 429 Too Many Requests\r\n\r\n'); return; }
+  const ip = String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || socket.remoteAddress || '?').trim().slice(0, 64), n = perIp.get(ip) || 0;
+  if ((MAX_PER_IP > 0 && n >= MAX_PER_IP) || total >= MAX_CONNS) { socket.end('HTTP/1.1 429 Too Many Requests\r\n\r\n'); return; }
   const ws = accept(req, socket); if (!ws) return;
   perIp.set(ip, n + 1); total++;
   ws.on('close', () => { total--; const k = (perIp.get(ip) || 1) - 1; if (k > 0) perIp.set(ip, k); else perIp.delete(ip); });
