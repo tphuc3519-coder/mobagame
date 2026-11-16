@@ -9,6 +9,8 @@ import { startRecall, cancelRecall } from './economy.js';
 import { isLocked } from './status.js';
 import { cancelChannel } from './suppress.js';
 import { placePing } from './pings.js';
+import { ASSIST } from '../data/controls.js';
+import { T } from './util.js';
 
 const ACT = new Set(['cast', 'spell', 'restore', 'useItem', 'recall']); // lệnh hành động: bị chặn khi bị áp chế / Sương Đông
 
@@ -23,8 +25,12 @@ export function applyCommand(world, e, cmd) {
     case 'attack': {
       const on = cmd.on !== false;
       if (on && !e.attacking) e.atkPress = e.atkIndex;
+      if (on) e.atkOnce = null;
       // chạm nhanh nút Đánh lúc địch ngoài tầm (đang đi tới, chưa kịp vung đòn nào): vẫn đi tới đánh đúng một đòn (assist.js)
       if (!on && e.chase?.kind === 'atk' && e.atkIndex === e.atkPress && !steering(e)) { e.chase.once = true; break; }
+      // bộ đệm chạm nút Đánh (như bộ đệm chiêu — assist.js): thả tay khi cú bấm này CHƯA ra được đòn nào (bấm đúng lúc đang chờ nhịp đánh / đang
+      // ra chiêu / bị khống chế, hoặc bấm–thả trong cùng một tick) thì giữ lệnh thêm bufferSec giây — ra được đúng một đòn là tự thả (combat.js)
+      if (!on && e.assist && e.attacking && e.atkIndex === e.atkPress) { e.atkOnce = world.tick + T(ASSIST.bufferSec); break; }
       e.attacking = on; e.preferTarget = cmd.preferTarget ?? null; e.attackMode = cmd.mode || null; break; // mode: 'minion' (ăn lính) | 'tower' (đẩy trụ)
     }
     case 'cast': { const r = assistCast(world, e, cmd.slot, cmd.aim ?? null); if (r && !r.ok) world.emit('castFail', { id: e.id, slot: cmd.slot, reason: r.reason }); break; } // r = null: đang giữ lệnh / đi tới (assist.js)

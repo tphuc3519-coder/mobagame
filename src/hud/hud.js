@@ -32,6 +32,8 @@ export function hardCc(e, tick) {
   const s = best.s, total = Math.max(1, s.until - (s.t0 ?? s.until - (s.duration || 1) * 30));
   return { kind: s.kind, left: (s.until - tick) / 30, frac: Math.max(0, Math.min(1, (s.until - tick) / total)) };
 }
+/** Đòn không gây sát thương → chữ nổi trên mục tiêu: đánh trượt (bị loá / mục tiêu ra khỏi tầm với hay thành không thể chọn lúc đòn chạm), bị né, miễn nhiễm. */
+const NOHIT = { miss: 'Trượt', attackMiss: 'Trượt', dodge: 'Né', immune: 'Miễn nhiễm' };
 /** Lý do không dùng được chiêu / phép / đồ của chính mình (sự kiện castFail) → chữ nổi trên đầu. */
 const FAIL = { noTarget: 'Không có mục tiêu', suppressed: 'Đang bị áp chế', channel: 'Đang giữ chiêu', noDash: 'Không thể lướt', rooted: 'Đang bị trói', cc: 'Đang bị khống chế' };
 
@@ -45,6 +47,7 @@ export function createHud(canvas, input, portraits = null) {
   const monHit = new Map(), monTrail = new Map(); // quái: lúc bị đánh gần nhất (hiện số máu), phần máu vừa mất (rút dần)
   let death = null; // lý do bị hạ của mình: { name, heroId, kind, team, total }
   let lastFail = -9; // lần hiện chữ castFail gần nhất (giây): bấm liên tục không dồn chữ
+  const noHitAt = new Map(); // chữ Trượt / Né / Miễn nhiễm gần nhất theo mục tiêu (giây)
   const tags = new Map(), mctx = document.createElement('canvas').getContext('2d'); // nhãn vẽ sẵn (tên tướng, huy hiệu cấp)
   const resize = () => { dpr = Math.min(devicePixelRatio, 2); w = innerWidth; h = innerHeight; canvas.width = w * dpr; canvas.height = h * dpr; tags.clear(); };
   on(window, 'resize', resize); resize();
@@ -171,6 +174,13 @@ export function createHud(canvas, input, portraits = null) {
         // số bay chỉ cho đòn mình gây ra / mình nhận (như Liên Quân): trước đây mọi đòn của mọi đơn vị (lính đánh lính…) đều có số — rối
         // mắt và mỗi số là vài lần vẽ chữ có viền trên canvas, giao tranh đông thì Safari tụt khung hình
         const mine = ev.src === world.__localId || ev.id === world.__localId;
+        // đòn không gây sát thương cũng phải nói vì sao (trước đây không hiện gì — người chơi thấy "đánh trúng mà không mất máu"): đòn của mình
+        // trượt / bị né / mục tiêu miễn nhiễm, hoặc mình né / miễn được đòn của địch. Mỗi mục tiêu tối đa một dòng mỗi 0,6 giây.
+        if (NOHIT[ev.type] && (ev.type !== 'attackMiss' ? mine : ev.id === world.__localId && ev.reason !== 'dead' && ev.reason !== 'cc')) {
+          const on = ev.type === 'attackMiss' ? world.byId(ev.target) : e, key = (on?.id ?? 0) + ev.type;
+          if (on && now() - (noHitAt.get(key) || -9) > 0.6) { noHitAt.set(key, now()); if (noHitAt.size > 64) noHitAt.clear();
+            floats.push({ x: on.pos.x, y: on.pos.y, gy: floorAt(world.map, on.pos.x, on.pos.y), t: 0, born: now(), text: NOHIT[ev.type], color: '#dfe6f5', size: 14, life: 0.8, drift: 0, tilt: 0 }); }
+        }
         if (ev.type === 'damage' && mine) floats.push({ x: e.pos.x + (Math.random() - 0.5) * 40, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: ev.shield ? 'Khiên' : String(ev.amount), st: ev.shield ? null : DMG_STYLE[ev.dmgType] || DMG_STYLE.physical, crit: !!ev.crit && !ev.shield,
           size: ev.amount > 150 ? 22 : 17, life: ev.crit ? 1.15 : 0.9, drift: (Math.random() - 0.5) * 36, tilt: (Math.random() - 0.5) * 0.18 });
         else if (ev.type === 'heal' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: '+' + ev.amount, color: '#8affb0', size: 16, life: 0.9, drift: 0, tilt: 0 });

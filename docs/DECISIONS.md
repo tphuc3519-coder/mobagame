@@ -1154,3 +1154,29 @@
     chơi điện thoại mất đòn khi vừa chạy vừa bấm); ô X / kéo xa để huỷ, độ nhạy xoay chiêu, đánh thường chính xác, nút Ăn lính / Đẩy trụ.
   - Chỉ tướng người chơi (đã gửi `assist`) có các hỗ trợ này: bot không gửi ⇒ bot / trận toàn bot không đổi. Thêm `haptics` (rung khi tung /
     huỷ chiêu, Android). **Chưa làm:** tự xếp vị trí / cỡ từng nút (bộ sửa bố cục HUD) — việc lớn, để đợt sau.
+- 2026-11-16: **Đòn đánh thường kiểm lại lúc chạm** (`sim/combat.js`, `targeting.js strikeMiss`, `data/economy.js BASIC`; `NET.version` 4 → 5) —
+  chủ dự án yêu cầu nghiên cứu cách các MOBA chuyên nghiệp làm đòn đánh thường rồi rà lại toàn bộ. Nghiên cứu + vòng đời + số đo trước / sau:
+  `docs/12_DANH_THUONG.md`. Kiến trúc cũ (vung → chạm theo tick, hoạt ảnh chỉ để nhìn, lệnh `attack` là ý định) đúng hướng nên **giữ**, chỉ sửa
+  các chỗ đo được là sai:
+  - **Lúc chạm phải kiểm lại mục tiêu.** Trước: đòn cận chiến đã vung là chắc chắn trúng (đo được trúng mục tiêu đã tốc biến đi 1 050 đơn vị; trúng
+    cả khi chính người đánh bị dời đi 900), và mục tiêu "không thể chọn" (đang nhảy) vẫn mất máu vì đòn đánh thường / đạn đang bay. Nay
+    `strikeMiss`: mục tiêu phải sống, chọn được, và với cận chiến còn trong tầm + `BASIC.leash` (200). Chọn 200 để **đi bộ không thoát được**
+    (vung dài nhất 0,36 giây × tốc chạy cao nhất ~520 = 187) — chỉ lướt / tốc biến / bị đẩy mới né được; chặt hơn là người chơi thấy "đứng ngay
+    cạnh mà trượt". Dùng chung cho tướng, lính, quái. Đạn bám mục tiêu (trừ đạn trụ) tan khi mục tiêu thành không thể chọn.
+  - **Đòn bị huỷ thì trả nhịp.** Trước: mục tiêu chết hoặc mình bị choáng 0,3 giây giữa lúc vung là mất trọn một nhịp đánh dù chưa gây sát thương
+    (1,63 giây mới ra đòn kế; nay 0,57). `cancelSwing` cho ra đòn lại sau `BASIC.retry` (0,1 giây) — không lợi hơn đánh bình thường vì đòn huỷ
+    không có sát thương và vẫn phải vung lại từ đầu.
+  - **Bám mục tiêu đang đánh dở** (`BASIC.stick`): lính / quái / trụ — không nhảy sang con cùng loại vừa nhích lại gần hơn. Tướng vào tầm, mục
+    tiêu khoá, nút Ăn lính / Đẩy trụ vẫn thắng như cũ.
+  - **Giữ Đánh là bám tới cùng.** Lượt đuổi (`assist.js`) hết hạn sau `chaseSec` 3 giây kể cả khi đang đánh trúng đều, và trong lúc chờ nhịp tướng
+    đứng yên — mục tiêu đi bộ chậm hơn mình vẫn thoát sau 3 đòn. Nay mỗi đòn ra vào đúng người đang đuổi thì gia hạn; đang chờ nhịp cũng bám theo.
+  - **Cú chạm nút Đánh không bị nuốt.** Bấm–thả trong cùng một tick (`world.command` gộp lệnh `attack` làm "thả" đè mất "bấm") hoặc chạm đúng lúc
+    đang chờ nhịp / đang ra chiêu / bị khống chế thì không ra đòn nào. Nay `world.command` chỉ gộp hai lệnh `attack` liền nhau cùng trạng thái;
+    cú chạm chưa ra đòn được giữ hộ `ASSIST.bufferSec` (0,3 giây — cùng bộ đệm với chiêu), ra đúng một đòn là tự thả.
+  - **Đòn không có sát thương phải có chữ:** "Trượt" / "Né" / "Miễn nhiễm" trên mục tiêu (sự kiện `miss`, `attackMiss`, `dodge`, `immune` — trước
+    không nơi nào hiển thị).
+  - **Hệ quả cân bằng (không đổi chỉ số tướng nào, nhưng phải biết):** chiêu nhảy "không thể chọn" né được đòn đánh thường đang vung / đạn đang
+    bay; lướt / tốc biến đúng lúc né được một đòn cận chiến; bị choáng ngắn giữa lúc vung không còn mất trọn nhịp đánh.
+  - **Giữ nguyên có chủ ý:** đòn đã vung thì đứng lại tới lúc chạm, người chơi không tự huỷ bằng cần di chuyển (quyết định 15/11 — đổi là đổi
+    thói quen giữ cần + giữ Đánh); thời gian vung không co theo tốc đánh trước khi chạm trần 80% nhịp (hoạt ảnh đã khớp theo nó); đạn trụ; cách
+    bot chọn mục tiêu / di chuyển (bám mục tiêu, bộ đệm, tự đi tới chỉ áp cho tướng có lệnh `assist`). Liệt kê ở 12 §4.

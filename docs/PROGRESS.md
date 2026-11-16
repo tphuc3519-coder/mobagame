@@ -719,3 +719,16 @@ Quyết định + lý do: `docs/DECISIONS.md` 2026-11-15 (Hỗ trợ thao tác c
 - **Kiểm thử mới:** `tools/t_assist.mjs` (20 mục), `t_target.mjs` thêm 5 mục `quickTarget`; `t_netsafe` lọc lệnh `assist`.
 - **Kết quả chạy:** Node 43 / 43 bộ đạt; trình duyệt `b_match` 38, `b_online` 6, `b_flow` 93 đạt (`loadout1280` hết giờ chờ một lần khi chạy song
   song với `b_match` trên máy không GPU — chạy riêng đạt). Chưa thử trên điện thoại thật (rung, cảm giác đuổi đánh với ngón tay thật).
+
+
+## 16/11 — Đòn đánh thường: nghiên cứu + rà lại từ bấm nút tới trừ máu
+Nghiên cứu, vòng đời, số đo trước / sau: `docs/12_DANH_THUONG.md`. Quyết định + lý do: `docs/DECISIONS.md` 2026-11-16.
+- **Lúc đòn chạm kiểm lại mục tiêu:** đòn cận chiến không còn trúng mục tiêu đã lướt / tốc biến ra khỏi tầm với (tầm đánh + 200); đòn đánh
+  thường và đạn đang bay không còn trúng tướng đang "không thể chọn". Áp cho tướng, lính, quái; đạn trụ giữ nguyên.
+- **Đòn bị huỷ giữa lúc vung** (mục tiêu chết / mất, mình bị khống chế) trả lại nhịp đánh: ra đòn kế sau ~0,6 giây thay vì ~1,6 giây.
+- **Bám mục tiêu:** đang đánh lính / quái / trụ nào thì đánh tới cùng; giữ Đánh đuổi tướng thì bám cả trong lúc chờ nhịp, không bỏ cuộc sau 3 giây.
+- **Chạm nút Đánh:** bấm–thả cực nhanh, hoặc chạm lúc đang chờ nhịp / ra chiêu / bị khống chế vẫn ra đúng một đòn (bộ đệm 0,3 giây).
+- **Phản hồi:** chữ "Trượt" / "Né" / "Miễn nhiễm" khi đòn không gây sát thương.
+- Bot không đổi cách chọn mục tiêu / di chuyển. Không đổi chỉ số tướng nào. `NET.version` 5.
+- **Kiểm thử mới:** `tools/t_basic.mjs` (15 kịch bản của đề bài + các phép đo lỗi cũ), `tools/b_attack.cjs` (nút Đánh thật trên trình duyệt cảm ứng).
+  `b_online` đọc `NET.version` từ mã thay vì ghi cứng số.

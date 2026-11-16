@@ -37,7 +37,7 @@ function backdoorFactor(world, src, tgt) {
  *  (đổi ctx.amount; ctx.cancel = true là né hẳn đòn — Thấu Nhãn). */
 export function dealDamage(world, src, tgt, amount, type = 'physical', opts = {}) {
   if (!tgt || !tgt.alive || amount <= 0 || tgt.noTarget) return 0;
-  if (tgt.invulnerable || isInvulnerable(tgt)) { world.emit('immune', { id: tgt.id }); return 0; }
+  if (tgt.invulnerable || isInvulnerable(tgt)) { world.emit('immune', { id: tgt.id, src: src?.id }); return 0; }
   if (src && src !== tgt) revealOnAttack(world, src, tgt); // đánh người thì lộ mặt (bụi, sương mù)
   const hook = src?.data?.passive?.hooks?.onDealDamage;
   if (hook) { const ctx = { world, self: src, target: tgt, amount, type, opts }; hook(ctx); amount = ctx.amount; }

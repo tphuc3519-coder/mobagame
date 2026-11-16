@@ -30,3 +30,10 @@ export const econOf = (map) => (map && map.id !== 'duel1v1' && map.lanes?.length
 export const COMBAT_EXTRA = { critBase: 1.75, cdrCap: 0.4, tenacityCap: 0.8, penCap: 0.8, suppress: { pad: 0.2, breakMult: 1.15 },
   // chống khoá chết (04 §3): khống chế cứng (choáng / hất tung / áp chế) liên tiếp lên một mục tiêu quá `max` giây → khống chế mới giảm `mul` trong `window` giây tiếp theo
   ccChain: { max: 3, window: 2, mul: 0.5 } };
+/** Đòn đánh thường (sim/combat.js — docs/12_DANH_THUONG.md). Thời gian vung riêng từng tướng nằm ở `basicAttack.delay` của file tướng.
+ *  leash:  lúc đòn CẬN CHIẾN chạm (hết thời gian vung) mục tiêu phải còn trong tầm đánh + chừng này, không thì đòn trượt. Đi bộ trong
+ *          thời gian vung (≤ 0,36 giây × tốc chạy ≤ ~520) không thoát được — chỉ lướt / tốc biến / bị đẩy mới ra khỏi tầm với.
+ *  retry:  đòn bị huỷ giữa lúc vung (mục tiêu chết / thành không thể chọn / ra khỏi tầm với, hoặc mình bị khống chế cứng) thì được ra đòn
+ *          lại sau chừng này giây thay vì chờ hết cả nhịp đánh (đòn chưa gây sát thương nên không lợi gì thêm).
+ *  stick:  đang đánh lính / quái / trụ nào thì đánh tiếp con đó khi nó còn trong tầm (không nhảy sang con cùng loại vừa lại gần hơn). */
+export const BASIC = Object.freeze({ leash: 200, retry: 0.1, stick: true });
