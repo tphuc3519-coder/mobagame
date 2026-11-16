@@ -1,6 +1,6 @@
 // Kiểm thử trình duyệt cho nút Đánh thường (Playwright + Chromium phần mềm, màn cảm ứng 844×390) — phần mô phỏng đã có tools/t_basic.mjs,
 // bộ này kiểm đường đi thật từ ngón tay tới trừ máu: chạm nhanh = đúng một đòn và trúng sau thời gian vung; giữ nút = đánh đều theo nhịp;
-// mục tiêu bị dời xa giữa lúc vung = đòn trượt, không có sát thương, có chữ "Trượt" (docs/12_DANH_THUONG.md).
+// mục tiêu bị dời xa giữa lúc vung = đòn trượt, không có sát thương, HUD vẽ chữ "Trượt" (docs/12_DANH_THUONG.md).
 // Dùng: node tools/b_attack.cjs [cổng=8787] [thư mục lưu ảnh]   — cần máy chủ đang chạy ở cổng đó; in ĐẠT / LỖI từng mục, mã thoát 1 khi có lỗi.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
@@ -10,6 +10,8 @@ let fail = 0; const ok = (n, c, x = '') => { console.log((c ? 'ĐẠT ' : 'LỖI
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: out ? 2 : 1 }), page = await ctx.newPage(), errs = [];
   page.on('pageerror', (e) => errs.push('pageerror ' + e.message)); page.on('console', (m) => { if (m.type() === 'error') errs.push('console ' + m.text().slice(0, 200)); });
+  // ghi lại mọi dòng chữ HUD vẽ lên canvas: chữ nổi chỉ sống 0,8 giây — máy không GPU chụp ảnh không kịp, nên kiểm bằng chính lệnh vẽ
+  await page.addInitScript(() => { window.__texts = new Set(); const P = CanvasRenderingContext2D.prototype, f = P.fillText; P.fillText = function (t, ...r) { window.__texts.add(String(t)); return f.call(this, t, ...r); }; });
   await page.goto(`http://127.0.0.1:${port}/?hero=kiem_thuy&dummies=1&q=low&noauto=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__game?.world?.tick > 10, null, { timeout: 420000, polling: 500 });
   // hình nộm gần nhất đặt ngay trong tầm đánh, các con khác đẩy ra xa; ghi mọi sự kiện vung / sát thương / trượt của tướng mình
@@ -35,13 +37,14 @@ let fail = 0; const ok = (n, c, x = '') => { console.log((c ? 'ĐẠT ' : 'LỖI
   const iv = await page.evaluate(() => Math.round(30 / window.__game.player.stats.atkSpeed));
   ok('giữ nút Đánh: các đòn cách nhau đúng một nhịp đánh', gaps.length >= 2 && gaps.every((g) => g === iv), `${gaps.join(', ')} tick (nhịp ${iv})`);
   // 3) giữa lúc vung, mục tiêu bị dời đi xa (ngoài tầm đánh + khoảng dư): đòn trượt + chữ "Trượt" trên màn hình, không có sát thương
-  const before = await count('damage');
+  const before = await count('damage'), textBefore = await page.evaluate(() => window.__texts.has('Trượt'));
   await page.evaluate(() => new Promise((res) => { const p = window.__game.player, n0 = window.__ev.filter((e) => e.t === 'attack').length; const iv = setInterval(() => { if (window.__ev.filter((e) => e.t === 'attack').length > n0) { clearInterval(iv); window.__put(window.__d, p.pos.x + 520, p.pos.y); res(); } }, 4); }));
   await page.waitForFunction(() => window.__ev.some((e) => e.t === 'attackMiss' && e.reason === 'range'), null, { timeout: 20000, polling: 30 });
   if (out) { await page.waitForTimeout(200); await page.screenshot({ path: `${out}/atk_miss.png` }); }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   { const t0 = await page.evaluate(() => window.__game.world.tick); await page.waitForFunction((t0) => window.__game.world.tick >= t0 + 15, t0, { timeout: 60000, polling: 100 }); }
   ok('mục tiêu bị dời xa giữa lúc vung: đòn trượt, không có sát thương', (await count('damage')) === before && (await count('attackMiss')) >= 1);
+  ok('đòn trượt có chữ "Trượt" vẽ trên màn hình (trước đây không hiện gì)', !textBefore && await page.evaluate(() => window.__texts.has('Trượt')));
   ok('không lỗi trang / console', !errs.length, errs.slice(0, 3).join(' | '));
   await browser.close(); console.log(fail ? `LỖI: ${fail} mục` : 'Tất cả đạt'); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.log('LỖI kịch bản', e.message.split('\n')[0]); process.exit(1); });

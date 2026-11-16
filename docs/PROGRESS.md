@@ -732,3 +732,7 @@ Nghiên cứu, vòng đời, số đo trước / sau: `docs/12_DANH_THUONG.md`. 
 - Bot không đổi cách chọn mục tiêu / di chuyển. Không đổi chỉ số tướng nào. `NET.version` 5.
 - **Kiểm thử mới:** `tools/t_basic.mjs` (15 kịch bản của đề bài + các phép đo lỗi cũ), `tools/b_attack.cjs` (nút Đánh thật trên trình duyệt cảm ứng).
   `b_online` đọc `NET.version` từ mã thay vì ghi cứng số.
+- **Kết quả chạy:** Node 46 / 46 bộ đạt (45 bộ `t_*` + `simtest`; `t_basic` 54 mục, `t_assist` 24, `t_netsafe` 40, `t_determinism` + `t_online` đạt với
+  `NET.version` 5); trình duyệt chạy lần lượt: `b_match` 38, `b_online` 6, `b_attack` 6, `b_flow` 93 — đạt hết. Chưa chạy lại đợt này: `b_layout`,
+  `b_prog`, `b_gd3`, `b_perf`, `b_pwa` (không đụng tới phần chúng kiểm). Chưa thử trên điện thoại thật / mạng thật có trễ (trễ 130 ms và 300 ms mới
+  chỉ mô phỏng trong `t_basic`).
