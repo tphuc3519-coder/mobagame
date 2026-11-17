@@ -25,8 +25,9 @@ export function updateProjectiles(world) {
     let done = false;
     if (p.homing != null) { // đòn đánh xa tự dẫn
       const t = world.byId(p.homing);
-      // chiêu khoá mục tiêu trượt khi mục tiêu thành không thể chọn / Sương Đông giữa đường (đòn đánh thường giữ như cũ)
-      if (!t || !t.alive || (p.kind === 'skill' && isUntargetable(t))) { done = true; p.onEnd?.(p); }
+      // đạn bám mục tiêu (chiêu khoá mục tiêu, đòn đánh xa của tướng / lính / quái / phân thân) tan khi mục tiêu chết hoặc thành không thể chọn /
+      // Sương Đông giữa đường — trước đây đạn đánh thường vẫn gây sát thương lên tướng đang nhảy. Đạn trụ giữ như cũ (bay tới nơi).
+      if (!t || !t.alive || (p.kind !== 'tower' && (t.noTarget || isUntargetable(t)))) { done = true; if (p.kind === 'basic') world.emit('attackMiss', { id: p.owner, target: p.homing, reason: t && t.alive ? 'untargetable' : 'dead', proj: true }); p.onEnd?.(p); }
       else {
         const dx = t.pos.x - p.x, dy = t.pos.y - p.y, d = D.hypot(dx, dy);
         if (d <= p.perTick + t.radius * 0.6) { p.hit.add(t.id); p.onHit(t); done = true; }

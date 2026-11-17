@@ -1,6 +1,7 @@
 import { dist, dirTo } from './util.js';
 import { isStealthed, isUntargetable } from './status.js';
 import { canSee } from './vision.js';
+import { BASIC } from '../data/economy.js';
 
 export const isTargetable = (viewer, t) => t.alive && !t.noTarget && !isUntargetable(t) && (t.team === viewer.team || !isStealthed(t));
 export const enemiesOf = (world, e) => world.entities.filter((t) => t.team !== e.team && t.alive && !t.noTarget && !isUntargetable(t));
@@ -50,4 +51,17 @@ export function enemyAlongDir(world, e, dir, range) {
     if (dd.x * dir.x + dd.y * dir.y > 0.5 && d < bd) { bd = d; best = t; }
   }
   return best;
+}
+
+/**
+ * Lúc đòn đánh thường CHẠM (hết thời gian vung — combat.js, minions.js, jungle.js): mục tiêu `t` còn đánh trúng được không? Trả null (trúng)
+ * hoặc lý do trượt: 'dead' | 'untargetable' (đang nhảy / Sương Đông / phân thân tan) | 'range' (chỉ đòn cận chiến: mục tiêu — hoặc chính người
+ * đánh — đã ra khỏi tầm đánh + BASIC.leash, vd. vừa lướt / tốc biến / bị đẩy đi). Đòn đánh xa không xét tầm ở đây: đã buông là đạn bay theo.
+ * Trước đây đòn cận chiến đã vung là chắc chắn trúng: đo được trúng cả mục tiêu đã tốc biến đi cách 1 050 đơn vị.
+ */
+export function strikeMiss(e, t, range, melee) {
+  if (!t || !t.alive) return 'dead';
+  if (t.noTarget || isUntargetable(t)) return 'untargetable';
+  if (melee && dist(t.pos, e.pos) - t.radius > range + BASIC.leash) return 'range';
+  return null;
 }

@@ -8,7 +8,7 @@ import { TICK } from '../core/loop.js';
 import { dealDamage } from './damage.js';
 import { applyStatus, isHardCC, isRooted } from './status.js';
 import { spawnProjectile } from './projectiles.js';
-import { isTargetable } from './targeting.js';
+import { isTargetable, strikeMiss } from './targeting.js';
 import { spawnMinion } from './minions.js';
 import { ITEM_PASSIVE } from '../data/items.js';
 import { computeBonus } from './inventory.js';
@@ -104,7 +104,7 @@ function attack(world, m, t, def) {
   m.attackReady = world.tick + T(1 / m.stats.atkSpeed);
   world.emit('attack', { id: m.id, n: 1, interval: 1 / m.stats.atkSpeed, delay: 0.35 });
   world.pending.push({ tick: world.tick + T(0.35), run: () => {
-    if (!m.alive || !t.alive || isHardCC(m)) return;
+    if (!m.alive || !t.alive || isHardCC(m) || strikeMiss(m, t, m.stats.range, !def.ranged)) return; // lúc chạm: mục tiêu đã lướt ra khỏi tầm với / thành không thể chọn thì trượt
     const hit = (tt) => {
       dealDamage(world, m, tt, m.stats.atk, 'physical');
       if (def.splash) for (const o of world.entities) if (o !== tt && o.alive && o.kind === 'hero' && dist(o.pos, tt.pos) <= def.splash) dealDamage(world, m, o, m.stats.atk * 0.5, 'physical');

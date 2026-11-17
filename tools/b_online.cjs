@@ -4,8 +4,9 @@
 // người thật: ngay) → màn kết quả. Dùng: node tools/b_online.cjs [cổng=8790]   — in ĐẠT / LỖI từng mục, mã thoát 1 khi có lỗi.
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= '/opt/pw-browsers';
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
-const { spawn } = require('child_process'), path = require('path');
+const { spawn } = require('child_process'), path = require('path'), fs = require('fs');
 const ROOT = path.join(__dirname, '..'), PORT = +(process.argv[2] || 8790), BASE = `http://127.0.0.1:${PORT}`;
+const NETV = +/\bversion:\s*(\d+)/.exec(fs.readFileSync(path.join(ROOT, 'src/net/protocol.js'), 'utf8'))[1]; // đọc từ mã: khỏi sửa tay mỗi lần tăng NET.version
 let fail = 0; const ok = (n, c, x = '') => { console.log((c ? 'ĐẠT ' : 'LỖI ') + n + (x ? '  ' + x : '')); if (!c) fail++; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), T = (s) => s * 1000;
 const boot = async () => { const p = spawn(process.execPath, [path.join(ROOT, 'server/index.mjs')], { env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', READY_SEC: '0.3' }, stdio: ['ignore', 'pipe', 'pipe'] }); p.log = ''; p.stdout.on('data', (d) => { p.log += d; }); p.stderr.on('data', (d) => { p.log += d; }); for (let i = 0; i < 100 && !p.log.includes('Máy chủ online'); i++) await sleep(50); return p; };
@@ -30,7 +31,7 @@ const boot = async () => { const p = spawn(process.execPath, [path.join(ROOT, 's
     };
     await enter();
     let st = await page.evaluate(() => ({ ...window.__game.online.stats(), tick: window.__game.world.tick, v: window.__game.online.cfg.v, net: document.getElementById('netTag')?.textContent }));
-    ok('trận trực tuyến chạy trên trình duyệt (nhận khung, đúng phiên bản 4, không lệch)', st.online && !st.desync && st.tick > 45 && st.v === 4, JSON.stringify(st));
+    ok(`trận trực tuyến chạy trên trình duyệt (nhận khung, đúng phiên bản ${NETV}, không lệch)`, st.online && !st.desync && st.tick > 45 && st.v === NETV, JSON.stringify(st));
     await page.waitForTimeout(2500);
     const st2 = await page.evaluate(() => ({ ...window.__game.online.stats(), tick: window.__game.world.tick, health: 0 }));
     ok('sau 2,5 giây: vẫn nhận khung, máy chủ không báo lệch (đã qua ít nhất một mốc so mã băm)', st2.tick > st.tick + 30 && !st2.desync && !/LỆCH/.test(srv.log), `tick ${st.tick} → ${st2.tick}`);

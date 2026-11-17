@@ -719,3 +719,20 @@ Quyết định + lý do: `docs/DECISIONS.md` 2026-11-15 (Hỗ trợ thao tác c
 - **Kiểm thử mới:** `tools/t_assist.mjs` (20 mục), `t_target.mjs` thêm 5 mục `quickTarget`; `t_netsafe` lọc lệnh `assist`.
 - **Kết quả chạy:** Node 43 / 43 bộ đạt; trình duyệt `b_match` 38, `b_online` 6, `b_flow` 93 đạt (`loadout1280` hết giờ chờ một lần khi chạy song
   song với `b_match` trên máy không GPU — chạy riêng đạt). Chưa thử trên điện thoại thật (rung, cảm giác đuổi đánh với ngón tay thật).
+
+
+## 16/11 — Đòn đánh thường: nghiên cứu + rà lại từ bấm nút tới trừ máu
+Nghiên cứu, vòng đời, số đo trước / sau: `docs/12_DANH_THUONG.md`. Quyết định + lý do: `docs/DECISIONS.md` 2026-11-16.
+- **Lúc đòn chạm kiểm lại mục tiêu:** đòn cận chiến không còn trúng mục tiêu đã lướt / tốc biến ra khỏi tầm với (tầm đánh + 200); đòn đánh
+  thường và đạn đang bay không còn trúng tướng đang "không thể chọn". Áp cho tướng, lính, quái; đạn trụ giữ nguyên.
+- **Đòn bị huỷ giữa lúc vung** (mục tiêu chết / mất, mình bị khống chế) trả lại nhịp đánh: ra đòn kế sau ~0,6 giây thay vì ~1,6 giây.
+- **Bám mục tiêu:** đang đánh lính / quái / trụ nào thì đánh tới cùng; giữ Đánh đuổi tướng thì bám cả trong lúc chờ nhịp, không bỏ cuộc sau 3 giây.
+- **Chạm nút Đánh:** bấm–thả cực nhanh, hoặc chạm lúc đang chờ nhịp / ra chiêu / bị khống chế vẫn ra đúng một đòn (bộ đệm 0,3 giây).
+- **Phản hồi:** chữ "Trượt" / "Né" / "Miễn nhiễm" khi đòn không gây sát thương.
+- Bot không đổi cách chọn mục tiêu / di chuyển. Không đổi chỉ số tướng nào. `NET.version` 5.
+- **Kiểm thử mới:** `tools/t_basic.mjs` (15 kịch bản của đề bài + các phép đo lỗi cũ), `tools/b_attack.cjs` (nút Đánh thật trên trình duyệt cảm ứng).
+  `b_online` đọc `NET.version` từ mã thay vì ghi cứng số.
+- **Kết quả chạy:** Node 46 / 46 bộ đạt (45 bộ `t_*` + `simtest`; `t_basic` 54 mục, `t_assist` 24, `t_netsafe` 40, `t_determinism` + `t_online` đạt với
+  `NET.version` 5); trình duyệt chạy lần lượt: `b_match` 38, `b_online` 6, `b_attack` 6, `b_flow` 93 — đạt hết. Chưa chạy lại đợt này: `b_layout`,
+  `b_prog`, `b_gd3`, `b_perf`, `b_pwa` (không đụng tới phần chúng kiểm). Chưa thử trên điện thoại thật / mạng thật có trễ (trễ 130 ms và 300 ms mới
+  chỉ mô phỏng trong `t_basic`).

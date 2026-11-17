@@ -96,6 +96,7 @@ Hồi máu/mana chung: HP hồi `40 (+4/cấp)` mỗi 5s; mana hồi `25 (+2.5/c
 | moc_cam | Mộc Cầm | Trợ thủ / Pháp sư | Hỗ trợ | ★★ | 700 | 92 | 450 | 44 | 47 | 3 | 23 | 3 | 30 | 2 | 0.62 | 1.2% | 320 | 530 |
 
 Tướng có tầm ≥ 400 bắn đạn đánh thường (tốc đạn 1800). Tướng cận chiến gây sát thương ngay tại khung đánh (0.25s sau khi bắt đầu đòn).
+Lúc đòn chạm mô phỏng kiểm lại mục tiêu (16/11 — `12_DANH_THUONG.md`): mục tiêu đã chết / thành không thể chọn, hoặc với đòn cận chiến đã ra khỏi tầm đánh + 200 (vừa lướt / tốc biến / bị đẩy) thì đòn **trượt** và nhịp đánh được trả lại; đạn đánh thường tan khi mục tiêu thành không thể chọn giữa đường (đạn trụ thì không). Thời gian vung và tốc đạn riêng từng tướng nằm ở `basicAttack` của file tướng.
 
 ---
 

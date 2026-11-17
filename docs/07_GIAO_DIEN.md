@@ -238,6 +238,8 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
 - **Chữ trên đầu**: `ÁP CHẾ` (tím, ưu tiên nhất), `CHOÁNG` / `HẤT TUNG` / `TRÓI` / `KHIÊU KHÍCH` / `CÂM` (vàng), `KHÔNG THỂ CẢN` (vàng cam,
   khi không có khống chế). Đang niệm giữ xích: thanh tím rút dần dưới thanh mana. Bấm chiêu / đồ không được: chữ nổi lý do trên đầu mình
   (Không có mục tiêu · Đang bị áp chế · Đang giữ chiêu · Không thể lướt · Đang bị trói · Đang bị khống chế).
+  Đòn không gây sát thương (16/11): chữ "Trượt" / "Né" / "Miễn nhiễm" trên mục tiêu — chỉ cho đòn của mình hoặc đòn nhắm vào mình, mỗi mục tiêu tối
+  đa một dòng mỗi 0,6 giây.
 - **Ping và chat nhanh**: nút ping mở vòng tròn 4 lệnh: Tấn công / Rút lui / Tập hợp / Cẩn thận. Chat nhanh: danh sách câu soạn sẵn.
 - **Thông báo hạ gục giữa phía trên** (`hud/killBanner.js`, như Liên Quân): mọi lần tướng chết — đội ta hạ (dải xanh) hay đội địch hạ
   (dải đỏ). Vệt sáng quét ngang mở màn → dải: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),

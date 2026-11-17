@@ -82,7 +82,10 @@ export function createWorld({ map, seed = 1, structures = true, waves = true }) 
   world.addBot = (e, difficulty = 'normal', laneIdx = null) => { e.goldMult = DIFFICULTY[difficulty]?.goldMult ?? 1; return laneIdx != null && map.lanes.length > 1 ? createLaneBot(world, e, difficulty, laneIdx) : createBot(world, e, difficulty); };
   world.command = (entityId, cmd) => {
     let q = world.queue.get(entityId); if (!q) world.queue.set(entityId, (q = []));
-    if (cmd.type === 'move' || cmd.type === 'attack') { const i = q.findIndex((c) => c.type === cmd.type); if (i >= 0) { q[i] = cmd; return; } }
+    // gộp lệnh trùng trong một tick: 'move' lấy lệnh sau cùng; 'attack' chỉ gộp khi cùng trạng thái bấm / thả — bấm rồi thả trong cùng
+    // một tick (chạm rất nhanh, hoặc mạng dồn hai tin vào một khung máy chủ) phải giữ cả hai, không thì cú chạm bị "thả" đè mất, không ra đòn
+    if (cmd.type === 'move') { const i = q.findIndex((c) => c.type === 'move'); if (i >= 0) { q[i] = cmd; return; } }
+    else if (cmd.type === 'attack') { const last = q[q.length - 1]; if (last && last.type === 'attack' && (last.on !== false) === (cmd.on !== false)) { q[q.length - 1] = cmd; return; } }
     q.push(cmd);
   };
   world.debug = {

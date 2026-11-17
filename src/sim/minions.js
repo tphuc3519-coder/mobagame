@@ -4,7 +4,7 @@ import { MINIONS, scaleFor } from '../data/units.js';
 import { T, dist, norm, clampToMap } from './util.js';
 import { TICK } from '../core/loop.js';
 import { dealDamage } from './damage.js';
-import { isTargetable } from './targeting.js';
+import { isTargetable, strikeMiss } from './targeting.js';
 import { canSee } from './vision.js';
 import { isRooted, isHardCC } from './status.js';
 import { spawnProjectile } from './projectiles.js';
@@ -94,7 +94,7 @@ function attack(world, e, t) {
   world.emit('attack', { id: e.id, n: 1, interval: 1 / e.stats.atkSpeed });
   const ba = e.data.basicAttack, d = MINIONS[e.minionType];
   world.pending.push({ tick: world.tick + T(ba.delay), run: () => {
-    if (!e.alive || !t.alive || isHardCC(e)) return;
+    if (!e.alive || !t.alive || isHardCC(e) || strikeMiss(e, t, e.stats.range, !!ba.melee)) return; // lúc chạm: mục tiêu ra khỏi tầm với / thành không thể chọn thì trượt (như tướng)
     const amt = (tt) => e.stats.atk * (tt.structure ? d.structureMult || 1 : 1); // lính phá công trình mạnh hơn để đợt lính có sức đẩy
     if (ba.melee) dealDamage(world, e, t, amt(t), 'physical');
     else spawnProjectile(world, { owner: e.id, x: e.pos.x, y: e.pos.y, dx: 0, dy: 0, speed: d.projSpeed, remaining: 9999, homing: t.id, kind: 'basic', onHit: (tt) => dealDamage(world, e, tt, amt(tt), 'physical') });
