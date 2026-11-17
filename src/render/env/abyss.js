@@ -135,9 +135,10 @@ function fallMat() {
 }
 
 /** Dựng vực: vách đá theo mép vực, đá + bụi che mép, thung lũng, mây, thác. heightAt(x, z): cao độ nền. */
-export function buildAbyss(map, heightAt, { riverWidth = 0, dens = 1, grass = null, rockMat = null, boulder = null } = {}) {
+export function buildAbyss(map, heightAt, { river = null, riverWidth = 0, dens = 1, grass = null, rockMat = null, boulder = null } = {}) {
   const g = new THREE.Group(), r = rngFor(808), D = ABYSS_DEPTH, cliffs = [], lipRocks = [], lipBush = [], falls = [];
-  const riverD = (x, z) => Math.abs(x - z) / Math.SQRT2;
+  // chỗ sông chạm mép vực (thác): theo mép nước thật (data/river.js — sông hẹp lại ở hai đầu) hoặc dải thẳng rộng riverWidth (bản cũ)
+  const wet = river?.sd ? (x, z, m) => river.sd(x, z) < m : riverWidth ? (x, z, m) => Math.abs(x - z) / Math.SQRT2 < riverWidth / 2 + m : null;
   for (const chain of abyssEdges(map)) {
     const n = chain.length, J = 22, P = [], I = [];
     // pháp tuyến hướng ra vực
@@ -161,14 +162,14 @@ export function buildAbyss(map, heightAt, { riverWidth = 0, dens = 1, grass = nu
     cliffs.push(geo);
     // đá + bụi che mép vực (phía đất liền), trừ chỗ sông đổ
     for (let i = 0; i < n; i += 2) {
-      const [x, z] = chain[i], [nx, nz] = N[i]; if (riverWidth && riverD(x, z) < riverWidth / 2 + 80) continue;
+      const [x, z] = chain[i], [nx, nz] = N[i]; if (wet?.(x, z, 80)) continue;
       if (x < -3000 || z < -3000 || x > map.w + 3000 || z > map.h + 3000) continue;
       if (r.next() < 0.5) { const sc = r.range(40, 110); lipRocks.push({ x: x - nx * r.range(0, 50), y: heightAt(x, z) - sc * 0.3, z: z - nz * r.range(0, 50), ry: r.range(0, 7), sx: sc * r.range(1, 1.7), sy: sc * r.range(0.5, 0.9), sz: sc }); }
       if (r.next() < 0.3 * dens) lipBush.push({ x: x - nx * r.range(20, 120), y: heightAt(x, z) - 4, z: z - nz * r.range(20, 120), ry: r.range(0, 7), sx: r.range(110, 170), sy: r.range(80, 150) });
     }
     // thác: đoạn mép vực nằm trong lòng sông
-    if (riverWidth) {
-      const idx = chain.map((p, i) => i).filter((i) => riverD(...chain[i]) < riverWidth / 2 + 20);
+    if (wet) {
+      const idx = chain.map((p, i) => i).filter((i) => wet(...chain[i], 20));
       if (idx.length > 2) {
         const pts = idx.map((i) => chain[i]), nn = idx.map((i) => N[i]), M = 16, Pf = [], UV = [], If = [];
         pts.forEach(([x, z], k) => { const [nx, nz] = nn[k]; for (let j = 0; j <= M; j++) { const t = j / M, off = 30 + 260 * Math.sqrt(t); Pf.push(x + nx * off, 4 - D * 0.9 * t, z + nz * off); UV.push(k / (pts.length - 1), t); } });

@@ -6,15 +6,18 @@
 import { HEROES } from '../data/heroes/index.js';
 import { play } from '../audio/audio.js';
 import { prefs } from '../core/prefs.js';
-import { DISP, BODY } from '../ui/fonts.js';
+import { DISP, BODY, TITLE } from '../ui/fonts.js';
 
 export const MULTI = { 2: 'Double Kill', 3: 'Triple Kill', 4: 'Quadra Kill', 5: 'Penta Kill' };
 const STREAK = { 3: 'Liên tục hạ gục', 4: 'Hủy diệt', 5: 'Không thể cản phá', 6: 'Thần thánh' };
 export const streakName = (n) => (n >= 7 ? 'Truyền thuyết' : STREAK[n] || '');
-const INK = '#0f1729', YEL = '#ffd23f'; // UI v4 hoạt hình phẳng
+// UI v5 "sơn mài đêm hội" (cùng bộ màu src/ui/css.js — trước đây dải này còn kiểu UI v4 hoạt hình: nền màu đặc, viền mực dày, bóng cứng,
+// chữ in hoa đắp nổi, tia sáng toả): dải sơn mài đen nâu, chỉ vàng mảnh trên / dưới, lòng dải ánh chàm (đội ta) / huyết dụ (đội địch), tiêu đề
+// Fraunces màu ngà / vàng quỳ không viền, bóng mềm. Vòng chân dung giữ màu đội sáng (#38b8ff / #ff4a3a) như mọi chỗ trong trận.
+const IVORY = '#f2e7d0', IVORY2 = '#cbbb9b', GOLD = '#d8b468', GOLD_L = '#ecd69f';
 const THEME = {
-  ally: { flat: '#2a4f86', mid: 'rgba(14,36,78,0.9)', edge: 'rgba(30,80,150,0.55)', line: '#6fd0ff', glow: [90, 200, 255], ring: '#38b8ff' },
-  foe: { flat: '#7a2a36', mid: 'rgba(78,14,20,0.9)', edge: 'rgba(150,34,30,0.55)', line: '#ff7a64', glow: [255, 100, 80], ring: '#ff4a3a' },
+  ally: { tint: 'rgba(36,54,79,0.92)', ring: '#38b8ff' },
+  foe: { tint: 'rgba(77,39,35,0.92)', ring: '#ff4a3a' },
 };
 const now = () => performance.now() / 1000;
 const ease = (x) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
@@ -89,27 +92,27 @@ export function createKillBanner(portraits) {
     ctx.save(); ctx.translate(0, dy);
     if (a <= 0.01) { ctx.restore(); return; }
     ctx.globalAlpha = a;
-    // dải phẳng kiểu hoạt hình (UI v4): nền màu phe đặc, viền mực dày, bóng cứng dưới — không quầng sáng, không dải màu
+    // dải sơn mài: bóng mềm dưới, nền đen nâu, lòng ánh màu phe, chỉ vàng mảnh trên / dưới (dài theo độ mở của dải)
     const rr = bh / 2, pill = () => { ctx.beginPath(); ctx.moveTo(x0 + rr, cy - rr); ctx.lineTo(x1 - rr, cy - rr); ctx.arc(x1 - rr, cy, rr, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x0 + rr, cy + rr); ctx.arc(x0 + rr, cy, rr, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); };
-    ctx.fillStyle = INK; ctx.translate(0, 4); pill(); ctx.fill(); ctx.translate(0, -4);
-    ctx.fillStyle = th.flat; pill(); ctx.fill();
-    ctx.save(); pill(); ctx.clip(); ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.92); ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x0, cy + rr - 4, x1 - x0, 4); ctx.restore(); // khối: nửa trên sáng, gờ tối dưới
-    ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-    // tiêu đề
-    const pop = big ? 1 + 0.5 * (1 - ease((t - 0.05) / 0.22)) : 1;
-    ctx.save(); ctx.translate(cx, cy + 1); ctx.scale(pop, pop); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-    if (big) {
-      ctx.font = `800 ${it.tier >= 5 ? 30 : 27}px ${DISP}`;
-      const txt = it.title.toUpperCase();
-      ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText(txt, 0, 3); ctx.strokeText(txt, 0, 0); ctx.fillStyle = YEL; ctx.fillText(txt, 0, 0); // chữ đắp nổi
-    } else {
-      ctx.font = `700 ${it.title.length > 15 ? 17 : 19}px ${DISP}`;
-      ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.strokeText(it.title, 0, 2.5); ctx.strokeText(it.title, 0, 0); ctx.fillStyle = it.tier >= 1 ? YEL : '#fff'; ctx.fillText(it.title, 0, 0);
-    }
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; ctx.fillStyle = '#120d0b'; pill(); ctx.fill(); ctx.restore();
+    ctx.save(); pill(); ctx.clip();
+    const lg = ctx.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, 'rgba(18,13,11,0)'); lg.addColorStop(0.5, th.tint); lg.addColorStop(1, 'rgba(18,13,11,0)');
+    ctx.fillStyle = lg; ctx.fillRect(x0, cy - rr, x1 - x0, bh);
+    ctx.fillStyle = 'rgba(242,231,208,0.05)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.8); // ánh sơn mài rất nhẹ nửa trên
+    ctx.restore();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(216,180,104,0.55)'; pill(); ctx.stroke();
+    const rule = (yy) => { const g2 = ctx.createLinearGradient(x0, 0, x1, 0); g2.addColorStop(0, 'rgba(216,180,104,0)'); g2.addColorStop(0.5, GOLD); g2.addColorStop(1, 'rgba(216,180,104,0)'); ctx.fillStyle = g2; ctx.fillRect(x0 + rr, yy, x1 - x0 - 2 * rr, 1); };
+    rule(cy - rr + 3); rule(cy + rr - 4);
+    // tiêu đề: Fraunces, ngà (thường) / vàng quỳ (đặc biệt, hạ liên tiếp) — không viền mực, chỉ bóng mềm cho dễ đọc trên cảnh
+    const pop = big ? 1 + 0.35 * (1 - ease((t - 0.05) / 0.22)) : 1;
+    ctx.save(); ctx.translate(cx, cy + 1); ctx.scale(pop, pop); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+    if (big) { ctx.font = `700 ${it.tier >= 5 ? 28 : 25}px ${TITLE}`; ctx.fillStyle = GOLD_L; ctx.fillText(it.title, 0, 0); }
+    else { ctx.font = `600 ${it.title.length > 15 ? 17 : 19}px ${TITLE}`; ctx.fillStyle = it.tier >= 1 ? GOLD_L : IVORY; ctx.fillText(it.title, 0, 0); }
     ctx.restore();
     if (it.sub) { // dòng phụ dưới dải (chiến công đầu / chuỗi / chặn đứng kèm theo)
-      ctx.font = `700 12px ${DISP}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 4; ctx.strokeStyle = INK;
-      ctx.strokeText(it.sub, cx, cy + bh / 2 + 6); ctx.fillStyle = it.tier >= 1.5 || /Truyền thuyết/.test(it.sub) ? YEL : '#fff'; ctx.fillText(it.sub, cx, cy + bh / 2 + 6);
+      ctx.save(); ctx.font = `600 12px ${DISP}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+      ctx.fillStyle = it.tier >= 1.5 || /Truyền thuyết/.test(it.sub) ? GOLD : IVORY2; ctx.fillText(it.sub, cx, cy + bh / 2 + 6); ctx.restore();
     }
     // chân dung: người hạ (trái), bị hạ (phải); trượt từ giữa ra
     const sl = ease((t - 0.04) / 0.26), lx = cx - (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl), rx = cx + (bw / 2 - R * 0.55) * (0.7 + 0.3 * sl);
@@ -131,11 +134,6 @@ export function createKillBanner(portraits) {
     }
     // người hỗ trợ: chân dung nhỏ dưới người hạ
     (it.assists || []).slice(0, 4).forEach((f, i) => face(ctx, f, lx - 6 + i * 17, cy + R + 10, 7.5, th.ring, f.me));
-    if (big && t < 0.9) { // hạ liên tiếp: tia sáng toả quanh chữ
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * (1 - t / 0.9);
-      for (let i = 0; i < 10; i++) { const an = (i / 10) * Math.PI * 2 + t * 0.8, r0 = 26 + t * 60, r1 = r0 + 18 + it.tier * 3; ctx.strokeStyle = i % 2 ? '#ffe7a0' : '#ffb640'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(an) * r0 * 2.2, cy + Math.sin(an) * r0 * 0.5); ctx.lineTo(cx + Math.cos(an) * r1 * 2.2, cy + Math.sin(an) * r1 * 0.5); ctx.stroke(); }
-      ctx.restore();
-    }
     ctx.restore();
   }
 

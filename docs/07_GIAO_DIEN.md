@@ -242,8 +242,10 @@ Chọn lượt 2: Đ4 | X4 X5 | Đ5
   đa một dòng mỗi 0,6 giây.
 - **Ping và chat nhanh**: nút ping mở vòng tròn 4 lệnh: Tấn công / Rút lui / Tập hợp / Cẩn thận. Chat nhanh: danh sách câu soạn sẵn.
 - **Thông báo hạ gục giữa phía trên** (`hud/killBanner.js`, như Liên Quân): mọi lần tướng chết — đội ta hạ (dải xanh) hay đội địch hạ
-  (dải đỏ). Vệt sáng quét ngang mở màn → dải: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),
-  người hỗ trợ là chân dung nhỏ dưới người hạ. Tiêu đề: Chiến công đầu; Double / Triple / Quadra / Penta Kill (chữ lớn vàng, tia sáng —
+  (dải đỏ). Dải sơn mài UI v5 (17/11 — trước còn kiểu UI v4: nền màu đặc, viền mực dày, bóng cứng, chữ in hoa đắp nổi, tia sáng): nền đen
+  nâu, lòng ánh chàm (đội ta) / huyết dụ (đội địch), chỉ vàng mảnh trên / dưới, bóng mềm; tiêu đề Fraunces ngà / vàng quỳ không viền. Dải mở
+  ra từ giữa: chân dung người hạ (viền màu đội) — tiêu đề — chân dung bị hạ (vạch chéo đỏ quẹt qua),
+  người hỗ trợ là chân dung nhỏ dưới người hạ. Tiêu đề: Chiến công đầu; Double / Triple / Quadra / Penta Kill (chữ lớn vàng quỳ —
   người chơi yêu cầu dùng tên tiếng Anh thay cho "Song Sát…"); chuỗi hạ gục Liên tục hạ gục → Hủy diệt → Không thể cản phá → Thần thánh →
   Truyền thuyết; Chặn đứng; "Bị hạ gục" kèm biểu tượng trụ / lính / quái khi không ai được mạng; hạ mục tiêu lớn. Hàng đợi ~2,4 giây mỗi
   thông báo, dồn thì rút ngắn. Vàng nhận được hiện "+N" kèm đồng vàng trên đầu tướng mình.

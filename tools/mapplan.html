@@ -2,19 +2,35 @@
 <style>html,body{margin:0;background:#111}</style>
 <canvas id="c"></canvas>
 <script type="module">
-// Sơ đồ 2D bản đồ 5v5 (src/data/maps.js): đường (độ rộng thật), tường/bệ đá, bụi, trại quái, trụ + vòng tầm bắn. Dùng để chỉnh bố cục.
-import { ARENA as M } from '../src/data/maps.js';
-const S = 1100 / M.w, c = document.getElementById('c'), x = c.getContext('2d'); c.width = c.height = 1100;
-x.fillStyle = '#3d6b3f'; x.fillRect(0, 0, 1100, 1100);
+// Sơ đồ 2D bản đồ 5v5 (src/data/maps.js): sông (đúng hình data/river.js), đường (độ rộng thật), khối đất đá / bờ rào / vách hang / cột đèn,
+// bụi, trại quái, trụ + vòng tầm bắn. Dùng để chỉnh bố cục. ?nav=1 tô thêm các ô lưới tìm đường bị chặn (sim/navgrid.js).
+import { ARENA as M, bushRects } from '../src/data/maps.js';
+import { buildNavGrid, CELL } from '../src/sim/navgrid.js';
+const N = 1100, S = N / M.w, c = document.getElementById('c'), x = c.getContext('2d'); c.width = c.height = N;
+// nền + sông: tô từng điểm ảnh theo khoảng cách tới mép nước
+const img = x.createImageData(N, N), d = img.data;
+for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+  const sd = M.river.sd((i + 0.5) / S, (j + 0.5) / S), k = 4 * (j * N + i), oob = M.outOfBounds((i + 0.5) / S, (j + 0.5) / S, 0);
+  const col = oob ? [30, 44, 34] : sd < -160 ? [47, 122, 160] : sd < 0 ? [72, 150, 184] : sd < 90 ? [120, 132, 96] : [61, 107, 63];
+  d[k] = col[0]; d[k + 1] = col[1]; d[k + 2] = col[2]; d[k + 3] = 255;
+}
+x.putImageData(img, 0, 0);
 x.lineCap = 'round'; x.lineJoin = 'round';
-for (const ln of M.lanes) { x.strokeStyle = '#cbb98a'; x.lineWidth = ln.width * S; x.beginPath(); ln.pts.forEach(([a, b], i) => (i ? x.lineTo(a * S, b * S) : x.moveTo(a * S, b * S))); x.stroke(); }
-if (M.river) { x.strokeStyle = '#3f8fb8aa'; x.lineWidth = M.river.width * S; x.beginPath(); x.moveTo(0, 0); x.lineTo(1100, 1100); x.stroke(); }
-for (const b of M.bushes || []) { x.fillStyle = '#1f5a2a'; x.fillRect((b.x - b.w / 2) * S, (b.y - b.h / 2) * S, b.w * S, b.h * S); }
-for (const w of M.walls.segs) { x.strokeStyle = w.lair ? '#5a4a6a' : '#2a2e36'; x.lineWidth = Math.max(2, (w.w ?? M.walls.thickness) * S); x.beginPath(); x.moveTo(w.x1 * S, w.y1 * S); x.lineTo(w.x2 * S, w.y2 * S); x.stroke(); }
-for (const cp of M.camps || []) { x.fillStyle = '#e8d48a'; x.beginPath(); x.arc(cp.x * S, cp.y * S, 6, 0, 7); x.fill(); }
+for (const ln of M.lanes) { x.strokeStyle = '#cbb98a99'; x.lineWidth = ln.width * S; x.beginPath(); ln.pts.forEach(([a, b], i) => (i ? x.lineTo(a * S, b * S) : x.moveTo(a * S, b * S))); x.stroke(); }
+for (const b of bushRects(M)) { x.fillStyle = '#1f5a2acc'; x.strokeStyle = '#1f5a2acc';
+  if (b.cap) { x.lineWidth = b.r * 2 * S; x.beginPath(); x.moveTo(b.cap[0] * S, b.cap[1] * S); x.lineTo(b.cap[2] * S, b.cap[3] * S); x.stroke(); }
+  else x.fillRect((b.x - b.w / 2) * S, (b.y - b.h / 2) * S, b.w * S, b.h * S); }
+for (const w of M.walls.segs) { if (w.pillar) continue; x.strokeStyle = w.lair ? '#5a4a6a' : w.baseWall != null ? '#6a6f88' : w.border ? '#20242a' : w.rock ? '#2a2e36' : '#363b30';
+  x.lineWidth = Math.max(2, (w.w ?? M.walls.thickness) * S); x.beginPath(); x.moveTo(w.x1 * S, w.y1 * S); x.lineTo(w.x2 * S, w.y2 * S); x.stroke(); }
+// cột đá đèn (đoạn dài 0 — nét vẽ không hiện): chấm vàng kim = lối vào (cổng rừng, cổng hang)
+for (const w of M.walls.segs) { if (!w.pillar) continue; x.fillStyle = '#f0b848'; x.strokeStyle = '#1a1208'; x.lineWidth = 1.5; x.beginPath(); x.arc(w.x1 * S, w.y1 * S, Math.max(3.5, (w.w ?? 200) / 2 * S), 0, 7); x.fill(); x.stroke(); }
+if (new URLSearchParams(location.search).has('nav')) { const g = buildNavGrid(M); x.fillStyle = '#ff2a6a55';
+  for (let cy = 0; cy < g.rows; cy++) for (let cx = 0; cx < g.cols; cx++) if (g.blocked[cy * g.cols + cx]) x.fillRect(cx * CELL * S, cy * CELL * S, CELL * S, CELL * S); }
+x.font = '10px sans-serif'; x.textAlign = 'center';
+for (const cp of M.camps || []) { x.fillStyle = cp.boss ? '#ff9a3a' : '#e8d48a'; x.beginPath(); x.arc(cp.x * S, cp.y * S, cp.boss ? 8 : 5, 0, 7); x.fill(); x.fillStyle = '#fff'; x.fillText(cp.id, cp.x * S, cp.y * S - 9); }
 const all = [...M.structures, ...M.structures.map((s) => ({ ...s, ...M.mirror(s.x, s.y), red: true }))];
 for (const s of all) { if (s.kind !== 'tower' && s.kind !== 'core') continue;
-  x.fillStyle = s.red ? '#ff4a3a33' : '#38b8ff33'; x.strokeStyle = s.red ? '#ff4a3a' : '#38b8ff'; x.lineWidth = 1.5;
+  x.fillStyle = s.red ? '#ff4a3a22' : '#38b8ff22'; x.strokeStyle = s.red ? '#ff4a3a' : '#38b8ff'; x.lineWidth = 1.2;
   x.beginPath(); x.arc(s.x * S, s.y * S, s.range * S, 0, 7); x.fill(); x.stroke();
   x.fillStyle = s.red ? '#ff4a3a' : '#38b8ff'; x.fillRect(s.x * S - 4, s.y * S - 4, 8, 8); }
 window.__ready = true;

@@ -32,7 +32,7 @@ Chỉ cần đấu với máy thì máy chủ tĩnh nào cũng được: `python
 ## Kiểm thử
 
 ```
-for f in tools/t_*.mjs tools/simtest.mjs; do node "$f" || echo "LỖI: $f"; done   # không cần trình duyệt (bỏ t_arena_batch / t_ui_draft nếu vội)
+for f in tools/t_*.mjs tools/simtest.mjs; do node "$f" || echo "LỖI: $f"; done   # không cần trình duyệt (bỏ t_arena_batch / t_side / t_ui_draft nếu vội)
 node tools/b_layout.cjs 8787    # trình duyệt thật (Playwright + Chromium), cần máy chủ đang chạy ở cổng đó
 node tools/b_flow.cjs 8787      # cũng vậy: b_match, b_attack, b_prog, b_gd3, b_perf
 node tools/b_online.cjs         # chơi online trọn vòng trên trình duyệt (tự bật máy chủ riêng ở cổng 8790); b_pwa cũng tự bật máy chủ

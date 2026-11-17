@@ -21,7 +21,7 @@ export function placeName(world, team, p, tgt = null) {
     const path = lanePath(map, lane, team), pr = project(path, p), f = pr.s / Math.max(1, path.length);
     return `${LANE[map.lanes[lane].id] || 'Đường'}${f < 0.4 ? ' phe ta' : f > 0.6 ? ' phe địch' : ''}`;
   }
-  if (map.river?.diag ? Math.abs(p.x - p.y) / Math.SQRT2 < map.river.width / 2 : Math.abs(p.x - map.river.x) < map.river.width / 2) return 'Sông';
+  if (map.river?.sd ? map.river.sd(p.x, p.y) < 0 : map.river?.diag ? Math.abs(p.x - p.y) / Math.SQRT2 < map.river.width / 2 : Math.abs(p.x - map.river.x) < map.river.width / 2) return 'Sông';
   const f0 = world.entities.find((s) => s.kind === 'fountain' && s.team === team), f1 = world.entities.find((s) => s.kind === 'fountain' && s.team !== team);
   return f0 && f1 && dist(f0.pos, p) > dist(f1.pos, p) ? 'Rừng phe địch' : 'Rừng phe ta';
 }

@@ -6,7 +6,7 @@ import { scatter } from './foliage.js';
 import { flagstoneSurface, wallStoneSurface, strataSurface } from './surfaces.js';
 import { plazaTexture } from './laneDecor.js';
 import { MONSTERS } from '../../data/jungle.js';
-import { LAIR_R } from '../../data/maps.js';
+import { LAIR_R, PIT_GLOW, lairWallSegs } from '../../data/maps.js';
 import { ROCK_GLSL } from './rockGlsl.js';
 
 // Bệ đá kiểu tảng đá tự nhiên (tham khảo các khối đá rêu trong rừng): mỗi đoạn tường là cụm tảng đá tròn gồ ghề xám lam,
@@ -161,7 +161,7 @@ export function buildRockWalls(map, dens = 1) {
   const g = new THREE.Group(), r = rngFor(404), geos = [], boulders = [[], [], []], grassFoot = [], flowers = [], glow = { P: [], C: [], I: [] }, pebbles = [], topGrass = [];
   map.walls.segs.forEach((w, si) => {
     if (w.border || w.baseWall != null || w.lair || w.pillar) return; // tường biên / bệ nhà / vách hang / cột đá đèn dựng riêng
-    const W = w.w ?? map.walls.thickness, H = w.bushRock ? 95 : w.ledge ? 110 : Math.min(230, 110 + W * 0.33);
+    const W = w.w ?? map.walls.thickness, H = Math.min(230, 110 + W * 0.33);
     const rg = roundRockGeo(w, H, si * 1.37); geos.push(rg); footGlow(w, glow);
     const L = Math.hypot(w.x2 - w.x1, w.y2 - w.y1) || 1, ux = (w.x2 - w.x1) / L, uz = (w.y2 - w.y1) / L, nx = -uz, nz = ux;
     for (const [tx, ty, tz] of rg.userData.tops) { // cỏ dại mọc trên lưng đá
@@ -177,7 +177,7 @@ export function buildRockWalls(map, dens = 1) {
       const t = (i + r.range(0.1, 0.9)) / nb, sd = r.next() < 0.5 ? -1 : 1, off = W * r.range(0.36, 0.42), sc = W * r.range(0.07, 0.1);
       boulders[r.int(3)].push({ x: w.x1 + ux * L * t + nx * sd * off, y: -6, z: w.y1 + uz * L * t + nz * sd * off, ry: r.range(0, 7), sx: sc * r.range(1, 1.2), sy: H * r.range(0.2, 0.32), sz: sc });
     }
-    if (!(w.rock || w.ledge) || w.field) return; // tường dọc đường: chân gọn; đá bờ ruộng: cỏ cao ở chân trông như bụi núp riêng → bỏ
+    if (!w.rock) return; // bờ rào dọc đường: chân gọn (cỏ cao chân đá chỉ ở khối đá trong rừng)
     // cụm cỏ cao ở chân đá: 1–2 cụm mỗi đoạn, mỗi cụm nhiều khóm dày (như Liên Quân), ưu tiên hai đầu bệ
     const nCl = L > 500 ? 2 : 1;
     for (let k = 0; k < nCl; k++) {
@@ -292,20 +292,24 @@ function pillarGeo(hw, lamp = false) {
   const knob = new THREE.SphereGeometry(0.2 * hw, 10, 8); knob.translate(0, 352, 0);
   return { stone: fin([...body, tip]), gold: fin([...bands, box(1.99, 4, 283), knob]) };
 }
-/** Cột đá đèn lồng (đoạn tường `pillar`: dài 0 = va chạm tròn; cột ở khe mép đường của hai ruộng cạnh bụi bờ, data/maps.js): cột vuông chạm
- *  đai vàng như cột tường nhà (cùng vật liệu baseWallMat), thân vừa trong vòng va chạm; trên đỉnh đèn lồng sáng ấm vượt ngưỡng bloom +
- *  quầng sáng và vũng sáng ấm dưới chân (không dùng đèn điểm). */
+/** Cột đá đèn lồng (đoạn tường `pillar`: dài 0 = va chạm tròn — data/maps.js): đánh dấu LỐI VÀO — hai bên mỗi cổng rừng trên bờ rào dọc
+ *  đường, và bốn đầu vách cù lao hang lớn (miệng hang + cửa hậu). Cột vuông chạm đai vàng như cột tường nhà (cùng vật liệu baseWallMat),
+ *  thân vừa trong vòng va chạm; trên đỉnh đèn lồng (ấm ở cổng rừng, màu riêng của mục tiêu ở cổng hang) + quầng sáng nhỏ dưới chân. */
 function buildPillars(map) {
   const g = new THREE.Group(), list = map.walls.segs.filter((w) => w.pillar); if (!list.length) return g;
-  const hw = (list[0].w ?? map.walls.thickness) * 0.42, pg = pillarGeo(hw, true), mats = baseWallMat(hw), at = list.map((w) => ({ x: w.x1, y: 0, z: w.y1, ry: 0, sx: 1 }));
+  const W0 = (list.find((w) => !w.lair) ?? list[0]).w ?? map.walls.thickness, hw = W0 * 0.42, pg = pillarGeo(hw, true), mats = baseWallMat(hw);
+  const at = list.map((w) => ({ x: w.x1, y: 0, z: w.y1, ry: 0, sx: (w.w ?? W0) / W0, glow: w.glow ?? 0xffb45c })); // cột đầu vách hang nhỏ hơn cột cổng rừng
   for (const [geo, mat] of [[pg.stone, mats.plain], [pg.gold, mats.gold]]) { const m = scatter(new THREE.InstancedMesh(geo, mat, at.length), at, false); m.castShadow = m.receiveShadow = true; g.add(m); }
-  const warm = new THREE.Color(0xffb45c);
-  g.add(scatter(new THREE.InstancedMesh(pg.core, new THREE.MeshBasicMaterial({ color: warm.clone().multiplyScalar(2.6) }), at.length), at, false));
-  const halo = new THREE.SpriteMaterial({ map: glowTex(), color: warm, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 });
-  const pool = new THREE.MeshBasicMaterial({ map: glowTex(), color: 0xff9a44, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
-  for (const p of at) {
-    const h = new THREE.Sprite(halo); h.position.set(p.x, 334, p.z); h.scale.setScalar(300); g.add(h);
-    const c = new THREE.Mesh(new THREE.CircleGeometry(340, 24), pool); c.rotation.x = -Math.PI / 2; c.position.set(p.x, 5, p.z); c.renderOrder = 2; g.add(c);
+  // đèn: cùng một kiểu cột cho cổng rừng (ấm) và cổng hang lớn (màu riêng của mục tiêu) — quầng sáng nhỏ, vừa đủ nhận ra lối vào từ xa
+  for (const hex of new Set(at.map((p) => p.glow))) {
+    const grp = at.filter((p) => p.glow === hex), col = new THREE.Color(hex);
+    g.add(scatter(new THREE.InstancedMesh(pg.core, new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.2) }), grp.length), grp, false));
+    const halo = new THREE.SpriteMaterial({ map: glowTex(), color: col, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5 });
+    const pool = new THREE.MeshBasicMaterial({ map: glowTex(), color: col, transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
+    for (const p of grp) {
+      const h = new THREE.Sprite(halo); h.position.set(p.x, 334 * p.sx, p.z); h.scale.setScalar(210 * p.sx); g.add(h);
+      const c = new THREE.Mesh(new THREE.CircleGeometry(260, 24), pool); c.rotation.x = -Math.PI / 2; c.position.set(p.x, 5, p.z); c.renderOrder = 2; g.add(c);
+    }
   }
   return g;
 }
@@ -454,11 +458,11 @@ function buildBorderWall(map) {
     // hướng ra ngoài sân (phía không chơi được)
     const mid = F[N >> 1], outSign = map.outOfBounds?.(mid.x + mid.nx * 260, mid.z + mid.nz * 260, 0) ? 1 : -1;
     F.forEach((f) => { f.nx *= outSign; f.nz *= outSign; });
-    const ph = rr.range(0, 6.3), rw2 = (map.river?.width || 0) / 2 + 60;
+    const ph = rr.range(0, 6.3), rw2 = (map.river?.width || 0) / 2 + 60, wet = map.river?.sd ? (x, z) => map.river.sd(x, z) < 60 : (x, z) => rw2 > 60 && Math.abs(x - z) / Math.SQRT2 < rw2;
     // chừa chỗ sông chảy qua (nước đổ xuống vực thành thác): tách thành các đoạn liền ngoài lòng sông
     let run = [];
     const flush = () => { if (run.length > 3) { const s0 = run[0].s, Fr = run.map((f) => ({ ...f, s: f.s - s0 })), T = Fr[Fr.length - 1].s; geos.push(bandGeo(Fr, T, -20, hw * 1.2, 55, ph), bandGeo(Fr, T, hw * 0.4, hw * 0.85, 125, ph + 1.7)); } run = []; };
-    for (const f of F) { if (rw2 > 60 && Math.abs(f.x - f.z) / Math.SQRT2 < rw2) flush(); else run.push(f); }
+    for (const f of F) { if (wet(f.x, f.z)) flush(); else run.push(f); }
     flush();
     for (let s = 700; s < total - 500; s += 1700) { const f = F[Math.round((s / total) * N)]; gems[sideOf(f.x, f.z)].push(f); }
   }
@@ -484,7 +488,7 @@ export function buildCampSites(map) {
   const rim = [];
   for (const c of map.camps || []) {
     const R = campRadius(c.type), def = MONSTERS[c.type];
-    if (def.boss) { buildLair(g, c, R, r, { ho_loi: 0x6ab8ff, long_ngu: 0xffa63a, than_dieu: 0x7ae8ff, ta_than: 0xb05aff }[c.type] || 0xffa63a); continue; }
+    if (def.boss) { buildLair(g, c, R, r, PIT_GLOW[c.type] || 0xffa63a); continue; }
     const dais = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.04, 12, 48, 1), [sideMat, topMat, topMat]); dais.position.set(c.x, 6, c.y); g.add(dais);
     if (def.buff && !def.boss) { // ấn khắc màu bùa giữa bệ
       const ring = new THREE.Mesh(new THREE.RingGeometry(R * 0.55, R * 0.62, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(c.type === 'linh_thuy' ? 0x4fb8ff : 0xff6a2a).multiplyScalar(1.3), transparent: true, opacity: 0.75 }));
@@ -515,15 +519,18 @@ function buildLair(g, c, R, r, glowHex) {
   const deco = Math.sin(back) > 0.2 ? back - Math.PI / 2 : back; // phần trang trí cao đặt ở phía xa camera (không che hang)
   if (c.type === 'ta_than') purpleLair(g, c, R, wr, deco);
   else if (c.type === 'than_dieu') dragonNest(g, c, R, wr, back);
-  else { // hang lớn mép rừng: vách đá cong hình móng ngựa ôm phía sau, cao dần về giữa lưng, chừa mặt mở ra sông
-    const wallGeos = [], RW = R * 1.12;
-    for (let i = 0; i < 7; i++) {
-      const a0 = back + (i / 7 - 0.5) * Math.PI * 1.3, a1 = back + ((i + 1) / 7 - 0.5) * Math.PI * 1.3;
-      const seg = { x1: c.x + Math.cos(a0) * RW, y1: c.y + Math.sin(a0) * RW, x2: c.x + Math.cos(a1) * RW, y2: c.y + Math.sin(a1) * RW, w: R * 0.4 };
-      const mid = 1 - Math.abs((i + 0.5) / 7 - 0.5) * 2; wallGeos.push(roundRockGeo(seg, 150 + 170 * mid, seed + i * 3.3));
+  else { // cù lao hang giữa đầm (Long Ngư, Hổ Lôi): hai vách đá sườn dựng ĐÚNG các đoạn tường va chạm (data/maps.js lairWallSegs), cao dần
+         // về giữa vách; miệng hang mở về giữa bản đồ, cửa hậu mở về phía đường cánh; cột đèn ở bốn đầu vách dựng chung với cột cổng rừng
+    const segs = lairWallSegs(c).filter((w) => !w.pillar), RW = R * 1.12;
+    const wg = mergeGeometries(segs.map((w, i) => roundRockGeo(w, 140 + 170 * w.rise, seed + i * 3.3)));
+    { // nhận diện bằng chất đá (cùng vật liệu đá chung, chỉ nhân màu đỉnh): Long Ngư sa thạch ấm, Hổ Lôi đá bazan sẫm ám lam như bị sét đánh
+      const t = { long_ngu: [1.08, 0.98, 0.86], ho_loi: [0.74, 0.8, 0.96] }[c.type] || [1, 1, 1], cl = wg.attributes.color;
+      for (let i = 0; i < cl.count; i++) cl.setXYZ(i, cl.getX(i) * t[0], cl.getY(i) * t[1], cl.getZ(i) * t[2]);
     }
-    const wallM = new THREE.Mesh(mergeGeometries(wallGeos), ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
-    const tf = []; for (let k = 0; k < 40; k++) { const a = back + wr.range(-1.9, 1.9), d = RW * wr.range(1.05, 1.35); tf.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: wr.range(0, 7), sx: wr.range(120, 180), sy: wr.range(120, 200) }); }
+    const wallM = new THREE.Mesh(wg, ROCK_FACET()); wallM.castShadow = true; wallM.receiveShadow = true; g.add(wallM);
+    const tf = []; // cỏ dại chân vách phía ngoài (giữa vách và mép cù lao), không mọc ở hai lối vào
+    for (const w of segs) for (let k = 0; k < 5; k++) { const t = wr.next(), x = w.x1 + (w.x2 - w.x1) * t, z = w.y1 + (w.y2 - w.y1) * t, a = Math.atan2(z - c.y, x - c.x), d = RW * wr.range(1.2, 1.3);
+      tf.push({ x: c.x + Math.cos(a) * d, y: 0, z: c.y + Math.sin(a) * d, ry: wr.range(0, 7), sx: wr.range(100, 150), sy: wr.range(90, 150) }); }
     g.add(buildGrass(tf, 'bush', 14));
   }
   // vết nứt phát sáng: mặt trên bệ + lan ra nước quanh hang
@@ -541,13 +548,10 @@ function buildLair(g, c, R, r, glowHex) {
         float line = smoothstep(0.13, 0.0, e) + smoothstep(0.03, 0.0, e) * 1.5;
         float fall = uO > 0.5 ? smoothstep(1.6, 0.95, r) * smoothstep(0.85, 1.0, r) : smoothstep(1.0, 0.2, r) * 0.9 + 0.1;
         float pulse = 0.65 + 0.35 * sin(uT * 2.2 - r * 6.0);
-        float v = line * fall * pulse * 0.55;
+        float v = line * fall * pulse * 0.4;
         gl_FragColor = vec4(uC * v, v); }` }));
     m.rotation.x = -Math.PI / 2; m.position.set(c.x, y, c.y); m.renderOrder = 2; g.add(m); };
-  crack(R * 0.98, 33, false); crack(R * 1.35, 6, true);
-  // quả cầu năng lượng trên móng giữa
-  const orb = new THREE.Mesh(new THREE.SphereGeometry(R * 0.07, 20, 14), new THREE.MeshBasicMaterial({ color: glow.clone().multiplyScalar(1.8) })); orb.position.set(c.x + Math.cos(back) * R * 0.2, R * 0.5, c.y + Math.sin(back) * R * 0.2); g.add(orb);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: glow, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 })); halo.scale.setScalar(R * 0.6); halo.position.copy(orb.position); g.add(halo);
+  crack(R * 0.98, 33, false); // chỉ trên mặt bệ (bỏ vòng nứt loang ra nước và quả cầu năng lượng lơ lửng: hiệu ứng thừa, che con quái)
 }
 
 /** Ống cong (rễ/cành) có bán kính thon dần từ gốc tới ngọn. */
