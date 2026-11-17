@@ -1180,3 +1180,22 @@
   - **Giữ nguyên có chủ ý:** đòn đã vung thì đứng lại tới lúc chạm, người chơi không tự huỷ bằng cần di chuyển (quyết định 15/11 — đổi là đổi
     thói quen giữ cần + giữ Đánh); thời gian vung không co theo tốc đánh trước khi chạm trần 80% nhịp (hoạt ảnh đã khớp theo nó); đạn trụ; cách
     bot chọn mục tiêu / di chuyển (bám mục tiêu, bộ đệm, tự đi tới chỉ áp cho tướng có lệnh `assist`). Liệt kê ở 12 §4.
+- 2026-11-17: **Vòng tầm đánh thường + cụm nút chiêu to, đều** (`render/indicators.js`, `hud/skillButtons.js`, `hud/layout.js`, `index.html`) —
+  chủ dự án yêu cầu: nút Đánh luôn hiện tầm đánh như lúc vuốt chiêu, và chỉnh cỡ các nút chiêu "cho logic, to hơn, dễ nhìn dễ chơi".
+  - **Vòng tầm đánh:** hiện mỗi khi đang đánh thường (giữ / chạm nút, phím, hoặc đòn đang vung), tắt dần sau 0,4 giây thôi đánh — chạm nhanh
+    một cái vẫn kịp thấy. Dùng lại đĩa tầm của chiêu (cùng viền) nhưng **phần tô còn 40%**: đĩa của chiêu chỉ hiện vài phần mười giây lúc ngắm,
+    còn vòng này hiện suốt lúc giữ Đánh — tô đậm như chiêu thì tướng đánh xa (tầm 500–600) làm cả sân ám xanh. Đang ngắm chiêu / phép thì ẩn:
+    hai đĩa tầm khác cỡ chồng nhau không đọc được đĩa nào là của chiêu. Không thêm mục Cài đặt để tắt (yêu cầu là "luôn luôn hiện"); thêm sau
+    nếu có người thấy vướng. Chỉ là phần nhìn — không đổi mô phỏng, `NET.version` giữ 5.
+  - **Cỡ nút:** trước đây K1 / K2 = 0,68 nút Đánh, K3 to hơn 10%, và ba nút cách tâm nút Đánh 135 / 95 / 128 px (K2 thụt vào) — nhìn không
+    theo quy luật nào. Nay ba nút **bằng nhau** = 0,8 nút Đánh (cùng cách làm của các MOBA di động: chiêu cuối không to hơn), trên **một cung
+    tròn** quanh nút Đánh, cách đều; bán kính cung = vừa đủ đặt nút Ăn lính / Đẩy trụ vào giữa. iPhone 14 ngang: nút chiêu 59 → 72 px (+23%,
+    diện tích +50%), nút Đánh 87 → 90. Khung cụm chỉ rộng thêm ~10 px vì K1 cũ vốn đã đứng xa; cao thêm ~25 px.
+  - **Màn rất thấp** (Safari còn thanh địa chỉ / thanh tab, cao 235–320 px): cung tròn đủ cỡ không lọt dưới khối góc phải trên. Thay vì bỏ mặc,
+    `clusterDims` có tham số nén `q`: tỉ lệ nút chiêu lùi dần về 0,68, khe hẹp lại, K2 kéo sát nút Đánh (chừa góc cho nút camera) — ở mức nén hết
+    cụm còn thấp hơn bản cũ nên máy nào trước vừa thì nay vẫn vừa. Nén tỉ lệ trước, thu nhỏ cả cụm sau: giữ nút Đánh to nhất có thể.
+  - **Vị trí nút do JS tính** (`--k1r` … `--k3b`) thay cho `calc()` trong CSS: cần lượng giác + điều kiện né nút Ăn lính, và thử được bằng Node
+    (`tools/t_hudlayout.mjs` quét 9 000 khổ màn). CSS giữ `calc()` làm giá trị lúc JS chưa chạy.
+  - **Cầu đá bản 1v1** (`render/env/floor.js`): mặt cầu lát ở độ cao 18 nhưng `floorAt` không tính → vòng ngắm, dấu mục tiêu, bóng chân, và cả
+    vòng tầm đánh mới đều nằm dưới mặt cầu ở đúng chỗ giao tranh nhiều nhất. Sửa ở `floorAt` nên mọi thứ đặt theo mặt nền (kể cả đơn vị —
+    trước chân lún 18 đơn vị vào cầu) cùng nổi lên.

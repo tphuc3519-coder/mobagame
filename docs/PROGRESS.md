@@ -736,3 +736,17 @@ Nghiên cứu, vòng đời, số đo trước / sau: `docs/12_DANH_THUONG.md`. 
   `NET.version` 5); trình duyệt chạy lần lượt: `b_match` 38, `b_online` 6, `b_attack` 6, `b_flow` 93 — đạt hết. Chưa chạy lại đợt này: `b_layout`,
   `b_prog`, `b_gd3`, `b_perf`, `b_pwa` (không đụng tới phần chúng kiểm). Chưa thử trên điện thoại thật / mạng thật có trễ (trễ 130 ms và 300 ms mới
   chỉ mô phỏng trong `t_basic`).
+
+
+## 17/11 — Vòng tầm đánh thường + cụm nút chiêu to, đều
+Quyết định + lý do: `docs/DECISIONS.md` 2026-11-17; spec: 07 §9 (Cụm nút phải, Vòng tầm đánh).
+- **Vòng tầm đánh:** giữ / chạm nút Đánh (cả Ăn lính, Đẩy trụ, phím J) hoặc đòn đang vung thì quanh tướng hiện đĩa tầm đánh cùng kiểu với lúc vuốt
+  chiêu (phần tô nhạt hơn để không che sân); thôi đánh thì mờ dần; đang ngắm chiêu thì nhường chỗ. Chỉ là phần nhìn — mô phỏng không đổi.
+- **Cụm nút chiêu:** ba nút bằng nhau, to hơn (0,68 → 0,8 nút Đánh; iPhone 14 ngang 59 → 72 px, iPad 98 px), xếp trên một cung tròn quanh nút
+  Đánh, cách đều nhau. Màn rất thấp (Safari còn thanh địa chỉ / thanh tab) tự nén lại để không đè khối góc phải trên; nút vẫn ≥ 44 px.
+- **Sửa kèm:** bản 1v1 — vòng ngắm, dấu mục tiêu, bóng chân, chân tướng không còn chìm dưới mặt cầu đá giữa đường.
+- **Kiểm thử mới:** `tools/t_hudlayout.mjs` (14 mục, quét 9 000 khổ màn); `b_attack` +4 mục vòng tầm đánh; `b_layout` +2 mục cụm nút mỗi máy (138 mục);
+  `b_match` chờ HUD xếp lại xong sau khi đổi cỡ màn (máy không GPU ~4 khung / giây: trước đó đọc vị trí nút theo cỡ cũ, chạm trượt K3 ở 1280×720).
+- **Kết quả chạy:** Node: `t_hudlayout` 14, `t_pwa` 18, `t_target` 21, `t_audit` 20, `t_dispose` 9, `t_endcam` 9 đạt (các bộ còn lại không đụng phần nhìn /
+  HUD; mô phỏng không đổi). Trình duyệt chạy lần lượt: `b_layout` 138, `b_attack` 10, `b_match` 38, `b_flow` 93 — đạt hết. Chưa thử trên điện thoại thật.
+

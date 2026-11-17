@@ -85,14 +85,12 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
   const marks = [0, 1].map(() => { const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2); const o = new THREE.Mesh(geo, mk(MARK, { uKind: { value: 0 }, uT: { value: 0 } })); o.renderOrder = 3; o.frustumCulled = false; o.visible = false; scene.add(o); return o; });
   const chev = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mk(CHEV)); // chỉ dấu số 0 (khoá / đang chọn)
   chev.material.depthTest = false; chev.rotation.x = -CAM_PITCH; chev.scale.set(120, 100, 1); chev.renderOrder = 5; chev.frustumCulled = false; chev.visible = false; scene.add(chev);
-  const atk = new THREE.Mesh(range.geometry, RANGE.clone()); atk.material.uniforms.uSize = { value: new THREE.Vector2(1, 1) }; // (clone giữ chung Vector2 — tách ra như `self`)
+  const atk = new THREE.Mesh(range.geometry, RANGE.clone()); // clone(): uniform riêng (uSize, uA, uFill), dùng chung hình phẳng với đĩa tầm
   atk.material.uniforms.uFill.value = 0.4; // cùng viền với đĩa tầm của chiêu, phần tô nhạt hơn: vòng này hiện suốt lúc giữ Đánh, tô đậm là cả sân ám xanh
   atk.renderOrder = 3; atk.frustumCulled = false; atk.visible = false; scene.add(atk);
   let atkLast = -1e9, atkA = 0, atkAt = 0, atkR = 0; // lần cuối còn đang đánh (giây), độ rõ hiện tại, lần gọi trước, bán kính đang vẽ
   return {
     hide() { g.visible = false; },
-    /** Đang có chỉ báo ngắm chiêu / phép trên sân? */
-    aiming: () => g.visible,
     /** Vòng tầm đánh đang hiện? Trả bán kính (đơn vị thế giới) hoặc 0. (kiểm thử trình duyệt) */
     atkRangeShown: () => (atk.visible ? atkR : 0),
     /** Vòng tầm đánh thường quanh tướng mình, gọi mỗi khung. p = { x, z, r } (tâm, bán kính = tầm đánh) hoặc null (tắt hẳn: tướng ngã);
