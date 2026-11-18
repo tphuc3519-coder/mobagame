@@ -33,10 +33,14 @@ export function buildLampGlow(posts) {
 }
 
 /** Đom đóm bay lơ lửng (đổi chỗ và nhấp nháy trong shader, không tốn CPU). */
-export function buildFireflies(map, count = 160) {
+/** Đom đóm. accept(x, z): chỉ thả ở chỗ hàm này nhận (bản 5v5: trong các khối cây đá và rừng ngoài biên — không lơ lửng trên lối đi / chỗ
+ *  giao tranh, ánh sáng cộng màu không chen vào hiệu ứng chiêu). */
+export function buildFireflies(map, count = 160, accept = null) {
   const r = rngFor(303), zr = map.road ? [map.road.y - 1300, map.road.y + 1300] : [300, map.h - 300], xr = map.road ? [-300, map.w + 300] : [300, map.w - 300], base = new Float32Array(count * 3), ph = new Float32Array(count);
-  for (let i = 0; i < count; i++) { base[i * 3] = r.range(xr[0], xr[1]); base[i * 3 + 1] = r.range(40, 260); base[i * 3 + 2] = r.range(zr[0], zr[1]); ph[i] = r.range(0, 100); }
-  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(base, 3)); geo.setAttribute('ph', new THREE.BufferAttribute(ph, 1));
+  let n = 0;
+  for (let t = 0; n < count && t < count * 60; t++) { const x = r.range(xr[0], xr[1]), z = r.range(zr[0], zr[1]); if (accept && !accept(x, z)) continue; base[n * 3] = x; base[n * 3 + 1] = r.range(40, 260); base[n * 3 + 2] = z; ph[n] = r.range(0, 100); n++; }
+  count = n;
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(base.subarray(0, count * 3), 3)); geo.setAttribute('ph', new THREE.BufferAttribute(ph.subarray(0, count), 1));
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
     uniforms: { uTime: { value: 0 }, uScale: { value: 500 }, uMap: { value: glowTexture() } },

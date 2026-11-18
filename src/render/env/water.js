@@ -27,6 +27,40 @@ function waveSlope() {
   return (slopeTex = { tex, k: 255 / s }); // d = (mẫu − 128/255) · k
 }
 
+/** GLSL: float riverSD(vec2 p) — khoảng cách có dấu tới mép nước, đúng công thức data/river.js (âm: trong nước). Sông 5v5 có đầm
+ *  quanh hai hang lớn và cù lao giữa đầm nên mép nước không còn là hai đường thẳng: nước, bọt bờ, độ sâu đều tính từ hàm này. */
+export function riverGLSL(R) {
+  const f = (v) => v.toFixed(3), n = R.narrow;
+  const hw = n ? `${f(n.width / 2)} + ${f((R.width - n.width) / 2)} * smoothstep(${f(n.at)}, ${f(n.to)}, min(a, ${f(R.len)} - a))` : f(R.width / 2);
+  return `float rSmin(float a, float b, float k){ float h = clamp(0.5 + (b - a) / (2.0 * k), 0.0, 1.0); return b + (a - b) * h - k * h * (1.0 - h); }
+  float riverSD(vec2 p){
+    float a = (p.x + p.y) * 0.7071068, c = abs(p.y - p.x) * 0.7071068;
+    float d = c - (${hw});${R.pools.map((q) => `
+    d = rSmin(d, (length(vec2((a - ${f(q.a)}) / ${f(q.along)}, c / ${f(q.across)})) - 1.0) * ${f(Math.min(q.along, q.across))}, 260.0);${q.isle ? `
+    d = -rSmin(-d, length(p - vec2(${f(q.x)}, ${f(q.y)})) - ${f(q.isle)}, 90.0);` : ''}`).join('')}
+    return d;
+  }`;
+}
+
+/** Dải lưới phủ mặt sông có hình (đầm, cù lao): chạy dọc trục, mỗi đoạn rộng vừa đủ ôm mép nước + `margin` (bờ lượn / bọt), kéo dài `ext`
+ *  quá hai góc bản đồ cho nước đổ xuống vực. Ít điểm ảnh thừa hơn một tấm phẳng rộng bằng chỗ đầm to nhất. */
+function riverStrip(R, margin = 480, ext = 1600, step = 240) {
+  const halfAt = (a) => {
+    let h = R.half(Math.max(0, Math.min(R.len, a)));
+    for (const q of R.pools) { const t = (a - q.a) / (q.along + 400); if (Math.abs(t) < 1) h = Math.max(h, q.across * Math.sqrt(1 - t * t) + 260); }
+    return h + margin;
+  };
+  const P = [], I = [];
+  for (let a = -ext, n = 0; ; a += step, n++) {
+    const aa = Math.min(a, R.len + ext), h = halfAt(aa);
+    for (const s of [-1, 1]) P.push((aa - s * h) / Math.SQRT2, 0, (aa + s * h) / Math.SQRT2);
+    if (n) { const b = (n - 1) * 2; I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); } // pháp tuyến hướng lên
+    if (aa >= R.len + ext) break;
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(P.length / 3 * 2), 2)); g.setIndex(I);
+  return g;
+}
+
 /** Dòng sông: nước trong (thấy lòng sông bùn sỏi bên dưới), đậm dần ra giữa dòng, sóng lăn tăn từ nhiễu cuộn theo dòng,
  *  phản chiếu trời theo góc nhìn (fresnel), lấp lánh nắng, bọt trắng vỡ dọc hai bờ và quanh chỗ đường lát băng qua (ghềnh cạn).
  *  setMask(bản đồ trộn nền) để chỗ đường đá băng qua sông là nước cạn chảy xiết trên đá thay vì phủ kín.
@@ -34,7 +68,7 @@ function waveSlope() {
  *  'low' = 1 tầng sóng + fresnel + bọt bờ đơn giản. Mẫu texture/điểm ảnh cao/vừa/thấp: 12/10/5 (trước: 26 + ánh đáy mọi nơi). */
 export function buildRiver(map, { detail = 'high' } = {}) {
   const D = detail === 'low' ? 0 : detail === 'mid' ? 1 : 2;
-  const diag = !!map.river.diag, len = diag ? Math.hypot(map.w, map.h) + 3200 : map.h + 4400;
+  const diag = !!map.river.diag, shaped = !!map.river.sd, len = diag ? Math.hypot(map.w, map.h) + 3200 : map.h + 4400;
   const slope = waveSlope();
   const U = { uTime: { value: 0 }, uNoise: { value: noiseSurface() }, uSlope: { value: slope.tex }, uSplat: { value: null }, uXf: { value: new THREE.Vector4(0, 0, 0, 0) }, uHasMask: { value: 0 }, uFlow: { value: diag ? new THREE.Vector2(Math.SQRT1_2, Math.SQRT1_2) : new THREE.Vector2(0, 1) } };
   // tầng sóng: [bước trôi, tỉ lệ, trọng số] (mức Thấp giữ tầng giữa, tăng trọng số cho mặt nước không phẳng lì)
@@ -45,6 +79,7 @@ export function buildRiver(map, { detail = 'high' } = {}) {
     vertexShader: 'varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: `varying vec2 vUv; varying vec3 vW; uniform float uTime, uHasMask; uniform sampler2D uNoise, uSlope, uSplat; uniform vec4 uXf; uniform vec2 uFlow;
       ${abyssGLSL(map, 400)}
+      ${shaped ? riverGLSL(map.river) : ''}
       // Toạ độ dòng chảy: s dọc dòng, t ngang dòng. Dòng giữa chảy nhanh, sát bờ chậm (cắt trượt) → dùng hai pha luân phiên để vân nước không bị kéo giãn.
       vec2 slope(vec2 q){ return (texture2D(uSlope, q).rg - 128.0 / 255.0) * ${slope.k.toFixed(6)}; } // = (h(q+e·x) − h(q), h(q+e·y) − h(q)), tính sẵn
       vec3 waveN(vec2 st, float spd){
@@ -69,9 +104,9 @@ export function buildRiver(map, { detail = 'high' } = {}) {
       void main(){
         if (abyssAt(vW.xz)) discard;                                             // sông đổ xuống vực (thác ở abyss.js)
         vec2 p = vW.xz, fl = uFlow, pr = vec2(-fl.y, fl.x);
-        float edge0 = abs(vUv.x - 0.5) * 2.0 * 1.4;                               // 1 = bờ danh nghĩa (mặt nước rộng 1.4 lần để bờ phình ra được)
+        float edge0 = ${shaped ? `1.0 + riverSD(p) / ${(map.river.width / 2).toFixed(1)}` : 'abs(vUv.x - 0.5) * 2.0 * 1.4'}; // 1 = mép nước, 0 = giữa dòng chính (đầm sâu hơn: âm); tấm nước phủ tới 1.4 để bờ lượn được
         vec2 stp = vec2(dot(p, uFlow), dot(p, vec2(-uFlow.y, uFlow.x)));
-        float side = vUv.x > 0.5 ? 0.0 : 0.5;                                    // hai bờ lượn khác nhau
+        float side = ${shaped ? '(p.y - p.x) > 0.0' : 'vUv.x > 0.5'} ? 0.0 : 0.5;  // hai bờ lượn khác nhau
         float shore = (texture2D(uNoise, vec2(stp.x / 5200.0, 0.21 + side)).r - 0.5) * 0.55${D ? ' + (texture2D(uNoise, vec2(stp.x / 1400.0, 0.63 + side)).g - 0.5) * 0.14' : ''}; // bờ lượn mạnh: vịnh, mũi đất
         float edge = clamp(edge0 + shore + 0.11, 0.0, 1.2);                      // 0 giữa dòng → 1 ở bờ (bờ lượn tự nhiên, không thẳng tắp)
         float vis = smoothstep(1.0, 0.9, edge) * smoothstep(1.4, 1.36, edge0);    // mép nước tan dần vào bờ
@@ -116,11 +151,11 @@ export function buildRiver(map, { detail = 'high' } = {}) {
         #include <colorspace_fragment>
       }`,
   });
-  mat.customProgramCacheKey = () => 'river' + D;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(map.river.width * 1.4, len, 1, 1), mat);
-  m.rotation.x = -Math.PI / 2; m.renderOrder = 1;
-  if (diag) { m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI / 4); m.position.set(map.w / 2, 5, map.h / 2); } // chảy theo đường chéo y = x
-  else m.position.set(map.river.x, 3, map.h / 2);
+  mat.customProgramCacheKey = () => 'river' + D + (shaped ? 's' : '');
+  const m = new THREE.Mesh(shaped ? riverStrip(map.river) : new THREE.PlaneGeometry(map.river.width * 1.4, len, 1, 1), mat);
+  m.renderOrder = 1;
+  if (shaped) m.position.y = 5;                                                                     // dải lưới đã ở toạ độ thế giới
+  else { m.rotation.x = -Math.PI / 2; if (diag) { m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.PI / 4); m.position.set(map.w / 2, 5, map.h / 2); } else m.position.set(map.river.x, 3, map.h / 2); }
   return {
     mesh: m,
     update: (t) => { U.uTime.value = t; },

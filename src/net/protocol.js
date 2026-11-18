@@ -11,7 +11,7 @@ import { SPELLS } from '../data/spells.js';
 import { setupTeams } from '../sim/lineup.js';
 
 export const NET = {
-  version: 5,       // TĂNG mỗi khi đổi mô phỏng / khuôn tin: máy khách và máy chủ khác số thì từ chối nhau (lockstep — khác bản là lệch đồng bộ). 3: gộp online-che-do + đợt 14/11; 4: hỗ trợ thao tác (lệnh assist); 5: đòn đánh thường kiểm lại lúc chạm (16/11)
+  version: 6,       // TĂNG mỗi khi đổi mô phỏng / khuôn tin: máy khách và máy chủ khác số thì từ chối nhau (lockstep — khác bản là lệch đồng bộ). 3: gộp online-che-do + đợt 14/11; 4: hỗ trợ thao tác (lệnh assist); 5: đòn đánh thường kiểm lại lúc chạm (16/11); 6: bản đồ 5v5 dựng lại (rừng bốn phần tư, hang cù lao — tường / trại / bụi đổi chỗ)
   pack: 1,          // số tick mỗi gói khung máy chủ gửi: 1 = gửi ngay mỗi tick (30 gói/giây, vài chục byte/gói) — bớt ~17 ms trễ so với gói 2 tick
   hashEvery: 60,    // máy khách gửi mã băm trạng thái mỗi 2 giây để máy chủ dò lệch đồng bộ
   botAfter: 6,      // giây mất kết nối trước khi máy tạm điều khiển tướng

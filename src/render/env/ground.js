@@ -8,7 +8,7 @@ import { grassSurface, dirtSurface, noiseSurface, pebbleSurface } from './surfac
 // Hướng nắng (để đổ bóng): ánh sáng chính ở lights.js đặt tại (600, 1200, 800) → bóng đổ về (-x, -z).
 export const SUN = { x: -0.5, z: -0.667 };
 
-/** Vẽ bản đồ trộn. o: { x0, z0, w, h, n, lanes: [[[x,z],…] , width], plazas: [{x,z,r}], dirt: [{x,z,r}], river: { pts:[[x,z],[x,z]], width },
+/** Vẽ bản đồ trộn. o: { x0, z0, w, h, n, lanes: [[[x,z],…] , width], plazas: [{x,z,r}], dirt: [{x,z,r}], river: { pts:[[x,z],[x,z]], width } | { sd(x, z) },
  *  casters: [{ x, z, r, h, k }] (bóng tròn), walls: [{ x1,z1,x2,z2, w, h }] } */
 export function bakeGroundMap(o) {
   const N = o.n || 1024, sx = N / o.w, sz = N / o.h, bs = N / 2048; // bán kính làm mờ quy về độ phân giải
@@ -28,13 +28,30 @@ export function bakeGroundMap(o) {
     for (const p of o.plazas) disc(g, p.x, p.z, p.r + 220, '#fff');
     for (const d of o.dirt || []) disc(g, d.x, d.z, d.r, `rgba(255,255,255,${d.k ?? 0.8})`);
   }, 10);
-  const A = layer((g) => { if (o.river) stroke(g, o.river.pts, o.river.width * 1.25, '#fff'); }, 14);
+  const A = o.river?.sd ? sdLayer(o, N, sx, sz) : layer((g) => { if (o.river) stroke(g, o.river.pts, o.river.width * 1.25, '#fff'); }, 14);
   const shade = shadeLayer(o, N, sx, sz, Math.max(1, Math.round(5 * bs)));
   const data = new Uint8Array(N * N * 4);
   for (let i = 0; i < N * N; i++) { data[4 * i] = R[i]; data[4 * i + 1] = G[i]; data[4 * i + 2] = shade[i]; data[4 * i + 3] = A[i]; }
   const tex = new THREE.DataTexture(data, N, N, THREE.RGBAFormat);
   tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = true; tex.needsUpdate = true;
   return { tex, xf: new THREE.Vector4(o.x0, o.z0, 1 / o.w, 1 / o.h), data, N };
+}
+
+/** Lòng sông từ hàm khoảng cách tới mép nước (o.river.sd — data/river.js; âm trong nước): 255 dưới nước, mờ dần về 0 ở ~350 trên bờ
+ *  (như nét vẽ cũ rộng 1,25 lần lòng sông rồi làm mờ). Tính trên lưới nửa độ phân giải rồi nội suy song tuyến: hàm khoảng cách tất định
+ *  (D.hypot) chậm hơn Math.hypot, ¼ số lần gọi giữ thời gian dựng bản đồ trên điện thoại như cũ. */
+function sdLayer(o, N, sx, sz) {
+  const M = (N >> 1) + 1, coarse = new Float32Array(M * M), sd = o.river.sd, ch = new Float32Array(N * N);
+  for (let j = 0; j < M; j++) for (let i = 0; i < M; i++) coarse[j * M + i] = sd(o.x0 + (i * 2 + 0.5) / sx, o.z0 + (j * 2 + 0.5) / sz);
+  for (let j = 0; j < N; j++) {
+    const fj = j / 2, j0 = Math.min(M - 2, Math.floor(fj)), tj = fj - j0;
+    for (let i = 0; i < N; i++) {
+      const fi = i / 2, i0 = Math.min(M - 2, Math.floor(fi)), ti = fi - i0, k = j0 * M + i0;
+      const v = (coarse[k] * (1 - ti) + coarse[k + 1] * ti) * (1 - tj) + (coarse[k + M] * (1 - ti) + coarse[k + M + 1] * ti) * tj;
+      const t = Math.min(1, Math.max(0, (350 - v) / 350)); ch[j * N + i] = 255 * t * t * (3 - 2 * t);
+    }
+  }
+  return ch;
 }
 
 /** Lớp sáng/tối: nền trắng, vẽ bóng đen mờ đè lên (đọc kênh R: 255 sáng, 0 tối). */

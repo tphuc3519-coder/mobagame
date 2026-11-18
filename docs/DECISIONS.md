@@ -1199,3 +1199,29 @@
   - **Cầu đá bản 1v1** (`render/env/floor.js`): mặt cầu lát ở độ cao 18 nhưng `floorAt` không tính → vòng ngắm, dấu mục tiêu, bóng chân, và cả
     vòng tầm đánh mới đều nằm dưới mặt cầu ở đúng chỗ giao tranh nhiều nhất. Sửa ở `floorAt` nên mọi thứ đặt theo mặt nền (kể cả đơn vị —
     trước chân lún 18 đơn vị vào cầu) cùng nổi lên.
+- 2026-11-17: **Bản đồ 5v5 dựng lại bố cục** (`data/maps.js`, `data/river.js` mới; spec: `03_BAN_DO.md` A8 *Bản đang chạy*; kiểm bằng số đo:
+  `tools/t_mapnav.mjs` mới; `NET.version` 5 → 6 vì tường / trại / bụi đổi chỗ). Chủ dự án: hang Long Ngư / Hổ Lôi đặt quanh sông chặn ngang
+  dòng, đường đi lủng củng, sông cắt ngang bản đồ không ăn nhập với đường / rừng / mục tiêu, trông như ghép tạm.
+  - **Hang giữ trên trục sông** (số đo 20/10: lệch về một bờ ⇒ đội bờ đó thắng 60–65%) nhưng **sông nắn lại quanh hang**: dòng chính 1500 hẹp
+    còn 1200 ở hai đầu, phình thành đầm quanh mỗi hang, hang là cù lao giữa đầm, nước chảy vòng hai nhánh. Không chọn kiểu hõm bờ đối xứng
+    tâm (như các game khác) vì chính số đo trên; không chọn để hang chặn dòng như cũ vì đó là lỗi được báo.
+  - **Hang có hai lối thật**: hai vách sườn quay ra hai nhánh (hai bờ của hai đội), miệng hang rộng mở về giữa bản đồ, cửa hậu hẹp mở về đường
+    cánh. Mỗi đội tới bằng nhánh phía mình rồi vào qua miệng hoặc cửa hậu — như nhau cho hai đội. Bỏ "lối từ rừng mỗi bên" của spec gốc: vách
+    sườn có khe thì hang thành sân trống bốn phía, mất chỗ thủ.
+  - **Rừng bốn phần tư giống hệt nhau** (ảnh qua trục sông và trục đường Giữa), mỗi phần tư: bờ rào liền dọc hai đường với cổng đặt ĐÚNG khe giữa
+    hai vòng trụ (vào rừng không ăn đạn trụ), sống đá bờ sông chừa hai cửa sông (bãi đầm cạnh hang, cửa mũi rừng cạnh đường Giữa), ba phòng trại
+    có cung đá ôm lưng mở miệng ra ngã ba giữa rừng. Thay cho hàng chục tảng đá rời + bệ chắn đường cắt khúc đều + ruộng / cột đá đèn cạnh bụi bờ.
+    Số đo đầu tiên của chính `t_mapnav` bắt được hai lỗi phải sửa trước khi chốt: phòng sói ôm vào góc bờ rào – tường nhà tạo bốn **túi đất kín**
+    (đi không tới), cung đá trại cóc chắn trước cổng đường Giữa còn **240** — cả hai đã sửa, nay tuyến hẹp nhất ≥ 530.
+  - **Cột đá đèn đánh dấu lối vào** (cổng rừng: đèn ấm; cổng hang: màu của mục tiêu) — lối vào là thứ người chơi cần thấy từ xa; quầng sáng nhỏ
+    lại (độ đục 0,85 → 0,5) vì có 28 cột.
+  - **Bỏ đá trang trí rải ngẫu nhiên trong sân** (không có va chạm — trông như vật cản mà đi xuyên được) và bộ lọc "bỏ đoạn đá chạm tường nhà"
+    (xoá mất cung đá trại sói đặt có chủ ý). **Đom đóm** chỉ còn trong khối cây đá / rừng ngoài biên (420 → 160 con): ánh sáng cộng màu lơ lửng
+    trên lối đi lẫn với hiệu ứng chiêu. **Hang**: bỏ vòng nứt sáng loang ra nước và quả cầu năng lượng lơ lửng, vết nứt trên bệ dịu đi (0,55 → 0,4).
+  - Hai bụi lớn nằm ngang giữa sông (trông như cầu cỏ) → hai **bãi lau sậy chạy dọc dòng** cùng chỗ, hai bên còn lạch nước trống.
+  - **Giữ nguyên có chủ ý:** đường cỏ (quyết định "Đường cỏ toàn map", chỉ lát đá đoạn nhà chính → trụ nhà) — nay bờ rào + cột đèn cổng làm rõ
+    mép đường; vị trí trụ, nhà chính, Suối Đèn, đường lính, mục tiêu cuối trận (Thần Điểu / Tà Thần) trên mũi đá; luật / chỉ số quái.
+  - Bản đồ nhỏ vẽ sông từng điểm ảnh theo `sd` (đầm, cù lao đúng như cảnh) và tô tối vùng ngoài tường biên (trước lẫn với rừng).
+  - **Công bằng hai phe đo lại** bằng `tools/t_side.mjs` mới (mỗi cặp hai trận cùng đội hình đổi bên — sức mạnh đội hình tự bù trừ), 192 trận
+    mỗi bản: cũ Xanh thắng 50% ± 3,6%, mới 48% ± 3,6% — không bản nào lệch đo được. Một bộ 96 trận riêng lẻ dao động 41–59% ngay trên bản
+    cũ: muốn kết luận về thiên lệch phe phải chạy ≥ 2 bộ seed (tham số thứ tư của `t_side`).

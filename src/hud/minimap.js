@@ -6,6 +6,7 @@ import { prefs } from '../core/prefs.js';
 import { on, track } from '../core/scope.js';
 import { DISP, font as cf } from '../ui/fonts.js';
 import { VIEW, viewX, viewY } from '../core/view.js';
+import { PIT_GLOW } from '../data/maps.js';
 
 const TEAM = ['#38b8ff', '#ff4a3a'];
 // Chú ý: bản đồ nhỏ chỉ hiện thứ đội mình thấy (02 §9); công trình luôn hiện.
@@ -26,11 +27,24 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     // vùng ngoài viền (vách núi)
     const M = map.margin || 0;
     if (M) { c.fillStyle = '#34503a'; const mx = wx(M), my = wy(M); c.fillRect(0, 0, W, my); c.fillRect(0, H - my, W, my); c.fillRect(0, 0, mx, H); c.fillRect(W - mx, 0, mx, H); }
-    // sông
-    c.save();
-    if (map.river.diag) { c.strokeStyle = '#4fb4d8'; c.lineWidth = map.river.width * sx; c.lineCap = 'butt'; c.beginPath(); c.moveTo(-50, -50); c.lineTo(W + 50, H + 50); c.stroke(); }
-    else { c.fillStyle = '#4fb4d8'; c.fillRect(Math.min(wx(map.river.x - map.river.width / 2), wx(map.river.x + map.river.width / 2)), 0, map.river.width * sx, H); }
-    c.restore();
+    // sông + vùng ngoài biên: sông 5v5 có đầm và cù lao hang (data/river.js) nên tô từng điểm ảnh theo khoảng cách tới mép nước — đúng hình nước
+    // trong trận (mép mềm 1 điểm ảnh); vùng ngoài tường biên (vực, không đi được) tối hẳn để không lẫn với rừng
+    if (map.river.sd) {
+      const n = Math.round(W * dpr), m = Math.round(H * dpr), off = document.createElement('canvas'); off.width = n; off.height = m;
+      const oc = off.getContext('2d'), im = oc.createImageData(n, m), d = im.data, px = map.w / n, water = [79, 180, 216], oob = [38, 58, 44];
+      for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
+        const x = viewX((i + 0.5) * px), y = viewY((j + 0.5) * (map.h / m)), k = 4 * (j * n + i);
+        if (map.outOfBounds?.(x, y, 0)) { d[k] = oob[0]; d[k + 1] = oob[1]; d[k + 2] = oob[2]; d[k + 3] = 255; continue; }
+        const a = Math.min(1, Math.max(0, 0.5 - map.river.sd(x, y) / px)); if (!a) continue;
+        d[k] = water[0]; d[k + 1] = water[1]; d[k + 2] = water[2]; d[k + 3] = Math.round(a * 255);
+      }
+      oc.putImageData(im, 0, 0); c.drawImage(off, 0, 0, W, H);
+    } else {
+      c.save();
+      if (map.river.diag) { c.strokeStyle = '#4fb4d8'; c.lineWidth = map.river.width * sx; c.lineCap = 'butt'; c.beginPath(); c.moveTo(-50, -50); c.lineTo(W + 50, H + 50); c.stroke(); }
+      else { c.fillStyle = '#4fb4d8'; c.fillRect(Math.min(wx(map.river.x - map.river.width / 2), wx(map.river.x + map.river.width / 2)), 0, map.river.width * sx, H); }
+      c.restore();
+    }
     // đường
     c.lineJoin = 'round'; c.lineCap = 'butt';
     for (const ln of map.lanes) { c.strokeStyle = '#d6c79e'; c.lineWidth = ln.width * sx; strokePath(c, ln.pts); }
@@ -91,7 +105,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
       // trại quái: bùa xanh/đỏ, quái nhỏ, mục tiêu lớn; trại đã bị hạ thì mờ + đếm ngược (bùa/mục tiêu lớn)
       for (const cp of world.camps || []) {
         const x = wx(cp.x), y = wy(cp.y), up = cp.respawnAt == null, big = cp.boss, buff = cp.type === 'linh_thuy' || cp.type === 'hoa_nham';
-        const col = cp.type === 'linh_thuy' ? '#3fa8ff' : cp.type === 'hoa_nham' ? '#ff5a2a' : big ? ({ long_ngu: '#ffc23a', ho_loi: '#7ac8ff', than_dieu: '#7ae8ff', ta_than: '#b05aff' }[cp.type] || '#b98aff') : '#e8d48a';
+        const col = cp.type === 'linh_thuy' ? '#3fa8ff' : cp.type === 'hoa_nham' ? '#ff5a2a' : big ? (PIT_GLOW[cp.type] != null ? '#' + PIT_GLOW[cp.type].toString(16).padStart(6, '0') : '#b98aff') /* cùng màu đèn cổng hang trong trận (data/maps.js PIT_GLOW) */ : '#e8d48a';
         const R = big ? 7.5 : buff ? 5 : 3.2;
         ctx.globalAlpha = up ? 1 : 0.35; ctx.fillStyle = col; ctx.strokeStyle = '#0b0d1a'; ctx.lineWidth = 1.4;
         ctx.beginPath(); if (big) { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); } ctx.closePath(); } else ctx.arc(x, y, R, 0, 7);

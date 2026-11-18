@@ -750,3 +750,40 @@ Quyết định + lý do: `docs/DECISIONS.md` 2026-11-17; spec: 07 §9 (Cụm n�
 - **Kết quả chạy:** Node: `t_hudlayout` 14, `t_pwa` 18, `t_target` 21, `t_audit` 20, `t_dispose` 9, `t_endcam` 9 đạt (các bộ còn lại không đụng phần nhìn /
   HUD; mô phỏng không đổi). Trình duyệt chạy lần lượt: `b_layout` 138, `b_attack` 10, `b_match` 38, `b_flow` 93 — đạt hết. Chưa thử trên điện thoại thật.
 
+## 17/11 — Bản đồ 5v5 dựng lại: sông có đầm, hang cù lao, rừng bốn phần tư; HUD trong trận theo UI v5
+
+Chủ dự án: hang Long Ngư / Hổ Lôi đặt quanh sông chặn ngang dòng, đường đi lủng củng; sông cắt ngang bản đồ không ăn nhập với đường / rừng /
+mục tiêu; hình ảnh "kiểu AI"; giao diện cần nhất quán. Lý do từng quyết định: `docs/DECISIONS.md` 17/11; số liệu bố cục: `03_BAN_DO.md` A8.
+- **Sông** (`src/data/river.js` mới — một hàm khoảng cách tới mép nước dùng chung cho mặt nước, lòng sông, cỏ lau / lá sen ven bờ, thác, bản đồ
+  nhỏ, tên vùng khi ra tín hiệu): dòng chính hẹp lại ở hai đầu, phình thành đầm quanh hai hang; hang là **cù lao** giữa đầm, nước chảy vòng hai
+  nhánh — đi dọc sông không còn bị hang chặn. Hang vẫn trên trục sông (công bằng hai đội, số đo 20/10).
+- **Hang có hai lối thật**: hai vách sườn quay ra hai nhánh, miệng hang rộng mở về giữa bản đồ, cửa hậu hẹp mở về đường cánh; cột đèn ở bốn
+  đầu vách (màu riêng: Long Ngư hổ phách, Hổ Lôi lam). Vách dựng đúng các đoạn tường va chạm (`lairWallSegs`) — hình và va chạm không lệch.
+  Nhận diện: Long Ngư vách sa thạch ấm + đầm nở sen dày; Hổ Lôi vách bazan sẫm, đầm trống. Bỏ vòng nứt sáng loang ra nước và quả cầu năng lượng.
+- **Rừng bốn phần tư giống hệt nhau**: bờ rào liền dọc đường với cổng đặt đúng khe giữa hai vòng trụ (cột đá đèn hai bên cổng), sống đá bờ
+  sông chừa hai cửa sông, ba phòng trại có cung đá ôm lưng mở ra ngã ba giữa rừng; ba bụi canh ba ngã rẽ. Thay cho hàng chục tảng đá rời +
+  bệ chắn đường cắt khúc + đá trang trí rải ngẫu nhiên (đi xuyên được). Hai bụi lớn nằm ngang sông (như cầu cỏ) → hai bãi lau sậy chạy dọc dòng.
+- **Đom đóm** chỉ trong khối cây đá / rừng ngoài biên, ít hơn (không lơ lửng trên chỗ giao tranh).
+- **Bản đồ nhỏ** vẽ đúng hình nước (đầm, cù lao) và tô tối vùng ngoài tường biên; màu biểu tượng mục tiêu lớn lấy chung `PIT_GLOW` với đèn hang.
+- **HUD theo UI v5** (spec 07 cấm viền mực dày / bóng cứng / chữ đắp nổi / quầng sáng nhưng trong trận còn sót kiểu UI v4): dải thông báo hạ
+  gục, thẻ bị hạ (đếm ngược hồi sinh), số vàng "+N" — nay nền sơn mài, chỉ vàng mảnh, bóng mềm, tiêu đề Fraunces ngà / vàng quỳ; số sát thương
+  giữ một lớp viền (đọc được giữa giao tranh) nhưng mực sơn mài, bỏ lớp "đắp nổi". Không đổi bố cục / cỡ HUD.
+- `NET.version` 5 → 6 (tường / trại / bụi đổi chỗ ⇒ khác mô phỏng).
+- **Kiểm thử mới:** `tools/t_mapnav.mjs` (bố cục bằng số đo: liền khối, không túi đất kín, độ rộng tuyến hẹp nhất tới mọi trại / hang / cổng,
+  hai lối vào hang, sông liền dòng + nước hai bên cù lao, cổng / bụi / trại ngoài tầm trụ, đối xứng, tướng đi thật bằng va chạm của mô phỏng);
+  `tools/t_side.mjs` (thiên lệch phe: từng cặp trận toàn máy cùng đội hình đổi bên). Lần chạy đầu tiên `t_mapnav` bắt được 4 túi đất kín sau
+  phòng trại sói và cổng đường Giữa bị cung đá trại cóc chắn còn 240 — đã sửa trước khi chốt.
+- **Kết quả chạy** (17/11):
+  - Node: 45 / 45 bộ `t_*` + `simtest` đạt (bỏ ba bộ đo nhiều trận `t_arena_batch` / `t_side` / `t_ui_draft`); `t_mapnav` 22 mục; `t_online` +
+    `t_determinism` đạt với `NET.version` 6.
+  - Trình duyệt: `b_match` 36 / 36 (bản đồ nhỏ, tín hiệu "Tập hợp tại Đường Giữa", khoá mục tiêu, áp chế, đồ kích hoạt — 844×390 và 1280×720);
+    chụp kiểm cảnh: toàn bản đồ, hai hang, bãi lau sậy giữa dòng, rừng, bản đồ nhỏ phóng to, thông báo hạ gục + thẻ bị hạ (UI v5), bản đồ 1v1
+    (đường sông thẳng cũ — không lỗi trang). Số vẽ (bảng `?debug`, cùng chỗ camera, trước → sau): hang Long Ngư 107 lượt / 233k tam giác →
+    111 / 260k; rừng 107 / 409k → 112 / 344k; giữa sông 126 / 278k → 101 / 268k.
+  - Toàn máy, cùng seed (`t_arena_batch` 24 trận, trước → sau): bot kẹt > 5 giây **9 → 0**; mạng hạ / trận 16,9 → 21,0; trung vị 16,4 → 15,8
+    phút; mục tiêu lớn / trận 3,71 → 3,58; trại rừng / trận 50,7 → 50,1; 24 / 24 trận kết thúc cả hai bản.
+  - Thiên lệch phe (`t_side`, mỗi cặp cùng đội hình đổi bên, 48 cặp = 96 trận / bộ seed): bản mới seed 300… Xanh 44% ± 5%, seed 500… 52% ± 5% —
+    gộp 92 / 192 = **48% ± 3,6%**; bản cũ seed 300… 59% ± 5%, seed 500… 41% ± 5% — gộp 96 / 192 = **50% ± 3,6%**. Kết luận: cả hai
+    bản đều KHÔNG đo được thiên lệch phe (lệch ±9% giữa hai bộ seed của cùng một bản là nhiễu — đừng kết luận từ một bộ 96 trận); bản mới giữ
+    được công bằng chứ không "sửa" một thiên lệch có sẵn.
+  - Chưa làm: thử trên điện thoại thật (mới chạy WebGL phần mềm), `b_layout` / `b_flow` / `b_perf` (không đổi bố cục DOM của HUD — chỉ vẽ canvas).
