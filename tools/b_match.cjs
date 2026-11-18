@@ -39,6 +39,15 @@ async function open(browser, hero) {
   });
   return { page, ctx, errs };
 }
+/** Đổi cỡ khung nhìn rồi chờ HUD xếp lại xong: sự kiện resize chạy ở lượt vẽ khung kế tiếp — máy không GPU (~4 khung / giây ở 1280×720) có
+ *  thể chậm hơn 400 ms, khi đó vị trí nút đọc ra vẫn là của cỡ cũ và ngón chạm trượt ra ngoài nút (hud/layout.js đặt lại --a, --k3r…). */
+async function resize(page, W, H) {
+  await page.setViewportSize({ width: W, height: H });
+  await page.waitForFunction(([W, H]) => innerWidth === W && innerHeight === H, [W, H], { timeout: 60000, polling: 50 });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // qua hai khung: đã chạy resize + đặt lại biến CSS
+  await page.waitForFunction(() => { const L = window.__game.layout.cur, r = document.querySelector('#skills [data-k="atk"]').getBoundingClientRect(); return Math.abs(r.width - L.a) < 0.6; }, null, { timeout: 60000, polling: 50 });
+  await sleep(400);
+}
 /** Toạ độ màn hình của điểm thế giới (x, y) (render/project.js — cùng phép chiếu với HUD). */
 const screenOf = (page, x, y) => page.evaluate(async ([x, y]) => { const { project } = await import('/src/render/project.js'); const g = window.__game; return project(g.cam.camera, x, 0, y, innerWidth, innerHeight); }, [x, y]);
 /** Chạm nhanh (màn cảm ứng); máy không GPU vẽ mỗi khung rất lâu nên cho chờ lâu. */
@@ -59,7 +68,7 @@ async function items(browser) {
   const { page, ctx, errs } = await open(browser, 'phu_dong');
   for (const [W, H] of SIZES) {
     const tag = `${W}x${H}`;
-    await page.setViewportSize({ width: W, height: H }); await sleep(400);
+    await resize(page, W, H);
     await page.evaluate(async () => { // mua thật qua lệnh buy (lần đầu); cỡ màn sau: đặt thẳng túi đồ
       const g = window.__game, w = g.world, p = g.player, { computeBonus } = await import('/src/sim/inventory.js');
       p.gold = 99999; p.itemCd = {}; p.hp = p.stats.maxHp;
@@ -118,7 +127,7 @@ async function lockon(browser) {
   const { page, ctx, errs } = await open(browser, 'trang_nhi');
   for (const [W, H] of SIZES) {
     const tag = `${W}x${H}`;
-    await page.setViewportSize({ width: W, height: H }); await sleep(400);
+    await resize(page, W, H);
     const pos = await page.evaluate(() => {
       const g = window.__game, w = g.world, p = g.player, { foe, place, c } = window.__t;
       p.skillLevels.s3 = 1; w.debug.resetCooldowns(p); place(p, c.x, c.y); place(foe, c.x + 450, c.y + 120); foe.hp = foe.stats.maxHp;
@@ -143,7 +152,7 @@ async function suppress(browser) {
   const { page, ctx, errs } = await open(browser, 'bong_den');
   for (const [W, H] of SIZES) {
     const tag = `${W}x${H}`;
-    await page.setViewportSize({ width: W, height: H }); await sleep(400);
+    await resize(page, W, H);
     await page.evaluate(() => { const g = window.__game, w = g.world, p = g.player, { foe, place, c } = window.__t; p.skillLevels.s2 = 1; w.debug.resetCooldowns(p); place(p, c.x, c.y); place(foe, c.x + 400, c.y); foe.statuses = []; foe.hp = foe.stats.maxHp; });
     await waitFor(page, () => window.__t.foe.seenBy?.[window.__game.player.team] !== false, 30);
     console.log(`  (chạm ${await tap(page, '#skills [data-k="s2"]')}ms)`);
@@ -164,7 +173,7 @@ async function pings(browser) {
   const hit = (a, b) => a && b && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
   for (const [W, H] of SIZES) {
     const tag = `${W}x${H}`;
-    await page.setViewportSize({ width: W, height: H }); await sleep(400);
+    await resize(page, W, H);
     // hai bot đồng đội đứng trong tầm Tập hợp (PING.gather.range 8000): đầu trận bot còn trong nhà, cách giữa bản đồ ~10.200 ⇒ đúng luật là không ai nhận
     await page.evaluate(() => { const g = window.__game, c = window.__t.c; g.world.pings.length = 0; g.player.pingLog = []; let i = 0; for (const e of g.world.entities) if (e.kind === 'hero' && e.team === g.player.team && e !== g.player && i < 2) window.__t.place(e, c.x - 2500 - 400 * i, c.y + 600 * i++); });
     await tap(page, '#pingBtn'); await page.waitForSelector('#pingWheel:not([hidden]) button[data-k="gather"]', { timeout: 60000 });

@@ -7,8 +7,11 @@ import * as THREE from 'three';
 // - chiêu vùng tại điểm (aoeCircle/zone): vòng mục tiêu có tâm ngắm 4 mũi chụm vào; quạt (cone): hình quạt sáng dần ra mép
 // Dấu mục tiêu đánh thường (mark, hud/atkTarget.js): vòng sát đất dưới đơn vị — khoá (đỏ, 3 mũi chụm vào, nhịp đập) kèm mũi chữ V lơ lửng
 // trên đầu, đang chọn khi kéo nút Đánh (vàng, như khoá), đang bị đánh (vòng cam đứt nét xoay). Nằm ngoài nhóm chỉ báo ngắm nên hide() không tắt.
+// Vòng tầm đánh thường (atkRange, hud/skillButtons.js): cùng đĩa tầm với lúc vuốt chiêu, hiện mỗi khi đang đánh thường; cũng nằm ngoài nhóm
+// chỉ báo ngắm. Đang ngắm chiêu / phép thì nhường chỗ (hai đĩa tầm khác cỡ chồng nhau không đọc được đĩa nào là của chiêu).
 const OK = new THREE.Color(0x6fd6ff), BAD = new THREE.Color(0xff5a4a);
 const MARK_C = { lock: new THREE.Color(0xff3030), pick: new THREE.Color(0xffd24d), atk: new THREE.Color(0xff8a3d) }, MARK_K = { lock: 0, pick: 1, atk: 2 };
+const ATK_IN = 0.1, ATK_HOLD = 0.4, ATK_FADE = 0.25; // vòng tầm đánh: hiện dần (giây), thôi đánh thì giữ thêm rồi mờ dần — chạm nhanh một cái vẫn kịp thấy
 const CAM_PITCH = 55 * Math.PI / 180; // render/camera.js: mũi chữ V quay mặt về camera (camera không xoay ngang)
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 const HEAD = `varying vec2 vUv; uniform vec3 uC; uniform float uA; uniform vec2 uSize;
@@ -19,11 +22,11 @@ const mk = (frag, extra = {}) => new THREE.ShaderMaterial({
 });
 
 // đĩa tầm: tâm (0.5,0.5), toạ độ chuẩn hoá theo bán kính
-const RANGE = mk(`void main(){ vec2 p = (vUv - 0.5) * 2.0; float r = length(p); if (r > 1.0) discard;
+const RANGE = mk(`uniform float uFill; void main(){ vec2 p = (vUv - 0.5) * 2.0; float r = length(p); if (r > 1.0) discard;
   float px = 2.0 / uSize.x; // 1 đơn vị thế giới theo bán kính
-  float fill = 0.1 + 0.24 * pow(r, 4.0);
+  float fill = (0.1 + 0.24 * pow(r, 4.0)) * uFill;
   float rim = edge(r - 1.0 + 7.0 * px, 7.0 * px) * 0.85 + edge(r - 1.0 + 26.0 * px, 3.0 * px) * 0.25;
-  gl_FragColor = vec4(uC * (1.0 + rim * 0.6), (fill + rim) * uA); }`);
+  gl_FragColor = vec4(uC * (1.0 + rim * 0.6), (fill + rim) * uA); }`, { uFill: { value: 1 } });
 // vòng mục tiêu tại điểm: đĩa + viền + 4 mũi chụm vào tâm + chấm giữa
 const RETICLE = mk(`void main(){ vec2 p = (vUv - 0.5) * 2.0; float r = length(p); if (r > 1.0) discard;
   float px = 2.0 / uSize.x;
@@ -82,8 +85,26 @@ export function createIndicators(scene, { floor = null } = {}) { // floor: độ
   const marks = [0, 1].map(() => { const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2); const o = new THREE.Mesh(geo, mk(MARK, { uKind: { value: 0 }, uT: { value: 0 } })); o.renderOrder = 3; o.frustumCulled = false; o.visible = false; scene.add(o); return o; });
   const chev = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mk(CHEV)); // chỉ dấu số 0 (khoá / đang chọn)
   chev.material.depthTest = false; chev.rotation.x = -CAM_PITCH; chev.scale.set(120, 100, 1); chev.renderOrder = 5; chev.frustumCulled = false; chev.visible = false; scene.add(chev);
+  const atk = new THREE.Mesh(range.geometry, RANGE.clone()); // clone(): uniform riêng (uSize, uA, uFill), dùng chung hình phẳng với đĩa tầm
+  atk.material.uniforms.uFill.value = 0.4; // cùng viền với đĩa tầm của chiêu, phần tô nhạt hơn: vòng này hiện suốt lúc giữ Đánh, tô đậm là cả sân ám xanh
+  atk.renderOrder = 3; atk.frustumCulled = false; atk.visible = false; scene.add(atk);
+  let atkLast = -1e9, atkA = 0, atkAt = 0, atkR = 0; // lần cuối còn đang đánh (giây), độ rõ hiện tại, lần gọi trước, bán kính đang vẽ
   return {
     hide() { g.visible = false; },
+    /** Vòng tầm đánh đang hiện? Trả bán kính (đơn vị thế giới) hoặc 0. (kiểm thử trình duyệt) */
+    atkRangeShown: () => (atk.visible ? atkR : 0),
+    /** Vòng tầm đánh thường quanh tướng mình, gọi mỗi khung. p = { x, z, r } (tâm, bán kính = tầm đánh) hoặc null (tắt hẳn: tướng ngã);
+     *  on: đang đánh thường (giữ / vừa chạm nút Đánh, đang vung). Thôi đánh: giữ ATK_HOLD giây rồi mờ dần; đang ngắm chiêu: ẩn. */
+    atkRange(p, on) {
+      const now = performance.now() / 1000, dt = Math.min(0.1, Math.max(0, now - atkAt)); atkAt = now;
+      if (on) atkLast = now;
+      const want = !p || g.visible ? 0 : Math.max(0, Math.min(1, 1 - (now - atkLast - ATK_HOLD) / ATK_FADE));
+      atkA = want > atkA ? Math.min(want, atkA + dt / ATK_IN) : want;
+      if (!p || atkA <= 0.01) { atk.visible = false; return; }
+      const d = p.r * 2; atkR = p.r;
+      atk.visible = true; atk.position.set(p.x, 5 + (floor ? floor(p.x, p.z, p.r) : 0), p.z); atk.scale.set(d, 1, d); // thấp hơn đĩa tầm của chiêu 1 đơn vị
+      atk.material.uniforms.uSize.value.set(d, d); atk.material.uniforms.uA.value = atkA;
+    },
     /** Dấu mục tiêu số k đang hiện? (kiểm thử trình duyệt) */
     markShown: (k) => !!marks[k]?.visible,
     /** Dấu mục tiêu số k (0: khoá / đang chọn — vòng + mũi chữ V trên đầu, 1: đang bị đánh — vòng). p = { x, z, y (độ cao nền), r (bán kính

@@ -150,21 +150,25 @@
   /* —— HUD kiểu Liên Quân: bản đồ nhỏ trái trên; cửa hàng dưới bản đồ nhỏ (hoặc bên phải, tuỳ cài đặt); cụm nút phụ ở đáy; kỹ năng phải dưới —— */
   #skills { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: var(--skw); height: var(--skh); z-index: 4; }
   /* số đo HUD: hud/layout.js tính theo khổ màn / vùng an toàn / màn chạm / Cài đặt cỡ nút rồi ghi đè trên :root; đây là giá trị lúc JS chưa chạy */
-  :root { --a: clamp(88px, calc(22 * var(--rvh, 1vh)), 124px); --s: calc(var(--a) * 0.68); --m: max(44px, calc(var(--s) * 0.66)); --skw: calc(var(--a) + var(--m) * 0.95 + var(--s) + 22px); --skh: calc(var(--a) + var(--s) * 1.4 + var(--m) * 0.5 + 26px);
+  :root { --a: clamp(88px, calc(23 * var(--rvh, 1vh)), 124px); --s: calc(var(--a) * 0.8); --m: max(44px, calc(var(--a) * 0.46)); --arc: calc(var(--a) * 0.5 + var(--s) * 0.5 + var(--m) + 12px); --skw: calc(var(--a) * 0.5 + var(--arc) + var(--s) * 0.5); --skh: calc(var(--skw) + 24px);
     --mini: clamp(50px, calc(13 * var(--rvh, 1vh)), 66px); --item: calc(var(--mini) * 1.1); --gp: 64px; --qi: min(52px, calc(var(--gp) - 4px)); }
   .atk { right: 0; bottom: 0; width: var(--a); height: var(--a); background: var(--g-red); font-size: 17px; border: 1px solid var(--line); box-shadow: var(--hl), 0 6px 16px rgba(0,0,0,.3); }
   .atk .ic, .atk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk { width: var(--s); height: var(--s); padding: 0; border: 0; background: none; box-shadow: 0 0 0 1px var(--line), 0 8px 20px rgba(0,0,0,.34); } /* vòng kim loại mảnh (viền .sb tắt ở nút chiêu để tranh tròn phủ kín) */
   .sk .art { position: absolute; inset: 0; width: 100%; height: 100%; }
   .sk.sb { overflow: visible; } .sk .clip { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; display: grid; place-items: center; } /* cắt tròn phần trong; nút + nằm ngoài, tràn lên trên viền */
-  .sk[data-k="s1"] { right: calc(var(--a) + var(--m) * 0.95 + 16px); bottom: 2px; } .sk[data-k="s2"] { right: calc(var(--a) * 0.86 + 6px); bottom: calc(var(--a) * 0.8 + 6px); } .sk[data-k="s3"] { right: calc(var(--s) * 0.05); bottom: calc(var(--a) + var(--m) * 0.5 + 26px); width: calc(var(--s) * 1.1); height: calc(var(--s) * 1.1); }
+  /* ba nút chiêu bằng nhau, trên một cung tròn quanh tâm nút Đánh (K1 −2°, K2 45°, K3 92°), cách đều; bán kính cung --arc chừa vừa một nút Ăn lính /
+     Đẩy trụ giữa nút Đánh và nút chiêu. Chỗ từng nút do hud/layout.js clusterDims tính (--k1r … --k3b: mép phải / mép dưới); calc() là lúc JS chưa chạy */
+  .sk[data-k="s1"] { right: var(--k1r, calc(var(--a) * 0.5 + var(--arc) * 0.9994 - var(--s) * 0.5)); bottom: var(--k1b, calc(var(--a) * 0.5 - var(--arc) * 0.0349 - var(--s) * 0.5)); }
+  .sk[data-k="s2"] { right: var(--k2r, calc(var(--a) * 0.5 + var(--arc) * 0.7071 - var(--s) * 0.5)); bottom: var(--k2b, calc(var(--a) * 0.5 + var(--arc) * 0.7071 - var(--s) * 0.5)); }
+  .sk[data-k="s3"] { right: var(--k3r, calc(var(--a) * 0.5 - var(--arc) * 0.0349 - var(--s) * 0.5)); bottom: var(--k3b, calc(var(--a) * 0.5 + var(--arc) * 0.9994 - var(--s) * 0.5)); }
   /* nút Ăn lính (dưới-trái nút Đánh) và Đẩy trụ (trên-phải nút Đánh), như Liên Quân; d = khoảng cách tâm tới tâm nút Đánh */
   .amode { --d: calc(var(--a) * 0.5 + var(--m) * 0.5 + 9px); width: var(--m); height: var(--m); padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--g-head); box-shadow: var(--hl), 0 4px 12px rgba(0,0,0,.28); display: grid; place-items: center; }
   .amode svg { width: 76%; height: 76%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); } .amode.down { background: var(--g-red); border-color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
   /* kẹp ≥ 0: nút không thò ra ngoài khung #skills — khung đã chừa vùng an toàn (tai thỏ, thanh vuốt), thò ra là lấn vào đó (b_flow ranked844) */
   .amode[data-k="minion"] { right: calc(var(--a) * 0.5 + var(--d) * 0.94 - var(--m) * 0.5); bottom: max(0px, calc(var(--a) * 0.5 - var(--d) * 0.342 - var(--m) * 0.5)); }
   .amode[data-k="tower"] { right: max(0px, calc(var(--a) * 0.5 - var(--d) * 0.469 - var(--m) * 0.5)); bottom: calc(var(--a) * 0.5 + var(--d) * 0.883 - var(--m) * 0.5); }
-  .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: 20px; text-shadow: 0 1px 3px rgba(0,0,0,.7); } .sk .nm { display: none; }
+  .sk .cd { z-index: 2; border-radius: 0; } .sk .cdt { z-index: 3; font-size: clamp(17px, calc(var(--s) * 0.3), 30px); text-shadow: 0 1px 3px rgba(0,0,0,.7); } .sk .nm { display: none; }
   .sk .sknm { display: none; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); z-index: 6; padding: 1px 7px; border-radius: 8px; background: #0b0e1ed9; color: #fff; font: 700 11px/1.3 var(--f-disp); white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.7); pointer-events: none; }
   #skills.names .sk .sknm { display: block; } /* Cài đặt: tên chiêu dưới nút */
   .sk .lvring { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }

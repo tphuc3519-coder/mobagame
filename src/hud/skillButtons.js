@@ -6,6 +6,8 @@
 // kéo nút Đánh về phía một địch (vòng ngắm như kỹ năng) — thả ra thì đánh + khoá nó. Khoá / chạm chọn địch / dấu / luật chọn mục tiêu: atkTarget.js.
 // Chiêu khoá mục tiêu (aim 'target'): chạm nhanh gửi kèm id mục tiêu đang khoá; kéo thì dấu vàng xem trước tướng mô phỏng sẽ chọn (cùng hàm
 // pickSkillTarget) và gửi đúng id đó — mô phỏng dùng nếu còn hợp lệ, không thì tự chọn như thường.
+// Vòng tầm đánh (indicators.atkRange): mỗi khi đang đánh thường — giữ / chạm nút Đánh, Ăn lính, Đẩy trụ, phím J, hoặc đòn đang vung — quanh
+// tướng hiện đĩa tầm đánh như lúc vuốt chiêu; thôi đánh thì mờ dần. Đang kéo ngắm (chiêu, phép, Đánh thường chính xác) thì chỉ báo ngắm thay chỗ.
 import { flipDir } from '../core/view.js';
 import { lv } from '../data/heroes/_levels.js';
 import { quickTarget } from '../sim/targeting.js';
@@ -215,6 +217,11 @@ export function createSkillButtons(root, { world, player, indicators, camera = n
         setAimFocus('skill', pt, rangeOf(sp)); // góc quay theo định vị (camLook.js)
       }
       tgt.update();
+      if (indicators.atkRange) { // vòng tầm đánh: theo vị trí tướng đã nội suy (unitView) để không giật khi vừa chạy vừa đánh
+        const v = views?.get(player.id), on = atkHeld || !!burst || player.attacking || world.tick < (player.swingUntil || 0);
+        const r = player.stats.range + (player.statuses.find((st) => st.kind === 'nextRange')?.value || 0); // đòn kế được cộng tầm: vòng nới theo
+        indicators.atkRange(player.alive ? { x: v ? v.root.position.x : player.pos.x, z: v ? v.root.position.z : player.pos.y, r } : null, on);
+      }
     },
     /** Mục tiêu đang khoá và dấu xem trước (dùng chung với nút đồ kích hoạt khoá mục tiêu — spellButtons.js). */
     lockId: () => tgt.lockId(),
