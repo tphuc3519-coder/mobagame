@@ -12,7 +12,7 @@ Tất cả toạ độ tính bằng đơn vị thế giới, gốc (0,0) ở gó
 - Kích thước **6400 × 6400**.
 - Đội Xanh (team 0) góc **dưới trái**, đội Đỏ (team 1) góc **trên phải**.
 - **Đối xứng qua đường chéo y = x:** mọi vật thể của Đỏ = vật thể tương ứng của Xanh với `(x, y) → (y, x)`. Code chỉ khai báo phía Xanh + vật thể trung lập, rồi sinh phía Đỏ bằng hàm `mirror()`.
-- **Sông** chạy theo đường chéo từ (700,700) tới (5700,5700), rộng 500 (hẹp 400 ở hai đầu), phình thành đầm quanh hai hang lớn — hang là cù lao giữa đầm (xem *Bản đang chạy* ở A8). Mục tiêu lớn và vật thể trung lập nằm trên trục này.
+- **Sông** chạy theo đường chéo từ (700,700) tới (5700,5700), rộng 500 (hẹp 400 ở hai đầu), uốn chữ S tránh hai hang lớn nằm trong hõm bờ hai bên (xem *Bản đang chạy* ở A8). Mục tiêu lớn và vật thể trung lập ở quanh trục này.
 
 ### A2. Ba đường
 
@@ -121,61 +121,71 @@ chấm xanh lá (mờ khi đang chờ).
 - **Tường:** khai báo trong `maps/arena5v5.js` dạng hình chữ nhật xoay được và đa giác lồi. Yêu cầu tối thiểu:
   - Tường bao quanh căn cứ, mở 3 cửa đúng hướng 3 đường.
   - Mỗi vùng rừng có 3–5 khối tường tạo lối mòn, mỗi bãi quái có ít nhất 2 lối vào.
-  - Hố mục tiêu lớn có 2 lối vào từ sông và 1 lối từ rừng mỗi bên. *(Bản đang chạy: hang là cù lao giữa đầm — miệng hang + cửa hậu, mỗi đội tới bằng nhánh sông phía mình; xem dưới.)*
+  - Hố mục tiêu lớn có 2 lối vào từ sông và 1 lối từ rừng mỗi bên. *(Bản đang chạy: hang trong hõm bờ — miệng hang ra sông + cửa sau về rừng phe chủ; xem dưới.)*
 - **Bụi cỏ** (phía Xanh, Đỏ = swap): cạnh Đường Đền (1250, 1600), (650, 3100); cạnh Đường Giữa (2050, 3600), (2900, 4050); cạnh Đường Sông (3300, 5150), (4800, 5750); cửa sông (2150, 2750), (3650, 4350). Ngoài ra 2 bụi trung lập giữa sông: (3000, 3450), (3450, 3000). Kích thước bụi 350×220 xoay theo hướng đường gần nhất.
 - Tường phải được khai báo sao cho **không chặn** bất kỳ đường nào của lính.
 
-**Bản đang chạy — bố cục dựng lại 17/11/2026** (`src/data/maps.js` + `src/data/river.js`; toạ độ gốc 6400 × 6400, nhân K = 3 ra đơn vị
-thế giới; sơ đồ 2D: `tools/mapplan.html`, `?nav=1` tô thêm ô lưới bị chặn; kiểm bằng số đo: `node tools/t_mapnav.mjs`). Bảng toạ độ A6–A7 ở
-trên là bản gợi ý ban đầu; số đúng là các số dưới đây.
+**Bản đang chạy — bố cục 18/11/2026** (`src/data/maps.js` + `src/data/river.js`; toạ độ gốc 6400 × 6400, nhân K = 3 ra đơn vị thế giới;
+sơ đồ 2D: `tools/mapplan.html`, `?nav=1` tô thêm ô lưới bị chặn; kiểm bằng số đo: `node tools/t_mapnav.mjs`; thiên lệch phe: `node tools/t_side.mjs`).
+Bảng toạ độ A6–A7 ở trên là bản gợi ý ban đầu; số đúng là các số dưới đây.
 
-*Vì sao làm lại.* Bản trước: sông là một dải thẳng rộng đều, hai hang lớn đặt đè lên giữa dòng nên chặn ngang sông (đi dọc sông phải lách
-vách hang); rừng là hàng chục tảng đá rời rạc + bệ chắn đường cắt khúc theo nhịp đều, thêm đá trang trí rải ngẫu nhiên trong sân (trông như vật
-cản nhưng đi xuyên được); bản đồ nhỏ vẽ sông thẳng không khớp cảnh.
+*Lịch sử.* 17/11: sông thẳng có hai hang đè giữa dòng chặn ngang sông → nắn thành đầm, hang là cù lao trên trục sông, rừng bốn phần tư
+có bờ rào + cổng (thay hàng chục tảng đá rời và đá trang trí đi xuyên được). 18/11: chủ dự án gửi ảnh bản đồ 5v5 của một game thương mại,
+yêu cầu xây lại "y chang". **Không sao chép màn chơi đó** (quy tắc 8, và chính đề bài ban đầu: "không chép bản đồ có sẵn") — chỉ lấy
+CẤU TRÚC chung của thể loại đọc được từ ảnh: rừng + hang đối xứng xoay 180°, mỗi đội một hang trong hõm bờ phía mình, sông uốn tránh hang,
+bùa đỏ ở phần rừng có hang của đội đó, bụi dọc bờ sông. Vị trí cụ thể, tên, hình, quái là của game.
 
-*Hai trục đối xứng.* Trục sông y = x (Xanh ↔ Đỏ — công bằng hai đội) và trục đường Giữa x + y = 6400 (rừng phía đường Đền ↔ rừng phía đường
-Sông). Chỉ khai **một phần tư rừng mẫu** (rừng Đền phía Xanh: tam giác giữa đường Đền, đường Giữa, sông); ba phần tư kia là ảnh qua hai
-trục. Hai hang lớn Long Ngư / Hổ Lôi là ảnh của nhau qua trục đường Giữa (chỉ khác bán kính hang như trước).
+*Đối xứng.* Đường + trụ + nhà chính + Suối Đèn đối xứng gương qua trục sông y = x (như cũ — đường Đền của Xanh ↔ đường Đền của Đỏ). Rừng,
+sông, bụi, trại, hai hang lớn đối xứng **xoay 180° quanh tâm** `(x, y) → (6400 − x, 6400 − y)`. Phía Xanh khai hai phần tư: rừng Đền
+(phần tư mẫu) và rừng Sông = ảnh của rừng Đền qua trục đường Giữa (trụ hai đường cánh của một đội đối xứng qua trục này nên cổng rừng
+vẫn rơi đúng khe giữa hai vòng trụ); phía Đỏ = ảnh xoay của cả hai. Hệ quả: bùa xanh của Đỏ nằm ở rừng phía đường Sông, bùa đỏ của Đỏ ở
+rừng phía đường Đền (cạnh hang Hổ Lôi).
 
 *Sông* (`data/river.js`, chỉ để nhìn / định hướng — nước không cản, không làm chậm; mô phỏng không đọc):
 - Dòng chính rộng 1500, hẹp dần còn 1200 ở hai đầu (chỗ đường cánh băng qua; khoảng 2600 → 5200 tính từ đầu trục).
-- Quanh mỗi hang lớn sông **phình thành đầm** (elip bán trục 2000 dọc dòng × 1500 ngang dòng); hang là **cù lao** giữa đầm (bán kính
-  vách hang + 190), nước chảy vòng hai nhánh, mỗi nhánh ~600: đi dọc sông từ giữa bản đồ ra đường cánh không còn bị hang chặn.
-- Một hàm `sd(x, y)` (khoảng cách có dấu tới mép nước) dùng chung cho mặt nước (shader `riverGLSL`), lòng sông trên nền, cỏ lau / lá sen / đá
-  ven bờ, thác đổ xuống vực, khe tường biên, bản đồ nhỏ, tên vùng "Sông" khi ra tín hiệu.
+- **Khúc chữ S**: quanh mỗi hang, tim dòng lệch 650 sang bờ đối diện hang và lòng sông nở thêm 250 mỗi bên, tác động trong ±2600 dọc trục
+  (nhân mềm có biên). Bệ hang (bán kính 907 — lấy theo hang lớn hơn cho hai bên đối xứng tuyệt đối) lấn ra lòng sông; nước vẫn chảy liền
+  qua trước miệng hang với lòng rộng ≥ 900 (`t_mapnav` đo dọc tim dòng).
+- Một hàm `sd(x, y)` (khoảng cách có dấu tới mép nước) dùng chung cho mặt nước (shader `riverGLSL` + dải lưới bám theo tim dòng), lòng sông
+  trên nền, cỏ lau / lá sen / đá ven bờ, thác đổ xuống vực, khe tường biên, bản đồ nhỏ, tên vùng "Sông" khi ra tín hiệu, bụi mép nước.
 
-*Hang lớn trên cù lao* (`lairWallSegs`, cùng một danh sách đoạn cho va chạm và dựng hình):
-- Long Ngư (1850, 1850) gần đường Đền, Hổ Lôi (4550, 4550) gần đường Sông — vẫn **trên trục sông** (đo 64 trận toàn máy đổi bên: hang lệch về
-  một bờ thì đội bờ đó thắng 60–65%, trên trục 47–54% — DECISIONS 20/10).
-- Hai vách đá sườn hình cung (mỗi vách 4 đoạn, cao dần về giữa) quay ra hai nhánh sông = hai bờ của hai đội. **Miệng hang** rộng (nửa góc
-  0,96 rad) mở về giữa bản đồ; **cửa hậu** hẹp (nửa góc 0,44 rad) mở về phía đường cánh. `t_mapnav` chặn tạm từng lối trên lưới đường đi và
-  kiểm vẫn vào được qua lối kia.
+*Hang lớn trong hõm bờ* (`lairWallSegs`, cùng một danh sách đoạn cho va chạm và dựng hình):
+- **Hổ Lôi** (2077, 1723) — bờ Đỏ, gần đường Đền (phút 8); **Long Ngư** (4323, 4677) — bờ Xanh, gần đường Sông (phút 2, "rồng" của đường
+  đôi Xạ thủ + Trợ thủ). Tâm hang nằm đúng mép dòng chính (cách trục 250 gốc); hai hang là ảnh xoay 180° của nhau.
+- Hai vách sườn hình cung (mỗi vách 4 đoạn, cao dần về giữa), **miệng hang** rộng (nửa góc 0,96 rad) mở ra sông — đội kia tới bằng đường sông;
+  **cửa sau** hẹp (nửa góc 0,44 rad) mở về rừng phe chủ — đi từ cổng ngoài đường cánh vào tới cửa sau ~1 150. `t_mapnav` kiểm: tâm hang trên đất,
+  trước miệng là nước, sau cửa là đất liền; chặn tạm từng lối trên lưới đường đi vẫn vào được qua lối kia.
 - Bốn cột đá đèn ở bốn đầu vách đánh dấu hai lối vào (cùng kiểu cột cổng rừng), đèn mang màu nhận diện (`PIT_GLOW`: Long Ngư hổ phách, Hổ
-  Lôi lam). Nhận diện thêm bằng chất đá: vách Long Ngư sa thạch ấm + đầm nở sen dày; vách Hổ Lôi bazan sẫm ám lam, đầm trống.
+  Lôi lam). Nhận diện thêm bằng chất đá: vách Long Ngư sa thạch ấm + nước quanh hang nở sen dày; vách Hổ Lôi bazan sẫm, nước trống.
+- Bùa đỏ của mỗi đội ở phần rừng có hang của đội đó (rừng Sông phía Xanh, rừng Đền phía Đỏ); bụi bãi bờ ngay sau cửa sau hang.
 
-*Một phần tư rừng mẫu* (toạ độ gốc; phần tư khác lấy ảnh):
+*Một phần tư rừng mẫu* — rừng Đền phía Xanh (toạ độ gốc; rừng Sông phía Xanh = ảnh qua trục đường Giữa, phía Đỏ = ảnh xoay 180°):
 - **Bờ rào đường Đền** x = 1180 (dày 300, mép cách mép đường 40), từ mép đầm y 1780 tới tường nhà y 4185, mở **cổng ngoài** y 2120–2340 (giữa
   vòng trụ ngoài và trụ trong) và **cổng trong** y 3265–3485 (giữa trụ trong và trụ nhà). Vào rừng qua cổng không ăn đạn trụ.
 - **Bờ rào đường Giữa** song song đường, lùi 380 vào rừng, từ tường nhà (quãng 1480 tính từ nhà chính) tới quãng 2860, mở **cổng đường Giữa**
   quãng 2200–2420 (giữa trụ trong và trụ ngoài).
 - **Cột đá đèn lồng** đứng ở hai đầu mỗi cổng (đoạn dài 0 = va chạm tròn, nằm trong đầu bờ rào nên không làm hẹp cổng): 12 cổng toàn bản đồ.
-- **Sống đá bờ sông** (tim cách trục sông 420, dày 750, s = (x + y)/2 từ 2227 tới 2404): ngăn rừng với sông, chừa hai cửa sông — **bãi đầm**
-  (giữa bờ rào đường Đền và đầu sống đá, ra thẳng hang lớn) và **cửa mũi rừng** (giữa cuối sống đá và trại cóc).
+- **Sống đá bờ sông** (tim cách trục sông 460, dày 750, s = (x + y)/2 từ 2330 tới 2480 — lùi khỏi khúc sông uốn tránh hang bờ bên kia): ngăn
+  rừng với sông, chừa hai cửa sông — **bãi bờ** (giữa bờ rào đường cánh và đầu sống đá) và **cửa mũi rừng** (giữa cuối sống đá và trại cóc).
 - **Ba phòng trại**, mỗi phòng có cung đá ôm lưng (r = lòng phòng, face = hướng miệng, span = góc ôm):
   bùa (1590, 2900; r 250, mở về đông, span 180 — tựa bờ rào giữa hai cổng), sói (1490, 3935; r 230, mở lên bắc, span 200 — lưng lấp kín góc
   bờ rào / tường nhà, không để túi đất kín), cóc (2274, 3193; r 180, mở về tây bắc, span 140 — mũi rừng, lưng tựa bờ rào đường Giữa).
   Rừng Đền: bùa xanh (Linh Thuỷ); rừng Sông: bùa đỏ (Hoả Nham).
-- **Bụi**: bãi đầm (1405, 2265) ngay trong cổng ngoài; cửa mũi rừng (2190, 2860); trong cổng đường Giữa (1905, 3760). Không bụi nào trong tầm trụ.
-- Lối chính: cổng ngoài → bãi đầm → đầm hang lớn; bãi đầm → (giữa phòng bùa và sống đá) → ngã ba giữa rừng; cổng trong → sân giữa phòng bùa
+- **Đảo đá giữa ngã ba** (1880, 3330) → (1960, 3450), dày 330 (18/11): chia ngã ba trống giữa ba miệng phòng trại thành hai lối vòng, chỗ
+  núp cạnh trại — cách mép phòng bùa ~640, phòng cóc ~510, phòng sói ~1 170, cổng đường Giữa ~800 (thế giới).
+- **Bụi**: bãi bờ (1405, 2265) ngay trong cổng ngoài (rừng Đền: nhìn sang hang địch; rừng Sông: ngay sau cửa sau hang mình); cửa mũi rừng
+  (2308, 2972); trong cổng đường Giữa (1905, 3760). Không bụi nào trong tầm trụ.
+- Lối chính: cổng ngoài → bãi bờ → sông (rừng Đền: sang hang địch qua sông; rừng Sông: thẳng tới cửa sau hang mình); bãi bờ → (giữa phòng bùa và sống đá) → ngã ba giữa rừng; cổng trong → sân giữa phòng bùa
   và phòng sói → ngã ba; cổng đường Giữa → giữa phòng sói và phòng cóc → ngã ba; ngã ba ↔ cửa mũi rừng ↔ sông. Mọi tuyến tới trại / hang /
   cổng rộng ≥ 530 (hẹp nhất là cổng: 660 giữa hai đầu bờ rào).
 
-*Bụi ngoài rừng*: bốn bụi mép nước ở bốn cửa sông sát đường cánh (khai một, ba bụi kia là ảnh qua hai trục); hai **bãi lau sậy giữa dòng**
-hai bên chỗ đường Giữa băng qua sông, chạy dọc dòng chảy (s 2730 ± 210 và 3670 ± 210, bán kính 330 thế giới), hai bên còn lạch nước trống ~420.
+*Bụi ngoài rừng* (khai phía Xanh, phía Đỏ là ảnh xoay; bám đúng mép nước của sông uốn — `bankBush`): hai bụi mép nước ở cửa sông đầu đường Đền
+(hai bờ); một bụi mép nước canh lối hông hang Long Ngư (giữa sống đá và vách hang); hai **bãi lau sậy giữa dòng** hai bên chỗ đường Giữa băng
+qua sông, chạy dọc dòng chảy (s 2730 ± 210 và 3670 ± 210, bán kính 330 thế giới), hai bên còn lạch nước trống ~420.
 
 *Kiểm thử* `tools/t_mapnav.mjs`: vùng chơi liền một khối, không túi đất kín > 12 ô; độ rộng hẹp nhất của tuyến rộng nhất (maximin) tới từng trại /
-hang / cổng ≥ 420; hai lối vào hang; sông liền dòng và có nước hai bên cù lao; cổng / bụi / trại ngoài tầm trụ; tim ba đường cách mọi khối đá ≥
-nửa bề rộng đường − 60; đối xứng tường / bụi / sông; một tướng bán kính 40 đi thật (bước 10 + đẩy khỏi tường như mô phỏng) theo đường A* tới
+hang / cổng ≥ 420; hang trên đất, miệng ra nước, cửa sau về đất, hai lối vào thật; sông liền dòng theo tim dòng uốn, lòng hẹp nhất ≥ 900;
+cổng / bụi / trại ngoài tầm trụ; tim ba đường cách mọi khối đá ≥ nửa bề rộng đường − 60; đối xứng xoay 180° tường / bụi / trại / sông; một tướng bán kính 40 đi thật (bước 10 + đẩy khỏi tường như mô phỏng) theo đường A* tới
 mọi trại, hang, cổng và nhà địch không kẹt.
 
 ### A9. Nhịp trận mục tiêu

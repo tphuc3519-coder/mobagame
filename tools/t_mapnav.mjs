@@ -1,6 +1,7 @@
 // Kiểm thử bố cục bản đồ 5v5 bằng số đo (không bằng mắt): vùng chơi liền một khối, từ hai nhà tới được mọi trại / hang / cổng rừng / đoạn
-// đường, hành lang đủ rộng, hang lớn có HAI lối vào thật (miệng hang + cửa hậu), sông liền dòng và chảy vòng hai bên cù lao hang, cổng rừng
-// và bụi ngoài tầm trụ, đối xứng hai đội; cuối cùng cho một tướng đi thật (va chạm của mô phỏng) theo đường tìm được tới từng đích.
+// đường, hành lang đủ rộng, hang lớn trong hõm bờ có HAI lối vào thật (miệng hang ra sông + cửa sau về rừng phe chủ), sông liền dòng theo
+// tim dòng uốn, cổng rừng và bụi ngoài tầm trụ, đối xứng XOAY 180° giữa hai đội; cuối cùng cho một tướng đi thật (va chạm của mô phỏng) theo
+// đường tìm được tới từng đích.
 // Dùng: node tools/t_mapnav.mjs   (in thêm bảng độ rộng hẹp nhất của từng tuyến để chỉnh bố cục)
 import { ARENA as M, bushRects, structuresOf, LAIR_R, PIT_GATE } from '../src/data/maps.js';
 import { buildNavGrid, CELL } from '../src/sim/navgrid.js';
@@ -76,14 +77,12 @@ const narrow = rows2.filter(([, w]) => w < MIN_W);
 ok(`mọi tuyến tới trại / hang / cổng rộng ≥ ${MIN_W}`, !narrow.length, narrow.map(([n, w]) => `${n}: ${w | 0}`).join('; '));
 console.log('     độ rộng hẹp nhất từng tuyến:', rows2.map(([n, w]) => `${n.replace('Suối Đèn ', '')} ${w | 0}`).join(' · '));
 
-// —— 3) hang lớn: cù lao giữa đầm, HAI lối vào thật ——
+// —— 3) hang lớn trong hõm bờ: tâm trên đất, miệng hang nhìn ra nước, cửa sau là đất của rừng phe chủ, HAI lối vào thật ——
 for (const L of lairs) {
-  const R = LAIR_R[L.type], back = L.back, dry = M.river.sd(L.x, L.y) > 0;
-  ok(`${L.id}: hang nằm trên cù lao (đất khô giữa đầm)`, dry, `sd ${M.river.sd(L.x, L.y) | 0}`);
-  const isle = M.river.pools.find((p) => Math.hypot(p.x - L.x, p.y - L.y) < 10)?.isle || 0, side = isle + 320;
-  const px = -Math.sin(back), py = Math.cos(back); // vuông góc trục sông
-  ok(`${L.id}: nước chảy vòng cả hai bên cù lao`, [1, -1].every((s) => M.river.sd(L.x + px * side * s, L.y + py * side * s) < -100),
-    [1, -1].map((s) => (M.river.sd(L.x + px * side * s, L.y + py * side * s) | 0)).join(' / '));
+  const R = LAIR_R[L.type], back = L.back, at = (dir, k) => M.river.sd(L.x + Math.cos(dir) * R * k, L.y + Math.sin(dir) * R * k);
+  ok(`${L.id}: tâm hang trên đất (bệ hang ở mép bờ)`, M.river.sd(L.x, L.y) > 0, `sd ${M.river.sd(L.x, L.y) | 0}`);
+  ok(`${L.id}: miệng hang mở ra sông (trước miệng là nước)`, at(back + Math.PI, 1.8) < -100, `sd ${at(back + Math.PI, 1.8) | 0}`);
+  ok(`${L.id}: cửa sau thông về đất liền (rừng phe chủ)`, at(back, 1.8) > 100, `sd ${at(back, 1.8) | 0}`);
   // chặn tạm miệng hang (hoặc cửa hậu) trên lưới: tâm hang vẫn phải tới được qua lối còn lại
   const viaOnly = (shut) => {
     const saved = new Map(), dirA = shut === 'mouth' ? back + Math.PI : back, half = shut === 'mouth' ? PIT_GATE.mouth : PIT_GATE.rear;
@@ -99,18 +98,15 @@ for (const L of lairs) {
   ok(`${L.id}: vào được qua miệng hang khi cửa hậu bị chặn`, viaOnly('rear'));
 }
 
-// —— 4) sông liền dòng từ góc này sang góc kia (dọc trục, tránh cù lao: đi vòng một nhánh) ——
+// —— 4) sông liền dòng từ góc này sang góc kia: dọc TIM DÒNG (uốn quanh hai hang) luôn là nước, và nước trước miệng mỗi hang đủ rộng ——
 {
-  let dryRun = 0, worst = 0;
+  let dryRun = 0, worst = 0, narrowest = Infinity;
   for (let a = 600; a < M.river.len - 600; a += 120) {
-    const x = a / Math.SQRT2, y = a / Math.SQRT2; let sd = M.river.sd(x, y);
-    if (sd > 0) { // trên cù lao: thử lệch sang nhánh
-      const p = M.river.pools.find((q) => Math.hypot(q.x - x, q.y - y) < q.isle + 50);
-      if (p) { const off = (p.isle + 300) / Math.SQRT2; sd = M.river.sd(x - off, y + off); }
-    }
-    dryRun = sd > 0 ? dryRun + 120 : 0; worst = Math.max(worst, dryRun);
+    const c = M.river.center(a), x = (a - c) / Math.SQRT2, y = (a + c) / Math.SQRT2, sd = M.river.sd(x, y);
+    dryRun = sd > 0 ? dryRun + 120 : 0; worst = Math.max(worst, dryRun); narrowest = Math.min(narrowest, -2 * sd);
   }
-  ok('sông chảy liền một mạch từ góc Thần Điểu tới góc Tà Thần', worst === 0, worst ? `đứt ${worst}` : '');
+  ok('sông chảy liền một mạch từ góc Thần Điểu tới góc Tà Thần (theo tim dòng)', worst === 0, worst ? `đứt ${worst}` : '');
+  ok('lòng sông hẹp nhất ≥ 900 (cả đoạn chảy qua trước miệng hang)', narrowest >= 900, `${narrowest | 0}`);
 }
 
 // —— 5) cổng rừng / bụi / trại ngoài tầm trụ ——
@@ -134,20 +130,25 @@ ok('trại quái ngoài tầm trụ', camps.every((c) => towerGap(c.x, c.y) > 30
   ok('tim ba đường cách mọi khối đá ≥ nửa bề rộng đường − 60', worst >= M.lanes[0].width / 2 - 60, `${worst | 0}`);
 }
 
-// —— 7) đối xứng hai đội (ảnh qua trục sông y = x) ——
+// —— 7) đối xứng hai đội: rừng, sông, bụi, trại là ảnh XOAY 180° quanh tâm (vách các hang mục tiêu khác nhau theo loại → chỉ kiểm vị trí hang) ——
 {
-  const same = (a, b) => Math.abs(a - b) < 2;
-  const hasMirror = (w) => M.walls.segs.some((o) => same((o.w ?? 0), (w.w ?? 0)) && ((same(o.x1, w.y1) && same(o.y1, w.x1) && same(o.x2, w.y2) && same(o.y2, w.x2)) || (same(o.x1, w.y2) && same(o.y1, w.x2) && same(o.x2, w.y1) && same(o.y2, w.x1))));
-  const miss = M.walls.segs.filter((w) => !hasMirror(w));
-  ok('mọi khối đá có ảnh đối xứng phía bên kia', !miss.length, miss.slice(0, 3).map((w) => `(${w.x1 | 0},${w.y1 | 0})`).join(' '));
-  const bk = (b) => b.cap ? b.cap.map((v) => Math.round(v / 5)).join(',') : [b.x, b.y, b.w, b.h].map((v) => Math.round(v / 5)).join(',');
-  const bm = (b) => b.cap ? bk({ cap: [b.cap[1], b.cap[0], b.cap[3], b.cap[2]] }) : bk({ x: b.y, y: b.x, w: b.h, h: b.w });
-  const bm2 = (b) => b.cap ? bk({ cap: [b.cap[3], b.cap[2], b.cap[1], b.cap[0]] }) : bm(b);
-  const bs = new Set(bushRects(M).map(bk)), bmiss = bushRects(M).filter((b) => !bs.has(bm(b)) && !bs.has(bm2(b)));
-  ok('mọi bụi cỏ có ảnh đối xứng phía bên kia', !bmiss.length, bmiss.slice(0, 3).map((b) => `(${(b.x ?? b.cap[0]) | 0},${(b.y ?? b.cap[1]) | 0})`).join(' '));
+  const same = (a, b) => Math.abs(a - b) < 2, Wd = M.w, Hd = M.h;
+  const rot = (w) => ({ ...w, x1: Wd - w.x1, y1: Hd - w.y1, x2: Wd - w.x2, y2: Hd - w.y2 });
+  const match = (o, w) => same(o.w ?? 0, w.w ?? 0) && ((same(o.x1, w.x1) && same(o.y1, w.y1) && same(o.x2, w.x2) && same(o.y2, w.y2)) || (same(o.x1, w.x2) && same(o.y1, w.y2) && same(o.x2, w.x1) && same(o.y2, w.y1)));
+  const plain = M.walls.segs.filter((w) => !w.lair), miss = plain.filter((w) => !plain.some((o) => match(o, rot(w))));
+  ok('mọi khối đá / bờ rào / cột cổng có ảnh xoay 180° phía bên kia', !miss.length, miss.slice(0, 3).map((w) => `(${w.x1 | 0},${w.y1 | 0})`).join(' '));
+  const pits = lairs.map((L) => [L.x, L.y]), bossAll = M.camps.filter((c) => c.boss);
+  ok('hai hang lớn là ảnh xoay của nhau; hai hang cuối trận cũng vậy', bossAll.every((c) => bossAll.some((o) => same(o.x, Wd - c.x) && same(o.y, Hd - c.y))), pits.map(([x, y]) => `(${x | 0},${y | 0})`).join(' '));
+  const bush = bushRects(M), bkey = (b) => (b.cap ? [b.cap[0], b.cap[1], b.cap[2], b.cap[3], b.r] : [b.x, b.y, b.w, b.h]);
+  const brot = (b) => (b.cap ? [Wd - b.cap[0], Hd - b.cap[1], Wd - b.cap[2], Hd - b.cap[3], b.r] : [Wd - b.x, Hd - b.y, b.w, b.h]);
+  const bmatch = (k, q) => k.length === q.length && (k.every((v, i) => same(v, q[i])) || (k.length === 5 && same(k[0], q[2]) && same(k[1], q[3]) && same(k[2], q[0]) && same(k[3], q[1]) && same(k[4], q[4])));
+  const bmiss = bush.filter((b) => !bush.some((o) => bmatch(bkey(o), brot(b))));
+  ok('mọi bụi cỏ có ảnh xoay 180° phía bên kia', !bmiss.length, bmiss.slice(0, 3).map((b) => `(${(b.x ?? b.cap[0]) | 0},${(b.y ?? b.cap[1]) | 0})`).join(' '));
+  const camps = M.camps.filter((c) => !c.boss);
+  ok('mọi trại quái có ảnh xoay 180° cùng loại phía bên kia', camps.every((c) => camps.some((o) => o.type === c.type && o.side !== c.side && same(o.x, Wd - c.x) && same(o.y, Hd - c.y))));
   const sd = [];
-  for (let i = 0; i < 400; i++) { const x = (i * 7919) % M.w, y = (i * 104729) % M.h; sd.push(Math.abs(M.river.sd(x, y) - M.river.sd(y, x))); }
-  ok('hình sông đối xứng qua trục', Math.max(...sd) < 1, Math.max(...sd).toFixed(3));
+  for (let i = 0; i < 400; i++) { const x = (i * 7919) % M.w, y = (i * 104729) % M.h; sd.push(Math.abs(M.river.sd(x, y) - M.river.sd(Wd - x, Hd - y))); }
+  ok('hình sông đối xứng xoay 180°', Math.max(...sd) < 1, Math.max(...sd).toFixed(3));
 }
 
 // —— 8) đi thật: tướng bán kính 40, bước 10 đơn vị + đẩy khỏi tường (va chạm của mô phỏng) theo đường A* tới từng đích ——

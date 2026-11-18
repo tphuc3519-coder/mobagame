@@ -787,3 +787,21 @@ mục tiêu; hình ảnh "kiểu AI"; giao diện cần nhất quán. Lý do t�
     bản đều KHÔNG đo được thiên lệch phe (lệch ±9% giữa hai bộ seed của cùng một bản là nhiễu — đừng kết luận từ một bộ 96 trận); bản mới giữ
     được công bằng chứ không "sửa" một thiên lệch có sẵn.
   - Chưa làm: thử trên điện thoại thật (mới chạy WebGL phần mềm), `b_layout` / `b_flow` / `b_perf` (không đổi bố cục DOM của HUD — chỉ vẽ canvas).
+
+## 18/11 — Bản đồ 5v5 theo cấu trúc ảnh tham chiếu: hang hõm bờ hai bên sông, sông chữ S, rừng đối xứng xoay 180°
+
+Chủ dự án gửi ảnh bản đồ 5v5 của Liên Quân Mobile, yêu cầu xây lại "y chang". Không sao chép màn chơi của game thương mại (quy tắc 8, đề bài
+ban đầu) — dựng lại theo cấu trúc chung của thể loại đọc được từ ảnh; lý do + số đo: `docs/DECISIONS.md` 18/11, số liệu: `03_BAN_DO.md` A8.
+- **Hang trong hõm bờ, mỗi đội một hang** (đối xứng xoay 180°): Hổ Lôi bờ Đỏ gần đường Đền, Long Ngư bờ Xanh gần đường Sông (đổi chỗ so với
+  17/11). Bệ hang lấn ra lòng sông; miệng hang mở ra sông, cửa sau về rừng phe chủ; cột đèn bốn đầu vách.
+- **Sông chữ S** (`river.js`: `bends` + `isles`): tim dòng uốn tránh hang sang bờ kia, lòng nở rộng; nước liền dòng qua trước miệng hang.
+  Shader nước tách hàng nhiễu bờ theo tim dòng thật (không để lại vệt giữa lòng nước ở khúc uốn).
+- **Rừng đối xứng xoay 180°** giữa hai đội (đường + trụ vẫn gương): phía Đỏ sinh bằng phép xoay — bùa xanh của Đỏ ở rừng phía đường Sông, bùa
+  đỏ của Đỏ cạnh Hổ Lôi; mỗi phần tư thêm một đảo đá giữa ngã ba; bụi mép nước bám đúng bờ sông uốn (cửa sông đầu đường Đền, lối hông hang).
+- `t_mapnav` đổi sang kiểm đối xứng xoay + hang hõm bờ (tâm hang trên đất, miệng ra nước, cửa sau về đất, hai lối vào thật, sông liền dòng
+  theo tim dòng uốn với lòng hẹp nhất ≥ 900). `NET.version` 6 → 7.
+- **Kết quả chạy** (18/11): Node 46 / 46 bộ `t_*` + `simtest` (`t_mapnav` 27 mục, `t_online` với `NET.version` 7). Thiên lệch phe `t_side` (cặp
+  trận cùng đội hình đổi bên): seed 300… 50% ± 5%, seed 500… 48% ± 5% → gộp **49% ± 3,6%**. `t_arena_batch` 24 trận cùng seed với các lần
+  trước: bot kẹt > 5 giây 0; mạng hạ / trận 21,3; mục tiêu lớn bị hạ / trận **4,42** (bản 17/11: 3,58 — hang hõm bờ có cửa sau từ rừng);
+  trại / trận 50,8; 24 / 24 trận kết thúc (tỉ lệ Xanh thắng của công cụ này không đo phe — xem DECISIONS 18/11).
+  Trình duyệt: `b_match` 38 / 38; chụp kiểm cảnh hai hang hõm bờ, khúc sông chữ S, đảo đá giữa ngã ba, toàn bản đồ (không lỗi trang).

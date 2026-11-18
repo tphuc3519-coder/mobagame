@@ -27,33 +27,34 @@ function waveSlope() {
   return (slopeTex = { tex, k: 255 / s }); // d = (mẫu − 128/255) · k
 }
 
-/** GLSL: float riverSD(vec2 p) — khoảng cách có dấu tới mép nước, đúng công thức data/river.js (âm: trong nước). Sông 5v5 có đầm
- *  quanh hai hang lớn và cù lao giữa đầm nên mép nước không còn là hai đường thẳng: nước, bọt bờ, độ sâu đều tính từ hàm này. */
+/** GLSL: float riverSD(vec2 p) — khoảng cách có dấu tới mép nước, đúng công thức data/river.js (âm: trong nước). Sông 5v5 uốn chữ S tránh
+ *  hai hang lấn ra lòng sông nên mép nước không còn là hai đường thẳng: nước, bọt bờ, độ sâu đều tính từ hàm này. */
 export function riverGLSL(R) {
   const f = (v) => v.toFixed(3), n = R.narrow;
   const hw = n ? `${f(n.width / 2)} + ${f((R.width - n.width) / 2)} * smoothstep(${f(n.at)}, ${f(n.to)}, min(a, ${f(R.len)} - a))` : f(R.width / 2);
   return `float rSmin(float a, float b, float k){ float h = clamp(0.5 + (b - a) / (2.0 * k), 0.0, 1.0); return b + (a - b) * h - k * h * (1.0 - h); }
+  float rBump(float t){ float u = 1.0 - min(1.0, t * t); return u * u; }
+  vec2 riverCH(vec2 p){ // (tim dòng c0, nửa bề rộng) tại vị trí dọc trục của p
+    float a = (p.x + p.y) * 0.7071068, c0 = 0.0, hw = ${hw};${R.bends.map((b) => `
+    { float k = rBump((a - ${f(b.a)}) / ${f(b.half)}); c0 += ${f(b.shift)} * k; hw += ${f(b.widen)} * k; }`).join('')}
+    return vec2(c0, hw);
+  }
+  float riverSide(vec2 p){ return (p.y - p.x) * 0.7071068 - riverCH(p).x; } // > 0: nửa lòng sông phía bờ Xanh (tính từ tim dòng)
   float riverSD(vec2 p){
-    float a = (p.x + p.y) * 0.7071068, c = abs(p.y - p.x) * 0.7071068;
-    float d = c - (${hw});${R.pools.map((q) => `
-    d = rSmin(d, (length(vec2((a - ${f(q.a)}) / ${f(q.along)}, c / ${f(q.across)})) - 1.0) * ${f(Math.min(q.along, q.across))}, 260.0);${q.isle ? `
-    d = -rSmin(-d, length(p - vec2(${f(q.x)}, ${f(q.y)})) - ${f(q.isle)}, 90.0);` : ''}`).join('')}
+    vec2 ch = riverCH(p);
+    float d = abs((p.y - p.x) * 0.7071068 - ch.x) - ch.y;${R.isles.map((q) => `
+    d = -rSmin(-d, length(p - vec2(${f(q.x)}, ${f(q.y)})) - ${f(q.r)}, 90.0);`).join('')}
     return d;
   }`;
 }
 
-/** Dải lưới phủ mặt sông có hình (đầm, cù lao): chạy dọc trục, mỗi đoạn rộng vừa đủ ôm mép nước + `margin` (bờ lượn / bọt), kéo dài `ext`
- *  quá hai góc bản đồ cho nước đổ xuống vực. Ít điểm ảnh thừa hơn một tấm phẳng rộng bằng chỗ đầm to nhất. */
+/** Dải lưới phủ mặt sông có hình (khúc uốn, chỗ nở): chạy dọc trục, mỗi lát ôm đúng lòng sông tại đó (tim dòng ± nửa bề rộng) + `margin`
+ *  (bờ lượn / bọt), kéo dài `ext` quá hai góc bản đồ cho nước đổ xuống vực. Ít điểm ảnh thừa hơn một tấm phẳng rộng bằng chỗ nở to nhất. */
 function riverStrip(R, margin = 480, ext = 1600, step = 240) {
-  const halfAt = (a) => {
-    let h = R.half(Math.max(0, Math.min(R.len, a)));
-    for (const q of R.pools) { const t = (a - q.a) / (q.along + 400); if (Math.abs(t) < 1) h = Math.max(h, q.across * Math.sqrt(1 - t * t) + 260); }
-    return h + margin;
-  };
   const P = [], I = [];
   for (let a = -ext, n = 0; ; a += step, n++) {
-    const aa = Math.min(a, R.len + ext), h = halfAt(aa);
-    for (const s of [-1, 1]) P.push((aa - s * h) / Math.SQRT2, 0, (aa + s * h) / Math.SQRT2);
+    const aa = Math.min(a, R.len + ext), ac = Math.max(0, Math.min(R.len, aa)), c0 = R.center(ac), h = R.half(ac) + margin;
+    for (const s of [-1, 1]) { const c = c0 + s * h; P.push((aa - c) / Math.SQRT2, 0, (aa + c) / Math.SQRT2); }
     if (n) { const b = (n - 1) * 2; I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); } // pháp tuyến hướng lên
     if (aa >= R.len + ext) break;
   }
@@ -106,7 +107,7 @@ export function buildRiver(map, { detail = 'high' } = {}) {
         vec2 p = vW.xz, fl = uFlow, pr = vec2(-fl.y, fl.x);
         float edge0 = ${shaped ? `1.0 + riverSD(p) / ${(map.river.width / 2).toFixed(1)}` : 'abs(vUv.x - 0.5) * 2.0 * 1.4'}; // 1 = mép nước, 0 = giữa dòng chính (đầm sâu hơn: âm); tấm nước phủ tới 1.4 để bờ lượn được
         vec2 stp = vec2(dot(p, uFlow), dot(p, vec2(-uFlow.y, uFlow.x)));
-        float side = ${shaped ? '(p.y - p.x) > 0.0' : 'vUv.x > 0.5'} ? 0.0 : 0.5;  // hai bờ lượn khác nhau
+        float side = ${shaped ? 'riverSide(p) > 0.0' : 'vUv.x > 0.5'} ? 0.0 : 0.5;  // hai bờ lượn khác nhau (tách ở tim dòng — sông uốn)
         float shore = (texture2D(uNoise, vec2(stp.x / 5200.0, 0.21 + side)).r - 0.5) * 0.55${D ? ' + (texture2D(uNoise, vec2(stp.x / 1400.0, 0.63 + side)).g - 0.5) * 0.14' : ''}; // bờ lượn mạnh: vịnh, mũi đất
         float edge = clamp(edge0 + shore + 0.11, 0.0, 1.2);                      // 0 giữa dòng → 1 ở bờ (bờ lượn tự nhiên, không thẳng tắp)
         float vis = smoothstep(1.0, 0.9, edge) * smoothstep(1.4, 1.36, edge0);    // mép nước tan dần vào bờ

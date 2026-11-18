@@ -1225,3 +1225,21 @@
   - **Công bằng hai phe đo lại** bằng `tools/t_side.mjs` mới (mỗi cặp hai trận cùng đội hình đổi bên — sức mạnh đội hình tự bù trừ), 192 trận
     mỗi bản: cũ Xanh thắng 50% ± 3,6%, mới 48% ± 3,6% — không bản nào lệch đo được. Một bộ 96 trận riêng lẻ dao động 41–59% ngay trên bản
     cũ: muốn kết luận về thiên lệch phe phải chạy ≥ 2 bộ seed (tham số thứ tư của `t_side`).
+- 2026-11-18: **Bản đồ 5v5 theo cấu trúc ảnh tham chiếu của chủ dự án — rừng + hang đối xứng xoay 180°, hang trong hõm bờ, sông chữ S**
+  (`data/maps.js`, `data/river.js`; spec `03_BAN_DO.md` A8; `NET.version` 6 → 7). Chủ dự án gửi ảnh bản đồ 5v5 của một game thương mại (Liên
+  Quân Mobile), yêu cầu "xây lại y chang". **Không sao chép màn chơi đó** — vi phạm quy tắc 8 (không dùng hình / thiết kế của game thương mại
+  khác) và chính đề bài ban đầu ("không chép bản đồ có sẵn, hiểu logic thiết kế rồi làm bản của mình"). Chỉ lấy cấu trúc chung của thể loại
+  đọc được từ ảnh, vị trí cụ thể / tên / hình / quái là của game:
+  - **Đối xứng hai lớp**: đường + trụ + nhà chính vẫn đối xứng gương qua trục sông (đường Đền của hai đội là cùng một đường); rừng, sông, bụi,
+    trại, hai hang lớn đối xứng **xoay 180°** — mỗi đội một hang ở bờ phía mình: Hổ Lôi bờ Đỏ gần đường Đền, Long Ngư bờ Xanh gần đường Sông
+    (đổi chỗ so với 17/11: mục tiêu sớm phút 2 nằm cạnh đường đôi Xạ thủ + Trợ thủ như quy ước thể loại). Phía Đỏ sinh bằng `ptSeg` / `ptBush`
+    / trại `A − x` thay cho ảnh gương; rừng phía Xanh giữ khung 17/11 (bờ rào, cổng đúng khe giữa hai vòng trụ, phòng trại).
+  - **Hang trong hõm bờ**: tâm hang ở mép dòng chính, bệ lấn ra lòng sông; miệng hang rộng mở ra sông (đội kia tới bằng đường sông), cửa sau hẹp
+    về rừng phe chủ; vẫn dựng vách đúng đoạn va chạm (`lairWallSegs`), cột đèn bốn đầu vách. Bùa đỏ mỗi đội ở phần rừng có hang của đội đó.
+  - **Sông chữ S** (`river.js`: `bends` + `isles` thay `pools`): tim dòng lệch 650 sang bờ đối diện hang, nở thêm 250, trong ±2600 dọc trục;
+    shader nước tách hàng nhiễu bờ theo tim dòng thật (tách theo trục y = x sẽ để lại vệt giữa lòng nước ở khúc uốn).
+  - Quyết định 20/10 dời hang lên trục sông vì "đội có hang bên mình thắng 60–65%" (50–64 trận) — số đo 17/11 cho thấy một bộ 96 trận dao động
+    41–59% ngay trên cùng một bản đồ, nên số cũ không đủ để kết luận. Đo lại bố cục mới bằng `t_side` (cặp trận đổi bên, hai bộ seed): seed 300… Xanh 50% ± 5%, seed 500… 48% ± 5% — gộp
+    94 / 192 = **49% ± 3,6%** (cặp "phe quyết định" Xanh 14 / Đỏ 16): hang hai bờ khác nhau không tạo lệch phe đo được. Lưu ý: tỉ lệ "Xanh
+    thắng" của `t_arena_batch` KHÔNG đo phe — ô người chơi phía Xanh trong công cụ đó không mua đồ khởi đầu / chọn phép theo vị trí như 9 tướng
+    máy còn lại (`sim/lineup.js`), và đội hình không đổi bên; chỉ dùng nó cho số bot kẹt, mạng hạ, mục tiêu, trại.

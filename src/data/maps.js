@@ -103,22 +103,26 @@ function arcWalls(cx, cy, r0, face, span = 200, n = 3, w = 460) {
   return out;
 }
 
-// ── Bố cục rừng: MỘT phần tư rừng mẫu, ba phần tư kia là ảnh đối xứng ───────────────────────────────────────────────────────────────
-// Bản đồ có hai trục đối xứng: trục sông y = x (Xanh ↔ Đỏ) và trục đường Giữa x + y = 6400 (rừng phía đường Đền ↔ rừng phía đường Sông).
-// Chỉ khai phần tư "rừng Đền phía Xanh" — tam giác giữa đường Đền (x = 800), đường Giữa và sông; `anti` lật nó qua trục đường Giữa thành
-// rừng Sông phía Xanh, `mirrorSeg` lật cả hai sang phía Đỏ. Bốn phần tư giống hệt nhau nên không đường nào, đội nào lợi hơn về địa hình.
+// ── Bố cục rừng + hang: ĐỐI XỨNG XOAY 180° giữa hai đội (như các MOBA ba đường), đường + trụ vẫn đối xứng gương ────────────────
+// Đường và trụ đối xứng qua trục sông y = x (đường Đền của Xanh ↔ đường Đền của Đỏ). Rừng, sông và hai hang lớn đối xứng XOAY 180° quanh
+// tâm (`pt`): mỗi đội có MỘT hang trong hõm bờ phía mình — Hổ Lôi ở bờ Đỏ gần đường Đền, Long Ngư ở bờ Xanh gần đường Sông — miệng hang
+// mở ra sông (đội kia tới bằng đường sông), cửa sau thông về rừng phe chủ; bùa đỏ mỗi đội ở phần rừng có hang của đội đó.
+// Phía Xanh khai hai phần tư: rừng Đền (tam giác giữa đường Đền x = 800, đường Giữa và sông) là phần tư mẫu, rừng Sông là ảnh của nó qua trục
+// đường Giữa (`anti` — trụ hai đường cánh của một đội đối xứng qua trục này nên cổng rừng vẫn rơi đúng khe giữa hai vòng trụ); phía Đỏ là ảnh
+// xoay 180° của cả hai (`pt`).
 //
-// Mỗi phần tư là các KHỐI ĐẤT ĐÁ liền mảng (không còn rải tảng đá lẻ), giữa chúng là lối đi rộng ≥ 530 (nhiều tướng dàn hàng):
-//   · bờ rào đường Đền: khối liền dọc mép đường, mở đúng HAI cổng giữa các vòng trụ (ngoài–trong, trong–nhà): vào rừng không ăn đạn trụ;
+// Mỗi phần tư là các KHỐI ĐẤT ĐÁ liền mảng (không rải tảng đá lẻ), giữa chúng là lối đi rộng ≥ 530 (nhiều tướng dàn hàng):
+//   · bờ rào đường cánh: khối liền dọc mép đường, mở đúng HAI cổng giữa các vòng trụ (ngoài–trong, trong–nhà): vào rừng không ăn đạn trụ;
 //   · bờ rào đường Giữa: mở MỘT cổng giữa trụ ngoài và trụ trong (khoảng trụ trong–nhà đã nằm trong tường nhà);
-//   · sống đá bờ sông: ngăn rừng với sông, chừa HAI cửa sông — bãi đầm (cạnh hang lớn) và cửa mũi rừng (cạnh đường Giữa);
+//   · sống đá bờ sông: ngăn rừng với sông, chừa HAI cửa sông — bãi bờ (phía góc bản đồ) và cửa mũi rừng (cạnh đường Giữa);
 //   · ba hõm trại quái tựa lưng vào bờ rào, miệng mở ra lối dọc giữa rừng: bùa (giữa), sói (gần nhà), cóc (mũi rừng, gần cửa sông).
-// Lối chính: cổng ngoài → bãi đầm → hang lớn; lối dọc giữa rừng nối bãi đầm – miệng trại bùa – cổng trong – trại sói – cổng đường Giữa;
-// lối mũi rừng nối cửa sông – trại cóc – lối dọc. tools/t_mapnav.mjs đo: không túi đất kín, tuyến tới mọi trại / hang / cổng rộng ≥ 530.
+// tools/t_mapnav.mjs đo: không túi đất kín, tuyến tới mọi trại / hang / cổng rộng ≥ 530, hai lối vào mỗi hang, đối xứng xoay.
 const HEDGE_W = 300, HEDGE_X = 800 + (LANE_W / 2 + HEDGE_W / 2 + 40) / K;          // bờ rào: dày 300, mép cách mép đường 40 (đơn vị thế giới)
 const anti = ([x, y]) => [6400 - y, 6400 - x];                                      // lật qua trục đường Giữa (toạ độ gốc)
 const antiSeg = (w) => { const [x1, y1] = anti([w.x1 / K, w.y1 / K]), [x2, y2] = anti([w.x2 / K, w.y2 / K]); return { ...w, x1: x1 * K, y1: y1 * K, x2: x2 * K, y2: y2 * K }; };
 const seg = (x1, y1, x2, y2, w, f = {}) => ({ x1: x1 * K, y1: y1 * K, x2: x2 * K, y2: y2 * K, w, ...f });
+const pt = ([x, y]) => [6400 - x, 6400 - y];                                          // xoay 180° quanh tâm (toạ độ gốc): phía Xanh → phía Đỏ
+const ptSeg = (w) => ({ ...w, x1: A - w.x1, y1: A - w.y1, x2: A - w.x2, y2: A - w.y2 }); // cùng phép xoay cho đoạn tường (toạ độ thế giới)
 /** Điểm trên bờ rào đường Giữa (phía rừng Đền): cách nhà chính Xanh `d` dọc đường, lùi vào rừng `off` tính từ tim đường (toạ độ gốc). */
 const midPt = (d, off = HEDGE_X - 800) => [800 + (d - off) / Math.SQRT2, 5600 - (d + off) / Math.SQRT2];
 /** Điểm cách trục sông `c` về phía Xanh, tại vị trí s dọc trục (x = y = s) — toạ độ gốc. */
@@ -137,20 +141,23 @@ const Q_POSTS = [
   [HEDGE_X, GATE.outer[0] - HR], [HEDGE_X, GATE.outer[1] + HR], [HEDGE_X, GATE.inner[0] - HR], [HEDGE_X, GATE.inner[1] + HR],
   midPt(GATE.mid[0] - HR), midPt(GATE.mid[1] + HR),
 ].map(([x, y]) => seg(x, y, x, y, 240, { pillar: true }));
-// Sống đá bờ sông: ngăn rừng với sông từ mép đầm tới trước cửa mũi rừng (tim khối cách trục sông 420, dày 750) — rừng ra sông qua hai cửa:
-// bãi đầm (giữa bờ rào đường Đền và đầu sống đá) và cửa mũi rừng (giữa cuối sống đá và trại cóc).
-const Q_RIDGE = (() => { const [a, b] = [bankPt(2227, 420), bankPt(2404, 420)]; return [seg(...a, ...b, 750, { rock: true })]; })();
+// Sống đá bờ sông: ngăn rừng với sông giữa bãi bờ và cửa mũi rừng (tim khối cách trục sông 460, dày 750; sông uốn tránh hang bờ bên kia
+// nên khối lùi khỏi trục hơn bản trước) — rừng ra sông qua bãi bờ (giữa bờ rào đường cánh và đầu sống đá) và cửa mũi rừng (cuối sống đá – trại cóc).
+const Q_RIDGE = (() => { const [a, b] = [bankPt(2330, 460), bankPt(2480, 460)]; return [seg(...a, ...b, 750, { rock: true })]; })();
 // Trại quái của phần tư mẫu (toạ độ gốc). arc: hõm đá ôm lưng trại — r lòng hõm, face hướng miệng (độ, 0 = +x, 90 = +y), span góc ôm.
 const Q_CAMPS = [
   { id: 'buff', x: 1590, y: 2900, arc: { r: 250, face: 0, span: 180 } },               // tựa bờ rào đường Đền giữa hai cổng, miệng mở ra ngã ba giữa rừng
   { id: 'wolves', x: 1490, y: 3935, arc: { r: 230, face: 270, span: 200 } },           // lưng lấp kín góc bờ rào – tường nhà, miệng mở lên sân cổng trong
   { id: 'toad', x: 2274, y: 3193, arc: { r: 180, face: 225, span: 140 } },             // mũi rừng: lưng tựa bờ rào đường Giữa, miệng nhìn ngược dòng về ngã ba
 ];
-const Q_WALLS = [...Q_HEDGE, ...Q_RIDGE, ...Q_CAMPS.flatMap((c) => arcWalls(c.x, c.y, c.arc.r, c.arc.face, c.arc.span, 3, 420))];
+// Đảo đá giữa ngã ba (giữa miệng phòng bùa, phòng cóc, phòng sói và cổng đường Giữa): chia ngã ba trống thành hai lối vòng, chỗ núp cạnh
+// trại — cách mép phòng bùa ~640, phòng cóc ~510, phòng sói ~1170, cổng đường Giữa ~800 (thế giới).
+const Q_ISLE = [seg(1880, 3330, 1960, 3450, 330, { rock: true })];
+const Q_WALLS = [...Q_HEDGE, ...Q_RIDGE, ...Q_ISLE, ...Q_CAMPS.flatMap((c) => arcWalls(c.x, c.y, c.arc.r, c.arc.face, c.arc.span, 3, 420))];
 // Bụi cỏ của phần tư mẫu (toạ độ gốc): mỗi bụi canh một ngã rẽ. Không bụi nào trong tầm trụ.
 const Q_BUSHES = [
-  { x: 1405, y: 2265, w: 250, h: 170 },                                               // bãi đầm, ngay trong cổng ngoài (canh cổng + sườn hang lớn)
-  { x: 2190, y: 2860, w: 230, h: 190 },                                               // cửa mũi rừng (lối sông ↔ ngã ba, ngay trước miệng trại cóc)
+  { x: 1405, y: 2265, w: 250, h: 170 },                                               // bãi bờ ngay trong cổng ngoài (rừng Đền: nhìn sang hang địch; rừng Sông: canh cửa sau hang mình)
+  { x: 2308, y: 2972, w: 230, h: 190 },                                               // cửa mũi rừng (lối sông ↔ ngã ba, ngay trước miệng trại cóc)
   { x: 1905, y: 3760, w: 230, h: 170 },                                               // trong cổng đường Giữa, giữa trại sói và trại cóc
 ];
 const antiBush = (b) => { const [x, y] = anti([b.x, b.y]); return { ...b, x, y, w: b.h, h: b.w }; };
@@ -159,26 +166,27 @@ const antiBush = (b) => { const [x, y] = anti([b.x, b.y]); return { ...b, x, y, 
 const CAMP_TYPE = { buff: ['linh_thuy', 'hoa_nham'], wolves: ['soi_da', 'soi_da'], toad: ['coc_reu', 'coc_reu'] };
 const CAMP_ID = { buff: ['blue', 'red'], wolves: ['wolves_l', 'wolves_b'], toad: ['toad_l', 'toad_b'] };
 const CAMPS_BLUE = [0, 1].flatMap((q) => Q_CAMPS.map((c) => { const [x, y] = q ? anti([c.x, c.y]) : [c.x, c.y]; return { id: CAMP_ID[c.id][q], type: CAMP_TYPE[c.id][q], x, y }; }));
-// Mục tiêu lớn: cả bốn nằm TRÊN TRỤC SÔNG y = x nên cách đều hai đội (03 §A7). Đo 64 trận toàn máy đổi bên: hang lệch về một bờ thì đội
-// bờ đó thắng 60–65%, trên trục 47–54% (docs/DECISIONS.md) — vì thế hang KHÔNG dời vào bờ như các game đối xứng tâm, mà sông được nắn lại:
-// quanh Long Ngư (phút 2, gần đường Đền) và Hổ Lôi (phút 8, gần đường Sông) sông phình thành đầm, hang là cù lao giữa đầm, nước chảy
-// vòng hai bên (data/river.js). Miệng hang mở về giữa bản đồ, cửa hậu hẹp mở về phía đường cánh, hai vách sườn quay ra hai nhánh sông.
-const PIT = 1850;                    // toạ độ gốc của Long Ngư trên trục (Hổ Lôi: 6400 − PIT)
+// Mục tiêu lớn. Hai hang lớn trong HÕM BỜ ở hai bờ đối diện, ảnh xoay 180° của nhau: Hổ Lôi (phút 8) bờ Đỏ gần đường Đền, Long Ngư (phút 2,
+// "rồng" của đường đôi Xạ thủ + Trợ thủ) bờ Xanh gần đường Sông. Tâm hang nằm đúng mép dòng chính (cách trục PIT_C), bệ hang lấn ra lòng sông,
+// sông uốn tránh sang bờ kia (RIVER). `back` = hướng cửa sau (về rừng phe chủ); miệng hang quay ngược lại, ra sông. Hai mục tiêu cuối trận
+// (phút 12) vẫn trên mũi đá chìa ra vực ở hai đầu sông: Thần Điểu (góc đường Đền), Tà Thần (góc đường Sông).
+// Thiên lệch phe đo bằng tools/t_side.mjs (cặp trận cùng đội hình đổi bên) — docs/DECISIONS.md 18/11.
+const PIT_S = 1900, PIT_C = 250;                                                     // hang gần đường Đền: s = (x + y)/2, cách trục sông (gốc)
+const [HL_X, HL_Y] = bankPt(PIT_S, -PIT_C), [LN_X, LN_Y] = pt([HL_X, HL_Y]);
 const BOSSES = [
-  { id: 'long_ngu', type: 'long_ngu', x: PIT, y: PIT, boss: true, back: -Math.PI * 0.75 }, // lưng hang chĩa đúng về góc (ảnh x↔y trùng chính nó)
-  { id: 'ho_loi', type: 'ho_loi', x: 6400 - PIT, y: 6400 - PIT, boss: true, back: Math.PI * 0.25 },
-  // Hai mục tiêu cuối trận (phút 12, 03 §A9) trên mũi đá chìa ra vực ở hai đầu sông: Thần Điểu (tổ chim, góc đường Đền), Tà Thần (hang tím, góc đường Sông).
+  { id: 'long_ngu', type: 'long_ngu', x: LN_X, y: LN_Y, boss: true, back: Math.PI * 0.75 },  // bờ Xanh: cửa sau mở về rừng Sông phía Xanh
+  { id: 'ho_loi', type: 'ho_loi', x: HL_X, y: HL_Y, boss: true, back: -Math.PI * 0.25 },     // bờ Đỏ: ảnh xoay 180° của Long Ngư
   { id: 'than_dieu', type: 'than_dieu', x: 560, y: 560, boss: true, back: -Math.PI * 0.75 },
   { id: 'ta_than', type: 'ta_than', x: 5840, y: 5840, boss: true, back: Math.PI * 0.25 },
 ];
 /** Bán kính hang mục tiêu lớn (toạ độ thế giới) — dùng chung cho dựng hình và va chạm. */
 export const LAIR_R = { long_ngu: 600, ho_loi: 640, than_dieu: 560, ta_than: 600 };
-/** Cù lao hang giữa đầm: miệng hang rộng (nửa góc mở), cửa hậu hẹp (nửa góc mở) — radian, tính từ hướng trước / hướng lưng. */
+/** Hang trong hõm bờ: miệng hang rộng ra sông (nửa góc mở), cửa sau hẹp về rừng phe chủ (nửa góc mở) — radian, tính từ hướng trước / hướng lưng. */
 export const PIT_GATE = { mouth: 0.96, rear: 0.44 };
 /** Màu nhận diện của từng mục tiêu lớn (đèn cột cổng hang, vết nứt trên bệ, biểu tượng bản đồ nhỏ). */
 export const PIT_GLOW = { long_ngu: 0xffa63a, ho_loi: 0x6ab8ff, than_dieu: 0x7ae8ff, ta_than: 0xb05aff };
 /** Vách hang thành tường va chạm — CŨNG là dữ liệu dựng hình (render/env/jungleDecor.js đọc lại đúng các đoạn này, không tính riêng):
- *  cù lao giữa đầm (Long Ngư, Hổ Lôi) = hai vách sườn hình cung, chừa miệng hang phía trước và cửa hậu phía lưng; hang tím = vòng rễ
+ *  hang hõm bờ (Long Ngư, Hổ Lôi) = hai vách sườn hình cung, chừa miệng hang ra sông và cửa sau về rừng phe chủ; hang tím = vòng rễ
  *  phía sau; tổ chim = vòng cành quanh tổ chừa lối vào. Mỗi đoạn mang `rise` 0…1 (độ cao tương đối, cao nhất giữa vách). */
 export function lairWallSegs(c) {
   const R = LAIR_R[c.type], back = c.back ?? -Math.PI / 2, arc = (r, a0, a1, n, w) => Array.from({ length: n }, (_, i) => {
@@ -187,7 +195,7 @@ export function lairWallSegs(c) {
   });
   if (c.type === 'long_ngu' || c.type === 'ho_loi') {
     const flanks = [1, -1].flatMap((sd) => arc(R * 1.12, back + sd * PIT_GATE.rear, back + sd * (Math.PI - PIT_GATE.mouth), 4, R * 0.4));
-    // cột đá đèn ở bốn đầu vách (hai bên miệng hang, hai bên cửa hậu): cùng kiểu cột cổng rừng, đèn mang màu riêng của mục tiêu; nằm gọn trong
+    // cột đá đèn ở bốn đầu vách (hai bên miệng hang, hai bên cửa sau): cùng kiểu cột cổng rừng, đèn mang màu riêng của mục tiêu; nằm gọn trong
     // đầu vách nên không chặn thêm lối nào
     const posts = [1, -1].flatMap((sd) => [back + sd * PIT_GATE.rear, back + sd * (Math.PI - PIT_GATE.mouth)])
       .map((a) => { const x = c.x + D.cos(a) * R * 1.12, y = c.y + D.sin(a) * R * 1.12; return { x1: x, y1: y, x2: x, y2: y, w: 200, pillar: true, lair: true, glow: PIT_GLOW[c.type] }; });
@@ -254,8 +262,26 @@ function outOfBounds(x, y, pad = 0) {
     return (u < e && v < BEND - p) || (u < BC && v < BC && D.hypot(u - BC, v - BC) > BR + BORDER_W / K / 2 + p) || (v < e && u < BEND - p); };
   return test(x, y) || test(A - y, A - x);
 }
-const mirrorSeg = (w) => ({ ...w, x1: w.y1, y1: w.x1, x2: w.y2, y2: w.x2 });
 const POSTS_BLUE = [...Q_POSTS, ...Q_POSTS.map(antiSeg)];
+// Sông (data/river.js): khúc uốn chữ S quanh hai hang — tim dòng lệch 650 về bờ đối diện hang, lòng sông nở thêm 250 trong ±2600 dọc trục;
+// bệ hang (bán kính lấy theo hang lớn hơn cho hai bên đối xứng tuyệt đối) lấn ra lòng sông.
+const PIT_A = PIT_S * K * Math.SQRT2, ISLE = LAIR_R.ho_loi * 1.12 + 190;
+const RIVER = makeRiver({ size: A, width: 500 * K, narrow: { at: 2600, to: 5200, width: 400 * K },
+  bends: [{ a: PIT_A, shift: 650, widen: 250, half: 2600 }, { a: A * Math.SQRT2 - PIT_A, shift: -650, widen: 250, half: 2600 }],
+  isles: [[HL_X, HL_Y], [LN_X, LN_Y]].map(([x, y]) => ({ x: x * K, y: y * K, r: ISLE })) });
+/** Bụi mép nước (con nhộng) bám đúng bờ sông uốn: từ s0 tới s1 (s = (x + y)/2, toạ độ gốc) trên bờ `side` (+1 Xanh, −1 Đỏ), tim lùi vào
+ *  nước `inset` (thế giới), bán kính r (gốc). */
+const bankBush = (s0, s1, side, r, inset = 40) => {
+  const end = (s) => { const a = s * K * Math.SQRT2, c = RIVER.center(a) + side * (RIVER.half(a) - inset); return [(a - c) / Math.SQRT2, (a + c) / Math.SQRT2]; };
+  return { cap: [...end(s0), ...end(s1)], r: r * K, bank: true, noMirror: true };
+};
+const ptBush = (b) => (b.cap ? { ...b, cap: [A - b.cap[0], A - b.cap[1], A - b.cap[2], A - b.cap[3]] } : { ...b, x: A - b.x, y: A - b.y });
+// bụi phía Xanh (thế giới): ba bụi mỗi phần tư rừng, bụi mép nước ở hai cửa sông đầu đường Đền (hai bờ), bụi canh lối hông hang Long Ngư
+const BUSH_BLUE = [
+  ...[...Q_BUSHES, ...Q_BUSHES.map(antiBush)].map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K, noMirror: true })),
+  bankBush(1450, 1540, 1, 80), bankBush(1405, 1499, -1, 95),
+  bankBush(4150, 4250, 1, 70),
+];
 
 export const ARENA = {
   id: 'arena5v5', w: A, h: A,
@@ -263,34 +289,27 @@ export const ARENA = {
   outOfBounds,                        // ngoài tường biên hai đường cánh
   oobShape: { K, BX, BEND, BC, BR, BW: BORDER_W, A, PX, PY, PR }, // hình học vùng ngoài biên (shader cắt nền / vực)
   lanes: LANES,
-  // sông dọc trục y = x: dòng chính rộng 1500, hẹp còn 1200 ở hai đầu (chỗ đường cánh băng qua), phình thành đầm quanh hai hang lớn —
-  // hang là cù lao giữa đầm, nước chảy vòng hai bên (data/river.js). Chỉ để nhìn / định hướng: mô phỏng không đọc.
-  river: makeRiver({ size: A, width: 500 * K, narrow: { at: 2600, to: 5200, width: 400 * K },
-    pools: [PIT, 6400 - PIT].map((p, i) => ({ x: p * K, y: p * K, along: 2000, across: 1500, isle: LAIR_R[i ? 'ho_loi' : 'long_ngu'] * 1.12 + 190 })) }),
+  // sông dọc trục y = x, uốn chữ S quanh hai hang hõm bờ (data/river.js) — chỉ để nhìn / định hướng: mô phỏng không đọc.
+  river: RIVER,
   spawn: [{ x: 430 * K, y: 5970 * K }, { x: 5970 * K, y: 430 * K }],
   structures: [
     { id: 'core', kind: 'core', x: BASE[0], y: BASE[1], hp: 7000, atk: 350, range: 1050, rate: 1.2, armor: 100, radius: 220, invulnUntil: ['temple_home', 'mid_home', 'river_home'] },
     ...['temple', 'mid', 'river'].flatMap((l) => [tower(l + '_outer', 'outer', ...TOWER_POS[l + '_outer'], null), tower(l + '_inner', 'inner', ...TOWER_POS[l + '_inner'], l + '_outer'), tower(l + '_home', 'home', ...TOWER_POS[l + '_home'], l + '_inner')]),
   ],
   fountain: { x: 430 * K, y: 5970 * K, range: 800, dps: 1000, healRadius: 650, healPct: 0.15 },
-  // tường: danh sách đoạn dày (capsule). Phía Đỏ là ảnh qua trục sông; cột đèn cổng rừng và vách hang thêm sau khi cắt tỉa.
-  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(mirrorSeg), ...POSTS_BLUE, ...POSTS_BLUE.map(mirrorSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
-  // bụi cỏ (toạ độ thế giới): hình chữ nhật theo trục (x, y, w, h) hoặc "con nhộng" (cap = đoạn thẳng + bán kính r). Khai phía Xanh, phía Đỏ
-  // do bushRects lấy đối xứng; bụi nằm trên trục / đã khai đủ các ảnh thì noMirror.
+  // tường: danh sách đoạn dày (capsule). Phía Đỏ là ảnh XOAY 180° của phía Xanh (đường, trụ, tường nhà, tường biên đối xứng cả hai cách nên
+  // ảnh xoay vẫn khớp); vách hai hang lớn và hai tổ / hang cuối trận khai riêng từng cái.
+  walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(ptSeg), ...POSTS_BLUE, ...POSTS_BLUE.map(ptSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
+  // bụi cỏ (toạ độ thế giới, khai đủ cả hai phía — noMirror): bụi phía Đỏ là ảnh xoay 180° của phía Xanh; hai bãi lau sậy giữa dòng hai bên chỗ
+  // đường Giữa băng qua sông chạy dọc dòng chảy (s 2730 ± 210 và 3670 ± 210, ảnh xoay của nhau), hai bên còn lạch nước trống.
   bushes: [
-    ...[...Q_BUSHES, ...Q_BUSHES.map(antiBush)].map((b) => ({ ...b, x: b.x * K, y: b.y * K, w: b.w * K, h: b.h * K })),
-    // bụi mọc mép nước ở bốn cửa sông, giữa trụ ngoài đường cánh và cửa hậu hang lớn: khai một bụi (bờ phía Đỏ, đầu đường Đền), ba bụi kia là
-    // ảnh qua hai trục. Đường tâm cách trục sông 219 (trong nước, sát bờ); đầu gần trụ giữ mép bụi ngoài tầm trụ (≥ 350 + bán kính tướng).
-    ...[[1560, 1250, 1654, 1344, 95]].flatMap(([a, b, c, d, r]) => [[a, b, c, d], [b, a, d, c], [6400 - c, 6400 - d, 6400 - a, 6400 - b], [6400 - d, 6400 - c, 6400 - b, 6400 - a]]
-      .map((q) => ({ cap: q.map((v) => v * K), r: r * K, bank: true, noMirror: true }))),
-    // hai bãi lau sậy GIỮA DÒNG hai bên chỗ đường Giữa băng qua, chạy DỌC theo dòng chảy (trước đây là hai khối cỏ nằm ngang chắn cả lòng
-    // sông, trông như cây cầu cỏ): chốt núp giữa bản đồ, hai bên còn lạch nước trống ~420 cho đi vòng. Trên trục đối xứng nên mỗi bãi một.
-    ...[-470, 470].map((d) => { const c = 3200 + d, h = 210; return { cap: [(c - h) * K, (c - h) * K, (c + h) * K, (c + h) * K], r: 110 * K, big: true, river: true }; }),
+    ...BUSH_BLUE, ...BUSH_BLUE.map(ptBush),
+    ...[-470, 470].map((d) => { const c = 3200 + d, h = 210; return { cap: [(c - h) * K, (c - h) * K, (c + h) * K, (c + h) * K], r: 110 * K, big: true, river: true, noMirror: true }; }),
   ],
   vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)
-  // quái rừng (đủ hai phía) + mục tiêu lớn; toạ độ thế giới. Phía Đỏ lấy đối xứng của phía Xanh.
+  // quái rừng (đủ hai phía) + mục tiêu lớn; toạ độ thế giới. Trại phía Đỏ là ảnh xoay 180° của phía Xanh.
   camps: [
-    ...CAMPS_BLUE.flatMap((c) => [{ ...c, x: c.x * K, y: c.y * K, side: 0 }, { ...c, id: c.id + '_r', x: c.y * K, y: c.x * K, side: 1 }]),
+    ...CAMPS_BLUE.flatMap((c) => [{ ...c, x: c.x * K, y: c.y * K, side: 0 }, { ...c, id: c.id + '_r', x: A - c.x * K, y: A - c.y * K, side: 1 }]), // phía Đỏ: ảnh xoay 180°
     ...BOSSES.map((b) => ({ ...b, x: b.x * K, y: b.y * K, side: null })),
   ],
   // fortifyUntil / fortifyTaken: giáp trụ ngoài — trước phút 4 trụ ngoài chỉ nhận 60% sát thương (đầu trận không bị phá trụ quá sớm);
