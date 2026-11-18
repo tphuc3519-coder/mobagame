@@ -180,8 +180,9 @@ rừng phía đường Đền (cạnh hang Hổ Lôi).
   cổng rộng ≥ 530 (hẹp nhất là cổng: 660 giữa hai đầu bờ rào).
 
 *Bụi ngoài rừng* (khai phía Xanh, phía Đỏ là ảnh xoay; bám đúng mép nước của sông uốn — `bankBush`): hai bụi mép nước ở cửa sông đầu đường Đền
-(hai bờ); một bụi mép nước canh lối hông hang Long Ngư (giữa sống đá và vách hang); hai **bãi lau sậy giữa dòng** hai bên chỗ đường Giữa băng
-qua sông, chạy dọc dòng chảy (s 2730 ± 210 và 3670 ± 210, bán kính 330 thế giới), hai bên còn lạch nước trống ~420.
+(hai bờ); một bụi mép nước canh lối hông hang Long Ngư (giữa sống đá và vách hang); hai **bụi lớn nằm ngang lòng sông** hai bên chỗ đường Giữa băng qua (tâm trên trục tại s 2730 và 3670, ảnh xoay của nhau): thân vuông góc
+dòng chảy, phủ kín bề ngang sông từ bờ này sang bờ kia, lấn mỗi bờ ~120, dày 840 dọc dòng — chốt núp khi vượt sông giữa bản đồ (18/11: trả về
+nằm ngang như thiết kế gốc; bản 17/11 cho nằm dọc dòng, chủ dự án thấy phi logic).
 
 *Kiểm thử* `tools/t_mapnav.mjs`: vùng chơi liền một khối, không túi đất kín > 12 ô; độ rộng hẹp nhất của tuyến rộng nhất (maximin) tới từng trại /
 hang / cổng ≥ 420; hang trên đất, miệng ra nước, cửa sau về đất, hai lối vào thật; sông liền dòng theo tim dòng uốn, lòng hẹp nhất ≥ 900;

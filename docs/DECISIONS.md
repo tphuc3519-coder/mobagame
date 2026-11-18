@@ -1243,3 +1243,7 @@
     94 / 192 = **49% ± 3,6%** (cặp "phe quyết định" Xanh 14 / Đỏ 16): hang hai bờ khác nhau không tạo lệch phe đo được. Lưu ý: tỉ lệ "Xanh
     thắng" của `t_arena_batch` KHÔNG đo phe — ô người chơi phía Xanh trong công cụ đó không mua đồ khởi đầu / chọn phép theo vị trí như 9 tướng
     máy còn lại (`sim/lineup.js`), và đội hình không đổi bên; chỉ dùng nó cho số bot kẹt, mạng hạ, mục tiêu, trại.
+- 2026-11-18: **Hai bụi lớn giữa sông nằm NGANG lòng sông trở lại** (`data/maps.js`). Chủ dự án: bụi nằm dọc sông (bãi lau sậy dọc dòng, đổi ngày
+  17/11) "phi logic". Trả về hướng của thiết kế gốc — thân vuông góc dòng chảy, hai bên chỗ đường Giữa băng qua (s = 3200 ∓ 470) — nhưng cho vừa
+  khít bề ngang sông hiện tại: vươn 869 mỗi phía (nửa lòng sông 750 → lấn mỗi bờ ~120), dày 840 dọc dòng; bản gốc vươn ~1 630 mỗi phía, lấn sâu
+  vào cửa mũi rừng nay đã có bụi riêng. Ngoài tầm trụ ngoài đường Giữa, đối xứng xoay (`t_mapnav` đạt). Cùng `NET.version` 7 (nhánh chưa phát hành).

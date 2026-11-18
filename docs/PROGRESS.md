@@ -805,3 +805,5 @@ ban đầu) — dựng lại theo cấu trúc chung của thể loại đọc đ
   trước: bot kẹt > 5 giây 0; mạng hạ / trận 21,3; mục tiêu lớn bị hạ / trận **4,42** (bản 17/11: 3,58 — hang hõm bờ có cửa sau từ rừng);
   trại / trận 50,8; 24 / 24 trận kết thúc (tỉ lệ Xanh thắng của công cụ này không đo phe — xem DECISIONS 18/11).
   Trình duyệt: `b_match` 38 / 38; chụp kiểm cảnh hai hang hõm bờ, khúc sông chữ S, đảo đá giữa ngã ba, toàn bản đồ (không lỗi trang).
+- Hai bụi lớn giữa sông trả về **nằm ngang lòng sông** (vuông góc dòng chảy, phủ kín bề ngang sông, lấn mỗi bờ ~120) theo góp ý chủ dự án —
+  bãi lau sậy dọc dòng của bản 17/11 trông phi logic.

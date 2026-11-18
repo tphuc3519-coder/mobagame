@@ -300,11 +300,12 @@ export const ARENA = {
   // tường: danh sách đoạn dày (capsule). Phía Đỏ là ảnh XOAY 180° của phía Xanh (đường, trụ, tường nhà, tường biên đối xứng cả hai cách nên
   // ảnh xoay vẫn khớp); vách hai hang lớn và hai tổ / hang cuối trận khai riêng từng cái.
   walls: { thickness: 110, segs: [...W_BLUE_T, ...W_BLUE_T.map(ptSeg), ...POSTS_BLUE, ...POSTS_BLUE.map(ptSeg), ...BOSSES.flatMap((b) => lairWallSegs({ ...b, x: b.x * K, y: b.y * K }))] },
-  // bụi cỏ (toạ độ thế giới, khai đủ cả hai phía — noMirror): bụi phía Đỏ là ảnh xoay 180° của phía Xanh; hai bãi lau sậy giữa dòng hai bên chỗ
-  // đường Giữa băng qua sông chạy dọc dòng chảy (s 2730 ± 210 và 3670 ± 210, ảnh xoay của nhau), hai bên còn lạch nước trống.
+  // bụi cỏ (toạ độ thế giới, khai đủ cả hai phía — noMirror): bụi phía Đỏ là ảnh xoay 180° của phía Xanh; hai bụi lớn giữa sông hai bên chỗ
+  // đường Giữa băng qua (s = 3200 ∓ 470, ảnh xoay của nhau) nằm NGANG lòng sông — vuông góc dòng chảy, phủ kín bề ngang sông từ bờ này sang bờ
+  // kia (lấn mỗi bờ ~120): chốt núp khi vượt sông giữa bản đồ (thiết kế gốc; 17/11 từng đổi sang dọc dòng, chủ dự án thấy phi logic → trả lại).
   bushes: [
     ...BUSH_BLUE, ...BUSH_BLUE.map(ptBush),
-    ...[-470, 470].map((d) => { const c = 3200 + d, h = 210; return { cap: [(c - h) * K, (c - h) * K, (c + h) * K, (c + h) * K], r: 110 * K, big: true, river: true, noMirror: true }; }),
+    ...[-470, 470].map((d) => { const c = 3200 + d, h = 106; return { cap: [(c - h) * K, (c + h) * K, (c + h) * K, (c - h) * K], r: 140 * K, big: true, river: true, noMirror: true }; }), // nửa thân ngang 150 + bán kính 140 (gốc)
   ],
   vision: true, // sương mù chiến trường + bụi cỏ ẩn (sim/vision.js)
   // quái rừng (đủ hai phía) + mục tiêu lớn; toạ độ thế giới. Trại phía Đỏ là ảnh xoay 180° của phía Xanh.
