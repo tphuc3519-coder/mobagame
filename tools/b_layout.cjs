@@ -3,6 +3,8 @@
 //  - không khối nào chồng lên khối nào (trong cụm kỹ năng chỉ xét nút camera với các nút chiêu), cần điều khiển không đè nút / bản đồ nhỏ;
 //  - không gì ra ngoài màn hình hay lấn vùng an toàn (tai thỏ trái / phải, thanh vuốt);
 //  - màn chạm: nút chính ≥ 44 px (Đánh, chiêu, Ăn lính / Đẩy trụ, nút phụ, camera, tín hiệu, cửa hàng); cần ≥ 48 px bán kính;
+//  - cụm kỹ năng (17/11): ba nút chiêu bằng nhau; các nút tròn trong cụm (Đánh, K1–K3, Ăn lính, Đẩy trụ) không chồng nhau; đủ chỗ thì nút
+//    chiêu = 0,8 nút Đánh và ba nút cách đều tâm nút Đánh (một cung tròn) — phần công thức quét mọi khổ màn ở tools/t_hudlayout.mjs;
 //  - bản đồ nhỏ 26–40% chiều cao dùng được trên điện thoại, ≥ 22% ở màn lớn; đổi Cài đặt cỡ nút / bản đồ áp dụng ngay giữa trận.
 // Chạy: python3 -m http.server <PORT> --bind 127.0.0.1 ở gốc repo, rồi node tools/b_layout.cjs <PORT> [se,ip14,…]
 let PW; try { PW = require('playwright'); } catch (_) { PW = require('/opt/node22/lib/node_modules/playwright'); }
@@ -77,6 +79,16 @@ async function run(browser, dk, pf) {
   const sz = (n) => E[n] ? Math.round(E[n].w) : '-';
   ok(`${label}: nút chính đủ lớn để chạm (${d.touch ? '≥ 44' : '≥ 34'} px)`, !small.length, small.map((n) => `${n}=${sz(n)}`).join(' ') || `Đánh ${sz('sk:atk')} · chiêu ${sz('sk:s1')}/${sz('sk:s2')}/${sz('sk:s3')} · Ăn lính ${sz('sk:minion')} · nút phụ ${sz('btn:recall')} · camera ${sz('camBtn')} · cửa hàng ${sz('goldPill')}`);
   ok(`${label}: cần điều khiển bán kính ≥ 48 px`, m.R >= 48, `R ${m.R} tại (${m.rest.x}, ${m.rest.y})`);
+  // 3b. cụm kỹ năng: ba nút chiêu bằng nhau, các nút tròn không chồng nhau, đủ chỗ thì trên một cung quanh nút Đánh
+  {
+    const c = (n) => E[n] && { x: (E[n].l + E[n].r) / 2, y: (E[n].t + E[n].b) / 2, r: E[n].w / 2 }, ks = ['sk:s1', 'sk:s2', 'sk:s3'], all = ['sk:atk', ...ks, 'sk:minion', 'sk:tower'].filter((n) => E[n]);
+    const w = ks.map((n) => E[n].w), touchy = [];
+    for (let i = 0; i < all.length; i++) for (let k = i + 1; k < all.length; k++) { const A = c(all[i]), B = c(all[k]), g = Math.hypot(A.x - B.x, A.y - B.y) - A.r - B.r; if (g < 1.5) touchy.push(`${all[i]}×${all[k]} ${g.toFixed(1)}`); }
+    const A = c('sk:atk'), dist = ks.map((n) => Math.hypot(c(n).x - A.x, c(n).y - A.y)), roomy = w[0] >= 0.795 * E['sk:atk'].w;
+    ok(`${label}: ba nút chiêu bằng nhau, các nút trong cụm không chồng nhau`, Math.max(...w) - Math.min(...w) < 0.6 && !touchy.length, touchy.join(', ') || `chiêu ${w.map((v) => v.toFixed(1)).join(' / ')} · Đánh ${E['sk:atk'].w.toFixed(1)}`);
+    ok(`${label}: ${roomy ? 'nút chiêu = 0,8 nút Đánh, ba nút cách đều tâm nút Đánh (một cung)' : 'màn thấp — cụm nén: nút chiêu 0,68–0,8 nút Đánh'}`,
+      roomy ? Math.max(...dist) - Math.min(...dist) < 1 : w[0] >= 0.675 * E['sk:atk'].w, `cách tâm nút Đánh ${dist.map((v) => v.toFixed(0)).join(' / ')} px`);
+  }
   // 4. bản đồ nhỏ theo chiều cao dùng được
   const hu = m.vh - ins.top - ins.bottom, f = m.mmCss / hu, phone = hu < 500, mmBig = pf.mmSize === 'lg';
   ok(`${label}: bản đồ nhỏ ${Math.round(m.mmCss)} px = ${Math.round(f * 100)}% chiều cao`, phone ? f >= 0.26 && f <= (mmBig ? 0.46 : 0.4) : f >= 0.22 && f <= 0.36);

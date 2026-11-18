@@ -1,6 +1,7 @@
 // Bố cục HUD theo thiết bị (07 §9): cỡ cụm kỹ năng, nút phụ, cửa hàng, bản đồ nhỏ và chỗ nút camera tính từ khổ màn, vùng an toàn
 // (tai thỏ, thanh vuốt), loại màn (chạm hay chuột) và cài đặt "Cỡ nút bấm" / "Cỡ bản đồ nhỏ"; đặt thành biến CSS trên :root
-// (--a nút Đánh, --s nút chiêu, --m nút Ăn lính / Đẩy trụ, --skw/--skh khung cụm, --mini/--item nút phụ, --gp nút cửa hàng, --camR/--camB).
+// (--a nút Đánh, --s nút chiêu, --m nút Ăn lính / Đẩy trụ, --k1r/--k1b … --k3r/--k3b chỗ ba nút chiêu, --skw/--skh khung cụm, --mini/--item nút
+// phụ, --gp nút cửa hàng, --camR/--camB).
 // Cần điều khiển (joystick.js) đọc R + vị trí nghỉ ở đây: đo các khối thật (bản đồ nhỏ, nút tín hiệu, cửa hàng, hàng nút phụ) rồi đặt
 // cần vào khoảng trống góc trái dưới — trước: cần cố định 180 px đè lên cửa hàng / nút Biến về trên mọi điện thoại.
 import { prefs, onPref } from '../core/prefs.js';
@@ -23,10 +24,26 @@ export const selfBarRect = (W, H, safeL = 0) => ({ l: 16 + safeL, t: H - SELF_BA
 const clamp = (lo, v, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(0, t, 1);
 
-/** Số đo cụm kỹ năng từ cỡ nút Đánh a (công thức cũ của index.html; bề ngang = tới mép trái nút chiêu 1, không chừa khoảng trống). */
-export function clusterDims(a, touch = true) {
-  const s = 0.68 * a, m = Math.max(touch ? TOUCH_MIN : 34, 0.66 * s);
-  return { a, s, m, skw: a + 0.95 * m + 16 + s + 6, skh: a + 1.4 * s + 0.5 * m + 26 };
+/** Tỉ lệ nút chiêu / nút Đánh: 0,8 khi đủ chỗ; màn rất thấp nén dần về 0,68 (tỉ lệ trước 17/11) để cụm vẫn nằm dưới khối góc phải trên. */
+export const SKILL_K = Object.freeze({ roomy: 0.8, tight: 0.68 });
+const ARC0 = -2 * Math.PI / 180, COS = Math.cos(ARC0), SIN = Math.sin(-ARC0); // K1 ở −2°, K2 ở 45°, K3 ở 92° quanh tâm nút Đánh
+
+/**
+ * Số đo cụm kỹ năng từ cỡ nút Đánh a. Ba nút chiêu BẰNG NHAU (s), nằm trên một cung tròn quanh tâm nút Đánh, cách đều nhau; bán kính cung chừa
+ * vừa một nút Ăn lính / Đẩy trụ (m) giữa nút Đánh và nút chiêu. q: 1 = rộng rãi (mặc định) … 0 = nén (màn rất thấp: nút chiêu nhỏ lại, khe hẹp
+ * lại, K1 lùi sang trái vừa đủ né nút Ăn lính). Toạ độ k1/k2/k3 = { r, b }: mép phải / mép dưới nút tính từ góc phải-dưới khung cụm (CSS right /
+ * bottom). Bề ngang khung = tới mép trái K1; bề cao = tới đỉnh K3 + chỗ cho nút "+" nâng chiêu thò lên trên.
+ */
+export function clusterDims(a, touch = true, q = 1) {
+  const s = a * lerp(SKILL_K.tight, SKILL_K.roomy, q), m = Math.max(touch ? TOUCH_MIN : 34, 0.46 * a), gap = lerp(4, 12, q), head = lerp(14, 24, q);
+  const ra = a / 2, rs = s / 2, rm = m / 2, arc = ra + rs + m + gap;
+  // tâm nút tính từ tâm nút Đánh: x sang trái, y lên trên. Nút Ăn lính: cùng công thức với .amode[data-k="minion"] trong index.html
+  const dm = ra + rm + 9, mx = 0.94 * dm, my = Math.max(-0.342 * dm, rm - ra);
+  const y1 = -arc * SIN, need = rs + rm + 3, x1 = Math.max(arc * COS, mx + Math.sqrt(Math.max(0, need * need - (y1 - my) ** 2)));
+  // K2 trên đường chéo 45°: đủ chỗ thì nằm trên cung cùng K1 / K3; nén thì kéo dần về sát nút Đánh, chừa góc trái-trên khung cho nút camera
+  const near = (ra + rs + 10) * Math.SQRT1_2, x2 = lerp(near, x1 / COS * Math.SQRT1_2, q), y2 = lerp(near, arc * Math.SQRT1_2, q);
+  const at = (x, y) => ({ r: ra + x - rs, b: ra + y - rs });
+  return { a, s, m, arc, k1: at(x1, y1), k2: at(x2, y2), k3: at(-arc * SIN, arc * COS), skw: ra + x1 + rs, skh: ra + arc * COS + rs + head };
 }
 
 /**
@@ -43,13 +60,19 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const topRight = top + (shopRight && !short ? 50 + (H < 560 ? Math.max(gp, Math.min(60, gp + 4)) : 124) : HUDSET); // một ô mua nhanh (ảnh co theo nút giỏ, --qi) cao hơn nút giỏ 4 px; 124 = hai ô xếp dọc
   // nút Đánh: theo chiều cao (màn chạm to hơn — ngón cái; chuột nhỏ hơn — thấy được nhiều sân hơn), nhân cỡ người chơi chọn
   const k = HUD_SIZES[size] ?? 1;
-  let d = clusterDims((touch ? clamp(84, 0.235 * hu, 118) : clamp(80, 0.15 * hu, 104)) * k, touch);
-  // cụm phải nằm dưới khối góc phải trên: màn thấp (Safari còn thanh địa chỉ, 667×320) thì thu nhỏ dần thay vì đè nút cài đặt / cửa hàng
+  let d = clusterDims((touch ? clamp(84, 0.245 * hu, 122) : clamp(80, 0.15 * hu, 104)) * k, touch);
+  // cụm phải nằm dưới khối góc phải trên: màn thấp (Safari còn thanh địa chỉ, 667×320) thì thu gọn dần thay vì đè nút cài đặt / cửa hàng —
+  // trước hết nén khe + tỉ lệ nút chiêu (giữ nút Đánh to), vẫn chưa vừa mới thu nhỏ cả cụm
   const room = H - bot - topRight - 6;
-  while (d.skh > room && d.a > CLUSTER_MIN) d = clusterDims(d.a - 1, touch);
+  let q = 1;
+  while (d.skh > room && q > 0) { q = Math.max(0, q - 0.1); d = clusterDims(d.a, touch, q); }
+  while (d.skh > room && d.a > CLUSTER_MIN) d = clusterDims(d.a - 1, touch, q);
   // nút camera: trên cụm nếu đủ chỗ, không thì vào góc trái trên khung cụm (ô trống giữa nút chiêu 1 và chiêu 3)
   const camAbove = H - bot - d.skh - 16 - CAM >= topRight + 6;
-  const camR = camAbove ? right + 6 : right + d.skw - CAM - 4, camB = camAbove ? bot + d.skh + 16 : bot + d.skh - CAM;
+  let camR = camAbove ? right + 6 : right + d.skw - CAM - 4; const camB = camAbove ? bot + d.skh + 16 : bot + d.skh - CAM;
+  // ở góc cụm: nút "+" nâng chiêu của K2 (34 px, thò lên trên nút 24 px) với cụm nhỏ có thể chạm góc này → xê nút camera sang trái vừa đủ
+  // (tối đa 14 px: vẫn cách cột nút phụ 4 px)
+  if (!camAbove && d.k2.b + d.s + 24 > d.skh - CAM) camR += clamp(0, d.k2.r + d.s / 2 + 20 - (d.skw - CAM - 4), 14);
   const mini = clamp(touch ? 46 : 40, 0.58 * d.a, 66), item = mini * 1.1;
   // bản đồ nhỏ: ~35% chiều cao trên điện thoại (chừa chỗ cửa hàng + cần điều khiển bên dưới), ~30% trên máy tính bảng / máy tính, tối đa 320;
   // màn rất thấp: không ép tối thiểu 104 px (≤ 36% chiều cao, cộng viền vẫn < 40%) — 104 px trên màn 231 px đè chỗ cần điều khiển
@@ -57,6 +80,7 @@ export function computeHudLayout({ W, H, safe = {}, touch = true, size = 'md', m
   const R = clamp(JOY_MIN, 0.9 * d.a, 104); // bán kính cần mong muốn — joystick đo chỗ trống thật rồi mới chốt
   const r = (v) => Math.round(v * 10) / 10;
   return { touch, hu, safe: sf, top, right, bot, a: r(d.a), s: r(d.s), m: r(d.m), skw: r(d.skw), skh: r(d.skh), mini: r(mini), item: r(item), gp,
+    k1r: r(d.k1.r), k1b: r(d.k1.b), k2r: r(d.k2.r), k2b: r(d.k2.b), k3r: r(d.k3.r), k3b: r(d.k3.b),
     camAbove, camR: r(camR), camB: r(camB), mm: Math.round(mmBox), R: Math.round(R), topRight, short };
 }
 
@@ -85,7 +109,7 @@ export function createHudLayout() {
   function update() {
     const p = prefs();
     cur = computeHudLayout({ W: innerWidth, H: innerHeight, safe: safe(), touch: touch(), size: p.hudSize, mm: p.mmSize, shopRight: p.shop === 'right' });
-    for (const k of ['a', 's', 'm', 'skw', 'skh', 'mini', 'item', 'gp', 'camR', 'camB']) root.setProperty('--' + k, cur[k] + 'px');
+    for (const k of ['a', 's', 'm', 'k1r', 'k1b', 'k2r', 'k2b', 'k3r', 'k3b', 'skw', 'skh', 'mini', 'item', 'gp', 'camR', 'camB']) root.setProperty('--' + k, cur[k] + 'px');
     document.documentElement.classList.toggle('hud-short', cur.short); // màn thấp: cửa hàng lên hàng trên cùng (index.html)
     for (const fn of [...subs]) fn(cur);
     at = -1e9; // đo lại chỗ cần ở lần vẽ kế tiếp (khối đã đổi cỡ)
