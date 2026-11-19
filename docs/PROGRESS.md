@@ -787,3 +787,20 @@ mục tiêu; hình ảnh "kiểu AI"; giao diện cần nhất quán. Lý do t�
     bản đều KHÔNG đo được thiên lệch phe (lệch ±9% giữa hai bộ seed của cùng một bản là nhiễu — đừng kết luận từ một bộ 96 trận); bản mới giữ
     được công bằng chứ không "sửa" một thiên lệch có sẵn.
   - Chưa làm: thử trên điện thoại thật (mới chạy WebGL phần mềm), `b_layout` / `b_flow` / `b_perf` (không đổi bố cục DOM của HUD — chỉ vẽ canvas).
+
+## 19/11 — UI v6 "Đêm lam đèn lồng": làm lại nhận diện giao diện toàn game
+Quyết định + lý do: `docs/DECISIONS.md` 2026-11-19; spec: 07 §1.1. Không đổi luật, mô phỏng, bố cục HUD hay luồng màn (`NET.version` giữ nguyên).
+- **Hệ thiết kế:** bảng màu thép lam đêm / trắng bạc / vàng đèn có chọn lọc thay sơn mài nâu (một chỗ: `ui/css.js :root`, bản rút gọn trong
+  `index.html`); vật liệu `--steel` (thép chải + ánh đèn từ trên), nút chính vàng kim loại chữ mực, nút phụ thép lam, nút tròn mặt kính vành thép;
+  bo góc thống nhất 4–6 px; rê chuột có phản hồi trên máy tính. 366 màu viết cứng trong 15 tệp chuyển theo quy tắc (giữ màu bão hoà / tranh).
+- **Từng màn:** sảnh (nút Đấu hạng vàng, thanh dưới chữ bạc), chọn chế độ (màu nhận diện từng thẻ, ruy băng, ổ khoá SVG thay emoji), cấm / chọn +
+  chọn tướng (thẻ đang chọn nổi lên viền vàng, vành kỹ năng bạc, chiêu cuối vàng), màn VS (nền lam / son hai nửa, vạch chia lam → vàng → son, VS
+  chữ Fraunces), đội hình, kết quả, Cài đặt, hộp thoại; **thông tin tướng** thêm chip vai trò + thang độ khó (dữ liệu `difficulty`), mỗi kỹ năng một
+  thẻ, chiêu cuối viền vàng; trong trận: vòng thép kép cho nút chiêu, chiêu cuối vòng vàng, nút Đánh vành bạc, bảng tỉ số vạch vàng, thanh máu
+  của mình thành tấm thép có vạch đếm (cùng khung `selfBarRect`).
+- **Tách tệp:** `ui/cssMatch.js` (màn VS + chữ hết trận) — `css.js` về 421 dòng. Manifest / `theme-color` `#080d17`.
+- **Kết quả chạy:** Node 46 / 46 bộ đạt (45 `t_*` + `simtest`, bỏ `t_arena_batch` / `t_side` / `t_ui_draft`). Trình duyệt chạy lần lượt:
+  `b_layout` đạt hết (16 khổ máy), `b_flow` ranked844 + normal1280 đạt hết, không lỗi trang / console. `b_match`: 29 đạt, 3 lỗi — "giữ nút Lọng
+  hiện mô tả" (2) lỗi y hệt trên **mã trước đợt này** ở cùng máy (một lần chạm mất 17–34 giây trên WebGL phần mềm), vòng tín hiệu hết giờ chờ;
+  `b_attack` 9 / 10 — "mục tiêu bị dời xa giữa lúc vung" là phép thử nhịp mô phỏng (đợt này không đụng mô phỏng), lần chạy đầu cùng bộ hết giờ
+  chờ do máy quá tải. Cần chạy lại `b_match` / `b_attack` trên máy nhanh hơn. Chưa thử trên điện thoại thật.

@@ -25,6 +25,20 @@ Bố cục học theo kiểu MOBA mobile phổ biến (như ảnh tham khảo ng
 }
 ```
 
+**Bản đang chạy — UI v6 "Đêm lam đèn lồng" (2026-11-19, `src/ui/css.js` `:root`; lý do: `DECISIONS.md` 19/11):** thay bảng màu sơn mài
+(mục UI v5 bên dưới giữ làm lịch sử — tên biến không đổi).
+- **Màu:** nền thép lam đêm `--lac0…--lac4` (#080d17 → #203049), mặt bảng `--steel` (sáng nhẹ từ trên xuống), chữ trắng bạc `--ivory #eaf0f8`
+  (phụ `--ivory2 #aab8cc`, mờ `--ivory3`), viền thép `--line` / `--line2`; vàng đèn `--gold #e0b961` (`--g-yel` kim loại ba nấc, chữ trên vàng
+  `--gold-ink`) **chỉ** cho nút chính, ô đang chọn, nẹp góc khung lớn, chiêu cuối; son `--ver` (đội Đỏ, cảnh báo), lam `--azure` (đội mình),
+  ngọc `--jade` (tốt). Ảnh render: giữ màu, hơi dịu (`--img-tone`), phủ lam rất nhẹ (`--tone`).
+- **Nút:** chính `.btn-gold` = vàng kim loại chữ mực, viền ngoài tối + đường chỉ trong sáng; phụ `.btn-blue` = thép lam viền bạc; huỷ `.btn-red`;
+  nhẹ `.btn-ghost`. Nhấn: sẫm + lún 1 px; có chuột thì rê sáng nhẹ. Nút tròn: mặt kính tối, vành thép, rê chuột vành vàng. "Đấu hạng" ở sảnh =
+  nút vàng lớn.
+- **Khung:** bo 4–6 px thống nhất, viền thép 1 px, vệt sáng trên mép (`.fr::before`); hộp thoại / Cài đặt: thép chải + nẹp góc vàng. Thẻ chế
+  độ có màu nhận diện riêng (`--acc`). Nhãn góc: dải ruy băng thẳng.
+- **Trong trận:** nút chiêu vòng thép kép, chiêu cuối vòng vàng; nút Đánh vành bạc; bảng tỉ số vạch vàng trên; thanh máu của mình là tấm thép
+  (máu chuyển sắc + vạch đếm, đỏ khi < 30%).
+
 **Bản đang chạy — UI v5 "Sơn mài đêm hội" (2026-11-09, `src/ui/css.js` `:root`):** chủ dự án chê UI v4.1 vẫn *"AI đặc trưng quá"*
 (mọi khung / nút cùng một công thức viền mực 3px + bóng cứng, chữ tiêu đề vàng viền đen đắp nổi, nút bóng kiểu kẹo, biểu tượng 3D bóng
 loáng, ảnh nền render rực, thẻ nào cũng một đoạn mô tả). Hướng mới lấy chất liệu tranh sơn mài + đèn lồng (đúng tên game, đúng văn hoá):

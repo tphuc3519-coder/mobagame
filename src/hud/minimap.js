@@ -14,7 +14,7 @@ const TEAM = ['#38b8ff', '#ff4a3a'];
 export function createMinimap({ world, player, map, cam, fog = null, portraits = null, layout = null }) {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.id = 'minimap';
-  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:1px solid rgba(216,180,104,.4);border-radius:8px;background:#1a1310;box-shadow:0 4px 14px rgba(0,0,0,.4);touch-action:none';
+  cv.style.cssText = 'position:fixed;z-index:4;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));border:1px solid rgba(216,180,104,.4);border-radius:8px;background:#0e1421;box-shadow:0 4px 14px rgba(0,0,0,.4);touch-action:none';
   document.body.appendChild(track(cv));
   cv.addEventListener('pointerdown', (e) => e.stopPropagation()); // không kích hoạt joystick khi chạm bản đồ nhỏ
 
@@ -47,7 +47,7 @@ export function createMinimap({ world, player, map, cam, fog = null, portraits =
     }
     // đường
     c.lineJoin = 'round'; c.lineCap = 'butt';
-    for (const ln of map.lanes) { c.strokeStyle = '#d6c79e'; c.lineWidth = ln.width * sx; strokePath(c, ln.pts); }
+    for (const ln of map.lanes) { c.strokeStyle = '#abb9ce'; c.lineWidth = ln.width * sx; strokePath(c, ln.pts); }
     // bệ đá (tảng đá rêu): nét dày bo tròn màu đá, viền tối — thấy rõ đường đi vòng; không vẽ bụi cỏ
     const segs = map.walls?.segs || (map.walls?.ys || []).map((y) => ({ x1: 0, y1: y, x2: map.w, y2: y }));
     c.lineCap = 'round';
