@@ -20,7 +20,7 @@ const STYLE = `.sh-cur { display: flex; gap: 10px; } .sh-cur .cur { display: inl
 .sh-look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 8px; background: var(--u-surf); box-shadow: inset 0 0 0 1px var(--line); }
 .sh-look.wear { box-shadow: inset 0 0 0 1px var(--line); }
 .sh-look .sw { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); } .sh-look .sw .face { width: 100%; height: 100%; mix-blend-mode: multiply; }
-.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #f2e7d0; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
+.sh-look b { font: 700 15px/1.1 var(--u-disp); color: #dbe2ec; } .sh-look .go { min-width: 110px; height: 32px; font-size: 14.5px; } .sh-look .go img.ui-ic { width: 18px; height: 18px; margin-right: 4px; vertical-align: -3px; }
 .pn-row .go img.ui-ic { width: 20px; height: 20px; margin: 0 4px 0 0; vertical-align: -4px; filter: none; }`;
 let styled = false;
 const cur = (k, n) => `<span class="cur" title="${CURRENCY[k].name}">${icon(CURRENCY[k].icon)}<b>${fmt(n)}</b></span>`;

@@ -14,7 +14,7 @@ export const streakName = (n) => (n >= 7 ? 'Truyền thuyết' : STREAK[n] || ''
 // UI v5 "sơn mài đêm hội" (cùng bộ màu src/ui/css.js — trước đây dải này còn kiểu UI v4 hoạt hình: nền màu đặc, viền mực dày, bóng cứng,
 // chữ in hoa đắp nổi, tia sáng toả): dải sơn mài đen nâu, chỉ vàng mảnh trên / dưới, lòng dải ánh chàm (đội ta) / huyết dụ (đội địch), tiêu đề
 // Fraunces màu ngà / vàng quỳ không viền, bóng mềm. Vòng chân dung giữ màu đội sáng (#38b8ff / #ff4a3a) như mọi chỗ trong trận.
-const IVORY = '#f2e7d0', IVORY2 = '#cbbb9b', GOLD = '#d8b468', GOLD_L = '#ecd69f';
+const IVORY = '#dbe2ec', IVORY2 = '#a5b2c6', GOLD = '#d8b468', GOLD_L = '#ecd69f';
 const THEME = {
   ally: { tint: 'rgba(36,54,79,0.92)', ring: '#38b8ff' },
   foe: { tint: 'rgba(77,39,35,0.92)', ring: '#ff4a3a' },
@@ -63,7 +63,7 @@ export function createKillBanner(portraits) {
     ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
     const g = ctx.createRadialGradient(x, y - r * 0.4, r * 0.1, x, y, r); g.addColorStop(0, '#3a3f5c'); g.addColorStop(1, '#141628'); ctx.fillStyle = g; ctx.fill();
     ctx.lineWidth = Math.max(2, r * 0.2); ctx.strokeStyle = ring; ctx.stroke();
-    ctx.translate(x, y); ctx.scale(r / 20, r / 20); ctx.fillStyle = '#f3e3b8'; ctx.strokeStyle = '#f3e3b8'; ctx.lineWidth = 2.2; ctx.lineJoin = ctx.lineCap = 'round';
+    ctx.translate(x, y); ctx.scale(r / 20, r / 20); ctx.fillStyle = '#ccd6e5'; ctx.strokeStyle = '#ccd6e5'; ctx.lineWidth = 2.2; ctx.lineJoin = ctx.lineCap = 'round';
     ctx.beginPath();
     if (kind === 'tower') { // tháp răng cưa (kiểu quân xe) + cửa vòm sáng — tránh dáng đầu nhọn thân loe (trông như cái chuông)
       ctx.fillRect(-10, 8, 20, 4); ctx.fillRect(-6.5, -5, 13, 13); ctx.fillRect(-9, -9, 18, 4.5);
@@ -94,11 +94,11 @@ export function createKillBanner(portraits) {
     ctx.globalAlpha = a;
     // dải sơn mài: bóng mềm dưới, nền đen nâu, lòng ánh màu phe, chỉ vàng mảnh trên / dưới (dài theo độ mở của dải)
     const rr = bh / 2, pill = () => { ctx.beginPath(); ctx.moveTo(x0 + rr, cy - rr); ctx.lineTo(x1 - rr, cy - rr); ctx.arc(x1 - rr, cy, rr, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x0 + rr, cy + rr); ctx.arc(x0 + rr, cy, rr, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); };
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; ctx.fillStyle = '#120d0b'; pill(); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; ctx.fillStyle = '#090e17'; pill(); ctx.fill(); ctx.restore();
     ctx.save(); pill(); ctx.clip();
-    const lg = ctx.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, 'rgba(18,13,11,0)'); lg.addColorStop(0.5, th.tint); lg.addColorStop(1, 'rgba(18,13,11,0)');
+    const lg = ctx.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, 'rgba(9,14,23,0)'); lg.addColorStop(0.5, th.tint); lg.addColorStop(1, 'rgba(9,14,23,0)');
     ctx.fillStyle = lg; ctx.fillRect(x0, cy - rr, x1 - x0, bh);
-    ctx.fillStyle = 'rgba(242,231,208,0.05)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.8); // ánh sơn mài rất nhẹ nửa trên
+    ctx.fillStyle = 'rgba(219,226,236,0.05)'; ctx.fillRect(x0, cy - rr, x1 - x0, rr * 0.8); // ánh sơn mài rất nhẹ nửa trên
     ctx.restore();
     ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(216,180,104,0.55)'; pill(); ctx.stroke();
     const rule = (yy) => { const g2 = ctx.createLinearGradient(x0, 0, x1, 0); g2.addColorStop(0, 'rgba(216,180,104,0)'); g2.addColorStop(0.5, GOLD); g2.addColorStop(1, 'rgba(216,180,104,0)'); ctx.fillStyle = g2; ctx.fillRect(x0 + rr, yy, x1 - x0 - 2 * rr, 1); };
@@ -130,7 +130,7 @@ export function createKillBanner(portraits) {
     if (s > 0) {
       const ax = rx + R * 0.95, ay = cy - R * 1.05, bx = rx - R * 0.95, by = cy + R * 1.05, ex = ax + (bx - ax) * s, ey = ay + (by - ay) * s;
       ctx.lineCap = 'round'; ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(80,0,0,0.6)'; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke();
-      ctx.lineWidth = 3.2; ctx.strokeStyle = '#ff2a2a'; ctx.stroke(); ctx.lineWidth = 1; ctx.strokeStyle = '#ffd0c8'; ctx.stroke();
+      ctx.lineWidth = 3.2; ctx.strokeStyle = '#ff2a2a'; ctx.stroke(); ctx.lineWidth = 1; ctx.strokeStyle = '#dee4ee'; ctx.stroke();
     }
     // người hỗ trợ: chân dung nhỏ dưới người hạ
     (it.assists || []).slice(0, 4).forEach((f, i) => face(ctx, f, lx - 6 + i * 17, cy + R + 10, 7.5, th.ring, f.me));

@@ -6,6 +6,7 @@ import { startMatch } from './game.js';
 import { loadHero, heroProgress } from './render/assets.js';
 import { injectCss } from './ui/css.js';
 import { injectDraftCss } from './ui/cssDraft.js';
+import { injectMatchCss } from './ui/cssMatch.js';
 import { bootStart, bootRun, bootDone, loadImg } from './ui/boot.js';
 import { faceSrc, cardSrc, ICONS, iconSrc, toast } from './ui/kit.js';
 import { profile, rankOf } from './ui/profile.js';
@@ -31,7 +32,7 @@ document.getElementById('fs').onclick = async () => {
   try { await document.documentElement.requestFullscreen(); await screen.orientation?.lock?.('landscape'); } catch (_) { /* tuỳ thiết bị */ }
 };
 initViewport(); // tỉ lệ giao diện theo cỡ màn (+ biến --vh / --vw đúng phần nhìn thấy) — trước khi dựng giao diện
-injectCss(); injectDraftCss();
+injectCss(); injectDraftCss(); injectMatchCss();
 initPwa({ canPrompt: canPromptUpdate }); // cài như ứng dụng + chơi không mạng (src/ui/pwa.js, sw.js)
 loadAudio(); hookUiSounds(); // âm thanh: tải + giải mã song song với màn tải game (không chặn vào game); phát được sau lần chạm đầu
 // model tướng tải lỗi hẳn (sau các lần thử lại): báo kèm lỗi (để biết lý do khi chơi trên điện thoại); game tự thử lại sau

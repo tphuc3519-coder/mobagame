@@ -1225,3 +1225,19 @@
   - **Công bằng hai phe đo lại** bằng `tools/t_side.mjs` mới (mỗi cặp hai trận cùng đội hình đổi bên — sức mạnh đội hình tự bù trừ), 192 trận
     mỗi bản: cũ Xanh thắng 50% ± 3,6%, mới 48% ± 3,6% — không bản nào lệch đo được. Một bộ 96 trận riêng lẻ dao động 41–59% ngay trên bản
     cũ: muốn kết luận về thiên lệch phe phải chạy ≥ 2 bộ seed (tham số thứ tư của `t_side`).
+- 2026-11-19: **UI v6 "Đêm lam đèn lồng"** (thay UI v5 "Sơn mài"; spec 07 §1.1). Chủ dự án yêu cầu giao diện đạt độ hoàn thiện của MOBA mobile
+  thương mại (tham khảo cách bố cục / phân cấp thị giác của MOBA mobile phổ biến — không dùng hình, logo, icon hay tệp giao diện của game nào).
+  - **Vì sao đổi bảng màu:** nền nâu đen + chỉ vàng ở mọi khung + nút son phẳng làm màn nào cũng "ngả bùn", vàng mất vai trò điểm nhấn. v6: nền
+    thép lam đêm (sáng nhẹ từ trên xuống), viền thép mảnh, chữ trắng bạc; **vàng đèn chỉ cho hành động chính** (nút vàng kim loại chữ mực, viền
+    hai lớp), ô / thẻ đang chọn, nẹp góc khung lớn và chiêu cuối. Lam = đội mình, son = đội Đỏ / cảnh báo, ngọc = trạng thái tốt.
+  - **Cách làm:** giữ nguyên tên biến (`--lac*`, `--ivory*`, `--line`, `--g-*`…) để mọi màn đổi theo một chỗ (`ui/css.js :root`, bản sao rút gọn
+    trong `index.html`); màu viết cứng kiểu sơn mài trong 14 tệp giao diện chuyển bằng một phép đổi có quy tắc (màu tối ấm độ bão hoà thấp → thép
+    lam cùng độ sáng; màu ngà → bạc; màu bão hoà — vàng, son, ngọc, màu đội, tranh kỹ năng, số sát thương — giữ nguyên). Bỏ mọi `sepia()` trên ảnh.
+  - Bo góc thống nhất 4–6 px (trước 6 / 10 / 12 px lẫn lộn); nhãn góc thẻ thành dải ruy băng thẳng (bỏ con dấu nghiêng); ổ khoá emoji ở thẻ chế
+    độ → biểu tượng SVG; mỗi thẻ chế độ có màu nhận diện riêng (`--acc`: lam / vàng / tím / ngọc / son).
+  - Trong trận: ba nút chiêu vòng thép kép, **chiêu cuối (K3) vòng vàng đèn** — ba nút bằng cỡ nên cần dấu nhận biết khác cỡ; bảng tỉ số có
+    vạch vàng trên; thanh máu của mình thành tấm thép (máu chuyển sắc, vạch mỗi 500 / 1000 máu, đỏ khi < 30%) — **cùng khung chữ nhật cũ**
+    (`selfBarRect`) nên bố cục và kiểm thử HUD không đổi.
+  - Giữ Fraunces cho tiêu đề lớn (tên màn, tên tướng, VS, CHIẾN THẮNG) — chữ có chân hợp chất kỳ ảo; nhãn mục (`.hd`) chuyển Be Vietnam Pro đậm
+    giãn nhẹ, màu bạc. Không thêm phông / thư viện mới.
+  - `css.js` vượt 400 dòng → tách màn tải trận (VS) + chữ hết trận ra `ui/cssMatch.js`. `theme-color` / manifest đổi sang `#080d17`.

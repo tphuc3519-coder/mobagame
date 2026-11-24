@@ -13,9 +13,9 @@ import { DISP, font as cf } from '../ui/fonts.js';
 // Số sát thương bay: 3 loại × thường/chí mạng. Màu lấy theo quy ước MOBA (vật lý cam, phép tím lam, chuẩn trắng);
 // chí mạng: chữ to hơn, nghiêng, nảy mạnh, có hình nổ phía sau + biểu tượng (vật lý: vết chém, phép: sao lấp lánh, chuẩn: viên kim cương).
 export const DMG_STYLE = {
-  physical: { fill: '#ffa53a', top: '#fff1cf', bot: '#ff9426', stroke: '#140e0b', burst: '#ff6a1c', icon: 'slash' },
-  magic: { fill: '#b48cff', top: '#f0e4ff', bot: '#8f6bff', stroke: '#140e0b', burst: '#a64dff', icon: 'spark' },
-  true: { fill: '#ffffff', top: '#ffffff', bot: '#d4dbef', stroke: '#140e0b', burst: '#e8f0ff', icon: 'gem' },
+  physical: { fill: '#ffa53a', top: '#fff1cf', bot: '#ff9426', stroke: '#0a0f19', burst: '#ff6a1c', icon: 'slash' },
+  magic: { fill: '#b48cff', top: '#f0e4ff', bot: '#8f6bff', stroke: '#0a0f19', burst: '#a64dff', icon: 'spark' },
+  true: { fill: '#ffffff', top: '#ffffff', bot: '#d4dbef', stroke: '#0a0f19', burst: '#e8f0ff', icon: 'gem' },
 };
 const HERO_BAR_Y = Math.round(250 * HERO_SCALE + 30); // thanh máu trên đầu tướng: trên đỉnh đầu tướng cao nhất (2,5 m × tỉ lệ trong trận)
 /** Chữ khống chế trên đầu (áp chế ưu tiên cao nhất, màu tím riêng). */
@@ -75,6 +75,29 @@ export function createHud(canvas, input, portraits = null) {
     ctx.fillStyle = fill; ctx.fillRect(x, y, bw * Math.max(0, Math.min(1, pct)), bh);
   };
 
+  // Thanh máu / năng lượng của mình (UI v6): tấm thép lam viền mảnh, máu xanh lục chuyển sắc trên → dưới + vạch mỗi 500 máu, giáp trắng phủ
+  // trên, năng lượng lam; cùng khung chữ nhật cũ (selfBarRect) để bố cục / kiểm thử không đổi
+  function selfPlate(bx, by, bw, player) {
+    const maxHp = Math.max(1, player.stats.maxHp), hpP = Math.max(0, Math.min(1, player.hp / maxHp));
+    ctx.save();
+    ctx.fillStyle = 'rgba(6,10,18,0.82)'; ctx.fillRect(bx - 3, by - 3, bw + 6, 26);
+    ctx.strokeStyle = 'rgba(140,170,215,0.38)'; ctx.lineWidth = 1; ctx.strokeRect(bx - 2.5, by - 2.5, bw + 5, 25);
+    ctx.fillStyle = 'rgba(224,185,97,0.85)'; ctx.fillRect(bx - 3, by - 3, 3, 26); // mép trái vàng đèn — điểm nhấn duy nhất
+    const hg = ctx.createLinearGradient(0, by, 0, by + 12); const low = hpP < 0.3;
+    hg.addColorStop(0, low ? '#ff9a7a' : '#8ff0a6'); hg.addColorStop(0.45, low ? '#e8503a' : '#3ecf74'); hg.addColorStop(1, low ? '#a82a1e' : '#1f8f4a');
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, bw, 12);
+    ctx.fillStyle = hg; ctx.fillRect(bx, by, bw * hpP, 12);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(bx, by, bw * hpP, 1);
+    const sh = player.shields.reduce((a, s) => a + s.amount, 0);
+    if (sh > 0) { ctx.fillStyle = 'rgba(244,246,250,0.9)'; ctx.fillRect(bx, by, bw * Math.min(1, sh / maxHp), 4); }
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; const step = maxHp > 6000 ? 1000 : 500; // vạch đếm máu
+    for (let v = step; v < maxHp; v += step) { const x = Math.round(bx + bw * (v / maxHp)); ctx.fillRect(x, by + (v % 1000 ? 6 : 0), 1, v % 1000 ? 6 : 12); }
+    const mg = ctx.createLinearGradient(0, by + 15, 0, by + 20); mg.addColorStop(0, '#8cc4ff'); mg.addColorStop(1, '#2f74d8');
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by + 15, bw, 5);
+    ctx.fillStyle = mg; ctx.fillRect(bx, by + 15, bw * Math.max(0, Math.min(1, player.mana / Math.max(1, player.stats.maxMana))), 5);
+    ctx.restore();
+  }
+
   // Bảng bị hạ (giữa trên, dưới tỉ số): vòng đếm ngược hồi sinh + "Bị hạ bởi" chân dung/tên kẻ hạ. Màn hình xám do game.js bật lớp .dead.
   function drawDeath(world, player) {
     const leftT = Math.max(0, (player.respawnTick - world.tick) / 30), left = Math.ceil(leftT), d = death || { name: 'Bị hạ gục', total: leftT || 1 };
@@ -82,23 +105,23 @@ export function createHud(canvas, input, portraits = null) {
     // thẻ sơn mài (UI v5, cùng bộ màu src/ui/css.js; trước là thẻ UI v4 đỏ đặc, viền mực dày, bóng cứng): nền đen nâu ánh huyết dụ, chỉ vàng
     // mảnh, bóng mềm; vòng đếm ngược viền vàng quỳ
     const card = () => { const r = 12; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + pw, y, x + pw, y + ph, r); ctx.arcTo(x + pw, y + ph, x, y + ph, r); ctx.arcTo(x, y + ph, x, y, r); ctx.arcTo(x, y, x + pw, y, r); ctx.closePath(); };
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; card(); ctx.fillStyle = '#1a1310'; ctx.fill(); ctx.restore();
-    ctx.save(); card(); ctx.clip(); const lg = ctx.createLinearGradient(x, 0, x + pw, 0); lg.addColorStop(0, 'rgba(77,39,35,0.95)'); lg.addColorStop(1, 'rgba(26,19,16,0)'); ctx.fillStyle = lg; ctx.fillRect(x, y, pw, ph); ctx.restore();
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; card(); ctx.fillStyle = '#0e1421'; ctx.fill(); ctx.restore();
+    ctx.save(); card(); ctx.clip(); const lg = ctx.createLinearGradient(x, 0, x + pw, 0); lg.addColorStop(0, 'rgba(77,39,35,0.95)'); lg.addColorStop(1, 'rgba(14,20,33,0)'); ctx.fillStyle = lg; ctx.fillRect(x, y, pw, ph); ctx.restore();
     ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(216,180,104,0.55)'; card(); ctx.stroke();
     // vòng đếm ngược
     const rx = x + 62, ry = y + ph / 2, rr = 22;
-    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#120d0b'; ctx.fill();
+    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fillStyle = '#090e17'; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(216,180,104,0.22)'; ctx.stroke();
     ctx.beginPath(); ctx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, leftT / d.total)); ctx.strokeStyle = '#d8b468'; ctx.stroke();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f2e7d0'; ctx.font = `700 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#dbe2ec'; ctx.font = `700 ${left >= 10 ? 21 : 24}px ${DISP}`; ctx.fillText(String(left), rx, ry + 1);
     // kẻ hạ
-    ctx.textAlign = 'left'; ctx.fillStyle = '#cbbb9b'; ctx.font = cf(600, 12); ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#a5b2c6'; ctx.font = cf(600, 12); ctx.fillText(d.self ? 'Tự hạ gục' : 'Bị hạ bởi', rx + 34, ry - 11);
     let nx = rx + 34;
     const col = d.team == null ? '#e8d48a' : d.team === player.team ? '#38b8ff' : '#ff4a3a';
     if (d.heroId && portraits) { portraits.draw(ctx, d.heroId, d.name, nx + 11, ry + 9, 11, col, {}); nx += 27; }
     ctx.font = cf(700, 15); ctx.fillStyle = d.kind === 'monster' ? '#ecd69f' : d.team === player.team ? '#cfe0f4' : '#f2d2c8';
     ctx.fillText(d.name, nx, ry + 9);
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillStyle = 'rgba(242,231,208,0.78)'; ctx.font = cf(500, 11); ctx.textAlign = 'center';
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillStyle = 'rgba(219,226,236,0.78)'; ctx.font = cf(500, 11); ctx.textAlign = 'center';
     ctx.fillText('Vẫn mua đồ được · giữ bản đồ nhỏ để xem trận', cx, y + ph + 10); ctx.restore();
   }
 
@@ -121,7 +144,7 @@ export function createHud(canvas, input, portraits = null) {
       ctx.beginPath();
       for (let j = 0; j < n * 2; j++) { const a = spin + (j / (n * 2)) * Math.PI * 2, r = j % 2 ? 0.62 : 1; ctx.lineTo(Math.cos(a) * rx * r, Math.sin(a) * ry * r); }
       ctx.closePath(); ctx.globalAlpha *= 0.85; ctx.fillStyle = st.burst; ctx.fill(); ctx.globalAlpha /= 0.85;
-      ctx.lineWidth = 3; ctx.strokeStyle = '#140e0b'; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#0a0f19'; ctx.stroke();
       critIcon(st.icon, -tw / 2 - size * 0.55, -size * 0.05, size * 0.5, st);
     } else ctx.font = font(size);
     // chữ chiến đấu: màu đặc theo loại sát thương + MỘT lớp viền mực sơn mài (ngoại lệ có chủ ý của UI v5 — số bay trên cảnh 3D cần viền mới đọc
@@ -166,7 +189,7 @@ export function createHud(canvas, input, portraits = null) {
         if (ev.type === 'ace') kills.ace(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'death' && e.kind === 'hero') kills.death(ev, world, world.__localId, world.__localTeam);
         if (ev.type === 'gold' && ev.id === world.__localId && ev.amount > 0) golds.push({ amount: ev.amount, born: now() }); // vàng nhận được: "+225" kèm đồng vàng trên đầu tướng mình
-        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); buzz('fail'); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#ffd0a0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
+        if (ev.type === 'castFail' && ev.id === world.__localId && FAIL[ev.reason] && now() - lastFail > 0.6) { lastFail = now(); buzz('fail'); floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: FAIL[ev.reason], color: '#c4cfe0', size: 14, life: 1.1, drift: 0, tilt: 0 }); }
         if (ev.type === 'emblem' && ev.id === world.__localId && KEYSTONES[ev.key]) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: KEYSTONES[ev.key].name, color: '#ffd36a', size: 13, life: 1.0, drift: 0, tilt: 0 }); // phù hiệu kích hoạt
         if (ev.type === 'ccResist' && e.kind === 'hero' && (ev.id === world.__localId || e.team !== world.__localTeam)) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Kháng 50%', color: '#b8e0ff', size: 13, life: 1.0, drift: 0, tilt: 0 }); // chống khoá chết (04 §3): khống chế bị giảm
         if (ev.type === 'restoreBreak' && ev.id === world.__localId) floats.push({ x: e.pos.x, y: e.pos.y, gy: floorAt(world.map, e.pos.x, e.pos.y), t: 0, born: now(), text: 'Mất hồi máu', color: '#ff8aa0', size: 14, life: 1.2, drift: 0, tilt: 0 });
@@ -224,7 +247,7 @@ export function createHud(canvas, input, portraits = null) {
             const pct = Math.max(0, e.hp / e.stats.maxHp), bh = e.boss ? 9 : 6, x0 = p.x - bw / 2, y0 = p.y - 6, tn = now();
             const tr = monTrail.get(e.id) || { v: pct, t: tn }; tr.v = Math.max(pct, tr.v - (tn - tr.t) * 0.45); tr.t = tn; monTrail.set(e.id, tr);
             bar(x0, y0, bw, bh, pct, '#f2b33a');
-            if (tr.v > pct + 0.002) { ctx.fillStyle = 'rgba(255,248,232,0.85)'; ctx.fillRect(x0 + bw * pct, y0, bw * (tr.v - pct), bh); }
+            if (tr.v > pct + 0.002) { ctx.fillStyle = 'rgba(243,245,249,0.85)'; ctx.fillRect(x0 + bw * pct, y0, bw * (tr.v - pct), bh); }
             const hot = e.aggro != null || tn - (monHit.get(e.id) ?? -99) < 4;
             if (hot) { ctx.font = `800 ${e.boss ? 16 : 12}px ${DISP}`; ctx.lineWidth = e.boss ? 4 : 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(String(Math.ceil(e.hp)), p.x, y0 - 2); ctx.fillStyle = '#ffffff'; ctx.fillText(String(Math.ceil(e.hp)), p.x, y0 - 2); } // boss: số to hơn
             if (e.boss || bw > 90) { const ny = hot ? y0 - (e.boss ? 20 : 16) : p.y - 10; ctx.font = cf(700, 12); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.75)'; ctx.strokeText(e.data.name, p.x, ny); ctx.fillStyle = '#ffe8b0'; ctx.fillText(e.data.name, p.x, ny); }
@@ -267,13 +290,12 @@ export function createHud(canvas, input, portraits = null) {
       }
       // thanh máu / mana của mình
       const { l: bx, t: by, r: br } = selfBarRect(w, h, input.layout?.cur.safe.l || 0), bw = br - bx; // sát mép dưới, mảnh, trong vùng an toàn (tai thỏ); cần di chuyển đứng phía trên (hud/layout.js)
-      bar(bx, by, bw, 12, player.hp / player.stats.maxHp, '#3ecf74');
-      const sh = player.shields.reduce((a, s) => a + s.amount, 0);
-      if (sh > 0) bar(bx, by, bw, 4, sh / player.stats.maxHp, '#f4f4f4', 'rgba(0,0,0,0)');
-      bar(bx, by + 15, bw, 5, player.mana / Math.max(1, player.stats.maxMana), '#4a9cff');
+      selfPlate(bx, by, bw, player);
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = cf(700, 11); ctx.fillStyle = '#fff';
       const gg = player.data.passive?.gauge?.(player, world); // thanh nội tại của tướng (Nụ, Ấn, Tầm Nhìn…)
+      ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
       ctx.fillText(`${Math.round(player.hp)} / ${Math.round(player.stats.maxHp)}    Cấp ${player.level}${player.heat ? '    Nhiệt ' + player.heat : ''}${gg ? `    ${gg.label}${gg.max > 1 ? ` ${gg.v}${gg.unit || ''}/${gg.max}${gg.unit || ''}` : ''}` : ''}`, bx + 6, by + 6);
+      ctx.shadowBlur = 0; ctx.shadowColor = 'rgba(0,0,0,0)';
       // tỉ số, đồng hồ, K/D/A: góc phải trên (scoreboard.js, DOM)
       if (!player.alive && player.respawnTick) drawDeath(world, player);
       // vàng nhận được: trên đầu tướng mình, nảy lên rồi mờ dần (giết tướng: chữ to)
@@ -284,8 +306,8 @@ export function createHud(canvas, input, portraits = null) {
         const big = g.amount >= 150, sz = (big ? 21 : 14) * (1 + 0.35 * Math.max(0, 1 - t / 0.12)), txt = '+' + g.amount;
         ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (life - t) * 3, t * 25)); ctx.font = `800 ${sz}px ${DISP}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
         const tw = ctx.measureText(txt).width, cr = sz * 0.42, x0 = p.x - (tw + cr * 2 + 3) / 2, cyy = p.y - (i % 3) * 6;
-        ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = '#e3c47e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#140e0b'; ctx.stroke(); // đồng vàng (vàng quỳ UI v5)
-        ctx.lineWidth = big ? 5 : 4; ctx.strokeStyle = '#140e0b'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
+        ctx.beginPath(); ctx.arc(x0 + cr, cyy, cr, 0, Math.PI * 2); ctx.fillStyle = '#e3c47e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0a0f19'; ctx.stroke(); // đồng vàng (vàng quỳ UI v5)
+        ctx.lineWidth = big ? 5 : 4; ctx.strokeStyle = '#0a0f19'; ctx.lineJoin = 'round'; ctx.strokeText(txt, x0 + cr * 2 + 3, cyy);
         ctx.fillStyle = '#ecd69f'; ctx.fillText(txt, x0 + cr * 2 + 3, cyy);
         ctx.restore();
       }
@@ -298,12 +320,12 @@ export function createHud(canvas, input, portraits = null) {
         const o = js.active ? { x: js.ox, y: js.oy } : input.rest(), dx = js.active ? js.x - js.ox : 0, dy = js.active ? js.y - js.oy : 0, l = Math.hypot(dx, dy), k = l > R ? R / l : 1;
         ctx.globalAlpha = js.active ? 1 : 0.55;
         const g = ctx.createRadialGradient(o.x, o.y, R * 0.3, o.x, o.y, R); g.addColorStop(0, 'rgba(15,18,36,0.15)'); g.addColorStop(1, 'rgba(15,18,36,0.45)');
-        ctx.fillStyle = g; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(243,233,214,0.55)';
+        ctx.fillStyle = g; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(223,230,239,0.55)';
         ctx.beginPath(); ctx.arc(o.x, o.y, R, 0, 7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = 'rgba(243,233,214,0.5)'; // 4 mũi chỉ hướng
+        ctx.fillStyle = 'rgba(223,230,239,0.5)'; // 4 mũi chỉ hướng
         for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2, cx = o.x + Math.cos(a) * (R - 12), cy2 = o.y + Math.sin(a) * (R - 12); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * 6, cy2 + Math.sin(a) * 6); ctx.lineTo(cx + Math.cos(a + 2.3) * 6, cy2 + Math.sin(a + 2.3) * 6); ctx.lineTo(cx + Math.cos(a - 2.3) * 6, cy2 + Math.sin(a - 2.3) * 6); ctx.fill(); }
         const kr = Math.round(R * 0.38), kx = o.x + dx * k, ky = o.y + dy * k, kg = ctx.createRadialGradient(kx - kr * 0.24, ky - kr * 0.3, 4, kx, ky, kr); // núm cần theo cỡ cần
-        kg.addColorStop(0, 'rgba(255,236,190,0.95)'); kg.addColorStop(1, js.active ? 'rgba(255,170,60,0.9)' : 'rgba(200,170,120,0.75)');
+        kg.addColorStop(0, 'rgba(215,223,235,0.95)'); kg.addColorStop(1, js.active ? 'rgba(255,170,60,0.9)' : 'rgba(200,170,120,0.75)');
         ctx.fillStyle = kg; ctx.beginPath(); ctx.arc(kx, ky, kr, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(60,30,0,0.45)'; ctx.stroke();
         ctx.globalAlpha = 1;
       }
